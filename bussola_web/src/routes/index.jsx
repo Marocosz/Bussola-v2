@@ -3,12 +3,12 @@ import { AuthProvider, AuthContext } from './context/AuthContext';
 import { useContext } from 'react';
 import { Login } from './pages/Login';
 
-// Componente para proteger rotas privadas (só entra se estiver logado)
+// Componente para proteger rotas privadas
 const PrivateRoute = ({ children }) => {
     const { authenticated, loading } = useContext(AuthContext);
 
     if (loading) {
-        return <div style={{color: 'white', textAlign: 'center', marginTop: '20%'}}>Carregando...</div>;
+        return <div>Carregando...</div>;
     }
 
     if (!authenticated) {
@@ -25,18 +25,15 @@ function App() {
                 <Routes>
                     <Route path="/login" element={<Login />} />
                     
-                    {/* Rota Protegida: Dashboard */}
+                    {/* Rota Protegida de Teste */}
                     <Route path="/dashboard" element={
                         <PrivateRoute>
-                            <div style={{color: 'white', padding: '2rem'}}>
-                                <h1>Bem-vindo ao Dashboard do Bússola! 🧭</h1>
-                                <p>Se você está vendo isso, o login funcionou.</p>
-                            </div>
+                            <h1>Bem-vindo ao Dashboard do Bússola! 🧭</h1>
                         </PrivateRoute>
                     } />
                     
-                    {/* Qualquer outra rota joga para o dashboard */}
-                    <Route path="*" element={<Navigate to="/dashboard" />} />
+                    {/* Redireciona raiz para dashboard */}
+                    <Route path="/" element={<Navigate to="/dashboard" />} />
                 </Routes>
             </AuthProvider>
         </BrowserRouter>

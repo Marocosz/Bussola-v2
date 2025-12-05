@@ -1,0 +1,302 @@
+/* =================================================================== */
+/* === ESTRUTURA GERAL DA PÁGINA DE AUTENTICAÇÃO
+/* =================================================================== */
+
+/* Define o container principal da página de login/registro */
+.auth-container {
+    display: grid;
+    /* Divide a página em duas colunas (introdução e formulário) em telas grandes */
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    justify-items: center;
+    width: 100%;
+    max-width: 1100px;
+    /* Limita a largura máxima para melhor visualização em desktops */
+    margin: 0 auto;
+    /* Centraliza o container na página */
+    padding: 2rem;
+    gap: 4rem;
+    /* Espaçamento entre as duas colunas */
+    flex-grow: 1;
+    /* Garante que o container ocupe o espaço vertical disponível */
+}
+
+/* Botão de alternância de tema posicionado de forma flutuante no canto da tela */
+.standalone-theme-toggle {
+    position: fixed;
+    top: 1.5rem;
+    right: 2rem;
+    z-index: 10;
+}
+
+
+/* =================================================================== */
+/* === COLUNA DE INTRODUÇÃO (LADO ESQUERDO)
+/* =================================================================== */
+
+/* Estilização da área de texto de boas-vindas */
+.auth-intro {
+    text-align: left;
+    color: var(--cor-texto-principal);
+}
+
+/* Cria uma barra lateral decorativa com gradiente fixada na borda esquerda da tela */
+.auth-intro::before {
+    content: '';
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, var(--cor-azul-primario), #a855f7);
+    z-index: 10;
+}
+
+/* Cabeçalho da introdução, alinhando o logo e o título principal */
+.auth-intro-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Estilo do logo principal na coluna de introdução */
+.auth-logo {
+    width: 60px;
+    height: auto;
+    margin-bottom: 0;
+}
+
+/* Inverte as cores do logo quando o tema claro está ativo para melhor contraste */
+.light-theme .auth-logo {
+    filter: invert(1);
+}
+
+/* Título principal H1 com efeito de texto em gradiente */
+.auth-intro h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 0;
+    /* Aplicação do gradiente como cor de fundo do texto */
+    background: linear-gradient(90deg, var(--cor-azul-primario), #a855f7);
+    -webkit-background-clip: text;
+    /* Corta o fundo para o formato do texto (prefixo WebKit) */
+    -webkit-text-fill-color: transparent;
+    /* Torna o texto transparente para revelar o fundo */
+    background-clip: text;
+}
+
+/* Parágrafo descritivo na coluna de introdução */
+.auth-intro p {
+    font-size: 1.1rem;
+    color: var(--cor-texto-secundario);
+    line-height: 1.7;
+    /* Aumenta o espaçamento entre linhas para legibilidade */
+    max-width: 45ch;
+    /* Limita a largura da linha a 45 caracteres para conforto de leitura */
+}
+
+/* Estilo para a imagem ilustrativa (se houver) na coluna de introdução */
+.auth-intro-image {
+    width: 100%;
+    max-width: 900px;
+}
+
+
+/* =================================================================== */
+/* === CARD DE AUTENTICAÇÃO (LADO DIREITO)
+/* =================================================================== */
+
+/* Estilo do card de formulário (login/registro) */
+.auth-card {
+    width: 100%;
+    max-width: 420px;
+    /* Largura máxima para o formulário */
+    background-color: var(--cor-card-principal);
+    padding: 2.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--cor-borda);
+}
+
+/* Cabeçalho dentro do card, alinhando logo e título secundário */
+.auth-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+/* Logo menor dentro do card de autenticação */
+.auth-logo-card {
+    width: 40px;
+    height: auto;
+}
+
+/* Inverte as cores do logo menor no tema claro */
+.light-theme .auth-logo-card {
+    filter: invert(1);
+}
+
+/* Título H2 dentro do card (ex: "Acesse sua conta") */
+.auth-card h2 {
+    text-align: center;
+    margin-bottom: 0;
+    font-weight: 600;
+}
+
+/* --- Estilos do Formulário --- */
+
+/* Espaçamento entre os campos do formulário (label + input) */
+.auth-card .form-group {
+    margin-bottom: 1.5rem;
+}
+
+/* Estilo da etiqueta (label) do campo de formulário */
+.auth-card .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--cor-texto-secundario);
+}
+
+/* Estilo dos campos de entrada (input) do formulário */
+.auth-card .form-input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    background-color: var(--cor-fundo);
+    color: var(--cor-texto-principal);
+    font-size: 1rem;
+    font-family: 'Poppins', sans-serif;
+    /* Garante consistência da fonte */
+}
+
+/* Efeito de foco no campo de entrada (borda e sombra coloridas) */
+.auth-card .form-input:focus {
+    outline: none;
+    border-color: var(--cor-azul-primario);
+    box-shadow: 0 0 0 3px rgba(74, 109, 255, 0.3);
+}
+
+/* Estilo do botão primário dentro do card (será sobrescrito abaixo) */
+.auth-card .btn-primary {
+    width: 100%;
+    padding: 0.8rem;
+    font-size: 1rem;
+    margin-top: 1rem;
+}
+
+/* --- Mensagens de Alerta (Flash Messages) --- */
+
+/* Estilo base para mensagens de feedback (erro, sucesso, etc.) */
+.alert-message {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+}
+
+/* Cor de fundo para mensagens de sucesso */
+.alert-message.success {
+    background-color: var(--cor-verde-sucesso);
+}
+
+/* Cor de fundo para mensagens de perigo/erro */
+.alert-message.danger {
+    background-color: var(--cor-vermelho-delete);
+}
+
+/* Cor de fundo para mensagens de aviso */
+.alert-message.warning {
+    background-color: var(--cor-laranja-aviso);
+}
+
+/* Cor de fundo para mensagens informativas */
+.alert-message.info {
+    background-color: var(--cor-azul-primario);
+}
+
+/* =================================================================== */
+/* === ESTILO DE GRADIENTE PARA O BOTÃO DE LOGIN
+/* =================================================================== */
+
+/* Aplica um fundo em gradiente ao botão primário dentro do card de autenticação */
+.auth-card .btn-primary {
+    background: linear-gradient(90deg, var(--cor-azul-primario), #a855f7);
+    border: none;
+    transition: all 0.3s ease;
+}
+
+/* Efeito de elevação e sombra ao passar o mouse sobre o botão */
+.auth-card .btn-primary:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+}
+
+
+/* =================================================================== */
+/* === RESPONSIVIDADE (Telas menores)
+/* =================================================================== */
+
+@media (max-width: 900px) {
+
+    /* Muda o layout de duas colunas para uma única coluna empilhada */
+    .auth-container {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 3rem;
+    }
+
+    /* Centraliza o texto da introdução em telas menores */
+    .auth-intro {
+        text-align: center;
+        padding-left: 0;
+    }
+
+    /* Esconde a barra decorativa lateral em telas pequenas */
+    .auth-intro::before {
+        display: none;
+    }
+
+    /* Centraliza o logo e o título da introdução */
+    .auth-intro-header {
+        justify-content: center;
+    }
+
+    /* Remove a limitação de largura do parágrafo em telas pequenas */
+    .auth-intro p {
+        max-width: 100%;
+    }
+}
+
+/* ============================================= */
+/* Lógica de Troca de Imagem por Tema (Login)    */
+/* ============================================= */
+
+/* 1. Estado Padrão (Dark Mode): Mostra a imagem escura e esconde a clara. */
+.image-dark-mode {
+    display: block;
+}
+.image-light-mode {
+    display: none;
+}
+
+/* 2. Estado de Tema Claro (.light-theme): Inverte a visibilidade. */
+.light-theme .image-dark-mode {
+    display: none;
+}
+.light-theme .image-light-mode {
+    display: block;
+}
+
+/* 3. Estilo base para a imagem de introdução (apenas para garantir o dimensionamento) */
+.auth-intro-image {
+    width: 100%;
+    max-width: 900px; /* Ou o tamanho que desejar */
+    height: auto;
+    margin-top: 1rem; /* Espaçamento da imagem */
+}
