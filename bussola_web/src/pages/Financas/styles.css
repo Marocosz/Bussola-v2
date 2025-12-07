@@ -106,7 +106,7 @@
     flex-direction: column;
     gap: 0.8rem;
     transition: transform 0.2s, box-shadow 0.2s;
-    border-left: 4px solid var(--cor-borda); /* Mantendo do original */
+    border-left: 4px solid var(--cor-borda);
 }
 
 .transacao-card:hover {
@@ -248,8 +248,8 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
 /* 4. CARD DE CATEGORIA                          */
 /* ============================================= */
 .category-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: 1rem;
     margin-top: 0.5rem;
 }
@@ -258,11 +258,12 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     background: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
     border-radius: 10px;
-    padding: 1rem;
+    padding: 1.2rem;
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 1.2rem;
     transition: transform 0.2s;
+    width: 100%;
 }
 
 .categoria-card:hover {
@@ -271,13 +272,13 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
 }
 
 .categoria-icon-box {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
+    font-size: 1.4rem;
     flex-shrink: 0;
 }
 
@@ -287,7 +288,7 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
 }
 
 .categoria-info h4 {
-    font-size: 0.95rem;
+    font-size: 1rem;
     margin-bottom: 0.3rem;
     white-space: nowrap;
     overflow: hidden;
@@ -296,7 +297,7 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
 }
 
 .categoria-meta {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     color: var(--cor-texto-secundario);
     display: flex;
     justify-content: space-between;
@@ -304,10 +305,10 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
 }
 
 .progress-bar-container {
-    height: 4px;
+    height: 6px;
     background: var(--cor-fundo-hover);
-    border-radius: 2px;
-    margin-top: 8px;
+    border-radius: 3px;
+    margin-top: 10px;
     overflow: hidden;
 }
 
@@ -317,18 +318,17 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
 }
 
 /* ============================================= */
-/* 5. MODAL (CORRIGIDO PARA REACT)               */
+/* 5. MODAL                                      */
 /* ============================================= */
 .modal {
-    display: flex; /* React renderiza condicionalmente, CSS garante layout flex */
+    display: flex;
     position: fixed;
     z-index: 2000;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    overflow: hidden;
-    background-color: rgba(0, 0, 0, 0.7); /* Fundo escuro */
+    background-color: rgba(0, 0, 0, 0.7);
     align-items: center;
     justify-content: center;
     backdrop-filter: blur(4px);
@@ -352,6 +352,8 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     flex-direction: column;
     max-height: 90vh;
     animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    /* Permite que os popups (pickers) saiam para fora do modal */
+    overflow: visible !important;
 }
 
 @keyframes scaleUp {
@@ -388,7 +390,7 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
 
 .modal-body {
     padding: 1.5rem;
-    overflow-y: auto;
+    overflow: visible;
     display: flex;
     flex-direction: column;
     gap: 1.2rem;
@@ -449,7 +451,7 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
 }
 
 /* ============================================= */
-/* 7. DROPDOWN E PICKERS (CORRIGIDO)             */
+/* 7. DROPDOWN E PICKERS                         */
 /* ============================================= */
 .btn-group {
     position: relative;
@@ -465,9 +467,9 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     border-radius: 10px;
     padding: 0.5rem;
     box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-    z-index: 2500; /* Z-index alto para ficar acima de tudo */
+    z-index: 2500;
     min-width: 200px;
-    display: none; /* Controlado pelo React, mas classe 'visible' ativa block */
+    display: none;
     animation: fadeIn 0.2s;
 }
 
@@ -512,15 +514,15 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
 
 .picker-popover {
     position: absolute;
-    bottom: 110%;
+    bottom: 110%; /* Abre para cima */
     left: 0;
     background: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
     padding: 12px;
     border-radius: 12px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-    z-index: 2500;
-    display: none; /* Controlado pela classe visible */
+    box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+    z-index: 3000;
+    display: none;
     gap: 8px;
     max-height: 250px;
     overflow-y: auto;
@@ -529,7 +531,15 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
 .picker-popover.visible { display: grid; }
 
 .picker-popover.icon-grid { grid-template-columns: repeat(5, 1fr); width: 240px; }
-.picker-popover.color-grid { grid-template-columns: repeat(5, 1fr); width: 200px; }
+
+/* --- CORREÇÃO AQUI: Largura aumentada para 250px para caber 5 itens de 36px + gaps --- */
+.picker-popover.color-grid { 
+    grid-template-columns: repeat(5, 1fr); 
+    width: 250px; 
+    max-height: none; 
+    overflow-y: visible;
+    height: auto;
+}
 
 .icon-option, .color-swatch {
     width: 36px;
@@ -557,6 +567,7 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     
     .modal-content {
         width: 95%;
-        max-height: 95vh;
+        max-height: 85vh;
+        overflow-y: auto !important; 
     }
 }
