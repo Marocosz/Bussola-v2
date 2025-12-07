@@ -1,43 +1,14 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, AuthContext } from './context/AuthContext';
-import { useContext } from 'react';
-import { Login } from './pages/Login';
+import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { AppRoutes } from './routes'; // Importa as rotas organizadas acima
 
-// Componente para proteger rotas privadas (só entra se estiver logado)
-const PrivateRoute = ({ children }) => {
-    const { authenticated, loading } = useContext(AuthContext);
-
-    if (loading) {
-        return <div style={{color: 'white', textAlign: 'center', marginTop: '20%'}}>Carregando...</div>;
-    }
-
-    if (!authenticated) {
-        return <Navigate to="/login" />;
-    }
-
-    return children;
-};
+import './assets/styles/global.css'; // Garante que o CSS global carregue aqui também
 
 function App() {
     return (
         <BrowserRouter>
             <AuthProvider>
-                <Routes>
-                    <Route path="/login" element={<Login />} />
-                    
-                    {/* Rota Protegida: Dashboard */}
-                    <Route path="/dashboard" element={
-                        <PrivateRoute>
-                            <div style={{color: 'white', padding: '2rem'}}>
-                                <h1>Bem-vindo ao Dashboard do Bússola! 🧭</h1>
-                                <p>Se você está vendo isso, o login funcionou.</p>
-                            </div>
-                        </PrivateRoute>
-                    } />
-                    
-                    {/* Qualquer outra rota joga para o dashboard */}
-                    <Route path="*" element={<Navigate to="/dashboard" />} />
-                </Routes>
+                <AppRoutes />
             </AuthProvider>
         </BrowserRouter>
     );

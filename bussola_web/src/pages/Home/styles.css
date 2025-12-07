@@ -1,0 +1,429 @@
+/* --- ESTILOS DE APRESENTAÇÃO (INDEX) --- */
+
+/* Remove margens do container principal do layout base para o hero fluir */
+main.container {
+    padding: 0 !important;
+    max-width: 100% !important;
+}
+
+/* ============================================= */
+/* 1. Seção Hero                                 */
+/* ============================================= */
+.hero-container {
+    padding: 6rem 2rem 5rem 2rem;
+    background: radial-gradient(circle at 10% 20%, rgba(74, 109, 255, 0.05), transparent 30%), var(--cor-fundo);
+}
+
+.hero-content {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 4rem;
+    align-items: center;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.hero-text h1 {
+    font-size: 4.2rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -1px;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(90deg, var(--cor-azul-primario) 0%, #a855f7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+}
+
+.hero-text .subtitle {
+    font-size: 1.15rem;
+    color: var(--cor-texto-secundario);
+    line-height: 1.7;
+    max-width: 55ch;
+}
+
+.hero-info {
+    background-color: transparent;
+    border-radius: 12px;
+    padding: 0;
+}
+
+.datetime-widget {
+    text-align: left;
+    margin-bottom: 2rem;
+}
+
+.datetime-widget .time-display {
+    font-size: 4rem;
+    font-weight: 600;
+    color: var(--cor-destaque);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+}
+
+.datetime-widget .date-location-display {
+    text-align: left;
+    color: var(--cor-texto-secundario);
+    font-size: 1rem;
+    line-height: 1.5;
+    padding-left: 2px;
+}
+
+.weather-widget {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: var(--cor-card-secundario);
+    border-radius: 10px;
+    border: 1px solid var(--cor-borda);
+}
+
+.weather-widget i {
+    font-size: 3rem;
+    color: var(--cor-azul-primario);
+    flex-shrink: 0;
+}
+
+.weather-details {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.weather-details .temperature {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--cor-texto-principal);
+    line-height: 1;
+}
+
+.weather-details .description {
+    font-size: 0.95rem;
+    color: var(--cor-texto-secundario);
+    text-transform: capitalize;
+    margin-top: 2px;
+}
+
+/* ============================================= */
+/* 2. Seção de Apresentação de Funcionalidades   */
+/* ============================================= */
+.features-presentation-area {
+    padding: 5rem 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.feature-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    /* Duas colunas iguais */
+    gap: 3rem;
+    align-items: center;
+    margin-bottom: 6rem;
+    /* Espaço grande entre as linhas de features */
+}
+
+/* O layout alternado é controlado pela ordem dos elementos no HTML, 
+   nenhuma regra de inversão de CSS é necessária. */
+
+.feature-content-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+    /* Espaço entre os itens de feature (ex: Finanças e Agenda) */
+}
+
+/* Estilo do título com gradiente, reutilizado do hero */
+.feature-item h3.gradient-title {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(cor-texto-principal);
+}
+
+.feature-item p {
+    font-size: 1.05rem;
+    color: var(--cor-texto-secundario);
+    line-height: 1.7;
+    margin-bottom: 1.25rem;
+    border-left: 3px solid var(--cor-azul-primario);
+    padding-left: 1rem;
+}
+
+.cta-link {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--cor-azul-primario);
+    text-decoration: none;
+    transition: letter-spacing 0.3s ease;
+}
+
+.cta-link i {
+    margin-left: 0.5rem;
+    transition: transform 0.3s ease;
+}
+
+.cta-link:hover {
+    letter-spacing: 0.5px;
+}
+
+.cta-link:hover i {
+    transform: translateX(5px);
+}
+
+.feature-image-showcase img {
+    width: 100%;
+    border-radius: 12px;
+    object-fit: contain;
+    filter: brightness(0.9) contrast(1.1);
+    transition: transform 0.4s ease;
+}
+
+.feature-image-showcase:hover img {
+    transform: scale(1.03);
+}
+
+/* ============================================= */
+/* 3. Seção de Destaque Panorama                 */
+/* ============================================= */
+.panorama-highlight-section {
+    padding: 6rem 2rem;
+    background-color: var(--cor-card-secundario);
+    text-align: center;
+}
+
+.panorama-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.panorama-icon {
+    font-size: 5rem;
+    color: var(--cor-azul-primario);
+    margin-bottom: 1rem;
+}
+
+.panorama-content h2 {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--cor-texto-principal);
+    margin-bottom: 1rem;
+}
+
+.panorama-content p {
+    font-size: 1.1rem;
+    color: var(--cor-texto-secundario);
+    line-height: 1.7;
+    margin-bottom: 2rem;
+}
+
+.btn-primary.large-button {
+    padding: 0.8rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* ============================================= */
+/* 4. Feed de Notícias (Rodapé)                   */
+/* ============================================= */
+.news-footer-section {
+    padding: 5rem 2rem 4rem 2rem;
+    background-color: var(--cor-fundo);
+    border-top: 1px solid var(--cor-borda);
+}
+
+.section-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.section-header h2 {
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--cor-texto-principal);
+}
+
+.news-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.news-item {
+    text-decoration: none;
+    padding: 1rem;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.news-item:hover {
+    background-color: var(--cor-fundo-hover);
+}
+
+.news-title {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--cor-texto-principal);
+    line-height: 1.4;
+}
+
+.news-source {
+    font-size: 0.85rem;
+    color: var(--cor-texto-secundario);
+    margin-top: 0.25rem;
+    display: block;
+}
+
+/* ============================================= */
+/* 5. Responsividade                             */
+/* ============================================= */
+@media (max-width: 1024px) {
+    .hero-content {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    .hero-text .subtitle {
+        margin: 0 auto 2rem auto;
+    }
+
+    .hero-info {
+        max-width: 450px;
+        margin: 0 auto;
+    }
+
+    .feature-row {
+        grid-template-columns: 1fr;
+        /* Empilha as colunas de feature */
+        gap: 2rem;
+        margin-bottom: 4rem;
+    }
+
+    .feature-image-showcase {
+        order: -1;
+        /* Coloca a imagem acima do texto no mobile */
+        padding: 0 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero-container {
+        padding: 4rem 1.5rem 3rem 1.5rem;
+    }
+
+    .hero-text h1 {
+        font-size: 3rem;
+    }
+
+    .features-presentation-area {
+        padding: 3rem 1.5rem;
+    }
+
+    .feature-item h3.gradient-title {
+        font-size: 1.8rem;
+    }
+
+    .feature-item p {
+        font-size: 1rem;
+    }
+
+    .panorama-highlight-section {
+        padding: 4rem 1.5rem;
+    }
+
+    .panorama-content h2 {
+        font-size: 2rem;
+    }
+
+    .news-footer-section {
+        padding: 3rem 1.5rem;
+    }
+
+    .news-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =================================================== */
+/* 2. Seção de Apresentação de Funcionalidades (Ajustes) */
+/* =================================================== */
+
+/* ... (Estilos .feature-row, .feature-content-stack, etc. existentes) ... */
+
+/* --- Estilos para alinhamento à direita na segunda linha --- */
+
+/* Alinha todo o texto dentro do contêiner à direita */
+.feature-content-stack.align-right {
+    text-align: right;
+}
+
+/* Inverte a direção do flex no título para que o ícone (se houver) fique à direita */
+.feature-content-stack.align-right .feature-item h3 {
+    flex-direction: row-reverse;
+}
+
+/* Move a borda decorativa do parágrafo da esquerda para a direita */
+.feature-content-stack.align-right .feature-item p {
+    border-left: none;
+    border-right: 3px solid var(--cor-azul-primario);
+    padding-left: 0;
+    padding-right: 1rem;
+}
+
+/* Alinha o link "cta-link" à direita dentro do seu contêiner flex */
+.feature-content-stack.align-right .cta-link {
+    align-self: flex-end;
+}
+
+/* Ajusta a margem do ícone da seta no link alinhado à direita */
+.feature-content-stack.align-right .cta-link i {
+    margin-left: 0;
+    margin-right: 0.5rem; /* Adiciona margem à direita do ícone */
+    transition: transform 0.3s ease;
+}
+
+/* Efeito de hover para a seta invertida */
+.feature-content-stack.align-right .cta-link:hover i {
+    transform: translateX(-5px);
+}
+
+/* Garante que o relógio principal use a cor de texto escura no tema claro. */
+.light-theme .datetime-widget .time-display {
+    color: var(--cor-texto-principal);
+}
+
+/* ============================================= */
+/* Lógica de Troca de Imagem por Tema            */
+/* ============================================= */
+
+/* 1. Por padrão (tema escuro), escondemos a imagem clara 
+      e exibimos a imagem escura. */
+.image-light-mode {
+    display: none;
+}
+.image-dark-mode {
+    display: block;
+}
+
+/* 2. Quando a classe .light-theme estiver ativa no body, 
+      invertemos a exibição. */
+.light-theme .image-light-mode {
+    display: block; /* Mostra a imagem clara */
+}
+.light-theme .image-dark-mode {
+    display: none; /* Esconde a imagem escura */
+}
+
+/* 3. Estilo de dimensionamento para garantir que a imagem se comporte bem.
+      (Certifique-se de que a classe .theme-image está nas suas tags <img>) */
+.theme-image {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    border-radius: 12px; /* Opcional, se quiser bordas arredondadas na imagem */
+}

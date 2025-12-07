@@ -1,9 +1,15 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import auth
+from app.api.v1.endpoints import auth, home
 
 api_router = APIRouter()
 
-# Registra a rota de login
-api_router.include_router(auth.router, prefix="/login", tags=["login"])
+# Autenticação (já deve existir)
+api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 
-# Aqui adicionaremos os outros depois (financas, agenda, etc)
+# Home
+api_router.include_router(home.router, prefix="/home", tags=["home"])
+
+# Futuros módulos (placeholders por enquanto, descomente conforme criarmos)
+# api_router.include_router(agenda.router, prefix="/agenda", tags=["agenda"])
+# api_router.include_router(financas.router, prefix="/financas", tags=["financas"])
+# ...

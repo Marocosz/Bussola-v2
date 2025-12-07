@@ -1,43 +1,41 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, AuthContext } from './context/AuthContext';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useContext } from 'react';
-import { Login } from './pages/Login';
+import { AuthContext } from '../context/AuthContext';
 
-// Componente para proteger rotas privadas
+import { Login } from '../pages/Login';
+import { Home } from '../pages/Home';
+
 const PrivateRoute = ({ children }) => {
     const { authenticated, loading } = useContext(AuthContext);
 
+    // Enquanto verifica o localStorage, mostra carregando
     if (loading) {
-        return <div>Carregando...</div>;
+        return <div className="loading-screen">Carregando...</div>;
     }
 
+    // Se terminou de carregar e NÃO está autenticado -> Login
     if (!authenticated) {
         return <Navigate to="/login" />;
     }
 
+    // Se está autenticado -> Mostra a página
     return children;
 };
 
-function App() {
+export const AppRoutes = () => {
     return (
-        <BrowserRouter>
-            <AuthProvider>
-                <Routes>
-                    <Route path="/login" element={<Login />} />
-                    
-                    {/* Rota Protegida de Teste */}
-                    <Route path="/dashboard" element={
-                        <PrivateRoute>
-                            <h1>Bem-vindo ao Dashboard do Bússola! 🧭</h1>
-                        </PrivateRoute>
-                    } />
-                    
-                    {/* Redireciona raiz para dashboard */}
-                    <Route path="/" element={<Navigate to="/dashboard" />} />
-                </Routes>
-            </AuthProvider>
-        </BrowserRouter>
+        <Routes>
+            <Route path="/login" element={<Login />} />
+            
+            <Route path="/home" element={
+                <PrivateRoute>
+                    <Home />
+                </PrivateRoute>
+            } />
+            
+            {/* Qualquer rota desconhecida vai tentar ir para Home. 
+                Se não estiver logado, o PrivateRoute da Home joga para Login. */}
+            <Route path="*" element={<Navigate to="/home" />} />
+        </Routes>
     );
-}
-
-export default App;
+};
