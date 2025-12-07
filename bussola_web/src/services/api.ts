@@ -50,7 +50,7 @@ export const getHomeData = async (): Promise<HomeData> => {
 };
 
 // ==========================================================
-// 3. MÓDULO FINANÇAS (Novo)
+// 3. MÓDULO FINANÇAS
 // ==========================================================
 
 // Interfaces para tipagem dos dados financeiros
@@ -123,6 +123,41 @@ export const createCategoria = async (data: any) => {
 // Exclui uma categoria
 export const deleteCategoria = async (id: number) => {
     const response = await api.delete(`/financas/categorias/${id}`);
+    return response.data;
+};
+
+// ==========================================================
+// 4. MÓDULO PANORAMA (Novo)
+// ==========================================================
+
+export interface PanoramaData {
+    kpis: {
+        receita_mes: number;
+        despesa_mes: number;
+        balanco_mes: number;
+        compromissos_realizados: number;
+        compromissos_pendentes: number;
+        compromissos_perdidos: number;
+        chaves_ativas: number;
+        chaves_expiradas: number;
+        proximo_compromisso?: { titulo: string; data_hora: string };
+    };
+    gastos_por_categoria: { labels: string[]; data: number[]; colors: string[] };
+    evolucao_mensal_receita: number[];
+    evolucao_mensal_despesa: number[];
+    evolucao_labels: string[];
+    gasto_semanal: { labels: string[]; data: number[] };
+    categorias_para_filtro: Categoria[];
+}
+
+// Busca os dados do dashboard unificado
+export const getPanoramaData = async (): Promise<PanoramaData> => {
+    const response = await api.get('/panorama/');
+    return response.data;
+};
+
+export const getCategoryHistory = async (categoryId: number) => {
+    const response = await api.get(`/panorama/history/${categoryId}`);
     return response.data;
 };
 

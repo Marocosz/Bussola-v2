@@ -1,0 +1,145 @@
+/* Layout Principal */
+.page-header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.page-header-actions h1 {
+    font-size: 2rem;
+    font-weight: 600;
+}
+
+/* Grid de 3 Colunas (KPI | Graficos | Graficos) */
+.panorama-grid {
+    display: grid;
+    grid-template-columns: 2fr 5fr 5fr;
+    gap: 2rem;
+}
+
+/* ============================================= */
+/* Coluna KPI (Esquerda)                         */
+/* ============================================= */
+.kpi-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    background-color: var(--cor-card-principal);
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--cor-borda);
+    height: fit-content;
+}
+
+.kpi-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.kpi-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.kpi-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.kpi-label {
+    font-size: 0.9rem;
+    color: var(--cor-texto-secundario);
+}
+
+.kpi-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--cor-texto-principal);
+}
+
+.kpi-divider {
+    border: none;
+    border-top: 1px solid var(--cor-borda);
+    margin: 0.5rem 0;
+}
+
+/* Próximo Evento */
+.next-event-card {
+    background-color: var(--cor-fundo);
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    border: 1px solid var(--cor-borda);
+}
+
+.next-event-card span {
+    color: var(--cor-texto-secundario);
+    font-size: 0.8rem;
+}
+
+.next-event-card strong {
+    color: var(--cor-texto-principal);
+    font-weight: 600;
+}
+
+.next-event-card small {
+    color: var(--cor-azul-primario);
+    font-size: 0.8rem;
+}
+
+/* ============================================= */
+/* Colunas de Gráficos                           */
+/* ============================================= */
+.charts-column {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.chart-card {
+    background-color: var(--cor-card-principal);
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--cor-borda);
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* Para preencher espaço */
+}
+
+.chart-card h3 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+    font-size: 1.1rem;
+    color: var(--cor-texto-principal);
+}
+
+.chart-container {
+    position: relative;
+    height: 300px; /* Altura fixa para o canvas */
+    width: 100%;
+}
+
+/* ============================================= */
+/* Responsividade                                */
+/* ============================================= */
+@media (max-width: 1200px) {
+    .panorama-grid {
+        grid-template-columns: 1fr; /* Empilha tudo em 1 coluna */
+    }
+    
+    .chart-container {
+        height: 250px;
+    }
+}

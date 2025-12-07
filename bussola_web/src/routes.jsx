@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthContext } from './context/AuthContext';
-
+import { Panorama } from './pages/Panorama';
 import { Navbar } from './components/Navbar'; 
 import { Login } from './pages/Login';
 import { Home } from './pages/Home';
@@ -47,6 +47,7 @@ export function AppRoutes() {
             <Route element={<PrivateLayout />}>
                 <Route path="/home" element={<Home />} />
                 <Route path="/financas" element={<Financas />} />
+                <Route path="/panorama" element={<Panorama />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/home" />} />
