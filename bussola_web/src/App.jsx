@@ -1,13 +1,17 @@
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { AppRoutes } from './routes'; // Importa as rotas organizadas acima
-
-import './assets/styles/global.css'; // Garante que o CSS global carregue aqui também
+import { Navbar } from './components/Navbar'; // <--- Importado aqui
+import { AppRoutes } from './routes'; 
+import './assets/styles/global.css'; 
 
 function App() {
     return (
         <BrowserRouter>
             <AuthProvider>
+                {/* A Navbar fica aqui para aparecer em todas as páginas */}
+                <Navbar /> 
+                
+                {/* As rotas renderizam o conteúdo da página abaixo da Navbar */}
                 <AppRoutes />
             </AuthProvider>
         </BrowserRouter>

@@ -1,0 +1,180 @@
+/* ============================================= */
+/* 1. Estrutura Geral e Contêiner Principal      */
+/* ============================================= */
+.container {
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 20px;
+    max-width: 1920px;
+}
+
+main.container {
+    flex-grow: 1;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+/* ============================================= */
+/* 2. Barra de Navegação (Cabeçalho)             */
+/* ============================================= */
+.main-header {
+    width: 100%;
+    z-index: 10;
+    border-bottom: 1px solid var(--cor-borda);
+    /* Garante que o fundo seja opaco para não misturar com o scroll */
+    background-color: var(--cor-fundo); 
+}
+
+.navbar {
+    margin: auto;
+    width: 90%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1920px;
+}
+
+/* --- Logo e Marca --- */
+.nav-logo {
+    height: 50px;
+    width: auto;
+    transition: transform 0.3s ease;
+}
+
+.nav-brand:hover .nav-logo {
+    transform: rotate(15deg);
+}
+
+.light-theme .nav-logo {
+    filter: invert(1);
+}
+
+/* --- Links de Navegação --- */
+.nav-links {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.nav-links li {
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.nav-links a {
+    display: block;
+    padding: 24px 20px;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--cor-texto-secundario);
+    transition: color 0.4s ease;
+}
+
+/* Efeito de foco: esmaece os outros */
+.nav-links:hover li {
+    opacity: 0.4;
+}
+
+/* Zoom no focado */
+.nav-links:hover li:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.nav-links:hover li:hover a {
+    color: var(--cor-texto-principal);
+}
+
+/* --- Barra de Busca --- */
+.nav-search form {
+    display: flex;
+    align-items: center;
+    background-color: var(--cor-fundo);
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    overflow: hidden;
+}
+.nav-search input {
+    background: none;
+    border: none;
+    padding: 0.5rem 1rem;
+    color: var(--cor-texto-principal);
+    font-size: 0.9rem;
+    outline: none;
+    min-width: 250px;
+}
+.nav-search button {
+    background: var(--cor-card-secundario);
+    border: none;
+    color: var(--cor-texto-secundario);
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.nav-search button:hover {
+    background-color: var(--cor-azul-primario);
+    color: white;
+}
+
+/* ============================================= */
+/* 3. Cabeçalhos de Página e Colunas             */
+/* ============================================= */
+.page-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+.page-header h1 {
+    font-size: 2.5rem;
+    font-weight: 600;
+}
+.subtitle {
+    font-size: 1.2rem;
+    color: var(--cor-texto-secundario);
+    margin-top: 0.5rem;
+}
+
+.agenda-view-container {
+    display: flex;
+    gap: 2rem;
+    width: 100%;
+    margin: 0 auto;
+}
+.agenda-view-container>.agenda-column {
+    flex: 1;
+}
+.agenda-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+}
+.column-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+.layout-grid-three-columns {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    width: 100%;
+    margin: 0 auto;
+    align-items: start;
+}
+
+/* Responsividade */
+@media (max-width: 992px) {
+    .agenda-view-container {
+        flex-direction: column;
+        gap: 3rem;
+    }
+}
+@media (max-width: 1200px) {
+    .layout-grid-three-columns {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+    }
+}
