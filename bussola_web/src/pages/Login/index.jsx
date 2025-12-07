@@ -1,5 +1,6 @@
 import { useState, useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext'; // <--- Importação do Hook de Toast
 import { useNavigate } from 'react-router-dom';
 import './styles.css'; 
 
@@ -11,16 +12,40 @@ import logoBussola from '../../assets/images/bussola.svg';
 export function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    
     const { login } = useContext(AuthContext);
+    const { addToast } = useToast(); // <--- Uso do Hook
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const result = await login(email, password);
-        if (result.success) {
-            navigate('/home');
-        } else {
-            alert(result.message); // Futuramente usaremos um Toast bonito aqui
+        
+        try {
+            const result = await login(email, password);
+            
+            if (result.success) {
+                // Toast de Sucesso
+                addToast({
+                    type: 'success',
+                    title: 'Bem-vindo(a)!',
+                    description: 'Login realizado com sucesso.'
+                });
+                navigate('/home');
+            } else {
+                // Toast de Erro (substituindo o alert)
+                addToast({
+                    type: 'error',
+                    title: 'Falha no Login',
+                    description: result.message || 'Verifique suas credenciais.'
+                });
+            }
+        } catch (error) {
+            // Proteção extra caso ocorra erro de rede inesperado
+            addToast({
+                type: 'error',
+                title: 'Erro inesperado',
+                description: 'Não foi possível conectar ao servidor.'
+            });
         }
     };
 

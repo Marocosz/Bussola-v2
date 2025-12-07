@@ -1,0 +1,127 @@
+/* Container que ficará fixo no canto da tela */
+.toast-container {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    padding: 30px;
+    overflow: hidden;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none; /* Permite clicar através do container vazio */
+}
+
+/* O Card da notificação individual */
+.toast-message {
+    width: 360px;
+    position: relative;
+    padding: 16px 30px 16px 16px;
+    border-radius: 10px;
+    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+    display: flex;
+    background: var(--cor-card-principal); /* Usa sua variável global */
+    color: var(--cor-texto-principal);
+    pointer-events: all; /* Permite clicar no botão de fechar */
+    
+    /* Animação de entrada */
+    animation: slideInRight 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    
+    /* Borda lateral colorida */
+    border-left: 8px solid;
+    border: 1px solid var(--cor-borda);
+    border-left-width: 6px;
+}
+
+/* Tipos de Toast */
+.toast-success {
+    border-left-color: var(--cor-verde-sucesso, #2e656a);
+    background: #e6fffa; /* Fundo suave para sucesso (tema claro) */
+    color: #2c7a7b;
+}
+
+.toast-error {
+    border-left-color: var(--cor-vermelho-delete, #c53030);
+    background: #fff5f5; /* Fundo suave para erro */
+    color: #c53030;
+}
+
+.toast-info {
+    border-left-color: var(--cor-azul-primario, #3182ce);
+    background: #ebf8ff;
+    color: #2b6cb0;
+}
+
+/* Ajuste para Tema Escuro (Sobrescreve os fundos claros) */
+body:not(.light-theme) .toast-message {
+    background: var(--cor-card-principal);
+    color: var(--cor-texto-principal);
+}
+
+/* Ícone */
+.toast-message > i {
+    margin: 3px 12px 0 0;
+    font-size: 20px;
+}
+
+/* Conteúdo */
+.toast-content {
+    flex: 1;
+}
+
+.toast-content strong {
+    font-size: 16px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.toast-content p {
+    font-size: 14px;
+    opacity: 0.9;
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* Botão Fechar */
+.toast-close-btn {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    background: transparent;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.toast-close-btn:hover {
+    opacity: 1;
+}
+
+/* Animações */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.toast-message.fade-out {
+    animation: fadeOutRight 0.5s forwards;
+}
+
+@keyframes fadeOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+}

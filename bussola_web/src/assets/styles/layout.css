@@ -85,37 +85,6 @@ main.container {
     color: var(--cor-texto-principal);
 }
 
-/* --- Barra de Busca --- */
-.nav-search form {
-    display: flex;
-    align-items: center;
-    background-color: var(--cor-fundo);
-    border: 1px solid var(--cor-borda);
-    border-radius: 8px;
-    overflow: hidden;
-}
-.nav-search input {
-    background: none;
-    border: none;
-    padding: 0.5rem 1rem;
-    color: var(--cor-texto-principal);
-    font-size: 0.9rem;
-    outline: none;
-    min-width: 250px;
-}
-.nav-search button {
-    background: var(--cor-card-secundario);
-    border: none;
-    color: var(--cor-texto-secundario);
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-.nav-search button:hover {
-    background-color: var(--cor-azul-primario);
-    color: white;
-}
-
 /* ============================================= */
 /* 3. Cabeçalhos de Página e Colunas             */
 /* ============================================= */
