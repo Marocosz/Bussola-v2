@@ -5,6 +5,7 @@ import { AuthContext } from './context/AuthContext';
 import { Navbar } from './components/Navbar'; 
 import { Login } from './pages/Login';
 import { Home } from './pages/Home';
+import { Financas } from './pages/Financas';
 
 const PrivateLayout = () => {
     const { authenticated, loading } = useContext(AuthContext);
@@ -45,7 +46,7 @@ export function AppRoutes() {
 
             <Route element={<PrivateLayout />}>
                 <Route path="/home" element={<Home />} />
-                {/* Outras rotas protegidas virão aqui */}
+                <Route path="/financas" element={<Financas />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/home" />} />
