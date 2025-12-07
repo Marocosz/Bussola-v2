@@ -51,7 +51,7 @@ main.container {
 
 .datetime-widget {
     text-align: left;
-    margin-bottom: 2rem;
+    margin-bottom: 2rem; /* Ajustado para 2rem igual ao antigo */
 }
 
 .datetime-widget .time-display {
@@ -70,6 +70,7 @@ main.container {
     padding-left: 2px;
 }
 
+/* --- CLIMA (CÓDIGO EXATO DO ANTIGO) --- */
 .weather-widget {
     display: flex;
     align-items: center;
@@ -79,6 +80,7 @@ main.container {
     background-color: var(--cor-card-secundario);
     border-radius: 10px;
     border: 1px solid var(--cor-borda);
+    /* width: fit-content removido para restaurar o comportamento antigo */
 }
 
 .weather-widget i {
@@ -106,6 +108,7 @@ main.container {
     text-transform: capitalize;
     margin-top: 2px;
 }
+/* -------------------------------------- */
 
 /* ============================================= */
 /* 2. Seção de Apresentação de Funcionalidades   */

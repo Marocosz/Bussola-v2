@@ -4,7 +4,7 @@ import re
 import httpx
 import feedparser
 import redis
-import asyncio  # <--- CORREÇÃO: Import movido para o topo
+import asyncio
 from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Optional, Dict, Any
@@ -32,7 +32,9 @@ FEEDS_URLS = [
 class ExternalDataService:
     def __init__(self):
         self.redis_client = None
-        redis_url = os.getenv('REDIS_URL')
+        # Tenta pegar do settings primeiro, fallback para os.getenv
+        redis_url = getattr(settings, 'REDIS_URL', os.getenv('REDIS_URL'))
+        
         if redis_url:
             try:
                 self.redis_client = redis.from_url(redis_url, decode_responses=True)
@@ -40,16 +42,22 @@ class ExternalDataService:
                 print(f"[Aviso] Redis não conectado: {e}")
 
     async def get_weather(self, city: str = "Uberlandia") -> Optional[Dict[str, Any]]:
-        api_key = os.getenv('OPENWEATHER_API_KEY')
+        # Tenta pegar do settings primeiro, fallback para os.getenv
+        api_key = getattr(settings, 'OPENWEATHER_API_KEY', os.getenv('OPENWEATHER_API_KEY'))
+        
         if not api_key:
+            print("[Erro] OPENWEATHER_API_KEY não encontrada no .env ou settings.")
             return None
 
+        # URL encoding básico e construção da URL
         url = f"https://api.openweathermap.org/data/2.5/weather?q={city},BR&appid={api_key}&units=metric&lang=pt_br"
 
         async with httpx.AsyncClient() as client:
             try:
-                response = await client.get(url, timeout=5.0)
+                response = await client.get(url, timeout=10.0) # Aumentei timeout para garantir
+                
                 if response.status_code != 200:
+                    print(f"[Erro API Clima] Status: {response.status_code} | Resposta: {response.text}")
                     return None
                 
                 data = response.json()
@@ -74,7 +82,7 @@ class ExternalDataService:
                     "icon_class": icon_map.get(icon_code, "wi-cloud")
                 }
             except Exception as e:
-                print(f"Erro ao buscar clima: {e}")
+                print(f"[Exception] Erro ao buscar clima: {e}")
                 return None
 
     def _contains_keywords(self, text: str) -> bool:
@@ -91,7 +99,6 @@ class ExternalDataService:
     def _fetch_single_feed(self, url: str) -> List[Dict]:
         articles = []
         try:
-            # Feedparser é síncrono e faz request interno
             feed = feedparser.parse(url)
             feed_title = feed.feed.get('title', url)
 
@@ -113,7 +120,7 @@ class ExternalDataService:
                         'published_at': dt_object.isoformat()
                     })
         except Exception as e:
-            print(f"Erro no feed {url}: {e}")
+            print(f"[Aviso] Erro no feed {url}: {e}")
         return articles
 
     async def get_tech_news(self) -> List[Dict]:
@@ -128,7 +135,7 @@ class ExternalDataService:
             except Exception:
                 pass
 
-        # 2. Busca Live (Executa processamento pesado em Threads para não bloquear o async loop)
+        # 2. Busca Live
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
@@ -136,14 +143,12 @@ class ExternalDataService:
         
         all_articles = []
         with ThreadPoolExecutor(max_workers=5) as executor:
-            # Como feedparser é IO blocking, rodamos no executor
             futures = [loop.run_in_executor(executor, self._fetch_single_feed, url) for url in FEEDS_URLS]
             results = await asyncio.gather(*futures)
             
             for feed_res in results:
                 all_articles.extend(feed_res)
 
-        # Ordenação e Deduplicação
         sorted_articles = sorted(all_articles, key=lambda x: x['published_at'], reverse=True)
         unique_articles = []
         seen = set()

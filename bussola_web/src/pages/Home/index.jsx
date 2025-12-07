@@ -65,7 +65,8 @@ export function Home() {
                         <p className="subtitle">
                             Este não é apenas um painel de controle; é um ecossistema integrado projetado para trazer clareza à
                             complexidade do seu dia a dia. Gerencie seus fluxos financeiros, domine sua agenda, capture ideias e 
-                            proteja dados críticos em uma interface unificada.
+                            proteja dados críticos em uma interface unificada,
+                            oferecendo clareza e controle total sobre suas informações.
                         </p>
                     </div>
 
@@ -81,8 +82,6 @@ export function Home() {
                         {/* Widget de Clima */}
                         {dashboardData.weather && (
                             <div className="weather-widget">
-                                {/* Nota: Para os ícones 'wi' funcionarem, adicione a CDN do Weather Icons no index.html 
-                                    ou instale 'weather-icons' e importe o CSS no global */}
                                 <i className={`wi ${dashboardData.weather.icon_class}`}></i>
                                 <div className="weather-details">
                                     <span className="temperature">{dashboardData.weather.temperature}°C</span>
@@ -101,14 +100,15 @@ export function Home() {
                 <div className="feature-row">
                     <div className="feature-image-showcase">
                         {/* Lógica de Tema: Baseada na classe .light-theme no body (gerida externamente) */}
-                        <img src={walletAmico} alt="Análise de Finanças" className="theme-image image-light-mode" />
-                        <img src={walletAmicoDark} alt="Análise de Finanças" className="theme-image image-dark-mode" />
+                        <img src={walletAmico} alt="Análise de Finanças e Agenda" className="theme-image image-light-mode" />
+                        <img src={walletAmicoDark} alt="Análise de Finanças e Agenda" className="theme-image image-dark-mode" />
                     </div>
                     <div className="feature-content-stack">
                         <div className="feature-item">
                             <h3 className="gradient-title">Provisões Financeiras</h3>
                             <p>Assuma o controle absoluto do seu fluxo de caixa. Desde o rastreamento de despesas recorrentes até a
-                                visualização de orçamentos por categoria.</p>
+                                visualização de orçamentos por categoria, a Bússola transforma dados financeiros complexos em
+                                insights claros e acionáveis.</p>
                             <Link to="/financas" className="cta-link">
                                 Explorar Finanças <i className="fa-solid fa-arrow-right-long"></i>
                             </Link>
@@ -116,7 +116,8 @@ export function Home() {
                         <div className="feature-item">
                             <h3 className="gradient-title">Roteiro Estratégico</h3>
                             <p>Visualize seu tempo e organize seus compromissos com precisão. A agenda integrada permite o
-                                gerenciamento de tarefas e eventos.</p>
+                                gerenciamento de tarefas e eventos, garantindo que você esteja sempre um passo à frente do seu
+                                cronograma.</p>
                             <Link to="/agenda" className="cta-link">
                                 Acessar Agenda <i className="fa-solid fa-arrow-right-long"></i>
                             </Link>
@@ -130,7 +131,7 @@ export function Home() {
                         <div className="feature-item">
                             <h3 className="gradient-title">Registros e Conhecimento</h3>
                             <p>Capture ideias, insights e informações importantes instantaneamente. Crie uma base de conhecimento
-                                pessoal estruturada.</p>
+                                pessoal estruturada com notas, listas de tarefas e links de referência.</p>
                             <Link to="/registros" className="cta-link">
                                 <i className="fa-solid fa-arrow-left-long"></i> Ver Registros
                             </Link>
@@ -138,7 +139,7 @@ export function Home() {
                         <div className="feature-item">
                             <h3 className="gradient-title">Cofre de Segredos</h3>
                             <p>Proteja suas informações mais sensíveis. Armazene senhas, chaves de API e credenciais com
-                                criptografia robusta.</p>
+                                criptografia robusta, monitorando datas de expiração e acessando dados com segurança.</p>
                             <Link to="/cofre" className="cta-link">
                                 <i className="fa-solid fa-arrow-left-long"></i> Acessar Cofre
                             </Link>
@@ -158,7 +159,8 @@ export function Home() {
                     <div className="panorama-icon"><i className="fa-solid fa-binoculars"></i></div>
                     <h2>Conheça o Panorama</h2>
                     <p>A visão de 30.000 pés da sua vida digital. O Panorama consolida métricas de finanças, agenda e produtividade
-                        em um único dashboard inteligente.</p>
+                        em um único dashboard inteligente, permitindo que você identifique tendências e tome decisões baseadas em
+                        dados com uma rapidez sem precedentes.</p>
                     <Link to="/panorama" className="btn-primary large-button">Ver Panorama Completo</Link>
                 </div>
             </section>

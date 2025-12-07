@@ -1,141 +1,220 @@
 /* ========================================================= */
 /* 1. VARIÁVEIS GLOBAIS (TEMA ESCURO PADRÃO)                 */
 /* ========================================================= */
-
 :root {
     /* --- Cores da Estrutura e Fundo --- */
-    --cor-fundo: #202124;             /* Cor principal do fundo da página */
-    --cor-card-principal: #2E2F33;   /* Cor de fundo para cards primários */
-    --cor-card-secundario: #292a2d; /* Cor de fundo para elementos secundários ou hover sutil */
-    --cor-borda: rgba(255, 255, 255, 0.1); /* Cor das bordas e divisores */
-    --cor-fundo-hover: rgba(255, 255, 255, 0.05); /* Fundo sutil ao passar o mouse sobre itens */
+    --cor-fundo: #202124;
+    --cor-card-principal: #2E2F33;
+    --cor-card-secundario: #292a2d;
+    --cor-borda: rgba(255, 255, 255, 0.1);
+    --cor-fundo-hover: rgba(255, 255, 255, 0.05);
 
     /* --- Cores de Texto --- */
-    --cor-texto-principal: #E8EAED;   /* Cor primária para texto regular */
-    --cor-texto-secundario: #BDC1C6; /* Cor para texto de apoio, legendas, placeholders */
-    --cor-destaque: #FFFFFF;         /* Cor para texto de ênfase ou ícones ativos */
+    --cor-texto-principal: #E8EAED;
+    --cor-texto-secundario: #BDC1C6;
+    --cor-destaque: #FFFFFF;
 
-    /* --- Cores de Ação e Feedback Visual --- */
-    --cor-azul-primario: #4A6DFF;          /* Cor principal para botões e links interativos */
-    --cor-azul-hover: #3859e0;             /* Cor do botão azul ao passar o mouse */
-    --cor-vermelho-delete: #e74c3c;         /* Cor para ações destrutivas (excluir) */
-    --cor-vermelho-delete-hover: #c0392b;   /* Hover da ação destrutiva */
-    --cor-cinza-botao: #484a4f;            /* Cor para botões neutros ou secundários */
-    --cor-cinza-botao-hover: #5f6368;      /* Hover do botão cinza */
-    --cor-verde-sucesso: #27ae60;          /* Cor para feedback de sucesso */
-    --cor-verde-sucesso-hover: #2ecc71;    /* Hover do feedback de sucesso */
-    --cor-laranja-aviso: #f39c12;          /* Cor para avisos ou itens fixados */
-    --cor-laranja-aviso-hover: #f1c40f;    /* Hover do feedback de aviso */
+    /* --- Cores de Ação --- */
+    --cor-azul-primario: #4A6DFF;
+    --cor-azul-hover: #3859e0;
+    --cor-vermelho-delete: #e74c3c;
+    --cor-vermelho-delete-hover: #c0392b;
+    --cor-cinza-botao: #484a4f;
+    --cor-cinza-botao-hover: #5f6368;
+    --cor-verde-sucesso: #27ae60;
+    --cor-verde-sucesso-hover: #2ecc71;
+    --cor-laranja-aviso: #f39c12;
+    --cor-laranja-aviso-hover: #f1c40f;
 
-    /* --- Cores de Componentes Específicos (Scrollbar e Gráficos) --- */
+    /* --- Outros --- */
     --cor-scrollbar: #5f6368;
     --cor-scrollbar-hover: #9aa0a6;
-    --cor-grafico-receita: rgba(39, 174, 96, 0.7);    /* Verde para gráficos de receita */
-    --cor-grafico-despesa: rgba(231, 76, 60, 0.7);    /* Vermelho para gráficos de despesa */
-    --cor-grafico-semanal: rgba(153, 102, 255, 0.7);  /* Roxo para gráficos de visão geral */
-    --cor-grafico-dinamico-fundo: rgba(74, 109, 255, 0.2); /* Preenchimento azul para gráficos dinâmicos */
-    --cor-grafico-dinamico-borda: var(--cor-azul-primario); /* Borda azul para gráficos dinâmicos */
-    --cor-grade-grafico: rgba(255, 255, 255, 0.1); /* Cor das linhas de grade do gráfico */
 }
 
 /* ========================================================= */
 /* 2. VARIÁVEIS PARA O TEMA CLARO                            */
 /* ========================================================= */
-
-/* Sobrescreve as variáveis quando a classe .light-theme está ativa no body */
 body.light-theme {
-    /* Estrutura */
     --cor-fundo: #F8F9FA;
     --cor-card-principal: #FFFFFF;
     --cor-card-secundario: #e3dfdf75;
     --cor-borda: rgba(0, 0, 0, 0.1);
     --cor-fundo-hover: rgba(0, 0, 0, 0.05);
-
-    /* Texto (cores invertidas para fundo claro) */
     --cor-texto-principal: #212529;
     --cor-texto-secundario: #636363;
-
-    /* Botões neutros */
     --cor-cinza-botao: #8b8a8a;
     --cor-cinza-botao-hover: #6a6a6a;
-
-    /* Scroll e gráficos (ajuste da cor da grade para fundo claro) */
     --cor-scrollbar: #CED4DA;
     --cor-scrollbar-hover: #ADB5BD;
-    --cor-grade-grafico: rgba(0, 0, 0, 0.1);
-    /* Mantém as cores vibrantes dos gráficos iguais ao tema escuro */
-    --cor-grafico-receita: rgba(39, 174, 96, 0.7);
-    --cor-grafico-despesa: rgba(231, 76, 60, 0.7);
-    --cor-grafico-semanal: rgba(153, 102, 255, 0.7);
-    --cor-grafico-dinamico-fundo: rgba(74, 109, 255, 0.2);
-    --cor-grafico-dinamico-borda: var(--cor-azul-primario);
 }
 
 /* ========================================================= */
-/* 3. RESET BÁSICO E ESTILOS GERAIS                          */
+/* 3. RESET E CONFIGURAÇÕES GERAIS                           */
 /* ========================================================= */
-
-/* Reset universal para garantir consistência no modelo de caixa */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
 }
 
-/* Garante que o HTML ocupe a altura total */
-html {
-    height: 100%;
+html { 
+    height: 100%; 
 }
 
-/* Estilos base do corpo da página */
+/* --- ATUALIZAÇÃO DE TIPOGRAFIA --- */
+/* Garante que a fonte Poppins pegue em todos os elementos, inclusive inputs e botões */
+body, button, input, textarea, select {
+    font-family: 'Poppins', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
 body {
-    min-height: 100%; /* Garante que o corpo ocupe pelo menos a altura da tela */
-    font-family: 'Poppins', sans-serif; /* Fonte padrão do projeto */
-    color: var(--cor-texto-principal); /* Cor de texto padrão vinda das variáveis */
-    background-color: var(--cor-fundo); /* Cor de fundo padrão vinda das variáveis */
-    display: flex; /* Permite o uso de flexbox para layout de página (ex: sticky footer) */
+    min-height: 100%;
+    color: var(--cor-texto-principal);
+    background-color: var(--cor-fundo);
+    display: flex;
     flex-direction: column;
 }
 
-/* Remove sublinhado padrão de links */
-a {
-    color: var(--cor-texto-principal);
+a { 
+    color: var(--cor-texto-principal); 
+    text-decoration: none; 
+}
+
+/* Scrollbar Personalizada */
+::-webkit-scrollbar { 
+    width: 10px; 
+}
+::-webkit-scrollbar-track { 
+    background: transparent; 
+}
+::-webkit-scrollbar-thumb { 
+    background-color: var(--cor-scrollbar); 
+    border-radius: 20px; 
+    border: 3px solid var(--cor-fundo); 
+}
+::-webkit-scrollbar-thumb:hover { 
+    background-color: var(--cor-scrollbar-hover); 
+}
+
+/* ========================================================= */
+/* 4. COMPONENTES (BOTÕES, INPUTS, CARDS)                    */
+/* ========================================================= */
+
+/* --- Botões Base --- */
+.btn-primary,
+.btn-secondary,
+.btn-delete,
+.submit-button {
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500; /* Poppins Medium */
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: var(--cor-destaque);
     text-decoration: none;
 }
 
+/* Botão Primário (Gradiente) */
+.btn-primary,
+.submit-button {
+    background: linear-gradient(90deg, var(--cor-azul-primario), #a855f7);
+}
+
+.btn-primary:hover,
+.submit-button:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+}
+
+.btn-primary.large-button {
+    padding: 0.8rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* Botão Secundário */
+.btn-secondary {
+    background-color: var(--cor-cinza-botao);
+}
+.btn-secondary:hover {
+    background-color: var(--cor-cinza-botao-hover);
+    transform: translateY(-2px);
+}
+
+/* Botão Delete */
+.btn-delete {
+    background-color: var(--cor-vermelho-delete);
+}
+.btn-delete:hover {
+    background-color: var(--cor-vermelho-delete-hover);
+    transform: translateY(-2px);
+}
+
+/* --- Botões de Ação Redondos (Ícones) --- */
+.btn-action-icon {
+    background: var(--cor-card-secundario);
+    border: none;
+    color: var(--cor-texto-secundario);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+.btn-action-icon:hover {
+    background-color: var(--cor-azul-hover);
+    color: white;
+}
+
+/* --- Inputs e Formulários --- */
+.form-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--cor-borda);
+    border-radius: 6px;
+    background-color: var(--cor-fundo);
+    color: var(--cor-texto-principal);
+    font-size: 1rem;
+    /* A fonte é herdada do reset global agora, mas mantemos por segurança */
+    font-family: 'Poppins', sans-serif; 
+}
+.form-input:focus {
+    outline: none;
+    border-color: var(--cor-azul-primario);
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--cor-texto-secundario);
+}
+
 /* ========================================================= */
-/* 4. ESTILIZAÇÃO DA SCROLLBAR                               */
+/* 5. LAYOUT GERAL                                           */
 /* ========================================================= */
-
-/* --- Navegadores baseados em WebKit (Chrome, Safari, Edge) --- */
-
-/* Largura da barra de rolagem */
-::-webkit-scrollbar {
-    width: 10px;
+.container {
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 20px;
+    max-width: 1920px;
 }
 
-/* Trilha (fundo) da barra de rolagem */
-::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-/* Polegar (a parte móvel) da barra de rolagem */
-::-webkit-scrollbar-thumb {
-    background-color: var(--cor-scrollbar);
-    border-radius: 20px;
-    /* Cria um espaçamento visual entre o polegar e a borda da trilha */
-    border: 3px solid var(--cor-fundo);
-}
-
-/* Efeito hover no polegar da barra de rolagem */
-::-webkit-scrollbar-thumb:hover {
-    background-color: var(--cor-scrollbar-hover);
-}
-
-/* --- Navegador Firefox --- */
-
-/* Define a barra de rolagem fina e as cores (polegar e trilha) */
-* {
-    scrollbar-width: thin;
-    scrollbar-color: var(--cor-scrollbar) var(--cor-fundo);
+main.container {
+    flex-grow: 1;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
 }
