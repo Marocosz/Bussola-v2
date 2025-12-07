@@ -6,6 +6,7 @@ import { Navbar } from './components/Navbar';
 import { Login } from './pages/Login';
 import { Home } from './pages/Home';
 import { Financas } from './pages/Financas';
+import { Registros } from './pages/Registros';
 
 const PrivateLayout = () => {
     const { authenticated, loading } = useContext(AuthContext);
@@ -48,6 +49,7 @@ export function AppRoutes() {
                 <Route path="/home" element={<Home />} />
                 <Route path="/financas" element={<Financas />} />
                 <Route path="/panorama" element={<Panorama />} />
+                <Route path="/registros" element={<Registros />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/home" />} />

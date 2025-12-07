@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // ==========================================================
-// 1. CONFIGURAÇÃO BASE (Mantendo o seu original)
+// 1. CONFIGURAÇÃO BASE
 // ==========================================================
 const api = axios.create({
     baseURL: 'http://127.0.0.1:8000/api/v1',
@@ -9,7 +9,6 @@ const api = axios.create({
 
 // Interceptor: Injeta o token automaticamente se ele existir
 api.interceptors.request.use((config) => {
-    // Mantive a sua chave específica '@Bussola:token'
     const token = localStorage.getItem('@Bussola:token');
     
     if (token) {
@@ -23,7 +22,6 @@ api.interceptors.request.use((config) => {
 // 2. MÓDULO HOME
 // ==========================================================
 
-// Interfaces (Tipagem para o TypeScript saber o formato dos dados)
 export interface WeatherData {
     temperature: number;
     description: string;
@@ -42,9 +40,7 @@ export interface HomeData {
     tech_news: NewsArticle[];
 }
 
-// Função para buscar os dados da Home
 export const getHomeData = async (): Promise<HomeData> => {
-    // Chama a rota GET http://127.0.0.1:8000/api/v1/home/
     const response = await api.get('/home/'); 
     return response.data;
 };
@@ -53,7 +49,6 @@ export const getHomeData = async (): Promise<HomeData> => {
 // 3. MÓDULO FINANÇAS
 // ==========================================================
 
-// Interfaces para tipagem dos dados financeiros
 export interface Categoria {
     id: number;
     nome: string;
@@ -61,17 +56,17 @@ export interface Categoria {
     icone: string;
     cor: string;
     meta_limite: number;
-    total_gasto?: number; // Calculado no backend
-    total_ganho?: number; // Calculado no backend
+    total_gasto?: number;
+    total_ganho?: number;
 }
 
 export interface Transacao {
     id: number;
     descricao: string;
     valor: number;
-    data: string; // Vem como ISO String do backend
+    data: string;
     categoria_id: number;
-    categoria?: Categoria; // Objeto aninhado
+    categoria?: Categoria;
     tipo_recorrencia: 'pontual' | 'parcelada' | 'recorrente';
     status: 'Pendente' | 'Efetivada';
     parcela_atual?: number;
@@ -82,52 +77,44 @@ export interface Transacao {
 export interface FinancasDashboard {
     categorias_despesa: Categoria[];
     categorias_receita: Categoria[];
-    transacoes_pontuais: Record<string, Transacao[]>;     // Objeto { "Janeiro/2025": [lista...] }
-    transacoes_recorrentes: Record<string, Transacao[]>;  // Objeto { "Janeiro/2025": [lista...] }
+    transacoes_pontuais: Record<string, Transacao[]>;
+    transacoes_recorrentes: Record<string, Transacao[]>;
     icones_disponiveis: string[];
     cores_disponiveis: string[];
 }
 
-// --- Chamadas API Finanças ---
-
-// Busca o dashboard completo (Categorias e Transações)
 export const getFinancasDashboard = async (): Promise<FinancasDashboard> => {
     const response = await api.get('/financas/');
     return response.data;
 };
 
-// Cria uma nova transação (Pontual, Parcelada ou Recorrente)
 export const createTransacao = async (data: any) => {
     const response = await api.post('/financas/transacoes', data);
     return response.data;
 };
 
-// Alterna status entre Pendente/Efetivada
 export const toggleStatusTransacao = async (id: number) => {
     const response = await api.put(`/financas/transacoes/${id}/toggle-status`);
     return response.data;
 };
 
-// Exclui uma transação (ou grupo de recorrência)
 export const deleteTransacao = async (id: number) => {
     const response = await api.delete(`/financas/transacoes/${id}`);
     return response.data;
 };
 
-// Cria uma nova categoria
 export const createCategoria = async (data: any) => {
     const response = await api.post('/financas/categorias', data);
     return response.data;
 };
 
-// Exclui uma categoria
 export const deleteCategoria = async (id: number) => {
     const response = await api.delete(`/financas/categorias/${id}`);
     return response.data;
 };
 
 // ==========================================================
-// 4. MÓDULO PANORAMA (Novo)
+// 4. MÓDULO PANORAMA
 // ==========================================================
 
 export interface PanoramaData {
@@ -150,7 +137,6 @@ export interface PanoramaData {
     categorias_para_filtro: Categoria[];
 }
 
-// Busca os dados do dashboard unificado
 export const getPanoramaData = async (): Promise<PanoramaData> => {
     const response = await api.get('/panorama/');
     return response.data;
@@ -158,6 +144,59 @@ export const getPanoramaData = async (): Promise<PanoramaData> => {
 
 export const getCategoryHistory = async (categoryId: number) => {
     const response = await api.get(`/panorama/history/${categoryId}`);
+    return response.data;
+};
+
+// ==========================================================
+// 5. MÓDULO REGISTROS (Novo)
+// ==========================================================
+
+export interface LinkItem { id: number; url: string; }
+
+export interface Anotacao {
+    id: number;
+    titulo: string;
+    conteudo: string; // HTML
+    tipo: string;
+    fixado: boolean;
+    is_tarefa: boolean;
+    status_tarefa: 'Pendente' | 'Concluído';
+    data_criacao: string;
+    links: LinkItem[];
+}
+
+export interface RegistrosDashboard {
+    anotacoes_fixadas: Anotacao[];
+    anotacoes_por_mes: Record<string, Anotacao[]>;
+}
+
+export const getRegistrosDashboard = async (): Promise<RegistrosDashboard> => {
+    const response = await api.get('/registros/');
+    return response.data;
+};
+
+export const createRegistro = async (data: any) => {
+    const response = await api.post('/registros/', data);
+    return response.data;
+};
+
+export const updateRegistro = async (id: number, data: any) => {
+    const response = await api.put(`/registros/${id}`, data);
+    return response.data;
+};
+
+export const deleteRegistro = async (id: number) => {
+    const response = await api.delete(`/registros/${id}`);
+    return response.data;
+};
+
+export const toggleFixarRegistro = async (id: number) => {
+    const response = await api.patch(`/registros/${id}/toggle-fixar`);
+    return response.data;
+};
+
+export const toggleTarefaStatus = async (id: number) => {
+    const response = await api.patch(`/registros/${id}/toggle-tarefa`);
     return response.data;
 };
 

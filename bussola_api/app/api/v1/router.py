@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import auth, home,financas, panorama
+from app.api.v1.endpoints import auth, home,financas, panorama, registros
 
 api_router = APIRouter()
 
@@ -14,3 +14,6 @@ api_router.include_router(financas.router, prefix="/financas", tags=["financas"]
 
 # Panorama
 api_router.include_router(panorama.router, prefix="/panorama", tags=["panorama"])
+
+# Registros
+api_router.include_router(registros.router, prefix="/registros", tags=["registros"]) 
