@@ -2,7 +2,7 @@ import os
 from sqlalchemy import Column, Integer, String, Text, Date
 from datetime import datetime
 from cryptography.fernet import Fernet
-from app.db.base import Base
+from app.db.base_class import Base
 
 # Carrega a chave de criptografia do ambiente
 encryption_key = os.getenv('ENCRYPTION_KEY')

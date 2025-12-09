@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, Text, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from app.db.base import Base # Ajuste o import conforme sua estrutura
+from app.db.base_class import Base
 
 class Anotacao(Base):
     __tablename__ = 'anotacao'

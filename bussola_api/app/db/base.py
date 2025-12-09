@@ -1,4 +1,9 @@
-from sqlalchemy.orm import DeclarativeBase
+# Pega a Base do arquivo neutro
+from app.db.base_class import Base
 
-class Base(DeclarativeBase):
-    pass
+# Importa os modelos para registrá-los no metadata da Base
+from app.models.user import User
+from app.models.financas import Categoria, Transacao
+from app.models.registros import Anotacao, Link
+from app.models.cofre import Segredo
+from app.models.agenda import Compromisso

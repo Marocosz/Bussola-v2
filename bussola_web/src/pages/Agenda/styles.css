@@ -1,0 +1,377 @@
+/* --- ESTILOS EXCLUSIVOS DA PÁGINA DA AGENDA --- */
+
+/* ============================================= */
+/* Componente: Card de Compromisso Detalhado     */
+/* ============================================= */
+
+/* Define a grade responsiva para a lista de compromissos */
+.compromissos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    padding: 0 10px;
+}
+
+/* Estilo base para o card individual do compromisso */
+.compromisso-card-detailed {
+    background-color: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    min-height: 200px;
+}
+
+/* --- Cabeçalho do Card e Título --- */
+
+/* Alinha o título e os botões de ação na parte superior do card */
+.compromisso-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+/* Estiliza o título do compromisso, permitindo quebra de linha em textos longos */
+.compromisso-header h4 {
+    font-size: 1.1rem;
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+/* --- Botões de Ação Pequenos (Concluir/Resetar) --- */
+
+/* Container para os botões de ação circulares */
+.action-buttons-small {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0; /* Impede que os botões diminuam de tamanho */
+}
+
+/* Remove margens padrão se o botão estiver dentro de um <form> */
+.action-buttons-small form {
+    margin: 0;
+}
+
+/* Estilo base dos botões circulares de ação */
+.action-buttons-small button {
+    background: var(--cor-card-secundario);
+    border: none;
+    color: var(--cor-texto-secundario);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+/* Efeito hover para o botão de concluir (verde) */
+.action-buttons-small button.done:hover {
+    background-color: var(--cor-verde-sucesso);
+    color: white;
+}
+
+/* Efeito hover para o botão de redefinir (laranja) */
+.action-buttons-small button.reset:hover {
+    background-color: var(--cor-laranja-aviso);
+    color: white;
+}
+
+/* --- Detalhes do Card (Ícone + Texto) --- */
+
+/* Estiliza cada linha de detalhe (ex: data, hora, local) */
+p.compromisso-detail {
+    display: flex;
+    align-items: flex-start;
+    line-height: 1.4;
+    font-size: 0.9rem;
+    color: var(--cor-texto-secundario);
+    margin: 0;
+}
+
+/* Alinhamento e espaçamento do ícone na linha de detalhe */
+p.compromisso-detail i {
+    margin-right: 0.6rem;
+    margin-top: 2px;
+    width: 16px;
+    text-align: center;
+}
+
+/* Garante a quebra de linha correta para o texto de detalhe */
+p.compromisso-detail span {
+    flex-shrink: 1;
+    min-width: 0;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+/* Estilo específico para o texto do lembrete */
+.lembrete-badge span {
+    font-weight: 500;
+    color: var(--cor-texto-principal);
+}
+
+/* --- Rodapé do Card e Status Badge --- */
+
+/* Container do rodapé, usado para empurrar o status para o final do card */
+.footer-details {
+    margin-top: auto;
+    padding-top: 0.5rem;
+}
+
+/* Estilo base da etiqueta de status (Pendente, Realizado, Perdido) */
+.status-badge {
+    padding: 0.25rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #fff;
+    text-transform: uppercase;
+}
+
+/* Cor para status pendente */
+.status-badge.pendente {
+    background-color: var(--cor-cinza-botao-hover);
+}
+
+/* Cor para status realizado */
+.status-badge.realizado {
+    background-color: var(--cor-verde-sucesso);
+}
+
+/* Cor para status perdido */
+.status-badge.perdido {
+    background-color: var(--cor-vermelho-delete);
+}
+
+/* ============================================= */
+/* Componente: Calendário (Visualização de Dias) */
+/* ============================================= */
+
+/* --- Divisor de Mês --- */
+
+/* Título de separação entre os meses (ex: Setembro 2025) */
+.month-divider {
+    grid-column: 1 / -1; /* Faz o título ocupar toda a largura da grade */
+    width: 100%;
+    text-align: left;
+    margin-top: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--cor-borda);
+}
+
+/* Estilo do texto do título do mês */
+.month-divider h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--cor-texto-principal);
+    margin: 0;
+}
+
+/* Ajuste de margem entre grupos de meses consecutivos */
+.month-group + .month-group {
+    margin-top: -1.75rem;
+}
+
+/* --- Grid dos Dias --- */
+
+/* Grade responsiva para as células dos dias do calendário */
+.dias-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+    gap: 0.75rem;
+    padding: 0 10px;
+}
+
+/* --- Card do Dia individual --- */
+
+/* Estilo base da célula de cada dia no calendário */
+.dia-card {
+    background-color: var(--cor-card-secundario);
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.25rem;
+    transition: all 0.2s ease;
+    min-height: 30px;
+    justify-content: center;
+}
+
+/* Estilo do número do dia (ex: 1, 2, 3...) */
+.dia-numero {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+/* Estilo do nome da semana (ex: Seg, Ter, Qua...) */
+.dia-semana {
+    font-size: 0.8rem;
+    color: var(--cor-texto-secundario);
+    margin-bottom: 0.25rem;
+}
+
+/* Indicador de evento no card do dia (ponto colorido) */
+.compromisso-indicator {
+    height: 8px;
+    width: 8px;
+    background-color: var(--cor-azul-primario);
+    border-radius: 50%;
+}
+
+/* Oculta o indicador se não houver eventos no dia */
+.compromisso-indicator.no-event {
+    background-color: transparent;
+}
+
+/* --- Estados do Card do Dia --- */
+
+/* Muda o cursor para indicar que o dia é clicável (quando tem compromissos) */
+.dia-card.has-compromissos {
+    cursor: pointer;
+}
+
+/* Efeito visual ao passar o mouse sobre a célula do dia */
+.dia-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--cor-azul-primario);
+}
+
+/* Destaque especial para o dia atual */
+.dia-card.today {
+    border: 2px solid var(--cor-azul-primario);
+    background-color: var(--cor-card-principal);
+}
+
+/* Cor do número do dia atual */
+.dia-card.today .dia-numero {
+    color: var(--cor-azul-primario);
+}
+
+/* ============================================= */
+/* Componente: Tooltip do Calendário             */
+/* ============================================= */
+
+/* Estilo base do container do tooltip (caixa flutuante) */
+.tooltip {
+    display: none; /* Oculto por padrão */
+    opacity: 0;
+    position: absolute;
+    z-index: 1000; /* Garante que fique sobreposto a outros elementos */
+    background-color: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    width: 280px;
+    max-width: 90vw;
+    pointer-events: none; /* Impede que o mouse interaja com o tooltip */
+    transition: opacity 0.2s ease;
+}
+
+/* Classe para tornar o tooltip visível (controlada por JS) */
+.tooltip.visible {
+    display: block;
+    opacity: 1;
+}
+
+/* --- Itens dentro do Tooltip --- */
+
+/* Estilo de cada item de compromisso listado no tooltip */
+.tooltip-compromisso-item {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--cor-borda);
+}
+
+/* Remove preenchimento superior do primeiro item */
+.tooltip-compromisso-item:first-child {
+    padding-top: 0;
+}
+
+/* Remove borda inferior do último item */
+.tooltip-compromisso-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+/* Alinhamento do conteúdo de texto dentro do item do tooltip */
+.tooltip-compromisso-item p {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+/* Estilo do título do compromisso no tooltip */
+.tooltip-titulo {
+    font-weight: 600;
+    color: var(--cor-texto-principal);
+    font-size: 0.95rem;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    min-width: 0;
+}
+
+/* Estilo da hora do compromisso no tooltip */
+.tooltip-hora {
+    font-size: 0.9rem;
+    color: var(--cor-texto-secundario);
+    white-space: nowrap; /* Impede que a hora quebre linha */
+    flex-shrink: 0;
+}
+
+/* ============================================= */
+/* Estilos para o Layout Moderno dos Modais      */
+/* ============================================= */
+
+/* Aplica layout customizado aos modais de adição e edição */
+#add-compromisso-modal .modal-content,
+#edit-compromisso-modal .modal-content {
+    padding: 0;
+    max-width: 650px;
+}
+
+/* Seção do cabeçalho do modal */
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--cor-borda);
+}
+
+/* Reseta margem do título do modal */
+.modal-header h3 {
+    margin: 0;
+}
+
+/* Seção principal de conteúdo do modal (formulário) */
+.modal-body {
+    padding: 1.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Seção do rodapé do modal (botões de salvar/cancelar) */
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem 2rem;
+    border-top: 1px solid var(--cor-borda);
+    background-color: var(--cor-card-secundario);
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 16px;
+}

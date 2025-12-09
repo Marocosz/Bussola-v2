@@ -8,7 +8,10 @@ import { Home } from './pages/Home';
 import { Financas } from './pages/Financas';
 import { Panorama } from './pages/Panorama';
 import { Registros } from './pages/Registros';
-import { Cofre } from './pages/Cofre'; // <--- 1. IMPORTE O COFRE AQUI
+import { Cofre } from './pages/Cofre';
+import { Agenda } from './pages/Agenda';
+
+// ... (imports)
 
 const PrivateLayout = () => {
     const { authenticated, loading } = useContext(AuthContext);
@@ -28,7 +31,7 @@ const PrivateLayout = () => {
     return (
         <>
             <Navbar />
-            <div style={{ paddingTop: '80px', width: '100%' }}> 
+            <div style={{ width: '100%' }}> 
                 <Outlet />
             </div>
         </>
@@ -45,8 +48,7 @@ export function AppRoutes() {
                 <Route path="/financas" element={<Financas />} />
                 <Route path="/panorama" element={<Panorama />} />
                 <Route path="/registros" element={<Registros />} />
-                
-                {/* --- 2. ADICIONE ESTA LINHA --- */}
+                <Route path="/agenda" element={<Agenda />} />
                 <Route path="/cofre" element={<Cofre />} />
                 
             </Route>

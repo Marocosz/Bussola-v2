@@ -241,4 +241,56 @@ export const getSegredoValor = async (id: number): Promise<SegredoValue> => {
     return response.data;
 };
 
+// --- AGENDA ---
+export interface Compromisso {
+    id: number;
+    titulo: string;
+    descricao: string;
+    local: string;
+    data_hora: string; // ISO
+    lembrete: boolean;
+    status: 'Pendente' | 'Realizado' | 'Perdido';
+}
+
+export interface CalendarDay {
+    type: 'day' | 'month_divider';
+    full_date?: string;
+    day_number?: string;
+    weekday_short?: string;
+    is_today?: boolean;
+    compromissos?: {titulo: string, hora: string}[];
+    month_name?: string;
+    year?: number;
+}
+
+export interface AgendaDashboard {
+    compromissos_por_mes: Record<string, Compromisso[]>;
+    calendar_days: CalendarDay[];
+}
+
+export const getAgendaDashboard = async (): Promise<AgendaDashboard> => {
+    const response = await api.get('/agenda/');
+    return response.data;
+};
+
+export const createCompromisso = async (data: any) => {
+    const response = await api.post('/agenda/', data);
+    return response.data;
+};
+
+export const updateCompromisso = async (id: number, data: any) => {
+    const response = await api.put(`/agenda/${id}`, data);
+    return response.data;
+};
+
+export const toggleCompromissoStatus = async (id: number) => {
+    const response = await api.patch(`/agenda/${id}/toggle-status`);
+    return response.data;
+};
+
+export const deleteCompromisso = async (id: number) => {
+    const response = await api.delete(`/agenda/${id}`);
+    return response.data;
+};
+
 export default api;

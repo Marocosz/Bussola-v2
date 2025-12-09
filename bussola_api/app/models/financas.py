@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, Date, ForeignKey, func
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
-from app.db.base import Base
+from app.db.base_class import Base
 
 class Categoria(Base):
     __tablename__ = 'categoria'
