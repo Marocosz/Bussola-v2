@@ -1,0 +1,63 @@
+/* Container da Tabela */
+.table-container {
+    background-color: var(--cor-card-principal);
+    border-radius: 12px;
+    border: 1px solid var(--cor-borda);
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th, .data-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--cor-borda);
+}
+
+.data-table th {
+    background-color: var(--cor-card-secundario);
+    color: var(--cor-texto-secundario);
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.data-table td {
+    color: var(--cor-texto-principal);
+}
+
+.data-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Coluna Notas */
+.column-notas {
+    max-width: 250px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--cor-texto-secundario);
+}
+
+/* Botões de Ação */
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Modais */
+/* Reutiliza o CSS global de modal, mas ajusta inputs */
+.secret-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.secret-input-wrapper .btn-action-icon {
+    position: absolute;
+    right: 5px;
+    background: transparent;
+    border: none;
+}

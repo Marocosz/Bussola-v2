@@ -1,26 +1,21 @@
 import React, { useContext } from 'react';
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthContext } from './context/AuthContext';
-import { Panorama } from './pages/Panorama';
+
 import { Navbar } from './components/Navbar'; 
 import { Login } from './pages/Login';
 import { Home } from './pages/Home';
 import { Financas } from './pages/Financas';
+import { Panorama } from './pages/Panorama';
 import { Registros } from './pages/Registros';
+import { Cofre } from './pages/Cofre'; // <--- 1. IMPORTE O COFRE AQUI
 
 const PrivateLayout = () => {
     const { authenticated, loading } = useContext(AuthContext);
 
-    // 1. Estilizando o loading para garantir que seja visível
     if (loading) {
         return (
-            <div style={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                alignItems: 'center', 
-                height: '100vh', 
-                color: '#fff' 
-            }}>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: '#fff' }}>
                 Carregando sistema...
             </div>
         );
@@ -33,9 +28,9 @@ const PrivateLayout = () => {
     return (
         <>
             <Navbar />
-            {/* 2. REMOVIDA a tag <main> que envolvia o Outlet. 
-                A Home já tem seu próprio container, isso evita conflito de CSS. */}
-            <Outlet />
+            <div style={{ paddingTop: '80px', width: '100%' }}> 
+                <Outlet />
+            </div>
         </>
     );
 };
@@ -50,6 +45,10 @@ export function AppRoutes() {
                 <Route path="/financas" element={<Financas />} />
                 <Route path="/panorama" element={<Panorama />} />
                 <Route path="/registros" element={<Registros />} />
+                
+                {/* --- 2. ADICIONE ESTA LINHA --- */}
+                <Route path="/cofre" element={<Cofre />} />
+                
             </Route>
 
             <Route path="*" element={<Navigate to="/home" />} />

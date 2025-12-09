@@ -148,7 +148,7 @@ export const getCategoryHistory = async (categoryId: number) => {
 };
 
 // ==========================================================
-// 5. MÓDULO REGISTROS (Novo)
+// 5. MÓDULO REGISTROS
 // ==========================================================
 
 export interface LinkItem { id: number; url: string; }
@@ -197,6 +197,47 @@ export const toggleFixarRegistro = async (id: number) => {
 
 export const toggleTarefaStatus = async (id: number) => {
     const response = await api.patch(`/registros/${id}/toggle-tarefa`);
+    return response.data;
+};
+
+// ==========================================================
+// 6. MÓDULO COFRE (Novo)
+// ==========================================================
+
+export interface Segredo {
+    id: number;
+    titulo: string;
+    servico: string;
+    notas: string;
+    data_expiracao: string; // String ISO
+}
+
+export interface SegredoValue {
+    valor: string;
+}
+
+export const getSegredos = async (): Promise<Segredo[]> => {
+    const response = await api.get('/cofre/');
+    return response.data;
+};
+
+export const createSegredo = async (data: any) => {
+    const response = await api.post('/cofre/', data);
+    return response.data;
+};
+
+export const updateSegredo = async (id: number, data: any) => {
+    const response = await api.put(`/cofre/${id}`, data);
+    return response.data;
+};
+
+export const deleteSegredo = async (id: number) => {
+    const response = await api.delete(`/cofre/${id}`);
+    return response.data;
+};
+
+export const getSegredoValor = async (id: number): Promise<SegredoValue> => {
+    const response = await api.get(`/cofre/${id}/valor`);
     return response.data;
 };
 

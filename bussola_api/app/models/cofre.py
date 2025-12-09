@@ -1,32 +1,39 @@
+import os
 from sqlalchemy import Column, Integer, String, Text, Date
-from datetime import datetime, timezone
+from datetime import datetime
 from cryptography.fernet import Fernet
 from app.db.base import Base
-from app.core.config import settings
 
-# Inicializa a suite de criptografia com a chave do .env
-cipher_suite = Fernet(settings.ENCRYPTION_KEY.encode()) if settings.ENCRYPTION_KEY else None
+# Carrega a chave de criptografia do ambiente
+encryption_key = os.getenv('ENCRYPTION_KEY')
+
+if encryption_key:
+    cipher_suite = Fernet(encryption_key.encode())
+else:
+    print("AVISO CRÍTICO: ENCRYPTION_KEY não definida no ambiente.")
+    cipher_suite = None
 
 class Segredo(Base):
     __tablename__ = 'segredo'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, index=True)
     titulo = Column(String(200), nullable=False)
     servico = Column(String(100), nullable=True)
     notas = Column(Text, nullable=True)
-    data_criacao = Column(Date, nullable=False, default=lambda: datetime.now(timezone.utc).date())
+    data_criacao = Column(Date, default=datetime.utcnow)
     data_expiracao = Column(Date, nullable=True)
 
-    # Armazena o dado criptografado
-    _valor_criptografado = Column("valor_criptografado", String(500), nullable=False)
+    # Armazena o valor criptografado
+    _valor_criptografado = Column(String(500), nullable=False)
 
     @property
     def valor(self):
-        """Descriptografa ao acessar"""
+        """Descriptografa ao ler"""
         if cipher_suite and self._valor_criptografado:
             try:
                 return cipher_suite.decrypt(self._valor_criptografado.encode()).decode()
-            except Exception:
+            except Exception as e:
+                print(f"Erro ao descriptografar segredo ID {self.id}: {e}")
                 return "!! ERRO !!"
         return None
 
@@ -34,4 +41,5 @@ class Segredo(Base):
     def valor(self, valor_plano: str):
         """Criptografa ao salvar"""
         if cipher_suite and valor_plano:
-            self._valor_criptografado = cipher_suite.encrypt(valor_plano.encode()).decode()
+            encrypted_value = cipher_suite.encrypt(valor_plano.encode())
+            self._valor_criptografado = encrypted_value.decode()
