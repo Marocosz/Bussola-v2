@@ -218,3 +218,22 @@ main.container {
     padding-top: 2rem;
     padding-bottom: 2rem;
 }
+
+/* ============================================= */
+/* ACCORDION GLOBAL (Animação de abrir/fechar)   */
+/* ============================================= */
+
+.accordion-wrapper {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease-out;
+}
+
+.accordion-wrapper.open {
+    grid-template-rows: 1fr;
+}
+
+.accordion-inner {
+    overflow: hidden;
+    min-height: 0; /* Importante para o grid funcionar */
+}

@@ -10,12 +10,22 @@ export function Financas() {
     const [loading, setLoading] = useState(true);
     
     // Controle de UI
-    const [openMonths, setOpenMonths] = useState({});
+    // ALTERAÇÃO 1: Inicializa lendo do localStorage, se existir
+    const [openMonths, setOpenMonths] = useState(() => {
+        const saved = localStorage.getItem('bussola_financas_accordions');
+        return saved ? JSON.parse(saved) : {};
+    });
+
     const [activeModal, setActiveModal] = useState(null);
     const [showDropdown, setShowDropdown] = useState(false);
 
     // Ref para detectar clique fora do dropdown
     const dropdownRef = useRef(null);
+
+    // ALTERAÇÃO 2: Salva no localStorage sempre que openMonths mudar
+    useEffect(() => {
+        localStorage.setItem('bussola_financas_accordions', JSON.stringify(openMonths));
+    }, [openMonths]);
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -23,10 +33,7 @@ export function Financas() {
                 setShowDropdown(false);
             }
         }
-        // Adiciona o listener quando o componente monta
         document.addEventListener("mousedown", handleClickOutside);
-        
-        // Remove o listener quando desmonta
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
@@ -35,17 +42,22 @@ export function Financas() {
     const fetchData = async () => {
         try {
             const result = await getFinancasDashboard();
-            setData(result);
             
-            // Abre o primeiro mês de cada lista por padrão
-            if(Object.keys(result.transacoes_pontuais).length > 0){
-                const firstPontual = Object.keys(result.transacoes_pontuais)[0];
-                setOpenMonths(prev => ({ ...prev, [`pontual-${firstPontual}`]: true }));
+            // ALTERAÇÃO 3: Lógica de "abrir o primeiro" aprimorada
+            // Só define o padrão se for a primeira carga (data === null)
+            // E se o usuário NÃO tiver um estado salvo no localStorage (Object.keys(openMonths).length === 0)
+            if (data === null && Object.keys(openMonths).length === 0) {
+                if(Object.keys(result.transacoes_pontuais).length > 0){
+                    const firstPontual = Object.keys(result.transacoes_pontuais)[0];
+                    setOpenMonths(prev => ({ ...prev, [`pontual-${firstPontual}`]: true }));
+                }
+                if(Object.keys(result.transacoes_recorrentes).length > 0){
+                    const firstRecorrente = Object.keys(result.transacoes_recorrentes)[0];
+                    setOpenMonths(prev => ({ ...prev, [`recorrente-${firstRecorrente}`]: true }));
+                }
             }
-            if(Object.keys(result.transacoes_recorrentes).length > 0){
-                const firstRecorrente = Object.keys(result.transacoes_recorrentes)[0];
-                setOpenMonths(prev => ({ ...prev, [`recorrente-${firstRecorrente}`]: true }));
-            }
+
+            setData(result);
         } catch (error) {
             console.error(error);
         } finally {
@@ -95,15 +107,19 @@ export function Financas() {
                                     <span>{mes}</span>
                                     <i className={`fa-solid fa-chevron-down ${openMonths[`pontual-${mes}`] ? 'rotate' : ''}`}></i>
                                 </h3>
-                                {openMonths[`pontual-${mes}`] && (
-                                    <div className="month-content">
-                                        <div className="transacoes-grid">
-                                            {transactions.map(t => (
-                                                <TransactionCard key={t.id} transacao={t} onUpdate={fetchData} />
-                                            ))}
+                                
+                                {/* ESTRUTURA ACCORDION ANIMADA */}
+                                <div className={`accordion-wrapper ${openMonths[`pontual-${mes}`] ? 'open' : ''}`}>
+                                    <div className="accordion-inner">
+                                        <div className="month-content">
+                                            <div className="transacoes-grid">
+                                                {transactions.map(t => (
+                                                    <TransactionCard key={t.id} transacao={t} onUpdate={fetchData} />
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
-                                )}
+                                </div>
                             </div>
                         ))
                     ) : (
@@ -141,15 +157,19 @@ export function Financas() {
                                     <span>{mes}</span>
                                     <i className={`fa-solid fa-chevron-down ${openMonths[`recorrente-${mes}`] ? 'rotate' : ''}`}></i>
                                 </h3>
-                                {openMonths[`recorrente-${mes}`] && (
-                                    <div className="month-content">
-                                        <div className="transacoes-grid">
-                                            {transactions.map(t => (
-                                                <TransactionCard key={t.id} transacao={t} onUpdate={fetchData} />
-                                            ))}
+                                
+                                {/* ESTRUTURA ACCORDION ANIMADA */}
+                                <div className={`accordion-wrapper ${openMonths[`recorrente-${mes}`] ? 'open' : ''}`}>
+                                    <div className="accordion-inner">
+                                        <div className="month-content">
+                                            <div className="transacoes-grid">
+                                                {transactions.map(t => (
+                                                    <TransactionCard key={t.id} transacao={t} onUpdate={fetchData} />
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
-                                )}
+                                </div>
                             </div>
                         ))
                     ) : (
