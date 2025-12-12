@@ -7,7 +7,7 @@ const api = axios.create({
     baseURL: 'http://127.0.0.1:8000/api/v1',
 });
 
-// Interceptor: Injeta o token automaticamente se ele existir
+// Interceptor de REQUISIÇÃO: Injeta o token na ida
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('@Bussola:token');
     
@@ -17,6 +17,23 @@ api.interceptors.request.use((config) => {
     
     return config;
 });
+
+// --- NOVO: Interceptor de RESPOSTA (Logout Automático) ---
+// Adicionei de volta este bloco que estava faltando no seu código
+api.interceptors.response.use(
+    (response) => {
+        return response;
+    },
+    (error) => {
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+            console.warn("Sessão inválida ou expirada. Redirecionando para login...");
+            localStorage.removeItem('@Bussola:token');
+            localStorage.removeItem('@Bussola:user');
+            window.location.href = '/login';
+        }
+        return Promise.reject(error);
+    }
+);
 
 // ==========================================================
 // 2. MÓDULO HOME
@@ -201,7 +218,7 @@ export const toggleTarefaStatus = async (id: number) => {
 };
 
 // ==========================================================
-// 6. MÓDULO COFRE (Novo)
+// 6. MÓDULO COFRE
 // ==========================================================
 
 export interface Segredo {
@@ -241,7 +258,10 @@ export const getSegredoValor = async (id: number): Promise<SegredoValue> => {
     return response.data;
 };
 
-// --- AGENDA ---
+// ==========================================================
+// 7. MÓDULO AGENDA (Roteiro)
+// ==========================================================
+
 export interface Compromisso {
     id: number;
     titulo: string;

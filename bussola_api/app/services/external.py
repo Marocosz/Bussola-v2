@@ -157,7 +157,7 @@ class ExternalDataService:
                 unique_articles.append(art)
                 seen.add(art['title'].lower())
         
-        final = unique_articles[:6]
+        final = unique_articles[:8]
 
         # 3. Salva Cache
         if self.redis_client and final:

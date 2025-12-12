@@ -56,7 +56,7 @@ export function Home() {
     };
 
     return (
-        <main className="container">
+        <main className="container main-container">
             {/* Seção Hero */}
             <section className="hero-container">
                 <div className="hero-content">
@@ -79,16 +79,27 @@ export function Home() {
                             </div>
                         </div>
 
-                        {/* Widget de Clima */}
-                        {dashboardData.weather && (
-                            <div className="weather-widget">
-                                <i className={`wi ${dashboardData.weather.icon_class}`}></i>
-                                <div className="weather-details">
-                                    <span className="temperature">{dashboardData.weather.temperature}°C</span>
-                                    <span className="description">{dashboardData.weather.description}</span>
+                        {/* Widget de Clima (Com Loading State) */}
+                        <div className="weather-widget">
+                            {loading ? (
+                                <div className="weather-loading" style={{display:'flex', alignItems:'center', gap:'10px', width:'100%', justifyContent:'center'}}>
+                                    <i className="fas fa-circle-notch fa-spin" style={{fontSize:'1.2rem', color:'var(--cor-azul-primario)'}}></i>
+                                    <span style={{fontSize:'0.9rem', color:'var(--cor-texto-secundario)'}}>Carregando clima...</span>
                                 </div>
-                            </div>
-                        )}
+                            ) : dashboardData.weather ? (
+                                <>
+                                    <i className={`wi ${dashboardData.weather.icon_class}`}></i>
+                                    <div className="weather-details">
+                                        <span className="temperature">{dashboardData.weather.temperature}°C</span>
+                                        <span className="description">{dashboardData.weather.description}</span>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="weather-error" style={{textAlign:'center', width:'100%', fontSize:'0.9rem', color:'var(--cor-texto-secundario)'}}>
+                                    Clima indisponível
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </section>
