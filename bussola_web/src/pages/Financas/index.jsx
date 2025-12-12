@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { getFinancasDashboard } from '../../services/api';
 import { TransactionCard } from './components/TransactionCard';
 import { CategoryCard } from './components/CategoryCard';
@@ -13,6 +13,24 @@ export function Financas() {
     const [openMonths, setOpenMonths] = useState({});
     const [activeModal, setActiveModal] = useState(null);
     const [showDropdown, setShowDropdown] = useState(false);
+
+    // Ref para detectar clique fora do dropdown
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setShowDropdown(false);
+            }
+        }
+        // Adiciona o listener quando o componente monta
+        document.addEventListener("mousedown", handleClickOutside);
+        
+        // Remove o listener quando desmonta
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [dropdownRef]);
 
     const fetchData = async () => {
         try {
@@ -97,7 +115,7 @@ export function Financas() {
                 <div className="agenda-column">
                     <div className="column-header-flex">
                         <h2>Recorrentes e Parceladas</h2>
-                        <div className="btn-group" style={{position: 'relative'}}>
+                        <div className="btn-group" style={{position: 'relative'}} ref={dropdownRef}>
                             <button 
                                 className="btn-primary" 
                                 onClick={() => setShowDropdown(!showDropdown)}

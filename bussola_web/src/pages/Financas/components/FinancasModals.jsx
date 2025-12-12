@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createTransacao, createCategoria } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 
@@ -14,6 +14,10 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
     // Controla qual Select Customizado está aberto ('categoria', 'frequencia' ou null)
     const [activeDropdown, setActiveDropdown] = useState(null);
 
+    // Refs para detectar cliques fora dos elementos
+    const iconWrapperRef = useRef(null);
+    const colorWrapperRef = useRef(null);
+
     // Limpa estados ao abrir/fechar
     useEffect(() => {
         setFormData({});
@@ -21,6 +25,36 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
         setShowColorPicker(false);
         setActiveDropdown(null);
     }, [activeModal]);
+
+    // --- LÓGICA DE CLIQUE FORA (Global para o Modal) ---
+    useEffect(() => {
+        function handleClickOutside(event) {
+            // 1. Fechar Icon Picker se clicar fora
+            if (showIconPicker && iconWrapperRef.current && !iconWrapperRef.current.contains(event.target)) {
+                setShowIconPicker(false);
+            }
+
+            // 2. Fechar Color Picker se clicar fora
+            if (showColorPicker && colorWrapperRef.current && !colorWrapperRef.current.contains(event.target)) {
+                setShowColorPicker(false);
+            }
+
+            // 3. Fechar Select Customizado se clicar fora
+            // Verifica se o clique NÃO foi em um trigger ou nas opções do select
+            if (activeDropdown) {
+                const clickedInsideSelect = event.target.closest('.custom-select-trigger') || event.target.closest('.custom-select-options');
+                if (!clickedInsideSelect) {
+                    setActiveDropdown(null);
+                }
+            }
+        }
+
+        // Adiciona listener
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [showIconPicker, showColorPicker, activeDropdown]);
 
     if (!activeModal) return null;
 
@@ -125,7 +159,7 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
     };
 
     return (
-        <div className="modal" style={{ display: 'flex' }} onClick={() => setActiveDropdown(null)}>
+        <div className="modal" style={{ display: 'flex' }}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <h3>{titles[activeModal]}</h3>
@@ -158,7 +192,7 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                     
                                     <div className="form-group form-group-fixed">
                                         <label>Ícone</label>
-                                        <div className="picker-wrapper">
+                                        <div className="picker-wrapper" ref={iconWrapperRef}>
                                             <div className="picker-preview" onClick={() => setShowIconPicker(!showIconPicker)}>
                                                 <i className={formData.icone || 'fa-solid fa-question'} style={{color: formData.cor}}></i>
                                             </div>
@@ -174,7 +208,7 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
 
                                     <div className="form-group form-group-fixed">
                                         <label>Cor</label>
-                                        <div className="picker-wrapper">
+                                        <div className="picker-wrapper" ref={colorWrapperRef}>
                                             <div className="picker-preview" onClick={() => setShowColorPicker(!showColorPicker)}>
                                                 <div style={{ width: 20, height: 20, borderRadius: '50%', backgroundColor: formData.cor || '#fff' }}></div>
                                             </div>
