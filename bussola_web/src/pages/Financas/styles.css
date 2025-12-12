@@ -1,16 +1,27 @@
 /* ============================================= */
-/* 1. HERO INTERNO (CABEÇALHO ESTILIZADO)        */
+/* 1. ESTRUTURA GERAL E CONTAINER                */
 /* ============================================= */
+
+.main-container {
+    /* Espaço para o scroll não cortar o conteúdo final */
+    padding-bottom: 5rem !important; 
+    min-height: 100vh; 
+    box-sizing: border-box; 
+}
+
+/* ============================================= */
+/* 2. HERO INTERNO (CABEÇALHO)                   */
+/* ============================================= */
+
 .internal-hero {
     position: relative;
     text-align: center;
-    padding: 4rem 2rem 3rem 2rem; /* Padding maior conforme solicitado */
+    padding: 4rem 2rem 3rem 2rem;
     margin-bottom: 3rem;
     overflow: hidden;
     border-radius: 0 0 20px 20px;
 }
 
-/* Efeito de brilho centralizado */
 .hero-bg-effect {
     position: absolute;
     top: -50%;
@@ -37,7 +48,6 @@
     font-size: 3rem;
     font-weight: 700;
     margin-bottom: 0.5rem;
-    /* Gradiente no texto */
     background: linear-gradient(90deg, #fff 0%, var(--cor-azul-primario) 50%, #fff 100%);
     background-size: 200% auto;
     -webkit-background-clip: text;
@@ -59,35 +69,50 @@
 }
 
 /* ============================================= */
-/* 2. LAYOUT CUSTOMIZADO (35% - 35% - 30%)       */
+/* 3. LAYOUT GRID E COLUNAS                      */
 /* ============================================= */
+
 .layout-grid-custom {
     display: grid;
     grid-template-columns: 3.5fr 3.5fr 3fr; 
-    gap: 2rem;
-    align-items: start;
+    /* Gap zero para permitir conexão visual dos cabeçalhos */
+    gap: 0; 
+    align-items: stretch; 
 }
 
 .agenda-column {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
-    min-width: 0; /* Previne overflow em grids flexíveis */
+    min-width: 0; 
+    position: relative; /* Necessário para posicionar a linha customizada */
+    height: 100%;
+    /* Padding lateral interno para compensar o gap zero */
+    padding: 0 1.2rem;
 }
 
-.column-header-flex {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-    min-height: 42px; 
+/* Remove padding das extremidades para alinhamento global */
+.agenda-column:first-child { padding-left: 0; }
+.agenda-column:last-child { padding-right: 0; }
+
+/* ALTERAÇÃO: 
+   1. Removemos o border-right direto da coluna.
+   2. Adicionamos o ::after para desenhar a linha tracejada
+      começando APENAS abaixo do cabeçalho (top: 3.6rem).
+*/
+.agenda-column:not(:last-child) {
+    border-right: none; 
 }
 
-.column-header-flex h2 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--cor-texto-principal);
-    margin: 0;
+.agenda-column:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    /* Pula a altura do cabeçalho para não sobrepor */
+    top: 3.6rem; 
+    bottom: 0;
+    right: 0;
+    width: 1px;
+    border-right: 1px dashed var(--cor-borda);
+    z-index: 0;
 }
 
 .empty-list-msg {
@@ -101,36 +126,114 @@
 }
 
 /* ============================================= */
-/* 3. ACCORDION (GRUPOS DE MÊS)                  */
+/* 4. CABEÇALHOS DAS COLUNAS (CONECTADOS)        */
 /* ============================================= */
+
+.column-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    /* Margens negativas para expandir e conectar visualmente */
+    margin: 0 -1.2rem 1.5rem -1.2rem; 
+    padding: 0.8rem 1.5rem;
+    
+    background-color: var(--cor-card-secundario);
+    border-bottom: 1px solid var(--cor-borda);
+    
+    /* Separador vertical entre os cabeçalhos */
+    border-right: 1px solid var(--cor-borda);
+    
+    transition: background-color 0.2s, color 0.2s;
+
+    /* --- CORREÇÃO DA SOBREPOSIÇÃO --- */
+    /* Coloca o cabeçalho em uma camada acima da coluna.
+       Como ele tem cor de fundo, ele vai tapar a linha tracejada da coluna. */
+    position: relative;
+    z-index: 2;
+}
+
+/* Ajustes de borda e arredondamento nas extremidades */
+.agenda-column:last-child .column-header-flex {
+    border-right: none;
+    margin-right: 0;
+    border-radius: 0 12px 12px 0;
+}
+
+.agenda-column:first-child .column-header-flex {
+    margin-left: 0;
+    border-radius: 12px 0 0 12px;
+}
+
+/* Hover effect nos títulos */
+.column-header-flex:hover {
+    background-color: var(--cor-card-principal);
+    box-shadow: inset 0 -2px 0 var(--cor-azul-primario); 
+}
+
+.column-header-flex h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--cor-texto-secundario);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: color 0.2s;
+}
+
+.column-header-flex:hover h2 {
+    color: var(--cor-texto-principal);
+}
+
+.column-header-flex .btn-primary {
+    font-size: 0.8rem;
+    padding: 4px 12px;
+    min-height: 30px;
+}
+
+/* ============================================= */
+/* 5. ACCORDION (GRUPOS DE MÊS)                  */
+/* ============================================= */
+
 .month-group {
-    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+}
+
+/* Aplica margem superior apenas a partir do segundo grupo de mês */
+.month-group + .month-group {
+    margin-top: 1.5rem !important; 
 }
 
 .month-header {
-    background-color: var(--cor-card-secundario);
-    padding: 0.8rem 1rem;
-    border-radius: 8px;
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid var(--cor-borda) !important;
+    border-radius: 0 !important;
+    
+    padding: 0.2rem 0 0.4rem 0;
+    margin-bottom: 0.5rem;
+    
     display: flex;
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
-    font-size: 0.95rem;
-    font-weight: 500;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
     color: var(--cor-texto-secundario);
     transition: all 0.2s;
-    user-select: none;
-    border: 1px solid transparent;
 }
 
 .month-header:hover, .month-header.active {
-    background-color: var(--cor-card-principal);
-    color: var(--cor-texto-principal);
-    border-color: var(--cor-borda);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    color: var(--cor-azul-primario);
+    border-bottom-color: var(--cor-azul-primario) !important;
 }
 
 .month-header i {
+    font-size: 0.8rem;
     transition: transform 0.3s ease;
 }
 
@@ -139,18 +242,20 @@
 }
 
 .month-content {
-    padding-top: 1rem;
+    padding-top: 0;
+    padding-bottom: 0;
     animation: slideDown 0.3s ease-out;
 }
 
 @keyframes slideDown {
-    from { opacity: 0; transform: translateY(-10px); }
+    from { opacity: 0; transform: translateY(-5px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
 /* ============================================= */
-/* 4. CARD DE TRANSAÇÃO                          */
+/* 6. CARDS (TRANSAÇÃO E CATEGORIA)              */
 /* ============================================= */
+
 .transacoes-grid {
     display: flex;
     flex-direction: column;
@@ -304,9 +409,6 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     background: rgba(231, 76, 60, 0.15);
 }
 
-/* ============================================= */
-/* 5. CARD DE CATEGORIA (AJUSTADO PARA COLUNA MENOR) */
-/* ============================================= */
 .category-grid {
     display: flex;
     flex-direction: column;
@@ -318,7 +420,7 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     background: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
     border-radius: 8px;
-    padding: 0.8rem; /* Padding reduzido para caber melhor na coluna de 20% */
+    padding: 0.8rem;
     display: flex;
     align-items: center;
     gap: 0.8rem;
@@ -332,8 +434,8 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
 }
 
 .categoria-icon-box {
-    width: 36px; /* Reduzido */
-    height: 36px; /* Reduzido */
+    width: 36px;
+    height: 36px;
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -365,8 +467,9 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
 }
 
 /* ============================================= */
-/* 6. MODAIS E DROPDOWN                          */
+/* 7. MODAIS E UI ELEMENTS                       */
 /* ============================================= */
+
 .modal {
     display: flex;
     position: fixed;
@@ -466,10 +569,6 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     color: var(--cor-azul-primario);
 }
 
-/* ============================================= */
-/* 7. FORMULÁRIOS E INPUTS (MODAIS)              */
-/* ============================================= */
-
 .form-row {
     display: grid;
     gap: 1rem;
@@ -477,14 +576,12 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     align-items: end;
 }
 
-/* --- GRID TEMPLATES --- */
 .grid-65-35 { grid-template-columns: 65fr 35fr; }
 .grid-60-40 { grid-template-columns: 60fr 40fr; }
 .grid-50-50 { grid-template-columns: 1fr 1fr; }
 .grid-33 { grid-template-columns: 1fr 1fr 1fr; }
 .grid-meta-icon-color { grid-template-columns: 1fr 45px 45px; }
 
-/* --- ESTILOS DOS CAMPOS --- */
 .form-group {
     display: flex;
     flex-direction: column;
@@ -500,7 +597,6 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     margin: 0;
 }
 
-/* PADRONIZAÇÃO DE ALTURA (Todos iguais: 45px) */
 .form-input, 
 .picker-preview,
 .custom-type-selector,
@@ -509,7 +605,6 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     box-sizing: border-box;
 }
 
-/* Input Padrão */
 .form-input {
     width: 100%;
     padding: 0 0.8rem;
@@ -527,11 +622,6 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     box-shadow: 0 0 0 3px rgba(74, 109, 255, 0.1);
 }
 
-/* ============================================= */
-/* 8. SELECT CUSTOMIZADO (SUBSTITUI O NATIVO)    */
-/* ============================================= */
-
-/* O "Botão" que parece um Input */
 .custom-select-trigger {
     display: flex;
     justify-content: space-between;
@@ -567,7 +657,6 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     transform: rotate(180deg);
 }
 
-/* O Menu Flutuante (Dropdown) */
 .custom-select-options {
     position: absolute;
     top: calc(100% + 5px);
@@ -584,7 +673,6 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     animation: fadeIn 0.1s ease-out;
 }
 
-/* Itens da Lista */
 .custom-option {
     padding: 10px;
     font-size: 0.9rem;
@@ -599,12 +687,9 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     color: white;
 }
 
-/* Scrollbar do menu */
 .custom-select-options::-webkit-scrollbar { width: 6px; }
 .custom-select-options::-webkit-scrollbar-thumb { background-color: var(--cor-borda); border-radius: 3px; }
 
-
-/* --- SELETOR DE TIPO (Pílula) --- */
 .custom-type-selector {
     display: flex;
     background-color: var(--cor-fundo);
@@ -638,9 +723,6 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
 .type-option.active.despesa { background-color: var(--cor-vermelho-delete); color: white; }
 .type-option.active.receita { background-color: var(--cor-verde-sucesso); color: white; }
 
-/* ============================================= */
-/* 9. PICKERS (Ícone e Cor)                      */
-/* ============================================= */
 .picker-wrapper { position: relative; }
 
 .picker-preview {
@@ -658,11 +740,10 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
 
 .picker-preview:hover { border-color: var(--cor-azul-primario); }
 
-/* Menu Flutuante dos Pickers */
 .picker-popover {
     position: absolute;
     bottom: 115%;
-    right: 0; /* Alinhado à direita para não vazar */
+    right: 0;
     background: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
     padding: 12px;
@@ -676,7 +757,6 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
 }
 
 .picker-popover.visible { display: grid; }
-
 .picker-popover.icon-grid { grid-template-columns: repeat(5, 1fr); max-height: 200px; overflow-y: auto; }
 .picker-popover.color-grid { grid-template-columns: repeat(5, 1fr); }
 
@@ -696,14 +776,44 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
 .color-swatch { border: 1px solid rgba(255,255,255,0.1); }
 .color-swatch:hover { transform: scale(1.15); border-color: white; z-index: 2; }
 
-/* Remove setas de número nativas */
 input[type=number]::-webkit-outer-spin-button,
 input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
 /* ============================================= */
-/* 10. RESPONSIVIDADE                            */
+/* 8. RESPONSIVIDADE                             */
 /* ============================================= */
+
 @media (max-width: 768px) {
+    .layout-grid-custom {
+        grid-template-columns: 1fr;
+        gap: 2rem; /* Retorna o gap no mobile pois as colunas empilham */
+    }
+    
+    .agenda-column {
+        padding: 0; /* Remove padding lateral extra no mobile */
+    }
+
+    .agenda-column:not(:last-child) {
+        border-right: none;
+        border-bottom: 1px dashed var(--cor-borda);
+        padding-bottom: 2rem;
+        padding-right: 0;
+    }
+    
+    /* Reset dos cabeçalhos para ficarem normais no mobile */
+    .column-header-flex {
+        margin: 0 0 1.5rem 0;
+        border-right: none;
+        border-radius: 12px;
+        /* Remove o z-index no mobile pois não é necessário */
+        z-index: auto;
+    }
+    
+    .agenda-column:last-child .column-header-flex,
+    .agenda-column:first-child .column-header-flex {
+        border-radius: 12px;
+    }
+
     .form-row, .grid-65-35, .grid-50-50, .grid-33, .grid-60-40 {
         grid-template-columns: 1fr;
     }
