@@ -3,15 +3,15 @@ import { getFinancasDashboard } from '../../services/api';
 import { TransactionCard } from './components/TransactionCard';
 import { CategoryCard } from './components/CategoryCard';
 import { FinancasModals } from './components/FinancasModals';
-import './styles.css'; // Você vai colar seu CSS antigo aqui
+import './styles.css';
 
 export function Financas() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     
     // Controle de UI
-    const [openMonths, setOpenMonths] = useState({}); // { 'Janeiro/2025': true }
-    const [activeModal, setActiveModal] = useState(null); // 'pontual', 'parcelada', 'recorrente', 'category'
+    const [openMonths, setOpenMonths] = useState({});
+    const [activeModal, setActiveModal] = useState(null);
     const [showDropdown, setShowDropdown] = useState(false);
 
     const fetchData = async () => {
@@ -20,14 +20,14 @@ export function Financas() {
             setData(result);
             
             // Abre o primeiro mês de cada lista por padrão
-            const firstPontual = Object.keys(result.transacoes_pontuais)[0];
-            const firstRecorrente = Object.keys(result.transacoes_recorrentes)[0];
-            
-            setOpenMonths(prev => ({
-                ...prev,
-                [`pontual-${firstPontual}`]: true,
-                [`recorrente-${firstRecorrente}`]: true
-            }));
+            if(Object.keys(result.transacoes_pontuais).length > 0){
+                const firstPontual = Object.keys(result.transacoes_pontuais)[0];
+                setOpenMonths(prev => ({ ...prev, [`pontual-${firstPontual}`]: true }));
+            }
+            if(Object.keys(result.transacoes_recorrentes).length > 0){
+                const firstRecorrente = Object.keys(result.transacoes_recorrentes)[0];
+                setOpenMonths(prev => ({ ...prev, [`recorrente-${firstRecorrente}`]: true }));
+            }
         } catch (error) {
             console.error(error);
         } finally {
@@ -46,14 +46,19 @@ export function Financas() {
     if (loading) return <div className="loading-screen">Carregando Finanças...</div>;
 
     return (
-        <div className="container">
-            <div className="page-header">
-                <h1>Provisões Financeiras</h1>
+        <div className="container main-container">
+            {/* --- NOVO CABEÇALHO HERO CENTRALIZADO --- */}
+            <div className="internal-hero">
+                <div className="hero-bg-effect"></div>
+                <div className="internal-hero-content">
+                    <h1>Provisões Financeiras</h1>
+                    <p>Controle total sobre suas entradas, saídas e planejamento.</p>
+                </div>
             </div>
 
-            <div className="layout-grid-three-columns">
+            <div className="layout-grid-custom">
                 
-                {/* Coluna 1: Pontuais */}
+                {/* Coluna 1: Pontuais (40%) */}
                 <div className="agenda-column">
                     <div className="column-header-flex">
                         <h2>Transações Pontuais</h2>
@@ -88,7 +93,7 @@ export function Financas() {
                     )}
                 </div>
 
-                {/* Coluna 2: Recorrentes */}
+                {/* Coluna 2: Recorrentes (40%) */}
                 <div className="agenda-column">
                     <div className="column-header-flex">
                         <h2>Recorrentes e Parceladas</h2>
@@ -134,7 +139,7 @@ export function Financas() {
                     )}
                 </div>
 
-                {/* Coluna 3: Categorias */}
+                {/* Coluna 3: Categorias (20%) */}
                 <div className="agenda-column" id="category-column">
                     <div className="column-header-flex">
                         <h2>Resumo</h2>
@@ -161,7 +166,6 @@ export function Financas() {
                 </div>
             </div>
 
-            {/* Modais */}
             <FinancasModals 
                 activeModal={activeModal} 
                 closeModal={() => setActiveModal(null)} 
