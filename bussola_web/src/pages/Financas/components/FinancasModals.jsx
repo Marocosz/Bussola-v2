@@ -4,14 +4,22 @@ import { useToast } from '../../../context/ToastContext';
 
 export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardData }) {
     const { addToast } = useToast();
+    
     const [formData, setFormData] = useState({});
+    
+    // Pickers e Dropdowns
     const [showIconPicker, setShowIconPicker] = useState(false);
     const [showColorPicker, setShowColorPicker] = useState(false);
+    
+    // Controla qual Select Customizado está aberto ('categoria', 'frequencia' ou null)
+    const [activeDropdown, setActiveDropdown] = useState(null);
 
+    // Limpa estados ao abrir/fechar
     useEffect(() => {
         setFormData({});
         setShowIconPicker(false);
         setShowColorPicker(false);
+        setActiveDropdown(null);
     }, [activeModal]);
 
     if (!activeModal) return null;
@@ -23,6 +31,12 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
 
     const handleTypeChange = (tipo) => {
         setFormData(prev => ({ ...prev, tipo: tipo }));
+    };
+
+    // Função para simular o evento de mudança nos selects customizados
+    const handleCustomSelectChange = (name, value) => {
+        setFormData(prev => ({ ...prev, [name]: value }));
+        setActiveDropdown(null); // Fecha o menu após selecionar
     };
 
     const handleSubmit = async (e) => {
@@ -49,18 +63,59 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
         }
     };
 
-    // Helper para o Select de Categoria
-    const CategorySelect = () => (
-        <div className="form-group">
-            <label>Categoria</label>
-            <select name="categoria_id" className="form-input" required onChange={handleChange}>
-                <option value="">Selecione...</option>
-                {[...dashboardData.categorias_despesa, ...dashboardData.categorias_receita].map(cat => (
-                    <option key={cat.id} value={cat.id}>{cat.nome} ({cat.tipo})</option>
-                ))}
-            </select>
-        </div>
-    );
+    // --- COMPONENTE SELECT CUSTOMIZADO (REUTILIZÁVEL) ---
+    const renderCustomSelect = (name, label, options, placeholder = "Selecione...") => {
+        const isOpen = activeDropdown === name;
+        const selectedValue = formData[name];
+        
+        // Encontra o rótulo do valor selecionado para exibir no input
+        const selectedLabel = options.find(opt => opt.value == selectedValue)?.label || placeholder;
+
+        return (
+            <div className="form-group" style={{ position: 'relative', zIndex: isOpen ? 100 : 1 }}>
+                <label>{label}</label>
+                
+                {/* O "Input" Falso (Trigger) */}
+                <div 
+                    className={`custom-select-trigger ${isOpen ? 'open' : ''}`} 
+                    onClick={() => setActiveDropdown(isOpen ? null : name)}
+                >
+                    <span style={{ color: selectedValue ? 'var(--cor-texto-principal)' : 'var(--cor-texto-secundario)' }}>
+                        {selectedLabel}
+                    </span>
+                    <i className="fa-solid fa-chevron-down arrow-icon"></i>
+                </div>
+
+                {/* A Lista de Opções (Dropdown) */}
+                {isOpen && (
+                    <div className="custom-select-options">
+                        {options.map(opt => (
+                            <div 
+                                key={opt.value} 
+                                className={`custom-option ${selectedValue === opt.value ? 'selected' : ''}`}
+                                onClick={() => handleCustomSelectChange(name, opt.value)}
+                            >
+                                {opt.label}
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    // Prepara as opções de categoria
+    const categoryOptions = [
+        ...dashboardData.categorias_despesa.map(c => ({ value: c.id, label: `${c.nome} (Despesa)` })),
+        ...dashboardData.categorias_receita.map(c => ({ value: c.id, label: `${c.nome} (Receita)` }))
+    ];
+
+    // Prepara as opções de frequência
+    const frequencyOptions = [
+        { value: 'mensal', label: 'Mensal' },
+        { value: 'semanal', label: 'Semanal' },
+        { value: 'anual', label: 'Anual' }
+    ];
 
     const titles = {
         category: 'Nova Categoria',
@@ -70,8 +125,8 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
     };
 
     return (
-        <div className="modal" style={{ display: 'flex' }}>
-            <div className="modal-content">
+        <div className="modal" style={{ display: 'flex' }} onClick={() => setActiveDropdown(null)}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <h3>{titles[activeModal]}</h3>
                     <span className="close-btn" onClick={closeModal}>&times;</span>
@@ -82,7 +137,6 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                         {/* --- NOVA CATEGORIA --- */}
                         {activeModal === 'category' && (
                             <>
-                                {/* Linha 1: Nome (Grande) | Tipo (Menor) */}
                                 <div className="form-row grid-60-40">
                                     <div className="form-group">
                                         <label>Nome</label>
@@ -96,7 +150,6 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                         </div>
                                     </div>
                                 </div>
-                                {/* Linha 2: Meta (Flex) | Ícone (Fixo) | Cor (Fixo) */}
                                 <div className="form-row grid-meta-icon-color">
                                     <div className="form-group">
                                         <label>{formData.tipo === 'receita' ? 'Meta' : 'Limite'}</label>
@@ -138,7 +191,7 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                             </>
                         )}
 
-                        {/* --- PONTUAL (65% | 35%) --- */}
+                        {/* --- PONTUAL --- */}
                         {activeModal === 'pontual' && (
                             <>
                                 <div className="form-row grid-65-35">
@@ -156,12 +209,13 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                         <label>Data</label>
                                         <input type="date" name="data" className="form-input" required onChange={handleChange} />
                                     </div>
-                                    <CategorySelect />
+                                    {/* Select Customizado de Categoria */}
+                                    {renderCustomSelect('categoria_id', 'Categoria', categoryOptions)}
                                 </div>
                             </>
                         )}
 
-                        {/* --- PARCELADA (65% | 35%) e (33% | 33% | 33%) --- */}
+                        {/* --- PARCELADA --- */}
                         {activeModal === 'parcelada' && (
                             <>
                                 <div className="form-row grid-65-35">
@@ -183,12 +237,13 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                         <label>Nº Parcelas</label>
                                         <input type="number" name="total_parcelas" className="form-input" min="2" required onChange={handleChange} />
                                     </div>
-                                    <CategorySelect />
+                                    {/* Select Customizado de Categoria */}
+                                    {renderCustomSelect('categoria_id', 'Categoria', categoryOptions)}
                                 </div>
                             </>
                         )}
 
-                        {/* --- RECORRENTE (65% | 35%) e (33% | 33% | 33%) --- */}
+                        {/* --- RECORRENTE --- */}
                         {activeModal === 'recorrente' && (
                             <>
                                 <div className="form-row grid-65-35">
@@ -206,15 +261,12 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                         <label>Data Início</label>
                                         <input type="date" name="data" className="form-input" required onChange={handleChange} />
                                     </div>
-                                    <div className="form-group">
-                                        <label>Frequência</label>
-                                        <select name="frequencia" className="form-input" required onChange={handleChange}>
-                                            <option value="mensal">Mensal</option>
-                                            <option value="semanal">Semanal</option>
-                                            <option value="anual">Anual</option>
-                                        </select>
-                                    </div>
-                                    <CategorySelect />
+                                    
+                                    {/* Select Customizado de Frequência */}
+                                    {renderCustomSelect('frequencia', 'Frequência', frequencyOptions)}
+                                    
+                                    {/* Select Customizado de Categoria */}
+                                    {renderCustomSelect('categoria_id', 'Categoria', categoryOptions)}
                                 </div>
                             </>
                         )}

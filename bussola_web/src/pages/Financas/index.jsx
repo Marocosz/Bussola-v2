@@ -106,8 +106,8 @@ export function Financas() {
                             </button>
                             {showDropdown && (
                                 <div className="dropdown-menu visible" style={{display: 'block'}}>
-                                    <a onClick={() => { setActiveModal('parcelada'); setShowDropdown(false); }}>Compra Parcelada</a>
-                                    <a onClick={() => { setActiveModal('recorrente'); setShowDropdown(false); }}>Transação Recorrente</a>
+                                    <a onClick={() => { setActiveModal('parcelada'); setShowDropdown(false); }}>Parcelada</a>
+                                    <a onClick={() => { setActiveModal('recorrente'); setShowDropdown(false); }}>Recorrente</a>
                                 </div>
                             )}
                         </div>
