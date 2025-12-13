@@ -1,46 +1,56 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createTransacao, createCategoria } from '../../../services/api';
+import { createTransacao, createCategoria, updateTransacao, updateCategoria } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 
-export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardData }) {
+export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardData, editingData }) {
     const { addToast } = useToast();
     
+    // Estado do formulário
     const [formData, setFormData] = useState({});
     
-    // Pickers e Dropdowns
+    // Controles de UI (Pickers e Selects)
     const [showIconPicker, setShowIconPicker] = useState(false);
     const [showColorPicker, setShowColorPicker] = useState(false);
-    
-    // Controla qual Select Customizado está aberto ('categoria', 'frequencia' ou null)
     const [activeDropdown, setActiveDropdown] = useState(null);
 
-    // Refs para detectar cliques fora dos elementos
+    // Refs para clique fora
     const iconWrapperRef = useRef(null);
     const colorWrapperRef = useRef(null);
 
-    // Limpa estados ao abrir/fechar
+    // --- EFEITO PRINCIPAL: CARREGAR DADOS ---
     useEffect(() => {
-        setFormData({});
+        if (!activeModal) return;
+
+        if (editingData) {
+            const dataToLoad = { ...editingData };
+            if (dataToLoad.data) {
+                const dataString = String(dataToLoad.data);
+                if (dataString.includes('T')) {
+                    dataToLoad.data = dataString.split('T')[0];
+                }
+            }
+            if (dataToLoad.categoria_id) {
+                dataToLoad.categoria_id = Number(dataToLoad.categoria_id);
+            }
+            setFormData(dataToLoad);
+        } else {
+            setFormData({});
+        }
+
         setShowIconPicker(false);
         setShowColorPicker(false);
         setActiveDropdown(null);
-    }, [activeModal]);
 
-    // --- LÓGICA DE CLIQUE FORA (Global para o Modal) ---
+    }, [activeModal, editingData]);
+
     useEffect(() => {
         function handleClickOutside(event) {
-            // 1. Fechar Icon Picker se clicar fora
             if (showIconPicker && iconWrapperRef.current && !iconWrapperRef.current.contains(event.target)) {
                 setShowIconPicker(false);
             }
-
-            // 2. Fechar Color Picker se clicar fora
             if (showColorPicker && colorWrapperRef.current && !colorWrapperRef.current.contains(event.target)) {
                 setShowColorPicker(false);
             }
-
-            // 3. Fechar Select Customizado se clicar fora
-            // Verifica se o clique NÃO foi em um trigger ou nas opções do select
             if (activeDropdown) {
                 const clickedInsideSelect = event.target.closest('.custom-select-trigger') || event.target.closest('.custom-select-options');
                 if (!clickedInsideSelect) {
@@ -48,8 +58,6 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                 }
             }
         }
-
-        // Adiciona listener
         document.addEventListener("mousedown", handleClickOutside);
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
@@ -58,6 +66,7 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
 
     if (!activeModal) return null;
 
+    // --- HANDLERS ---
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -67,10 +76,9 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
         setFormData(prev => ({ ...prev, tipo: tipo }));
     };
 
-    // Função para simular o evento de mudança nos selects customizados
     const handleCustomSelectChange = (name, value) => {
         setFormData(prev => ({ ...prev, [name]: value }));
-        setActiveDropdown(null); // Fecha o menu após selecionar
+        setActiveDropdown(null); 
     };
 
     const handleSubmit = async (e) => {
@@ -84,32 +92,38 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                     meta_limite: formData.meta_limite || 0,
                     tipo: formData.tipo || 'despesa'
                 };
-                await createCategoria(payload);
+                
+                if (editingData) {
+                    await updateCategoria(editingData.id, payload);
+                } else {
+                    await createCategoria(payload);
+                }
             } else {
-                const payload = { ...formData, tipo_recorrencia: activeModal };
-                await createTransacao(payload);
+                let payload = { ...formData, tipo_recorrencia: activeModal };
+                if (editingData) {
+                    await updateTransacao(editingData.id, payload);
+                } else {
+                    await createTransacao(payload);
+                }
             }
+            
             addToast({ type: 'success', title: 'Sucesso', description: 'Salvo com sucesso.' });
-            onUpdate();
-            closeModal();
+            onUpdate(); 
+            closeModal(); 
         } catch (error) {
+            console.error(error);
             addToast({ type: 'error', title: 'Erro', description: 'Erro ao salvar.' });
         }
     };
 
-    // --- COMPONENTE SELECT CUSTOMIZADO (REUTILIZÁVEL) ---
     const renderCustomSelect = (name, label, options, placeholder = "Selecione...") => {
         const isOpen = activeDropdown === name;
-        const selectedValue = formData[name];
-        
-        // Encontra o rótulo do valor selecionado para exibir no input
+        const selectedValue = formData[name]; 
         const selectedLabel = options.find(opt => opt.value == selectedValue)?.label || placeholder;
 
         return (
             <div className="form-group" style={{ position: 'relative', zIndex: isOpen ? 100 : 1 }}>
                 <label>{label}</label>
-                
-                {/* O "Input" Falso (Trigger) */}
                 <div 
                     className={`custom-select-trigger ${isOpen ? 'open' : ''}`} 
                     onClick={() => setActiveDropdown(isOpen ? null : name)}
@@ -119,8 +133,6 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                     </span>
                     <i className="fa-solid fa-chevron-down arrow-icon"></i>
                 </div>
-
-                {/* A Lista de Opções (Dropdown) */}
                 {isOpen && (
                     <div className="custom-select-options">
                         {options.map(opt => (
@@ -138,13 +150,25 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
         );
     };
 
-    // Prepara as opções de categoria
+    // PROTEÇÃO TOTAL: Se dashboardData for undefined, usa arrays vazios
+    const safeData = dashboardData || {};
+    const safeDespesas = safeData.categorias_despesa || [];
+    const safeReceitas = safeData.categorias_receita || [];
+    const safeIcones = safeData.icones_disponiveis || [];
+    const safeCores = safeData.cores_disponiveis || [];
+
+    // --- CORREÇÃO AQUI: Verifica se o nome já tem parênteses ---
     const categoryOptions = [
-        ...dashboardData.categorias_despesa.map(c => ({ value: c.id, label: `${c.nome} (Despesa)` })),
-        ...dashboardData.categorias_receita.map(c => ({ value: c.id, label: `${c.nome} (Receita)` }))
+        ...safeDespesas.map(c => ({ 
+            value: c.id, 
+            label: c.nome.includes('(') ? c.nome : `${c.nome} (Despesa)` 
+        })),
+        ...safeReceitas.map(c => ({ 
+            value: c.id, 
+            label: c.nome.includes('(') ? c.nome : `${c.nome} (Receita)` 
+        }))
     ];
 
-    // Prepara as opções de frequência
     const frequencyOptions = [
         { value: 'mensal', label: 'Mensal' },
         { value: 'semanal', label: 'Semanal' },
@@ -152,10 +176,10 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
     ];
 
     const titles = {
-        category: 'Nova Categoria',
-        pontual: 'Nova Transação Única',
-        parcelada: 'Nova Transação Parcelada',
-        recorrente: 'Nova Transação Recorrente'
+        category: editingData ? 'Editar Categoria' : 'Nova Categoria',
+        pontual: editingData ? 'Editar Transação' : 'Nova Transação Única',
+        parcelada: editingData ? 'Editar Parcela' : 'Nova Transação Parcelada',
+        recorrente: editingData ? 'Editar Recorrência' : 'Nova Transação Recorrente'
     };
 
     return (
@@ -168,13 +192,12 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                 <form onSubmit={handleSubmit}>
                     <div className="modal-body">
                         
-                        {/* --- NOVA CATEGORIA --- */}
                         {activeModal === 'category' && (
                             <>
                                 <div className="form-row grid-60-40">
                                     <div className="form-group">
                                         <label>Nome</label>
-                                        <input name="nome" className="form-input" required onChange={handleChange} />
+                                        <input name="nome" value={formData.nome || ''} className="form-input" required onChange={handleChange} />
                                     </div>
                                     <div className="form-group">
                                         <label>Tipo</label>
@@ -187,7 +210,7 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                 <div className="form-row grid-meta-icon-color">
                                     <div className="form-group">
                                         <label>{formData.tipo === 'receita' ? 'Meta' : 'Limite'}</label>
-                                        <input type="number" step="0.01" name="meta_limite" className="form-input" placeholder="0.00" onChange={handleChange} />
+                                        <input type="number" step="0.01" name="meta_limite" value={formData.meta_limite || ''} className="form-input" placeholder="0.00" onChange={handleChange} />
                                     </div>
                                     
                                     <div className="form-group form-group-fixed">
@@ -198,7 +221,7 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                             </div>
                                             {showIconPicker && (
                                                 <div className="picker-popover icon-grid visible">
-                                                    {dashboardData.icones_disponiveis.map(icon => (
+                                                    {safeIcones.map(icon => (
                                                         <div key={icon} className="icon-option" onClick={() => { setFormData(prev => ({...prev, icone: icon})); setShowIconPicker(false); }}><i className={icon}></i></div>
                                                     ))}
                                                 </div>
@@ -214,7 +237,7 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                             </div>
                                             {showColorPicker && (
                                                 <div className="picker-popover color-grid visible">
-                                                    {dashboardData.cores_disponiveis.map(cor => (
+                                                    {safeCores.map(cor => (
                                                         <div key={cor} className="color-swatch" style={{backgroundColor: cor}} onClick={() => { setFormData(prev => ({...prev, cor: cor})); setShowColorPicker(false); }}></div>
                                                     ))}
                                                 </div>
@@ -225,81 +248,81 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                             </>
                         )}
 
-                        {/* --- PONTUAL --- */}
                         {activeModal === 'pontual' && (
                             <>
                                 <div className="form-row grid-65-35">
                                     <div className="form-group">
                                         <label>Descrição</label>
-                                        <input name="descricao" className="form-input" required onChange={handleChange} />
+                                        <input name="descricao" value={formData.descricao || ''} className="form-input" required onChange={handleChange} />
                                     </div>
                                     <div className="form-group">
                                         <label>Valor (R$)</label>
-                                        <input type="number" step="0.01" name="valor" className="form-input" required onChange={handleChange} />
+                                        <input type="number" step="0.01" name="valor" value={formData.valor || ''} className="form-input" required onChange={handleChange} />
                                     </div>
                                 </div>
                                 <div className="form-row grid-50-50">
                                     <div className="form-group">
                                         <label>Data</label>
-                                        <input type="date" name="data" className="form-input" required onChange={handleChange} />
+                                        <input type="date" name="data" value={formData.data || ''} className="form-input" required onChange={handleChange} />
                                     </div>
-                                    {/* Select Customizado de Categoria */}
                                     {renderCustomSelect('categoria_id', 'Categoria', categoryOptions)}
                                 </div>
                             </>
                         )}
 
-                        {/* --- PARCELADA --- */}
                         {activeModal === 'parcelada' && (
                             <>
                                 <div className="form-row grid-65-35">
                                     <div className="form-group">
                                         <label>Descrição</label>
-                                        <input name="descricao" className="form-input" required onChange={handleChange} />
+                                        <input name="descricao" value={formData.descricao || ''} className="form-input" required onChange={handleChange} />
                                     </div>
                                     <div className="form-group">
-                                        <label>Valor Total</label>
-                                        <input type="number" step="0.01" name="valor" className="form-input" required onChange={handleChange} />
+                                        <label>{editingData ? 'Valor da Parcela' : 'Valor Total'}</label>
+                                        <input type="number" step="0.01" name="valor" value={formData.valor || ''} className="form-input" required onChange={handleChange} placeholder="Ex: 1000.00" />
                                     </div>
                                 </div>
                                 <div className="form-row grid-33">
                                     <div className="form-group">
-                                        <label>Data 1ª</label>
-                                        <input type="date" name="data" className="form-input" required onChange={handleChange} />
+                                        <label>{editingData ? 'Data' : 'Data 1ª'}</label>
+                                        <input type="date" name="data" value={formData.data || ''} className="form-input" required onChange={handleChange} />
                                     </div>
                                     <div className="form-group">
                                         <label>Nº Parcelas</label>
-                                        <input type="number" name="total_parcelas" className="form-input" min="2" required onChange={handleChange} />
+                                        <input 
+                                            type="number" 
+                                            name="total_parcelas" 
+                                            value={formData.total_parcelas || ''} 
+                                            className="form-input" 
+                                            min="2" 
+                                            required 
+                                            onChange={handleChange}
+                                            disabled={!!editingData} 
+                                        />
                                     </div>
-                                    {/* Select Customizado de Categoria */}
                                     {renderCustomSelect('categoria_id', 'Categoria', categoryOptions)}
                                 </div>
                             </>
                         )}
 
-                        {/* --- RECORRENTE --- */}
                         {activeModal === 'recorrente' && (
                             <>
                                 <div className="form-row grid-65-35">
                                     <div className="form-group">
                                         <label>Descrição</label>
-                                        <input name="descricao" className="form-input" required onChange={handleChange} />
+                                        <input name="descricao" value={formData.descricao || ''} className="form-input" required onChange={handleChange} />
                                     </div>
                                     <div className="form-group">
-                                        <label>Valor</label>
-                                        <input type="number" step="0.01" name="valor" className="form-input" required onChange={handleChange} />
+                                        <label>Valor Mensal</label>
+                                        <input type="number" step="0.01" name="valor" value={formData.valor || ''} className="form-input" required onChange={handleChange} placeholder="Ex: 39.90" />
                                     </div>
                                 </div>
                                 <div className="form-row grid-33">
                                     <div className="form-group">
-                                        <label>Data Início</label>
-                                        <input type="date" name="data" className="form-input" required onChange={handleChange} />
+                                        <label>{editingData ? 'Data' : 'Data Início'}</label>
+                                        <input type="date" name="data" value={formData.data || ''} className="form-input" required onChange={handleChange} />
                                     </div>
-                                    
-                                    {/* Select Customizado de Frequência */}
                                     {renderCustomSelect('frequencia', 'Frequência', frequencyOptions)}
-                                    
-                                    {/* Select Customizado de Categoria */}
                                     {renderCustomSelect('categoria_id', 'Categoria', categoryOptions)}
                                 </div>
                             </>
@@ -307,7 +330,7 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                     </div>
                     <div className="modal-footer">
                         <button type="button" className="btn-secondary" onClick={closeModal}>Cancelar</button>
-                        <button type="submit" className="btn-primary">Salvar</button>
+                        <button type="submit" className="btn-primary">{editingData ? 'Atualizar' : 'Salvar'}</button>
                     </div>
                 </form>
             </div>

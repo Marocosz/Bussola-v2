@@ -33,6 +33,14 @@ class CategoriaBase(BaseModel):
 class CategoriaCreate(CategoriaBase):
     pass
 
+# NOVO: Schema para atualização
+class CategoriaUpdate(BaseModel):
+    nome: Optional[str] = None
+    tipo: Optional[TipoCategoria] = None
+    meta_limite: Optional[float] = None
+    icone: Optional[str] = None
+    cor: Optional[str] = None
+
 class CategoriaResponse(CategoriaBase):
     id: int
     
@@ -64,6 +72,15 @@ class TransacaoBase(BaseModel):
 
 class TransacaoCreate(TransacaoBase):
     pass
+
+# NOVO: Schema para atualização
+class TransacaoUpdate(BaseModel):
+    descricao: Optional[str] = None
+    valor: Optional[float] = None
+    data: Optional[datetime] = None
+    categoria_id: Optional[int] = None
+    status: Optional[StatusTransacao] = None
+    # Geralmente não editamos recorrência complexa num update simples, mas pode ser adicionado se necessário
 
 class TransacaoResponse(TransacaoBase):
     id: int

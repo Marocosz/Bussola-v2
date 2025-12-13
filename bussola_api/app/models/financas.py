@@ -7,14 +7,15 @@ class Categoria(Base):
     __tablename__ = 'categoria'
 
     id = Column(Integer, primary_key=True)
-    nome = Column(String(100), nullable=False, unique=True)
+    # ALTERAÇÃO: Removido unique=True para permitir "Indefinida" em Receita E Despesa
+    nome = Column(String(100), nullable=False) 
     tipo = Column(String(50), nullable=False, default='despesa') # 'despesa' ou 'receita'
     meta_limite = Column(Float, nullable=False, default=0.0)
     icone = Column(String(50), nullable=True)
     cor = Column(String(7), nullable=True, default="#ffffff")
 
     # Relacionamentos
-    transacoes = relationship('Transacao', back_populates='categoria', cascade="all, delete-orphan", lazy=True)
+    transacoes = relationship('Transacao', back_populates='categoria', lazy=True)
     historico_gastos = relationship('HistoricoGastoMensal', back_populates='categoria', cascade="all, delete-orphan")
 
 class Transacao(Base):

@@ -2,13 +2,14 @@ import React from 'react';
 import { toggleStatusTransacao, deleteTransacao } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 
-export function TransactionCard({ transacao, onUpdate }) {
+// Adicionei a prop onEdit aqui
+export function TransactionCard({ transacao, onUpdate, onEdit }) {
     const { addToast } = useToast();
 
     const handleToggleStatus = async () => {
         try {
             await toggleStatusTransacao(transacao.id);
-            onUpdate(); // Recarrega os dados
+            onUpdate();
         } catch (error) {
             addToast({ type: 'error', title: 'Erro', description: 'Não foi possível alterar o status.' });
         }
@@ -51,7 +52,6 @@ export function TransactionCard({ transacao, onUpdate }) {
                             <span>{transacao.categoria?.nome}</span>
                         </div>
                         
-                        {/* Badge de parcelas E o valor total ao lado */}
                         {transacao.tipo_recorrencia === 'parcelada' && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <span className="badge-parcela">
@@ -75,13 +75,20 @@ export function TransactionCard({ transacao, onUpdate }) {
             <div className="transacao-footer">
                 <span className={`status-badge ${transacao.status.toLowerCase()}`}>{transacao.status}</span>
                 <div className="transacao-actions">
-                    {/* ALTERAÇÃO: Só mostra o botão Efetivar/Desmarcar se NÃO for pontual */}
+                    {/* Botão Efetivar/Desmarcar (apenas se não for pontual) */}
                     {transacao.tipo_recorrencia !== 'pontual' && (
                         <button onClick={handleToggleStatus} className={transacao.status === 'Pendente' ? 'btn-sm-pagar' : 'btn-sm-desmarcar'}>
                             {transacao.status === 'Pendente' ? 'Efetivar' : 'Desmarcar'}
                         </button>
                     )}
                     
+                    {/* --- NOVO BOTÃO DE EDITAR --- */}
+                    {/* Passamos o objeto transacao para a função onEdit */}
+                    <button onClick={() => onEdit && onEdit(transacao)} className="btn-action-icon btn-edit-transacao">
+                        <i className="fa-solid fa-pen-to-square"></i>
+                    </button>
+
+                    {/* Botão Excluir */}
                     <button onClick={handleDelete} className="btn-action-icon btn-delete-transacao">
                         <i className="fa-solid fa-trash-can"></i>
                     </button>

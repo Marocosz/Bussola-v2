@@ -6,10 +6,10 @@ from sqlalchemy import func, and_, desc
 from collections import defaultdict
 import random
 
-from app.models.financas import Transacao, Categoria # Assumindo que você já migrou os Models do SQLAlchemy
-from app.schemas.financas import TransacaoCreate, TipoRecorrencia
+from app.models.financas import Transacao, Categoria 
+from app.schemas.financas import TransacaoCreate, TransacaoUpdate, TipoRecorrencia
 
-# Lista de ícones (pode ser movida para um arquivo de constantes depois)
+# Lista de ícones
 ICONES_DISPONIVEIS = [
     "fa-solid fa-utensils", "fa-solid fa-burger", "fa-solid fa-cart-shopping",
     "fa-solid fa-house", "fa-solid fa-lightbulb", "fa-solid fa-wifi",
@@ -21,17 +21,56 @@ ICONES_DISPONIVEIS = [
 class FinancasService:
     
     def gerar_paleta_cores(self, n=20):
-        # Gera cores hexadecimais aleatórias (simplificado)
         cores = []
         for _ in range(n):
             color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
             cores.append(color)
         return cores
 
+    # --- CORREÇÃO AQUI ---
+    def get_or_create_indefinida(self, db: Session, tipo: str) -> Categoria:
+        """
+        Busca ou cria uma categoria 'Indefinida' ESPECÍFICA para o tipo.
+        Usa nomes distintos para não quebrar a constraint UNIQUE do banco.
+        """
+        # Ex: "Indefinida (Despesa)" ou "Indefinida (Receita)"
+        nome_padrao = f"Indefinida ({tipo.capitalize()})"
+        
+        cat = db.query(Categoria).filter(
+            Categoria.nome == nome_padrao,
+            Categoria.tipo == tipo
+        ).first()
+
+        if not cat:
+            # Tenta buscar só por "Indefinida" caso tenha sobrado da tentativa anterior errada
+            # para evitar duplicidade ou erro se você limpar o banco manualmente
+            cat_legacy = db.query(Categoria).filter(
+                Categoria.nome == "Indefinida", 
+                Categoria.tipo == tipo
+            ).first()
+            
+            if cat_legacy:
+                # Atualiza a antiga para o novo padrão
+                cat_legacy.nome = nome_padrao
+                db.commit()
+                db.refresh(cat_legacy)
+                return cat_legacy
+
+            # Cria nova se não existir nada
+            cat = Categoria(
+                nome=nome_padrao,
+                tipo=tipo,
+                icone="fa-solid fa-circle-question", 
+                cor="#94a3b8", # Cinza
+                meta_limite=0
+            )
+            db.add(cat)
+            db.commit()
+            db.refresh(cat)
+        
+        return cat
+
     def gerar_transacoes_futuras(self, db: Session):
-        """
-        Lógica portada do Flask: Verifica recorrências e cria as próximas instâncias.
-        """
         today_date = datetime.now().date()
 
         grupos = db.query(Transacao.id_grupo_recorrencia).filter(
@@ -45,12 +84,10 @@ class FinancasService:
             ultima = db.query(Transacao).filter_by(id_grupo_recorrencia=grupo_id).order_by(Transacao.data.desc()).first()
             if not ultima: continue
 
-            # Lógica Recorrente (Assinatura)
             if ultima.tipo_recorrencia == 'recorrente':
                 proximo_vencimento = ultima.data
                 frequencia = ultima.frequencia
                 
-                # Incremento inicial
                 if frequencia == 'semanal': proximo_vencimento += relativedelta(weeks=1)
                 elif frequencia == 'mensal': proximo_vencimento += relativedelta(months=1)
                 elif frequencia == 'anual': proximo_vencimento += relativedelta(years=1)
@@ -62,12 +99,10 @@ class FinancasService:
                         id_grupo_recorrencia=grupo_id, status='Pendente', frequencia=frequencia
                     )
                     db.add(nova)
-                    # Incremento loop
                     if frequencia == 'semanal': proximo_vencimento += relativedelta(weeks=1)
                     elif frequencia == 'mensal': proximo_vencimento += relativedelta(months=1)
                     elif frequencia == 'anual': proximo_vencimento += relativedelta(years=1)
 
-            # Lógica Parcelada
             elif ultima.tipo_recorrencia == 'parcelada':
                 if ultima.parcela_atual >= ultima.total_parcelas: continue
 
@@ -88,38 +123,30 @@ class FinancasService:
         db.commit()
 
     def criar_transacao(self, db: Session, dados: TransacaoCreate):
-        # --- CASO PONTUAL ---
         if dados.tipo_recorrencia == 'pontual':
             nova = Transacao(**dados.model_dump())
-            if not dados.status: nova.status = 'Pendente' # Padrão Pendente se não informado
+            if not dados.status: nova.status = 'Pendente'
             db.add(nova)
             db.commit()
             db.refresh(nova)
             return nova
 
-        # --- CASO PARCELADA (Lógica Nova: Cria TODAS as parcelas agora) ---
         elif dados.tipo_recorrencia == 'parcelada':
             grupo_id = uuid.uuid4().hex
             
             valor_total = dados.valor
             qtd_parcelas = dados.total_parcelas
             
-            # 1. Calcula valor base (truncado em 2 casas)
             valor_parcela_base = round(valor_total / qtd_parcelas, 2)
-            
-            # 2. Calcula a diferença de centavos (Ex: 100/3 -> 33.33 * 3 = 99.99 -> sobra 0.01)
             diferenca = round(valor_total - (valor_parcela_base * qtd_parcelas), 2)
             
             primeira_criada = None
 
             for i in range(1, qtd_parcelas + 1):
-                # Ajusta a primeira parcela com a diferença de centavos para fechar a conta
                 valor_desta = valor_parcela_base
                 if i == 1:
                     valor_desta += diferenca
                 
-                # Calcula data do mês subsequente (Parcela 1 = Data informada, Parcela 2 = +1 mês...)
-                # Nota: i-1 porque a primeira (i=1) não soma meses, é na data atual
                 data_vencimento = dados.data + relativedelta(months=i-1)
                 
                 nova = Transacao(
@@ -140,10 +167,9 @@ class FinancasService:
                     primeira_criada = nova
 
             db.commit()
-            db.refresh(primeira_criada) # Retorna a primeira para responder a API
+            db.refresh(primeira_criada)
             return primeira_criada
 
-        # --- CASO RECORRENTE (Assinatura) ---
         elif dados.tipo_recorrencia == 'recorrente':
             grupo_id = uuid.uuid4().hex
             nova = Transacao(**dados.model_dump())
@@ -151,5 +177,18 @@ class FinancasService:
             db.add(nova)
             db.commit()
             return nova
+
+    def atualizar_transacao(self, db: Session, id: int, dados: TransacaoUpdate):
+        transacao = db.query(Transacao).get(id)
+        if not transacao:
+            return None
+        
+        update_data = dados.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(transacao, key, value)
+            
+        db.commit()
+        db.refresh(transacao)
+        return transacao
 
 financas_service = FinancasService()

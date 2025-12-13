@@ -1,28 +1,33 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { getFinancasDashboard } from '../../services/api';
+import { getFinancasDashboard, deleteCategoria } from '../../services/api';
 import { TransactionCard } from './components/TransactionCard';
 import { CategoryCard } from './components/CategoryCard';
 import { FinancasModals } from './components/FinancasModals';
+import { useToast } from '../../context/ToastContext';
 import './styles.css';
 
 export function Financas() {
+    // Inicializa com null
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const { addToast } = useToast();
     
     // Controle de UI
-    // ALTERAÇÃO 1: Inicializa lendo do localStorage, se existir
     const [openMonths, setOpenMonths] = useState(() => {
-        const saved = localStorage.getItem('bussola_financas_accordions');
-        return saved ? JSON.parse(saved) : {};
+        try {
+            const saved = localStorage.getItem('bussola_financas_accordions');
+            return saved ? JSON.parse(saved) : {};
+        } catch (e) {
+            return {};
+        }
     });
 
     const [activeModal, setActiveModal] = useState(null);
+    const [editingData, setEditingData] = useState(null);
     const [showDropdown, setShowDropdown] = useState(false);
 
-    // Ref para detectar clique fora do dropdown
     const dropdownRef = useRef(null);
 
-    // ALTERAÇÃO 2: Salva no localStorage sempre que openMonths mudar
     useEffect(() => {
         localStorage.setItem('bussola_financas_accordions', JSON.stringify(openMonths));
     }, [openMonths]);
@@ -43,23 +48,37 @@ export function Financas() {
         try {
             const result = await getFinancasDashboard();
             
-            // ALTERAÇÃO 3: Lógica de "abrir o primeiro" aprimorada
-            // Só define o padrão se for a primeira carga (data === null)
-            // E se o usuário NÃO tiver um estado salvo no localStorage (Object.keys(openMonths).length === 0)
-            if (data === null && Object.keys(openMonths).length === 0) {
-                if(Object.keys(result.transacoes_pontuais).length > 0){
-                    const firstPontual = Object.keys(result.transacoes_pontuais)[0];
-                    setOpenMonths(prev => ({ ...prev, [`pontual-${firstPontual}`]: true }));
+            // BLINDAGEM: Verifica se o resultado é válido e tem a estrutura esperada
+            if (result && typeof result === 'object') {
+                
+                // Lógica de abrir o primeiro mês (apenas se tiver dados válidos)
+                if (data === null && Object.keys(openMonths).length === 0) {
+                    if(result.transacoes_pontuais && Object.keys(result.transacoes_pontuais).length > 0){
+                        const firstPontual = Object.keys(result.transacoes_pontuais)[0];
+                        setOpenMonths(prev => ({ ...prev, [`pontual-${firstPontual}`]: true }));
+                    }
+                    if(result.transacoes_recorrentes && Object.keys(result.transacoes_recorrentes).length > 0){
+                        const firstRecorrente = Object.keys(result.transacoes_recorrentes)[0];
+                        setOpenMonths(prev => ({ ...prev, [`recorrente-${firstRecorrente}`]: true }));
+                    }
                 }
-                if(Object.keys(result.transacoes_recorrentes).length > 0){
-                    const firstRecorrente = Object.keys(result.transacoes_recorrentes)[0];
-                    setOpenMonths(prev => ({ ...prev, [`recorrente-${firstRecorrente}`]: true }));
-                }
-            }
 
-            setData(result);
+                setData(result);
+            } else {
+                console.error("Formato de dados inválido recebido da API:", result);
+                // Inicializa com estrutura vazia para não quebrar a tela
+                setData({
+                    transacoes_pontuais: {},
+                    transacoes_recorrentes: {},
+                    categorias_despesa: [],
+                    categorias_receita: [],
+                    icones_disponiveis: [],
+                    cores_disponiveis: []
+                });
+            }
         } catch (error) {
             console.error(error);
+            addToast({ type: 'error', title: 'Erro', description: 'Falha ao carregar dados.' });
         } finally {
             setLoading(false);
         }
@@ -73,11 +92,43 @@ export function Financas() {
         setOpenMonths(prev => ({ ...prev, [key]: !prev[key] }));
     };
 
+    const handleEditTransaction = (transacao) => {
+        setEditingData(transacao);
+        setActiveModal(transacao.tipo_recorrencia || 'pontual'); // Fallback para 'pontual'
+    };
+
+    const handleEditCategory = (categoria) => {
+        setEditingData(categoria);
+        setActiveModal('category');
+    };
+
+    const handleDeleteCategory = async (id) => {
+        // MENSAGEM ATUALIZADA
+        if (!confirm('Ao excluir esta categoria, todas as transações vinculadas a ela serão movidas para "Indefinida". Deseja continuar?')) return;
+        
+        try {
+            await deleteCategoria(id);
+            addToast({ type: 'success', title: 'Sucesso', description: 'Categoria removida e transações migradas.' });
+            fetchData();
+        } catch (error) {
+            // Caso tente apagar a própria Indefinida, o back retorna erro
+            const msg = error.response?.data?.detail || 'Erro ao excluir categoria.';
+            addToast({ type: 'error', title: 'Erro', description: msg });
+        }
+    };
+
+    const handleCloseModal = () => {
+        setActiveModal(null);
+        setEditingData(null);
+    };
+
     if (loading) return <div className="loading-screen">Carregando Finanças...</div>;
+
+    // Se carregou mas data continua null (erro grave), exibe fallback
+    if (!data) return <div className="loading-screen">Erro ao carregar dados.</div>;
 
     return (
         <div className="container main-container">
-            {/* --- NOVO CABEÇALHO HERO CENTRALIZADO --- */}
             <div className="internal-hero">
                 <div className="hero-bg-effect"></div>
                 <div className="internal-hero-content">
@@ -88,17 +139,18 @@ export function Financas() {
 
             <div className="layout-grid-custom">
                 
-                {/* Coluna 1: Pontuais (40%) */}
+                {/* Coluna 1: Pontuais */}
                 <div className="agenda-column">
                     <div className="column-header-flex">
                         <h2>Transações Pontuais</h2>
-                        <button className="btn-primary" onClick={() => setActiveModal('pontual')}>
+                        <button className="btn-primary" onClick={() => { setEditingData(null); setActiveModal('pontual'); }}>
                             <i className="fa-solid fa-plus"></i> Pontual
                         </button>
                     </div>
                     
-                    {Object.keys(data.transacoes_pontuais).length > 0 ? (
-                        Object.entries(data.transacoes_pontuais).map(([mes, transactions]) => (
+                    {/* BLINDAGEM: ?. e || {} em todos os acessos a objetos */}
+                    {Object.keys(data.transacoes_pontuais || {}).length > 0 ? (
+                        Object.entries(data.transacoes_pontuais || {}).map(([mes, transactions]) => (
                             <div className="month-group" key={mes}>
                                 <h3 
                                     className={`month-header ${openMonths[`pontual-${mes}`] ? 'active' : ''}`} 
@@ -108,13 +160,17 @@ export function Financas() {
                                     <i className={`fa-solid fa-chevron-down ${openMonths[`pontual-${mes}`] ? 'rotate' : ''}`}></i>
                                 </h3>
                                 
-                                {/* ESTRUTURA ACCORDION ANIMADA */}
                                 <div className={`accordion-wrapper ${openMonths[`pontual-${mes}`] ? 'open' : ''}`}>
                                     <div className="accordion-inner">
                                         <div className="month-content">
                                             <div className="transacoes-grid">
-                                                {transactions.map(t => (
-                                                    <TransactionCard key={t.id} transacao={t} onUpdate={fetchData} />
+                                                {(transactions || []).map(t => (
+                                                    <TransactionCard 
+                                                        key={t.id} 
+                                                        transacao={t} 
+                                                        onUpdate={fetchData} 
+                                                        onEdit={handleEditTransaction}
+                                                    />
                                                 ))}
                                             </div>
                                         </div>
@@ -127,7 +183,7 @@ export function Financas() {
                     )}
                 </div>
 
-                {/* Coluna 2: Recorrentes (40%) */}
+                {/* Coluna 2: Recorrentes */}
                 <div className="agenda-column">
                     <div className="column-header-flex">
                         <h2>Recorrentes e Parceladas</h2>
@@ -140,15 +196,15 @@ export function Financas() {
                             </button>
                             {showDropdown && (
                                 <div className="dropdown-menu visible" style={{display: 'block'}}>
-                                    <a onClick={() => { setActiveModal('parcelada'); setShowDropdown(false); }}>Parcelada</a>
-                                    <a onClick={() => { setActiveModal('recorrente'); setShowDropdown(false); }}>Recorrente</a>
+                                    <a onClick={() => { setEditingData(null); setActiveModal('parcelada'); setShowDropdown(false); }}>Parcelada</a>
+                                    <a onClick={() => { setEditingData(null); setActiveModal('recorrente'); setShowDropdown(false); }}>Recorrente</a>
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    {Object.keys(data.transacoes_recorrentes).length > 0 ? (
-                        Object.entries(data.transacoes_recorrentes).map(([mes, transactions]) => (
+                    {Object.keys(data.transacoes_recorrentes || {}).length > 0 ? (
+                        Object.entries(data.transacoes_recorrentes || {}).map(([mes, transactions]) => (
                             <div className="month-group" key={mes}>
                                 <h3 
                                     className={`month-header ${openMonths[`recorrente-${mes}`] ? 'active' : ''}`} 
@@ -158,13 +214,17 @@ export function Financas() {
                                     <i className={`fa-solid fa-chevron-down ${openMonths[`recorrente-${mes}`] ? 'rotate' : ''}`}></i>
                                 </h3>
                                 
-                                {/* ESTRUTURA ACCORDION ANIMADA */}
                                 <div className={`accordion-wrapper ${openMonths[`recorrente-${mes}`] ? 'open' : ''}`}>
                                     <div className="accordion-inner">
                                         <div className="month-content">
                                             <div className="transacoes-grid">
-                                                {transactions.map(t => (
-                                                    <TransactionCard key={t.id} transacao={t} onUpdate={fetchData} />
+                                                {(transactions || []).map(t => (
+                                                    <TransactionCard 
+                                                        key={t.id} 
+                                                        transacao={t} 
+                                                        onUpdate={fetchData} 
+                                                        onEdit={handleEditTransaction}
+                                                    />
                                                 ))}
                                             </div>
                                         </div>
@@ -177,38 +237,49 @@ export function Financas() {
                     )}
                 </div>
 
-                {/* Coluna 3: Categorias (20%) */}
+                {/* Coluna 3: Categorias */}
                 <div className="agenda-column" id="category-column">
                     <div className="column-header-flex">
                         <h2>Resumo</h2>
-                        <button className="btn-primary" onClick={() => setActiveModal('category')}>
+                        <button className="btn-primary" onClick={() => { setEditingData(null); setActiveModal('category'); }}>
                             <i className="fa-solid fa-plus"></i> Categoria
                         </button>
                     </div>
 
                     <h4>Despesas do Mês</h4>
                     <div className="category-grid">
-                        {data.categorias_despesa.map(cat => (
-                            <CategoryCard key={cat.id} categoria={cat} />
+                        {(data.categorias_despesa || []).map(cat => (
+                            <CategoryCard 
+                                key={cat.id} 
+                                categoria={cat} 
+                                onEdit={handleEditCategory} 
+                                onDelete={handleDeleteCategory} 
+                            />
                         ))}
-                        {data.categorias_despesa.length === 0 && <p className="empty-list-msg">Sem despesas.</p>}
+                        {(!data.categorias_despesa || data.categorias_despesa.length === 0) && <p className="empty-list-msg">Sem despesas.</p>}
                     </div>
 
                     <h4 style={{marginTop: '1.5rem'}}>Receitas do Mês</h4>
                     <div className="category-grid">
-                        {data.categorias_receita.map(cat => (
-                            <CategoryCard key={cat.id} categoria={cat} />
+                        {(data.categorias_receita || []).map(cat => (
+                            <CategoryCard 
+                                key={cat.id} 
+                                categoria={cat} 
+                                onEdit={handleEditCategory} 
+                                onDelete={handleDeleteCategory} 
+                            />
                         ))}
-                        {data.categorias_receita.length === 0 && <p className="empty-list-msg">Sem receitas.</p>}
+                        {(!data.categorias_receita || data.categorias_receita.length === 0) && <p className="empty-list-msg">Sem receitas.</p>}
                     </div>
                 </div>
             </div>
 
             <FinancasModals 
                 activeModal={activeModal} 
-                closeModal={() => setActiveModal(null)} 
+                closeModal={handleCloseModal} 
                 onUpdate={fetchData}
                 dashboardData={data}
+                editingData={editingData} 
             />
         </div>
     );

@@ -1,53 +1,57 @@
 import React, { useState } from 'react';
 
-export function CategoryCard({ categoria }) {
+export function CategoryCard({ categoria, onEdit, onDelete }) {
     const [expanded, setExpanded] = useState(false);
 
     // Helpers de formatação
     const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
     
-    // 1. Define o valor atual (Gasto ou Ganho)
+    // 1. Define o valor atual
     const valorAtual = categoria.tipo === 'despesa' ? Number(categoria.total_gasto || 0) : Number(categoria.total_ganho || 0);
     const metaLimite = Number(categoria.meta_limite || 0);
     
     // 2. Verifica se tem meta definida
     const hasMeta = metaLimite > 0;
     
-    // 3. CÁLCULO DA PORCENTAGEM (PROGRESSIVA)
+    // 3. Cálculo da porcentagem
     const percentMeta = hasMeta ? Math.min((valorAtual / metaLimite) * 100, 100) : 0;
     
-    // Verifica se estourou o limite (apenas para mudar a cor da despesa para vermelho)
     const isOverLimit = hasMeta && categoria.tipo === 'despesa' && valorAtual > metaLimite;
-
-    // Rótulo dinâmico
     const labelMeta = categoria.tipo === 'despesa' ? 'Limite' : 'Meta';
+
+    // Verifica se é categoria de sistema
+    const isSystemCategory = categoria.nome && categoria.nome.toLowerCase().includes('indefinida');
 
     return (
         <div className={`categoria-card ${expanded ? 'expanded' : ''}`}>
             
-            {/* --- CABEÇALHO DO CARD (Sempre Visível) --- */}
-            {/* ALTERAÇÃO: onClick no header inteiro para expandir ao clicar em qualquer parte */}
             <div 
                 className="categoria-card-header" 
                 onClick={() => setExpanded(!expanded)}
                 style={{ cursor: 'pointer' }}
             >
-                {/* Ícone */}
+                {/* 1. Ícone */}
                 <div className="categoria-icon-box" style={{ backgroundColor: categoria.cor + '20' }}>
                     <i className={categoria.icone} style={{ color: categoria.cor }}></i>
                 </div>
 
-                {/* Informações Principais */}
+                {/* 2. Informações (Centro) */}
                 <div className="categoria-info">
                     <div className="categoria-main-row">
                         <h4>{categoria.nome}</h4>
-                        <span className={`categoria-valor ${categoria.tipo}`}>
-                            {formatCurrency(valorAtual)}
-                        </span>
+                        
+                        {/* NOVA LÓGICA: 
+                           Se for categoria NORMAL, o valor aparece aqui (ao lado do nome).
+                           Se for de SISTEMA, o valor some daqui (vai pra direita).
+                        */}
+                        {!isSystemCategory && (
+                            <span className={`categoria-valor ${categoria.tipo}`}>
+                                {formatCurrency(valorAtual)}
+                            </span>
+                        )}
                     </div>
 
                     <div className="categoria-meta-line">
-                        {/* Mostra texto apenas se houver meta/limite configurado */}
                         {hasMeta ? (
                             <span className="meta-text">
                                 {labelMeta}: <strong>{formatCurrency(metaLimite)}</strong>
@@ -57,15 +61,12 @@ export function CategoryCard({ categoria }) {
                         )}
                     </div>
 
-                    {/* BARRA DE PROGRESSO */}
                     {hasMeta && (
                         <div className="progress-bar-container">
                             <div 
                                 className="progress-bar-fill" 
                                 style={{ 
-                                    // Aqui aplicamos a porcentagem calculada (Ex: 30%)
                                     width: `${percentMeta}%`,
-                                    // Lógica de cor: Vermelho se estourou despesa, senão usa a cor da categoria
                                     backgroundColor: isOverLimit ? 'var(--cor-vermelho-delete)' : categoria.cor 
                                 }}
                             ></div>
@@ -73,20 +74,55 @@ export function CategoryCard({ categoria }) {
                     )}
                 </div>
 
-                {/* Botão de Expandir (Setinha) */}
-                <button 
-                    className={`btn-expand-card ${expanded ? 'rotate' : ''}`}
-                    // O onClick aqui é redundante pois o pai já trata, mas mantemos para garantir a UI do botão
-                    onClick={(e) => {
-                        e.stopPropagation(); // Evita duplo disparo se necessário, mas não crítico aqui
-                        setExpanded(!expanded);
-                    }}
-                >
-                    <i className="fa-solid fa-chevron-down"></i>
-                </button>
+                {/* 3. Coluna Direita */}
+                <div className="header-right-column">
+                    
+                    {/* Topo da Direita: Botões OU Valor (se for sistema) */}
+                    <div className="header-actions-top" onClick={(e) => e.stopPropagation()}>
+                        
+                        {/* Se NÃO for sistema: Mostra os botões de editar/excluir */}
+                        {!isSystemCategory ? (
+                            <>
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); onEdit && onEdit(categoria); }} 
+                                    className="btn-action-icon btn-edit-transacao"
+                                    title="Editar Categoria"
+                                >
+                                    <i className="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); onDelete && onDelete(categoria.id); }} 
+                                    className="btn-action-icon btn-delete-transacao"
+                                    title="Excluir Categoria"
+                                >
+                                    <i className="fa-solid fa-trash-can"></i>
+                                </button>
+                            </>
+                        ) : (
+                            /* NOVA LÓGICA:
+                               Se FOR sistema: O valor aparece AQUI, ocupando o lugar dos botões
+                               e ficando alinhado totalmente à direita.
+                            */
+                            <span className={`categoria-valor ${categoria.tipo}`} style={{ fontSize: '1rem' }}>
+                                {formatCurrency(valorAtual)}
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Seta (Fundo) */}
+                    <button 
+                        className={`btn-expand-card ${expanded ? 'rotate' : ''}`}
+                        onClick={(e) => {
+                            e.stopPropagation(); 
+                            setExpanded(!expanded);
+                        }}
+                    >
+                        <i className="fa-solid fa-chevron-down"></i>
+                    </button>
+                </div>
             </div>
 
-            {/* --- DETALHES (Visível ao Expandir) --- */}
+            {/* Detalhes... (Mantido igual) */}
             <div className={`categoria-details-wrapper ${expanded ? 'open' : ''}`}>
                 <div className="categoria-details-inner">
                     <div className="stats-separator"></div>

@@ -372,6 +372,44 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
 .btn-sm-pagar { background: var(--cor-verde-sucesso); color: white; }
 .btn-sm-desmarcar { background: var(--cor-card-secundario); color: var(--cor-texto-secundario); border: 1px solid var(--cor-borda); }
 
+.btn-edit-transacao {
+    width: 20px;
+    height: 20px;
+    font-size: 0.75rem;
+    /* Cor neutra ou azul suave */
+    color: var(--cor-texto-secundario); 
+    background: transparent;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+.btn-edit-transacao:hover {
+    color: var(--cor-azul-primario);
+    background: var(--cor-fundo-hover);
+}
+
+.btn-delete-transacao {
+    width: 20px;
+    height: 20px;
+    font-size: 0.75rem;
+    color: var(--cor-vermelho-delete);
+    background: transparent;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    padding: 0; 
+}
+.btn-delete-transacao:hover {
+    background: rgba(231, 76, 60, 0.15);
+}
+
 .btn-delete-transacao {
     width: 28px;
     height: 28px;
@@ -389,7 +427,8 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     background: rgba(231, 76, 60, 0.15);
 }
 
-/* --- CARD DE CATEGORIA (MANTIDO PADRÃO) --- */
+/* --- CARD DE CATEGORIA (AJUSTADO: BOTÕES TOPO / SETA BAIXO) --- */
+
 .category-grid {
     display: flex;
     flex-direction: column;
@@ -404,9 +443,8 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     padding: 0.8rem;
     display: flex;
     flex-direction: column;
-    gap: 0; 
-    transition: transform 0.2s, box-shadow 0.2s;
     width: 100%;
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .categoria-card:hover {
@@ -414,12 +452,13 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     border-color: var(--cor-azul-primario);
 }
 
-/* Header do Card (Parte sempre visível) */
+/* Header: Flex container principal */
 .categoria-card-header {
     display: flex;
-    align-items: center;
+    align-items: stretch; /* Estica altura para a coluna direita alinhar topo/fundo */
     gap: 0.8rem;
     width: 100%;
+    min-height: 52px; /* Garante altura mínima para caber botões e seta */
 }
 
 .categoria-icon-box {
@@ -431,14 +470,18 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     justify-content: center;
     font-size: 1.1rem;
     flex-shrink: 0;
+    align-self: flex-start; /* Ícone no topo */
+    margin-top: 2px;
 }
 
+/* Info: Ocupa o espaço central */
 .categoria-info {
     flex: 1;
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
+    justify-content: center;
+    gap: 4px;
 }
 
 .categoria-main-row {
@@ -448,7 +491,7 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
 }
 
 .categoria-info h4 {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
@@ -457,10 +500,9 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
 }
 
 .categoria-valor {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     font-weight: 700;
 }
-
 .categoria-valor.despesa { color: var(--cor-vermelho-delete); }
 .categoria-valor.receita { color: var(--cor-verde-sucesso); }
 
@@ -480,13 +522,47 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     background-color: var(--cor-fundo-hover);
     border-radius: 2px;
     overflow: hidden;
-    margin-top: 4px;
+    margin-top: 2px;
 }
 
-.progress-bar-fill {
-    height: 100%;
-    transition: width 0.3s ease;
+.progress-bar-fill { height: 100%; transition: width 0.3s ease; }
+
+/* --- COLUNA DIREITA (NOVA) --- */
+.header-right-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Empurra Botões p/ Topo e Seta p/ Baixo */
+    align-items: flex-end; /* Alinha tudo à direita */
+    width: auto;
+    min-width: 40px; /* Garante espaço mínimo */
+    padding-left: 8px;
 }
+
+.header-actions-top {
+    display: flex;
+    gap: 6px;
+    height: 22px; /* Altura fixa para alinhar com o título/valor */
+    align-items: center;
+}
+
+.btn-action-icon {
+    width: 22px;
+    height: 22px;
+    font-size: 0.75rem;
+    color: var(--cor-texto-secundario);
+    background: transparent;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.2s;
+}
+
+.btn-edit-transacao:hover { color: var(--cor-azul-primario); background: var(--cor-fundo-hover); }
+.btn-delete-transacao:hover { color: var(--cor-vermelho-delete); background: rgba(231, 76, 60, 0.1); }
 
 /* Botão de Expandir (Setinha) */
 .btn-expand-card {
@@ -501,6 +577,8 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     justify-content: center;
     border-radius: 50%;
     transition: all 0.2s;
+    margin-left: 0 !important; /* Reseta margem antiga */
+    margin-top: 1.3rem;
 }
 
 .btn-expand-card:hover {
@@ -508,14 +586,8 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     color: var(--cor-texto-principal);
 }
 
-.btn-expand-card i {
-    transition: transform 0.3s ease;
-    font-size: 0.8rem;
-}
-
-.btn-expand-card.rotate i {
-    transform: rotate(180deg);
-}
+.btn-expand-card i { transition: transform 0.3s ease; font-size: 0.8rem; }
+.btn-expand-card.rotate i { transform: rotate(180deg); }
 
 /* Detalhes Expansíveis */
 .categoria-details-wrapper {
@@ -523,48 +595,19 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     grid-template-rows: 0fr;
     transition: grid-template-rows 0.3s ease-out;
 }
+.categoria-details-wrapper.open { grid-template-rows: 1fr; }
+.categoria-details-inner { overflow: hidden; min-height: 0; }
 
-.categoria-details-wrapper.open {
-    grid-template-rows: 1fr;
-}
-
-.categoria-details-inner {
-    overflow: hidden;
-    min-height: 0;
-}
-
-.stats-separator {
-    background-color: var(--cor-borda);
-    margin: 0.8rem 0;
-    opacity: 0.5;
-}
-
+.stats-separator { background-color: var(--cor-borda); margin: 0.8rem 0; opacity: 0.5; height: 1px; }
 .categoria-stats-grid {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     gap: 0.5rem;
     padding-bottom: 0.2rem;
 }
-
-.stat-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-}
-
-.stat-label {
-    font-size: 0.65rem;
-    color: var(--cor-texto-secundario);
-    text-transform: uppercase;
-    margin-bottom: 2px;
-}
-
-.stat-value {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--cor-texto-principal);
-}
+.stat-item { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.stat-label { font-size: 0.65rem; color: var(--cor-texto-secundario); text-transform: uppercase; margin-bottom: 2px; }
+.stat-value { font-size: 0.8rem; font-weight: 600; color: var(--cor-texto-principal); }
 
 /* ============================================= */
 /* 7. MODAIS E UI ELEMENTS                       */

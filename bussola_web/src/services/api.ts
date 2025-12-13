@@ -18,8 +18,7 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
-// --- NOVO: Interceptor de RESPOSTA (Logout Automático) ---
-// Adicionei de volta este bloco que estava faltando no seu código
+// Interceptor de RESPOSTA (Logout Automático)
 api.interceptors.response.use(
     (response) => {
         return response;
@@ -110,6 +109,12 @@ export const createTransacao = async (data: any) => {
     return response.data;
 };
 
+// --- NOVO: Função para atualizar transação (PUT) ---
+export const updateTransacao = async (id: number, data: any) => {
+    const response = await api.put(`/financas/transacoes/${id}`, data);
+    return response.data;
+};
+
 export const toggleStatusTransacao = async (id: number) => {
     const response = await api.put(`/financas/transacoes/${id}/toggle-status`);
     return response.data;
@@ -122,6 +127,12 @@ export const deleteTransacao = async (id: number) => {
 
 export const createCategoria = async (data: any) => {
     const response = await api.post('/financas/categorias', data);
+    return response.data;
+};
+
+// --- NOVO: Função para atualizar categoria (PUT) ---
+export const updateCategoria = async (id: number, data: any) => {
+    const response = await api.put(`/financas/categorias/${id}`, data);
     return response.data;
 };
 
