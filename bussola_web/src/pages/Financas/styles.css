@@ -11,7 +11,7 @@
 /* Container Grid Principal */
 .layout-grid-custom {
     display: grid;
-    grid-template-columns: 3.5fr 3.5fr 3fr;
+    grid-template-columns: 3.75fr 3.75fr 2.5fr;
     gap: 0;
     align-items: stretch;
 }

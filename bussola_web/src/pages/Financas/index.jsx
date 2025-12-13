@@ -12,7 +12,7 @@ export function Financas() {
     const [loading, setLoading] = useState(true);
     const { addToast } = useToast();
     
-    // Controle de UI
+    // Controle de UI - Accordions (Já persistido)
     const [openMonths, setOpenMonths] = useState(() => {
         try {
             const saved = localStorage.getItem('bussola_financas_accordions');
@@ -26,18 +26,33 @@ export function Financas() {
     const [editingData, setEditingData] = useState(null);
     const [showDropdown, setShowDropdown] = useState(false);
 
-    // --- ESTADOS DE ORDENAÇÃO ---
-    // 'desc' (padrão): Mais recente -> Mais antigo
-    // 'asc': Mais antigo -> Mais recente
-    const [orderPontual, setOrderPontual] = useState('desc');
-    const [orderRecorrente, setOrderRecorrente] = useState('desc');
+    // --- ESTADOS DE ORDENAÇÃO (AGORA PERSISTIDOS) ---
+    // Inicializa lendo do LocalStorage, se não existir, usa 'desc'
+    const [orderPontual, setOrderPontual] = useState(() => {
+        return localStorage.getItem('bussola_financas_order_pontual') || 'desc';
+    });
+
+    const [orderRecorrente, setOrderRecorrente] = useState(() => {
+        return localStorage.getItem('bussola_financas_order_recorrente') || 'desc';
+    });
 
     const dropdownRef = useRef(null);
 
+    // Efeito para salvar Accordions
     useEffect(() => {
         localStorage.setItem('bussola_financas_accordions', JSON.stringify(openMonths));
     }, [openMonths]);
 
+    // --- NOVOS EFEITOS PARA SALVAR ORDENAÇÃO ---
+    useEffect(() => {
+        localStorage.setItem('bussola_financas_order_pontual', orderPontual);
+    }, [orderPontual]);
+
+    useEffect(() => {
+        localStorage.setItem('bussola_financas_order_recorrente', orderRecorrente);
+    }, [orderRecorrente]);
+
+    // Fecha dropdown ao clicar fora
     useEffect(() => {
         function handleClickOutside(event) {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {

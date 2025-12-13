@@ -284,7 +284,7 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                 </div>
                                 <div className="form-row grid-33">
                                     <div className="form-group">
-                                        <label>{editingData ? 'Data' : 'Data 1ª'}</label>
+                                        <label>{editingData ? 'Data' : 'Data 1ª parcela'}</label>
                                         <input type="date" name="data" value={formData.data || ''} className="form-input" required onChange={handleChange} />
                                     </div>
                                     <div className="form-group">
