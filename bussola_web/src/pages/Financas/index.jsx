@@ -26,7 +26,7 @@ export function Financas() {
     const [editingData, setEditingData] = useState(null);
     const [showDropdown, setShowDropdown] = useState(false);
 
-    // --- NOVOS ESTADOS PARA ORDENAÇÃO ---
+    // --- ESTADOS DE ORDENAÇÃO ---
     // 'desc' (padrão): Mais recente -> Mais antigo
     // 'asc': Mais antigo -> Mais recente
     const [orderPontual, setOrderPontual] = useState('desc');
@@ -54,10 +54,10 @@ export function Financas() {
         try {
             const result = await getFinancasDashboard();
             
-            // BLINDAGEM: Verifica se o resultado é válido e tem a estrutura esperada
+            // BLINDAGEM: Verifica se o resultado é válido
             if (result && typeof result === 'object') {
                 
-                // Lógica de abrir o primeiro mês (apenas se tiver dados válidos)
+                // Lógica de abrir o primeiro mês (apenas se tiver dados válidos e nada salvo)
                 if (data === null && Object.keys(openMonths).length === 0) {
                     if(result.transacoes_pontuais && Object.keys(result.transacoes_pontuais).length > 0){
                         const firstPontual = Object.keys(result.transacoes_pontuais)[0];
@@ -72,7 +72,6 @@ export function Financas() {
                 setData(result);
             } else {
                 console.error("Formato de dados inválido recebido da API:", result);
-                // Inicializa com estrutura vazia para não quebrar a tela
                 setData({
                     transacoes_pontuais: {},
                     transacoes_recorrentes: {},
@@ -98,8 +97,8 @@ export function Financas() {
         setOpenMonths(prev => ({ ...prev, [key]: !prev[key] }));
     };
 
-    // --- FUNÇÃO AUXILIAR DE ORDENAÇÃO ---
-    // Converte "Janeiro/2025" em Date object para ordenar corretamente
+    // --- FUNÇÃO DE ORDENAÇÃO ---
+    // Converte "Janeiro/2025" em Data real para comparar
     const getSortedKeys = (obj, order) => {
         if (!obj) return [];
         
@@ -110,23 +109,27 @@ export function Financas() {
 
         return Object.keys(obj).sort((a, b) => {
             // Formato esperado: "Mês/Ano"
-            const [mesA, anoA] = a.split('/');
-            const [mesB, anoB] = b.split('/');
+            try {
+                const [mesA, anoA] = a.split('/');
+                const [mesB, anoB] = b.split('/');
 
-            const dateA = new Date(parseInt(anoA), mesesMap[mesA] - 1);
-            const dateB = new Date(parseInt(anoB), mesesMap[mesB] - 1);
+                const dateA = new Date(parseInt(anoA), mesesMap[mesA] - 1);
+                const dateB = new Date(parseInt(anoB), mesesMap[mesB] - 1);
 
-            if (order === 'asc') {
-                return dateA - dateB; // Mais antigo primeiro
-            } else {
-                return dateB - dateA; // Mais recente primeiro (Padrão)
+                if (order === 'asc') {
+                    return dateA - dateB; // Crescente (Antigo -> Novo)
+                } else {
+                    return dateB - dateA; // Decrescente (Novo -> Antigo)
+                }
+            } catch (e) {
+                return 0; // Fallback se o formato estiver errado
             }
         });
     };
 
     const handleEditTransaction = (transacao) => {
         setEditingData(transacao);
-        setActiveModal(transacao.tipo_recorrencia || 'pontual'); // Fallback para 'pontual'
+        setActiveModal(transacao.tipo_recorrencia || 'pontual'); 
     };
 
     const handleEditCategory = (categoria) => {
@@ -135,7 +138,6 @@ export function Financas() {
     };
 
     const handleDeleteCategory = async (id) => {
-        // MENSAGEM ATUALIZADA
         if (!confirm('Ao excluir esta categoria, todas as transações vinculadas a ela serão movidas para "Indefinida". Deseja continuar?')) return;
         
         try {
@@ -143,7 +145,6 @@ export function Financas() {
             addToast({ type: 'success', title: 'Sucesso', description: 'Categoria removida e transações migradas.' });
             fetchData();
         } catch (error) {
-            // Caso tente apagar a própria Indefinida, o back retorna erro
             const msg = error.response?.data?.detail || 'Erro ao excluir categoria.';
             addToast({ type: 'error', title: 'Erro', description: msg });
         }
@@ -155,11 +156,9 @@ export function Financas() {
     };
 
     if (loading) return <div className="loading-screen">Carregando Finanças...</div>;
-
-    // Se carregou mas data continua null (erro grave), exibe fallback
     if (!data) return <div className="loading-screen">Erro ao carregar dados.</div>;
 
-    // Prepara chaves ordenadas
+    // Obtém chaves ordenadas
     const pontuaisKeys = getSortedKeys(data.transacoes_pontuais, orderPontual);
     const recorrentesKeys = getSortedKeys(data.transacoes_recorrentes, orderRecorrente);
 
@@ -175,17 +174,17 @@ export function Financas() {
 
             <div className="layout-grid-custom">
                 
-                {/* Coluna 1: Pontuais */}
+                {/* --- COLUNA 1: PONTUAIS --- */}
                 <div className="agenda-column">
                     <div className="column-header-flex">
                         <h2>Transações Pontuais</h2>
                         
                         <div className="header-actions-group">
-                            {/* BOTÃO FILTRO PONTUAL */}
+                            {/* BOTÃO FILTRO */}
                             <button 
                                 className="btn-filter-sort" 
                                 onClick={() => setOrderPontual(prev => prev === 'desc' ? 'asc' : 'desc')}
-                                title={orderPontual === 'desc' ? "Mostrar mais antigos primeiro" : "Mostrar mais recentes primeiro"}
+                                title={orderPontual === 'desc' ? "Mais antigos primeiro" : "Mais recentes primeiro"}
                             >
                                 <i className={`fa-solid fa-arrow-${orderPontual === 'desc' ? 'down-wide-short' : 'up-wide-short'}`}></i>
                             </button>
@@ -196,7 +195,6 @@ export function Financas() {
                         </div>
                     </div>
                     
-                    {/* USANDO CHAVES ORDENADAS */}
                     {pontuaisKeys.length > 0 ? (
                         pontuaisKeys.map((mes) => (
                             <div className="month-group" key={mes}>
@@ -231,17 +229,17 @@ export function Financas() {
                     )}
                 </div>
 
-                {/* Coluna 2: Recorrentes */}
+                {/* --- COLUNA 2: RECORRENTES --- */}
                 <div className="agenda-column">
                     <div className="column-header-flex">
                         <h2>Recorrentes e Parceladas</h2>
                         
                         <div className="header-actions-group">
-                            {/* BOTÃO FILTRO RECORRENTE */}
+                            {/* BOTÃO FILTRO */}
                             <button 
                                 className="btn-filter-sort" 
                                 onClick={() => setOrderRecorrente(prev => prev === 'desc' ? 'asc' : 'desc')}
-                                title={orderRecorrente === 'desc' ? "Mostrar mais antigos primeiro" : "Mostrar mais recentes primeiro"}
+                                title={orderRecorrente === 'desc' ? "Mais antigos primeiro" : "Mais recentes primeiro"}
                             >
                                 <i className={`fa-solid fa-arrow-${orderRecorrente === 'desc' ? 'down-wide-short' : 'up-wide-short'}`}></i>
                             </button>
@@ -263,7 +261,6 @@ export function Financas() {
                         </div>
                     </div>
 
-                    {/* USANDO CHAVES ORDENADAS */}
                     {recorrentesKeys.length > 0 ? (
                         recorrentesKeys.map((mes) => (
                             <div className="month-group" key={mes}>
@@ -298,7 +295,7 @@ export function Financas() {
                     )}
                 </div>
 
-                {/* Coluna 3: Categorias */}
+                {/* --- COLUNA 3: CATEGORIAS --- */}
                 <div className="agenda-column" id="category-column">
                     <div className="column-header-flex">
                         <h2>Resumo</h2>
