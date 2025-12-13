@@ -137,10 +137,35 @@
     z-index: 2;
 }
 
-.agenda-column:last-child .column-header-flex {
-    border-right: none;
-    margin-right: 0;
+/* 1. Coluna Pontuais (Esquerda): Arredonda só a esquerda */
+.agenda-column:first-child .column-header-flex {
+    margin-left: 0;           /* Encosta na esquerda */
+    margin-right: -1.2rem;    /* Cola na coluna do meio */
+    border-radius: 12px 0 0 12px;
+    z-index: 2;
+}
+
+/* 2. Coluna Recorrentes (Meio): Arredonda só a direita */
+.agenda-column:nth-child(2) .column-header-flex {
+    margin-left: -1.2rem;     /* Cola na coluna da esquerda */
+    margin-right: 0;          /* Não cola na direita (cria o espaço) */
     border-radius: 0 12px 12px 0;
+    border-right: 1px solid var(--cor-borda); /* Fecha a borda direita */
+    z-index: 2;
+}
+
+/* 3. Coluna Resumo (Direita): Totalmente separada e arredondada */
+.agenda-column:last-child .column-header-flex {
+    margin-left: 0;           /* Reseta margem negativa */
+    margin-right: 0;          /* Reseta margem negativa */
+    border-radius: 12px;      /* Arredonda tudo */
+    border-right: 1px solid var(--cor-borda);
+    z-index: 2;
+}
+
+/* OPCIONAL: Remover a linha pontilhada entre a coluna 2 e 3 */
+.agenda-column:nth-child(2)::after {
+    display: none;
 }
 
 .agenda-column:first-child .column-header-flex {
