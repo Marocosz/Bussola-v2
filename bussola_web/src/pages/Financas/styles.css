@@ -538,6 +538,39 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     padding-left: 8px;
 }
 
+/* --- HEADER ACTIONS (FILTRO + ADICIONAR) --- */
+.header-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Espaço entre o botão de filtro e o botão de adicionar */
+}
+
+/* --- BOTÃO DE FILTRO DE ORDEM --- */
+.btn-filter-sort {
+    background: transparent;
+    border: 1px solid var(--cor-borda);
+    color: var(--cor-texto-secundario);
+    width: 30px; /* Quadrado */
+    height: 30px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+.btn-filter-sort:hover {
+    background: var(--cor-fundo-hover);
+    color: var(--cor-azul-primario);
+    border-color: var(--cor-azul-primario);
+}
+
+.btn-filter-sort:active {
+    transform: translateY(1px);
+}
+
 .header-actions-top {
     display: flex;
     gap: 6px;

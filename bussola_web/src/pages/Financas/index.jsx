@@ -26,6 +26,12 @@ export function Financas() {
     const [editingData, setEditingData] = useState(null);
     const [showDropdown, setShowDropdown] = useState(false);
 
+    // --- NOVOS ESTADOS PARA ORDENAÇÃO ---
+    // 'desc' (padrão): Mais recente -> Mais antigo
+    // 'asc': Mais antigo -> Mais recente
+    const [orderPontual, setOrderPontual] = useState('desc');
+    const [orderRecorrente, setOrderRecorrente] = useState('desc');
+
     const dropdownRef = useRef(null);
 
     useEffect(() => {
@@ -92,6 +98,32 @@ export function Financas() {
         setOpenMonths(prev => ({ ...prev, [key]: !prev[key] }));
     };
 
+    // --- FUNÇÃO AUXILIAR DE ORDENAÇÃO ---
+    // Converte "Janeiro/2025" em Date object para ordenar corretamente
+    const getSortedKeys = (obj, order) => {
+        if (!obj) return [];
+        
+        const mesesMap = {
+            "Janeiro": 1, "Fevereiro": 2, "Março": 3, "Abril": 4, "Maio": 5, "Junho": 6,
+            "Julho": 7, "Agosto": 8, "Setembro": 9, "Outubro": 10, "Novembro": 11, "Dezembro": 12
+        };
+
+        return Object.keys(obj).sort((a, b) => {
+            // Formato esperado: "Mês/Ano"
+            const [mesA, anoA] = a.split('/');
+            const [mesB, anoB] = b.split('/');
+
+            const dateA = new Date(parseInt(anoA), mesesMap[mesA] - 1);
+            const dateB = new Date(parseInt(anoB), mesesMap[mesB] - 1);
+
+            if (order === 'asc') {
+                return dateA - dateB; // Mais antigo primeiro
+            } else {
+                return dateB - dateA; // Mais recente primeiro (Padrão)
+            }
+        });
+    };
+
     const handleEditTransaction = (transacao) => {
         setEditingData(transacao);
         setActiveModal(transacao.tipo_recorrencia || 'pontual'); // Fallback para 'pontual'
@@ -127,6 +159,10 @@ export function Financas() {
     // Se carregou mas data continua null (erro grave), exibe fallback
     if (!data) return <div className="loading-screen">Erro ao carregar dados.</div>;
 
+    // Prepara chaves ordenadas
+    const pontuaisKeys = getSortedKeys(data.transacoes_pontuais, orderPontual);
+    const recorrentesKeys = getSortedKeys(data.transacoes_recorrentes, orderRecorrente);
+
     return (
         <div className="container main-container">
             <div className="internal-hero">
@@ -143,14 +179,26 @@ export function Financas() {
                 <div className="agenda-column">
                     <div className="column-header-flex">
                         <h2>Transações Pontuais</h2>
-                        <button className="btn-primary" onClick={() => { setEditingData(null); setActiveModal('pontual'); }}>
-                            <i className="fa-solid fa-plus"></i> Pontual
-                        </button>
+                        
+                        <div className="header-actions-group">
+                            {/* BOTÃO FILTRO PONTUAL */}
+                            <button 
+                                className="btn-filter-sort" 
+                                onClick={() => setOrderPontual(prev => prev === 'desc' ? 'asc' : 'desc')}
+                                title={orderPontual === 'desc' ? "Mostrar mais antigos primeiro" : "Mostrar mais recentes primeiro"}
+                            >
+                                <i className={`fa-solid fa-arrow-${orderPontual === 'desc' ? 'down-wide-short' : 'up-wide-short'}`}></i>
+                            </button>
+
+                            <button className="btn-primary" onClick={() => { setEditingData(null); setActiveModal('pontual'); }}>
+                                <i className="fa-solid fa-plus"></i> Pontual
+                            </button>
+                        </div>
                     </div>
                     
-                    {/* BLINDAGEM: ?. e || {} em todos os acessos a objetos */}
-                    {Object.keys(data.transacoes_pontuais || {}).length > 0 ? (
-                        Object.entries(data.transacoes_pontuais || {}).map(([mes, transactions]) => (
+                    {/* USANDO CHAVES ORDENADAS */}
+                    {pontuaisKeys.length > 0 ? (
+                        pontuaisKeys.map((mes) => (
                             <div className="month-group" key={mes}>
                                 <h3 
                                     className={`month-header ${openMonths[`pontual-${mes}`] ? 'active' : ''}`} 
@@ -164,7 +212,7 @@ export function Financas() {
                                     <div className="accordion-inner">
                                         <div className="month-content">
                                             <div className="transacoes-grid">
-                                                {(transactions || []).map(t => (
+                                                {(data.transacoes_pontuais[mes] || []).map(t => (
                                                     <TransactionCard 
                                                         key={t.id} 
                                                         transacao={t} 
@@ -187,24 +235,37 @@ export function Financas() {
                 <div className="agenda-column">
                     <div className="column-header-flex">
                         <h2>Recorrentes e Parceladas</h2>
-                        <div className="btn-group" style={{position: 'relative'}} ref={dropdownRef}>
+                        
+                        <div className="header-actions-group">
+                            {/* BOTÃO FILTRO RECORRENTE */}
                             <button 
-                                className="btn-primary" 
-                                onClick={() => setShowDropdown(!showDropdown)}
+                                className="btn-filter-sort" 
+                                onClick={() => setOrderRecorrente(prev => prev === 'desc' ? 'asc' : 'desc')}
+                                title={orderRecorrente === 'desc' ? "Mostrar mais antigos primeiro" : "Mostrar mais recentes primeiro"}
                             >
-                                <i className="fa-solid fa-plus"></i> Adicionar
+                                <i className={`fa-solid fa-arrow-${orderRecorrente === 'desc' ? 'down-wide-short' : 'up-wide-short'}`}></i>
                             </button>
-                            {showDropdown && (
-                                <div className="dropdown-menu visible" style={{display: 'block'}}>
-                                    <a onClick={() => { setEditingData(null); setActiveModal('parcelada'); setShowDropdown(false); }}>Parcelada</a>
-                                    <a onClick={() => { setEditingData(null); setActiveModal('recorrente'); setShowDropdown(false); }}>Recorrente</a>
-                                </div>
-                            )}
+
+                            <div className="btn-group" style={{position: 'relative'}} ref={dropdownRef}>
+                                <button 
+                                    className="btn-primary" 
+                                    onClick={() => setShowDropdown(!showDropdown)}
+                                >
+                                    <i className="fa-solid fa-plus"></i> Adicionar
+                                </button>
+                                {showDropdown && (
+                                    <div className="dropdown-menu visible" style={{display: 'block'}}>
+                                        <a onClick={() => { setEditingData(null); setActiveModal('parcelada'); setShowDropdown(false); }}>Parcelada</a>
+                                        <a onClick={() => { setEditingData(null); setActiveModal('recorrente'); setShowDropdown(false); }}>Recorrente</a>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 
-                    {Object.keys(data.transacoes_recorrentes || {}).length > 0 ? (
-                        Object.entries(data.transacoes_recorrentes || {}).map(([mes, transactions]) => (
+                    {/* USANDO CHAVES ORDENADAS */}
+                    {recorrentesKeys.length > 0 ? (
+                        recorrentesKeys.map((mes) => (
                             <div className="month-group" key={mes}>
                                 <h3 
                                     className={`month-header ${openMonths[`recorrente-${mes}`] ? 'active' : ''}`} 
@@ -218,7 +279,7 @@ export function Financas() {
                                     <div className="accordion-inner">
                                         <div className="month-content">
                                             <div className="transacoes-grid">
-                                                {(transactions || []).map(t => (
+                                                {(data.transacoes_recorrentes[mes] || []).map(t => (
                                                     <TransactionCard 
                                                         key={t.id} 
                                                         transacao={t} 
