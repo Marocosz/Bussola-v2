@@ -1,15 +1,15 @@
 /* ============================================= */
-/* 1. ESTRUTURA GERAL E LAYOUT                   */
+/* 1. ESTRUTURA GERAL E LAYOUT (SCOPED)          */
 /* ============================================= */
 
-.main-container {
+.financas-scope.main-container {
     padding-bottom: 5rem !important;
     min-height: 100vh;
     box-sizing: border-box;
 }
 
 /* Container Grid Principal */
-.layout-grid-custom {
+.financas-scope .layout-grid-custom {
     display: grid;
     grid-template-columns: 3.75fr 3.75fr 2.5fr;
     gap: 0;
@@ -17,7 +17,7 @@
 }
 
 /* Colunas Individuais */
-.agenda-column {
+.financas-scope .agenda-column {
     display: flex;
     flex-direction: column;
     min-width: 0;
@@ -26,20 +26,25 @@
     padding: 0 1.2rem;
 }
 
-.agenda-column:first-child {
+/* Coluna 1 (Pontuais) */
+.financas-scope .agenda-column:first-child {
     padding-left: 0;
 }
 
-.agenda-column:last-child {
+/* Coluna 3 (Resumo) - AQUI ESTÁ A CORREÇÃO DO ALINHAMENTO */
+.financas-scope .agenda-column:last-child {
     padding-right: 0;
+    /* Adiciona padding na esquerda da COLUNA inteira. 
+       Isso empurra tanto o Título quanto os Cards juntos. */
+    padding-left: 1.5rem;
 }
 
-/* Linha divisória entre colunas */
-.agenda-column:not(:last-child) {
+/* Linha divisória entre colunas 1 e 2 */
+.financas-scope .agenda-column:not(:last-child) {
     border-right: none;
 }
 
-.agenda-column:not(:last-child)::after {
+.financas-scope .agenda-column:first-child::after {
     content: "";
     position: absolute;
     top: 3.6rem;
@@ -51,7 +56,7 @@
 }
 
 /* Mensagem de lista vazia */
-.empty-list-msg {
+.financas-scope .empty-list-msg {
     color: var(--cor-texto-secundario);
     font-style: italic;
     font-size: 0.9rem;
@@ -62,10 +67,10 @@
 }
 
 /* ============================================= */
-/* 2. HERO INTERNO                               */
+/* 2. HERO INTERNO (SCOPED)                      */
 /* ============================================= */
 
-.internal-hero {
+.financas-scope .internal-hero {
     position: relative;
     text-align: center;
     padding: 4rem 2rem 5rem 2rem;
@@ -73,7 +78,7 @@
     border-radius: 0 0 20px 20px;
 }
 
-.hero-bg-effect {
+.financas-scope .hero-bg-effect {
     position: absolute;
     top: -50%;
     left: 50%;
@@ -88,12 +93,12 @@
     pointer-events: none;
 }
 
-.internal-hero-content {
+.financas-scope .internal-hero-content {
     position: relative;
     z-index: 1;
 }
 
-.internal-hero h1 {
+.financas-scope .internal-hero h1 {
     font-size: 3rem;
     font-weight: 700;
     margin-bottom: 0.5rem;
@@ -106,7 +111,7 @@
     animation: shine 5s linear infinite;
 }
 
-.internal-hero p {
+.financas-scope .internal-hero p {
     font-size: 1.1rem;
     color: var(--cor-texto-secundario);
     max-width: 600px;
@@ -120,10 +125,10 @@
 }
 
 /* ============================================= */
-/* 3. CABEÇALHOS DAS COLUNAS E FILTROS           */
+/* 3. CABEÇALHOS DAS COLUNAS (SCOPED)            */
 /* ============================================= */
 
-.column-header-flex {
+.financas-scope .column-header-flex {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -137,48 +142,48 @@
     z-index: 2;
 }
 
-/* 1. Coluna Pontuais (Esquerda): Arredonda só a esquerda */
-.agenda-column:first-child .column-header-flex {
-    margin-left: 0;           /* Encosta na esquerda */
-    margin-right: -1.2rem;    /* Cola na coluna do meio */
+/* 1. Coluna Pontuais (Esquerda) */
+.financas-scope .agenda-column:first-child .column-header-flex {
+    margin-left: 0;
+    margin-right: -1.2rem;
     border-radius: 12px 0 0 12px;
     z-index: 2;
 }
 
-/* 2. Coluna Recorrentes (Meio): Arredonda só a direita */
-.agenda-column:nth-child(2) .column-header-flex {
-    margin-left: -1.2rem;     /* Cola na coluna da esquerda */
-    margin-right: 0;          /* Não cola na direita (cria o espaço) */
+/* 2. Coluna Recorrentes (Meio) */
+.financas-scope .agenda-column:nth-child(2) .column-header-flex {
+    margin-left: -1.2rem;
+    margin-right: 0;
     border-radius: 0 12px 12px 0;
-    border-right: 1px solid var(--cor-borda); /* Fecha a borda direita */
-    z-index: 2;
-}
-
-/* 3. Coluna Resumo (Direita): Totalmente separada e arredondada */
-.agenda-column:last-child .column-header-flex {
-    margin-left: 0;           /* Reseta margem negativa */
-    margin-right: 0;          /* Reseta margem negativa */
-    border-radius: 12px;      /* Arredonda tudo */
     border-right: 1px solid var(--cor-borda);
     z-index: 2;
 }
 
-/* OPCIONAL: Remover a linha pontilhada entre a coluna 2 e 3 */
-.agenda-column:nth-child(2)::after {
+/* 3. Coluna Resumo (Direita): CORREÇÃO DO FUNDO ARREDONDADO */
+/* Como aplicamos padding na coluna, aqui removemos margins estranhas */
+.financas-scope #category-column .column-header-flex {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100%;
+    /* Ocupa o espaço da coluna */
+    border-radius: 12px !important;
+    /* Arredonda tudo */
+    z-index: 2;
+    box-sizing: border-box;
+    /* Garante que padding não estoure */
+}
+
+/* Remove a linha pontilhada entre 2 e 3 */
+.financas-scope .agenda-column:nth-child(2)::after {
     display: none;
 }
 
-.agenda-column:first-child .column-header-flex {
-    margin-left: 0;
-    border-radius: 12px 0 0 12px;
-}
-
-.column-header-flex:hover {
+.financas-scope .column-header-flex:hover {
     background-color: var(--cor-card-principal);
     box-shadow: inset 0 -2px 0 var(--cor-azul-primario);
 }
 
-.column-header-flex h2 {
+.financas-scope .column-header-flex h2 {
     font-size: 1rem;
     font-weight: 600;
     color: var(--cor-texto-secundario);
@@ -188,26 +193,24 @@
     transition: color 0.2s;
 }
 
-.column-header-flex:hover h2 {
+.financas-scope .column-header-flex:hover h2 {
     color: var(--cor-texto-principal);
 }
 
-/* --- GRUPO DE AÇÕES DO HEADER (FILTRO + ADD) --- */
-.header-actions-group {
+/* --- GRUPO DE AÇÕES DO HEADER --- */
+.financas-scope .header-actions-group {
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
-/* Botão Primário (Adicionar) */
-.column-header-flex .btn-primary {
+.financas-scope .column-header-flex .btn-primary {
     font-size: 0.8rem;
     padding: 4px 12px;
     min-height: 30px;
 }
 
-/* Botão de Filtro (Seta) */
-.btn-filter-sort {
+.financas-scope .btn-filter-sort {
     background: transparent;
     border: 1px solid var(--cor-borda);
     color: var(--cor-texto-secundario);
@@ -222,31 +225,31 @@
     font-size: 0.9rem;
 }
 
-.btn-filter-sort:hover {
+.financas-scope .btn-filter-sort:hover {
     background: var(--cor-fundo-hover);
     color: var(--cor-azul-primario);
     border-color: var(--cor-azul-primario);
 }
 
-.btn-filter-sort:active {
+.financas-scope .btn-filter-sort:active {
     transform: translateY(1px);
 }
 
 /* ============================================= */
-/* 4. ACCORDION (GRUPOS DE MÊS)                  */
+/* 4. ACCORDION (SCOPED)                         */
 /* ============================================= */
 
-.month-group {
+.financas-scope .month-group {
     display: flex;
     flex-direction: column;
     margin: 0;
 }
 
-.month-group+.month-group {
+.financas-scope .month-group+.month-group {
     margin-top: 1.5rem !important;
 }
 
-.month-header {
+.financas-scope .month-header {
     background: transparent !important;
     border: none !important;
     border-bottom: 1px solid var(--cor-borda) !important;
@@ -265,37 +268,37 @@
     transition: all 0.2s;
 }
 
-.month-header:hover,
-.month-header.active {
+.financas-scope .month-header:hover,
+.financas-scope .month-header.active {
     color: var(--cor-azul-primario);
     border-bottom-color: var(--cor-azul-primario) !important;
 }
 
-.month-header i {
+.financas-scope .month-header i {
     font-size: 0.8rem;
     transition: transform 0.3s ease;
 }
 
-.month-header i.rotate {
+.financas-scope .month-header i.rotate {
     transform: rotate(180deg);
 }
 
-.month-content {
+.financas-scope .month-content {
     padding-top: 0;
     padding-bottom: 0;
 }
 
 /* ============================================= */
-/* 5. CARD DE TRANSAÇÃO                          */
+/* 5. CARD DE TRANSAÇÃO (SCOPED)                 */
 /* ============================================= */
 
-.transacoes-grid {
+.financas-scope .transacoes-grid {
     display: flex;
     flex-direction: column;
     gap: 0.8rem;
 }
 
-.transacao-card {
+.financas-scope .transacao-card {
     background-color: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
     border-radius: 10px;
@@ -307,18 +310,18 @@
     border-left: 4px solid var(--cor-borda);
 }
 
-.transacao-card:hover {
+.financas-scope .transacao-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.transacao-card-main {
+.financas-scope .transacao-card-main {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
 }
 
-.transacao-card-info {
+.financas-scope .transacao-card-info {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -326,27 +329,27 @@
     min-width: 0;
 }
 
-.transacao-card-top-line {
+.financas-scope .transacao-card-top-line {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
     gap: 1rem;
 }
 
-.transacao-descricao {
+.financas-scope .transacao-descricao {
     font-weight: 600;
     font-size: 1rem;
     color: var(--cor-texto-principal);
     line-height: 1.3;
 }
 
-.transacao-data {
+.financas-scope .transacao-data {
     font-size: 0.8rem;
     color: var(--cor-texto-secundario);
     white-space: nowrap;
 }
 
-.transacao-card-bottom-line {
+.financas-scope .transacao-card-bottom-line {
     display: flex;
     align-items: center;
     gap: 0.8rem;
@@ -355,14 +358,14 @@
     flex-wrap: wrap;
 }
 
-.transacao-categoria {
+.financas-scope .transacao-categoria {
     display: flex;
     align-items: center;
     gap: 0.4rem;
 }
 
-.badge-parcela,
-.badge-recorrente {
+.financas-scope .badge-parcela,
+.financas-scope .badge-recorrente {
     background: var(--cor-fundo);
     padding: 2px 6px;
     border-radius: 4px;
@@ -371,7 +374,7 @@
     color: var(--cor-texto-secundario);
 }
 
-.transacao-valor {
+.financas-scope .transacao-valor {
     font-weight: 700;
     font-size: 1rem;
     white-space: nowrap;
@@ -379,15 +382,15 @@
     align-self: flex-start;
 }
 
-.transacao-valor.despesa {
+.financas-scope .transacao-valor.despesa {
     color: var(--cor-vermelho-delete);
 }
 
-.transacao-valor.receita {
+.financas-scope .transacao-valor.receita {
     color: var(--cor-verde-sucesso);
 }
 
-.transacao-footer {
+.financas-scope .transacao-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -395,7 +398,7 @@
     padding-top: 0.4rem;
 }
 
-.status-badge {
+.financas-scope .status-badge {
     font-size: 0.75rem;
     padding: 2px 8px;
     border-radius: 12px;
@@ -404,74 +407,98 @@
     letter-spacing: 0.5px;
 }
 
-.status-badge.pendente {
+.financas-scope .status-badge.pendente {
     background: rgba(255, 193, 7, 0.15);
     color: #ffc107;
     border: 1px solid rgba(255, 193, 7, 0.3);
 }
 
-.status-badge.efetivada {
+.financas-scope .status-badge.efetivada {
     background: rgba(40, 167, 69, 0.15);
     color: #28a745;
     border: 1px solid rgba(40, 167, 69, 0.3);
 }
 
-body.light-theme .status-badge.pendente {
-    background: #fff3cd;
-    color: #856404;
-    border-color: #ffeeba;
-}
-
-body.light-theme .status-badge.efetivada {
-    background: #d4edda;
-    color: #155724;
-    border-color: #c3e6cb;
-}
-
-.transacao-actions {
+/* --- AÇÕES GERAIS (Botões) --- */
+.financas-scope .transacao-actions {
     display: flex;
     gap: 0.5rem;
 }
 
-.btn-sm-pagar,
-.btn-sm-desmarcar {
+.financas-scope .btn-sm-pagar,
+.financas-scope .btn-sm-desmarcar {
     border: none;
     padding: 4px 10px;
     border-radius: 6px;
+    /* Quadrados suaves */
     font-size: 0.8rem;
     cursor: pointer;
     font-weight: 500;
     transition: filter 0.2s;
 }
 
-.btn-sm-pagar:hover,
-.btn-sm-desmarcar:hover {
+.financas-scope .btn-sm-pagar:hover,
+.financas-scope .btn-sm-desmarcar:hover {
     filter: brightness(1.1);
 }
 
-.btn-sm-pagar {
+.financas-scope .btn-sm-pagar {
     background: var(--cor-verde-sucesso);
     color: white;
 }
 
-.btn-sm-desmarcar {
+.financas-scope .btn-sm-desmarcar {
     background: var(--cor-card-secundario);
     color: var(--cor-texto-secundario);
     border: 1px solid var(--cor-borda);
 }
 
+/* --- UNIFICAÇÃO DOS BOTÕES DE AÇÃO (Quadrados e Coloridos) --- */
+/* Aplica-se a TODOS os botões .btn-action-icon dentro do escopo financas */
+
+.financas-scope .btn-action-icon {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.8rem;
+    color: var(--cor-texto-secundario);
+    background: transparent;
+    border: 1px solid var(--cor-borda) !important;
+    border-radius: 6px !important;
+    /* FORÇA QUADRADO */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.2s;
+}
+
+/* Hover Editar (Global na página): Amarelo/Laranja */
+.financas-scope .btn-edit-transacao:hover {
+    background-color: #f59e0b !important;
+    border-color: #f59e0b !important;
+    color: #fff !important;
+}
+
+/* Hover Excluir (Global na página): Vermelho */
+.financas-scope .btn-delete-transacao:hover {
+    background-color: var(--cor-vermelho-delete) !important;
+    border-color: var(--cor-vermelho-delete) !important;
+    color: #fff !important;
+}
+
 /* ============================================= */
-/* 6. CARD DE CATEGORIA (AJUSTADO)               */
+/* 6. CARD DE CATEGORIA (SCOPED & FIXED)         */
 /* ============================================= */
 
-.category-grid {
+.financas-scope .category-grid {
     display: flex;
     flex-direction: column;
     gap: 0.8rem;
     margin-top: 0.5rem;
 }
 
-.categoria-card {
+.financas-scope .categoria-card {
     background: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
     border-radius: 8px;
@@ -482,13 +509,12 @@ body.light-theme .status-badge.efetivada {
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.categoria-card:hover {
+.financas-scope .categoria-card:hover {
     transform: translateY(-2px);
     border-color: var(--cor-azul-primario);
 }
 
-/* Header Principal */
-.categoria-card-header {
+.financas-scope .categoria-card-header {
     display: flex;
     align-items: stretch;
     gap: 0.8rem;
@@ -496,7 +522,7 @@ body.light-theme .status-badge.efetivada {
     min-height: 52px;
 }
 
-.categoria-icon-box {
+.financas-scope .categoria-icon-box {
     width: 36px;
     height: 36px;
     border-radius: 8px;
@@ -509,63 +535,67 @@ body.light-theme .status-badge.efetivada {
     margin-top: 2px;
 }
 
-.categoria-info {
+.financas-scope .categoria-info {
     flex: 1;
     min-width: 0;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 4px;
+    padding-top: 2px;
 }
 
-.categoria-main-row {
+/* CORREÇÃO DO ALINHAMENTO TÍTULO / VALOR */
+.financas-scope .categoria-main-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    /* ISSO ALINHA VERTICALMENTE O TEXTO COM O VALOR */
 }
 
-.categoria-info h4 {
+.financas-scope .categoria-info h4 {
     font-size: 0.95rem;
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     font-weight: 600;
+    line-height: 1.2;
 }
 
-.categoria-valor {
+/* Removemos o 'top' negativo para usar o alinhamento do flex */
+.financas-scope .categoria-valor {
     font-size: 0.95rem;
     font-weight: 700;
     margin: 0;
-    position: relative;
-    top: -9px;
+    line-height: 1.2;
 }
 
-.categoria-valor.despesa {
+.financas-scope .categoria-valor.despesa {
     color: var(--cor-vermelho-delete);
 }
 
-.categoria-valor.receita {
+.financas-scope .categoria-valor.receita {
     color: var(--cor-verde-sucesso);
 }
 
-.categoria-meta-line {
+.financas-scope .categoria-meta-line {
     font-size: 0.75rem;
     color: var(--cor-texto-secundario);
     display: flex;
     justify-content: space-between;
 }
 
-.meta-text strong {
+.financas-scope .meta-text strong {
     color: var(--cor-texto-principal);
 }
 
-.meta-text-empty {
+.financas-scope .meta-text-empty {
     font-style: italic;
     opacity: 0.7;
 }
 
-.progress-bar-container {
+.financas-scope .progress-bar-container {
     width: 100%;
     height: 4px;
     background-color: var(--cor-fundo-hover);
@@ -574,13 +604,12 @@ body.light-theme .status-badge.efetivada {
     margin-top: 2px;
 }
 
-.progress-bar-fill {
+.financas-scope .progress-bar-fill {
     height: 100%;
     transition: width 0.3s ease;
 }
 
-/* --- COLUNA DIREITA (Ações e Seta) --- */
-.header-right-column {
+.financas-scope .header-right-column {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -590,58 +619,25 @@ body.light-theme .status-badge.efetivada {
     padding-left: 8px;
 }
 
-/* Área do Topo da Coluna Direita (Botões OU Valor) */
-.header-actions-top {
+.financas-scope .header-actions-top {
     display: flex;
     gap: 6px;
     height: 22px;
     align-items: center;
-    /* Centraliza verticalmente */
     justify-content: flex-end;
     min-width: max-content;
-    /* Garante que o texto caiba */
-
 }
 
-/* Ajuste específico para quando o VALOR está na coluna direita (Indefinida) */
-.header-actions-top .categoria-valor {
+.financas-scope .header-actions-top .categoria-valor {
     line-height: 1;
-    /* Remove entrelinha extra */
     display: flex;
     align-items: center;
-    position: relative;
-    top: -5px;
-
-}
-
-.btn-action-icon {
-    width: 22px;
-    height: 22px;
-    font-size: 0.75rem;
-    color: var(--cor-texto-secundario);
-    background: transparent;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    transition: all 0.2s;
-}
-
-.btn-edit-transacao:hover {
-    color: var(--cor-azul-primario);
-    background: var(--cor-fundo-hover);
-}
-
-.btn-delete-transacao:hover {
-    color: var(--cor-vermelho-delete);
-    background: rgba(231, 76, 60, 0.1);
+    /* Ajuste fino apenas para o valor "solto" na direita, se precisar */
+    /* position: relative; top: -1px; */
 }
 
 /* Seta de Expandir */
-.btn-expand-card {
+.financas-scope .btn-expand-card {
     background: transparent;
     border: none;
     color: var(--cor-texto-secundario);
@@ -657,75 +653,75 @@ body.light-theme .status-badge.efetivada {
     margin-top: 1.3rem;
 }
 
-.btn-expand-card:hover {
+.financas-scope .btn-expand-card:hover {
     background-color: var(--cor-fundo-hover);
     color: var(--cor-texto-principal);
 }
 
-.btn-expand-card i {
+.financas-scope .btn-expand-card i {
     transition: transform 0.3s ease;
     font-size: 0.8rem;
 }
 
-.btn-expand-card.rotate i {
+.financas-scope .btn-expand-card.rotate i {
     transform: rotate(180deg);
 }
 
-/* Detalhes do Card */
-.categoria-details-wrapper {
+/* Detalhes */
+.financas-scope .categoria-details-wrapper {
     display: grid;
     grid-template-rows: 0fr;
     transition: grid-template-rows 0.3s ease-out;
 }
 
-.categoria-details-wrapper.open {
+.financas-scope .categoria-details-wrapper.open {
     grid-template-rows: 1fr;
 }
 
-.categoria-details-inner {
+.financas-scope .categoria-details-inner {
     overflow: hidden;
     min-height: 0;
 }
 
-.stats-separator {
+.financas-scope .stats-separator {
     background-color: var(--cor-borda);
     margin: 0.8rem 0;
     opacity: 0.5;
     height: 1px;
 }
 
-.categoria-stats-grid {
+.financas-scope .categoria-stats-grid {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     gap: 0.5rem;
     padding-bottom: 0.2rem;
 }
 
-.stat-item {
+.financas-scope .stat-item {
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
 }
 
-.stat-label {
+.financas-scope .stat-label {
     font-size: 0.65rem;
     color: var(--cor-texto-secundario);
     text-transform: uppercase;
     margin-bottom: 2px;
 }
 
-.stat-value {
+.financas-scope .stat-value {
     font-size: 0.8rem;
     font-weight: 600;
     color: var(--cor-texto-principal);
 }
 
 /* ============================================= */
-/* 7. MODAIS E DROPDOWNS                         */
+/* 7. MODAIS E DROPDOWNS (SCOPED)                */
 /* ============================================= */
 
-.modal {
+.financas-scope .modal {
     display: flex;
     position: fixed;
     z-index: 2000;
@@ -740,7 +736,7 @@ body.light-theme .status-badge.efetivada {
     animation: fadeIn 0.2s ease-out;
 }
 
-.modal-content {
+.financas-scope .modal-content {
     background-color: var(--cor-card-principal);
     margin: auto;
     width: 90%;
@@ -755,7 +751,7 @@ body.light-theme .status-badge.efetivada {
     overflow: visible !important;
 }
 
-.modal-header {
+.financas-scope .modal-header {
     padding: 1.25rem 1.5rem;
     border-bottom: 1px solid var(--cor-borda);
     display: flex;
@@ -765,13 +761,13 @@ body.light-theme .status-badge.efetivada {
     border-radius: 16px 16px 0 0;
 }
 
-.close-btn {
+.financas-scope .close-btn {
     color: var(--cor-texto-secundario);
     font-size: 1.5rem;
     cursor: pointer;
 }
 
-.modal-body {
+.financas-scope .modal-body {
     padding: 1.5rem;
     overflow: visible;
     display: flex;
@@ -779,7 +775,7 @@ body.light-theme .status-badge.efetivada {
     gap: 1.2rem;
 }
 
-.modal-footer {
+.financas-scope .modal-footer {
     padding: 1.2rem 1.5rem;
     border-top: 1px solid var(--cor-borda);
     display: flex;
@@ -789,12 +785,12 @@ body.light-theme .status-badge.efetivada {
     border-radius: 0 0 16px 16px;
 }
 
-.btn-group {
+.financas-scope .btn-group {
     position: relative;
     display: inline-block;
 }
 
-.dropdown-menu {
+.financas-scope .dropdown-menu {
     position: absolute;
     top: 110%;
     right: 0;
@@ -809,11 +805,11 @@ body.light-theme .status-badge.efetivada {
     animation: fadeIn 0.2s;
 }
 
-.dropdown-menu.visible {
+.financas-scope .dropdown-menu.visible {
     display: block;
 }
 
-.dropdown-menu a {
+.financas-scope .dropdown-menu a {
     display: block;
     padding: 0.8rem 1rem;
     font-size: 0.95rem;
@@ -824,40 +820,40 @@ body.light-theme .status-badge.efetivada {
     transition: background 0.2s;
 }
 
-.dropdown-menu a:hover {
+.financas-scope .dropdown-menu a:hover {
     background-color: var(--cor-fundo-hover);
     color: var(--cor-azul-primario);
 }
 
 /* Formulários */
-.form-row {
+.financas-scope .form-row {
     display: grid;
     gap: 1rem;
     width: 100%;
     align-items: end;
 }
 
-.grid-65-35 {
+.financas-scope .grid-65-35 {
     grid-template-columns: 65fr 35fr;
 }
 
-.grid-60-40 {
+.financas-scope .grid-60-40 {
     grid-template-columns: 60fr 40fr;
 }
 
-.grid-50-50 {
+.financas-scope .grid-50-50 {
     grid-template-columns: 1fr 1fr;
 }
 
-.grid-33 {
+.financas-scope .grid-33 {
     grid-template-columns: 1fr 1fr 1fr;
 }
 
-.grid-meta-icon-color {
+.financas-scope .grid-meta-icon-color {
     grid-template-columns: 1fr 45px 45px;
 }
 
-.form-group {
+.financas-scope .form-group {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
@@ -865,22 +861,22 @@ body.light-theme .status-badge.efetivada {
     min-width: 0;
 }
 
-.form-group label {
+.financas-scope .form-group label {
     font-size: 0.85rem;
     font-weight: 500;
     color: var(--cor-texto-secundario);
     margin: 0;
 }
 
-.form-input,
-.picker-preview,
-.custom-type-selector,
-.custom-select-trigger {
+.financas-scope .form-input,
+.financas-scope .picker-preview,
+.financas-scope .custom-type-selector,
+.financas-scope .custom-select-trigger {
     height: 45px;
     box-sizing: border-box;
 }
 
-.form-input {
+.financas-scope .form-input {
     width: 100%;
     padding: 0 0.8rem;
     border: 1px solid var(--cor-borda);
@@ -891,13 +887,13 @@ body.light-theme .status-badge.efetivada {
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.form-input:focus {
+.financas-scope .form-input:focus {
     outline: none;
     border-color: var(--cor-azul-primario);
     box-shadow: 0 0 0 3px rgba(74, 109, 255, 0.1);
 }
 
-.custom-select-trigger {
+.financas-scope .custom-select-trigger {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -913,26 +909,26 @@ body.light-theme .status-badge.efetivada {
     user-select: none;
 }
 
-.custom-select-trigger:hover {
+.financas-scope .custom-select-trigger:hover {
     border-color: var(--cor-texto-secundario);
 }
 
-.custom-select-trigger.open {
+.financas-scope .custom-select-trigger.open {
     border-color: var(--cor-azul-primario);
     box-shadow: 0 0 0 3px rgba(74, 109, 255, 0.1);
 }
 
-.arrow-icon {
+.financas-scope .arrow-icon {
     font-size: 0.8rem;
     color: var(--cor-texto-secundario);
     transition: transform 0.2s;
 }
 
-.custom-select-trigger.open .arrow-icon {
+.financas-scope .custom-select-trigger.open .arrow-icon {
     transform: rotate(180deg);
 }
 
-.custom-select-options {
+.financas-scope .custom-select-options {
     position: absolute;
     top: calc(100% + 5px);
     left: 0;
@@ -948,7 +944,7 @@ body.light-theme .status-badge.efetivada {
     animation: fadeIn 0.1s ease-out;
 }
 
-.custom-option {
+.financas-scope .custom-option {
     padding: 10px;
     font-size: 0.9rem;
     color: var(--cor-texto-principal);
@@ -957,22 +953,22 @@ body.light-theme .status-badge.efetivada {
     transition: background 0.2s;
 }
 
-.custom-option:hover,
-.custom-option.selected {
+.financas-scope .custom-option:hover,
+.financas-scope .custom-option.selected {
     background-color: var(--cor-azul-primario);
     color: white;
 }
 
-.custom-select-options::-webkit-scrollbar {
+.financas-scope .custom-select-options::-webkit-scrollbar {
     width: 6px;
 }
 
-.custom-select-options::-webkit-scrollbar-thumb {
+.financas-scope .custom-select-options::-webkit-scrollbar-thumb {
     background-color: var(--cor-borda);
     border-radius: 3px;
 }
 
-.custom-type-selector {
+.financas-scope .custom-type-selector {
     display: flex;
     background-color: var(--cor-fundo);
     border: 1px solid var(--cor-borda);
@@ -981,7 +977,7 @@ body.light-theme .status-badge.efetivada {
     gap: 4px;
 }
 
-.type-option {
+.financas-scope .type-option {
     flex: 1;
     display: flex;
     align-items: center;
@@ -997,26 +993,26 @@ body.light-theme .status-badge.efetivada {
     letter-spacing: 0.5px;
 }
 
-.type-option:hover {
+.financas-scope .type-option:hover {
     background-color: var(--cor-fundo-hover);
     color: var(--cor-texto-principal);
 }
 
-.type-option.active.despesa {
+.financas-scope .type-option.active.despesa {
     background-color: var(--cor-vermelho-delete);
     color: white;
 }
 
-.type-option.active.receita {
+.financas-scope .type-option.active.receita {
     background-color: var(--cor-verde-sucesso);
     color: white;
 }
 
-.picker-wrapper {
+.financas-scope .picker-wrapper {
     position: relative;
 }
 
-.picker-preview {
+.financas-scope .picker-preview {
     width: 45px;
     border: 1px solid var(--cor-borda);
     border-radius: 8px;
@@ -1029,11 +1025,11 @@ body.light-theme .status-badge.efetivada {
     transition: all 0.2s;
 }
 
-.picker-preview:hover {
+.financas-scope .picker-preview:hover {
     border-color: var(--cor-azul-primario);
 }
 
-.picker-popover {
+.financas-scope .picker-popover {
     position: absolute;
     bottom: 115%;
     right: 0;
@@ -1049,22 +1045,22 @@ body.light-theme .status-badge.efetivada {
     max-width: 260px;
 }
 
-.picker-popover.visible {
+.financas-scope .picker-popover.visible {
     display: grid;
 }
 
-.picker-popover.icon-grid {
+.financas-scope .picker-popover.icon-grid {
     grid-template-columns: repeat(5, 1fr);
     max-height: 200px;
     overflow-y: auto;
 }
 
-.picker-popover.color-grid {
+.financas-scope .picker-popover.color-grid {
     grid-template-columns: repeat(5, 1fr);
 }
 
-.icon-option,
-.color-swatch {
+.financas-scope .icon-option,
+.financas-scope .color-swatch {
     width: 36px;
     height: 36px;
     border-radius: 8px;
@@ -1076,17 +1072,17 @@ body.light-theme .status-badge.efetivada {
     border: 1px solid transparent;
 }
 
-.icon-option:hover {
+.financas-scope .icon-option:hover {
     background-color: var(--cor-fundo-hover);
     transform: scale(1.1);
     color: var(--cor-texto-principal);
 }
 
-.color-swatch {
+.financas-scope .color-swatch {
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.color-swatch:hover {
+.financas-scope .color-swatch:hover {
     transform: scale(1.15);
     border-color: white;
     z-index: 2;
@@ -1099,47 +1095,47 @@ input[type=number]::-webkit-inner-spin-button {
 }
 
 /* ============================================= */
-/* 8. RESPONSIVIDADE                             */
+/* 8. RESPONSIVIDADE (SCOPED)                    */
 /* ============================================= */
 
 @media (max-width: 768px) {
-    .layout-grid-custom {
+    .financas-scope .layout-grid-custom {
         grid-template-columns: 1fr;
         gap: 2rem;
     }
 
-    .agenda-column {
+    .financas-scope .agenda-column {
         padding: 0;
     }
 
-    .agenda-column:not(:last-child) {
+    .financas-scope .agenda-column:not(:last-child) {
         border-right: none;
         border-bottom: 1px dashed var(--cor-borda);
         padding-bottom: 2rem;
         padding-right: 0;
     }
 
-    .column-header-flex {
+    .financas-scope .column-header-flex {
         margin: 0 0 1.5rem 0;
         border-right: none;
         border-radius: 12px;
         z-index: auto;
     }
 
-    .agenda-column:last-child .column-header-flex,
-    .agenda-column:first-child .column-header-flex {
+    .financas-scope .agenda-column:last-child .column-header-flex,
+    .financas-scope .agenda-column:first-child .column-header-flex {
         border-radius: 12px;
     }
 
-    .form-row,
-    .grid-65-35,
-    .grid-50-50,
-    .grid-33,
-    .grid-60-40 {
+    .financas-scope .form-row,
+    .financas-scope .grid-65-35,
+    .financas-scope .grid-50-50,
+    .financas-scope .grid-33,
+    .financas-scope .grid-60-40 {
         grid-template-columns: 1fr;
     }
 
-    .grid-meta-icon-color {
+    .financas-scope .grid-meta-icon-color {
         grid-template-columns: 1fr auto auto;
     }
 }

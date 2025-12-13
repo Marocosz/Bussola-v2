@@ -18,7 +18,7 @@ export function Agenda() {
         try {
             const result = await getAgendaDashboard();
             setData(result);
-            if(Object.keys(result.compromissos_por_mes).length > 0){
+            if(result.compromissos_por_mes && Object.keys(result.compromissos_por_mes).length > 0){
                 const firstMonth = Object.keys(result.compromissos_por_mes)[0];
                 setOpenMonths(prev => ({...prev, [firstMonth]: true}));
             }
@@ -41,7 +41,7 @@ export function Agenda() {
         const rect = e.target.getBoundingClientRect();
         setTooltip({
             visible: true,
-            x: rect.right + window.scrollX - 280, // Ajuste simples de posição
+            x: rect.right + window.scrollX - 280, 
             y: rect.bottom + window.scrollY + 5,
             compromissos
         });
@@ -52,17 +52,26 @@ export function Agenda() {
     if (loading) return <div className="loading-screen">Carregando Agenda...</div>;
 
     return (
-        <div className="container">
-            <div className="page-header">
-                <h1>Roteiro</h1>
+        <div className="container main-container">
+            {/* HERO SECTION */}
+            <div className="internal-hero">
+                <div className="hero-bg-effect"></div>
+                <div className="internal-hero-content">
+                    <h1>Roteiro</h1>
+                    <p>Organize seus compromissos, tarefas e eventos importantes.</p>
+                </div>
             </div>
 
-            <div className="agenda-view-container">
+            {/* LAYOUT GRID */}
+            <div className="layout-grid-custom agenda-layout">
+                
                 {/* Coluna da Esquerda: Lista */}
                 <div className="agenda-column">
                     <div className="column-header-flex">
                         <h2>Compromissos</h2>
-                        <button className="btn-primary" onClick={handleNew}><i className="fa-solid fa-plus"></i> Adicionar</button>
+                        <button className="btn-primary" onClick={handleNew}>
+                            <i className="fa-solid fa-plus"></i> Adicionar
+                        </button>
                     </div>
 
                     {Object.keys(data.compromissos_por_mes).length > 0 ? (
@@ -72,19 +81,21 @@ export function Agenda() {
                                     <span>{mes}</span>
                                     <i className={`fa-solid fa-chevron-down ${openMonths[mes] ? 'rotate' : ''}`}></i>
                                 </h3>
-                                {openMonths[mes] && (
-                                    <div className="month-content">
-                                        <div className="compromissos-grid">
-                                            {comps.map(comp => (
-                                                <CompromissoCard key={comp.id} comp={comp} onUpdate={fetchData} onEdit={handleEdit} />
-                                            ))}
+                                <div className={`accordion-wrapper ${openMonths[mes] ? 'open' : ''}`}>
+                                    <div className="accordion-inner">
+                                        <div className="month-content">
+                                            <div className="compromissos-grid">
+                                                {comps.map(comp => (
+                                                    <CompromissoCard key={comp.id} comp={comp} onUpdate={fetchData} onEdit={handleEdit} />
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
-                                )}
+                                </div>
                             </div>
                         ))
                     ) : (
-                        <p style={{textAlign:'center', color:'var(--cor-texto-secundario)'}}>Nenhum compromisso agendado.</p>
+                        <p className="empty-list-msg">Nenhum compromisso agendado.</p>
                     )}
                 </div>
 

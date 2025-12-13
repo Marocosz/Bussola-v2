@@ -1,32 +1,277 @@
-/* --- ESTILOS EXCLUSIVOS DA PÁGINA DA AGENDA --- */
-
 /* ============================================= */
-/* Componente: Card de Compromisso Detalhado     */
+/* 1. ESTRUTURA GERAL E LAYOUT                   */
 /* ============================================= */
 
-/* Define a grade responsiva para a lista de compromissos */
-.compromissos-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-    padding: 0 10px;
+.main-container {
+    padding-bottom: 5rem !important; 
+    min-height: 100vh; 
+    box-sizing: border-box; 
 }
 
-/* Estilo base para o card individual do compromisso */
+/* LAYOUT GRID ESPECÍFICO DA AGENDA (2 Colunas) */
+.layout-grid-custom.agenda-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Duas colunas iguais */
+    gap: 0; 
+    align-items: stretch; 
+}
+
+/* Colunas Individuais */
+.agenda-column {
+    display: flex;
+    flex-direction: column;
+    min-width: 0; 
+    position: relative;
+    height: 100%;
+    padding: 0 1.2rem;
+}
+
+.agenda-column:first-child { padding-left: 0; }
+.agenda-column:last-child { padding-right: 0; }
+
+/* Linha divisória entre colunas */
+.agenda-column:not(:last-child) { border-right: none; }
+.agenda-column:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 3.6rem; 
+    bottom: 0;
+    right: 0;
+    width: 1px;
+    border-right: 1px dashed var(--cor-borda);
+    z-index: 0;
+}
+
+/* Mensagem de lista vazia */
+.empty-list-msg {
+    color: var(--cor-texto-secundario);
+    font-style: italic;
+    font-size: 0.9rem;
+    padding: 1rem;
+    background: var(--cor-fundo-hover);
+    border-radius: 8px;
+    text-align: center;
+}
+
+/* ============================================= */
+/* 2. HERO INTERNO                               */
+/* ============================================= */
+
+.internal-hero {
+    position: relative;
+    text-align: center;
+    padding: 4rem 2rem 5rem 2rem;
+    overflow: hidden;
+    border-radius: 0 0 20px 20px;
+}
+
+.hero-bg-effect {
+    position: absolute;
+    top: -50%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 200%;
+    background: radial-gradient(
+        ellipse at center, 
+        rgba(74, 109, 255, 0.15) 0%, 
+        rgba(168, 85, 247, 0.05) 40%, 
+        transparent 70%
+    );
+    z-index: 0;
+    pointer-events: none;
+}
+
+.internal-hero-content { position: relative; z-index: 1; }
+
+.internal-hero h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(90deg, #fff 0%, var(--cor-azul-primario) 50%, #fff 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+    animation: shine 5s linear infinite;
+}
+
+.internal-hero p {
+    font-size: 1.1rem;
+    color: var(--cor-texto-secundario);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+@keyframes shine {
+    to { background-position: 200% center; }
+}
+
+/* ============================================= */
+/* 3. CABEÇALHOS DAS COLUNAS                     */
+/* ============================================= */
+
+/* --- RESTAURAÇÃO DO PADRÃO GLOBAL (Seguro para Finanças) --- */
+.column-header-flex {
+    display: flex;
+    justify-content: space-between; /* VOLTA AO PADRÃO: Um em cada ponta */
+    align-items: center;
+    margin: 0 -1.2rem 1.5rem -1.2rem; 
+    padding: 0.8rem 1.5rem;
+    background-color: var(--cor-card-secundario);
+    border-bottom: 1px solid var(--cor-borda);
+    border-right: 1px solid var(--cor-borda);
+    transition: background-color 0.2s, color 0.2s;
+    position: relative; 
+    z-index: 2;
+    /* Removemos min-height global */
+}
+
+.column-header-flex:hover {
+    background-color: var(--cor-card-principal);
+    box-shadow: inset 0 -2px 0 var(--cor-azul-primario); 
+}
+
+.column-header-flex h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--cor-texto-secundario);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: color 0.2s;
+    /* text-align: center; -> REMOVIDO DO GLOBAL */
+}
+
+.column-header-flex:hover h2 { color: var(--cor-texto-principal); }
+
+
+/* --- AGORA SIM: REGRAS ESPECÍFICAS SÓ PARA AGENDA --- */
+/* O seletor .agenda-layout blinda essas alterações */
+
+.agenda-layout .column-header-flex {
+    justify-content: center; /* Centraliza só na agenda */
+    min-height: 60px;       /* Altura fixa só na agenda */
+}
+
+.agenda-layout .column-header-flex h2 {
+    text-align: center;     /* Alinhamento de texto só na agenda */
+}
+
+/* Posicionamento absoluto do botão SÓ NA AGENDA */
+.agenda-layout .column-header-flex .btn-primary {
+    position: absolute;
+    right: 1.5rem;
+    font-size: 0.8rem;
+    padding: 4px 12px;
+    min-height: 30px;
+}
+/* --------------------------------------------------- */
+
+/* BOTÃO PADRÃO (Para Finanças não quebrar) */
+.column-header-flex .btn-primary {
+    font-size: 0.8rem;
+    padding: 4px 12px;
+    min-height: 30px;
+    /* Sem position absolute aqui */
+}
+
+/* AJUSTE PARA 2 COLUNAS CONECTADAS */
+
+/* 1. Coluna Esquerda: Arredonda só a esquerda */
+.agenda-column:first-child .column-header-flex {
+    margin-left: 0;           
+    margin-right: -1.2rem;    
+    border-radius: 12px 0 0 12px;
+    z-index: 2;
+}
+
+/* 2. Coluna Direita: Arredonda só a direita */
+.agenda-column:last-child .column-header-flex {
+    margin-left: -1.2rem;     
+    margin-right: 0;          
+    border-radius: 0 12px 12px 0;
+    border-right: 1px solid var(--cor-borda); 
+    z-index: 2;
+}
+
+/* ============================================= */
+/* 4. ACCORDION E LISTA DE COMPROMISSOS          */
+/* ============================================= */
+
+.month-group {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+}
+
+.month-group + .month-group { margin-top: 1.5rem !important; }
+
+.month-header {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid var(--cor-borda) !important;
+    border-radius: 0 !important;
+    padding: 0.2rem 0 0.4rem 0;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--cor-texto-secundario);
+    transition: all 0.2s;
+}
+
+.month-header:hover, .month-header.active {
+    color: var(--cor-azul-primario);
+    border-bottom-color: var(--cor-azul-primario) !important;
+}
+
+.month-header i { font-size: 0.8rem; transition: transform 0.3s ease; }
+.month-header i.rotate { transform: rotate(180deg); }
+
+/* Animação do Accordion */
+.accordion-wrapper {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease-out;
+}
+.accordion-wrapper.open { grid-template-rows: 1fr; }
+.accordion-inner { overflow: hidden; min-height: 0; }
+.month-content { padding-top: 0; padding-bottom: 0; }
+
+.compromissos-grid {
+    display: flex;
+    flex-direction: column; /* Lista vertical em vez de grid */
+    gap: 0.8rem;
+}
+
+/* ============================================= */
+/* 5. CARD DE COMPROMISSO (Estilo Finanças)      */
+/* ============================================= */
+
 .compromisso-card-detailed {
     background-color: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 1rem;
     display: flex;
     flex-direction: column;
-    gap: 0.85rem;
-    min-height: 200px;
+    gap: 0.8rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-left: 4px solid var(--cor-azul-primario); /* Cor padrão */
 }
 
-/* --- Cabeçalho do Card e Título --- */
+.compromisso-card-detailed:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
 
-/* Alinha o título e os botões de ação na parte superior do card */
 .compromisso-header {
     display: flex;
     justify-content: space-between;
@@ -34,132 +279,79 @@
     align-items: flex-start;
 }
 
-/* Estiliza o título do compromisso, permitindo quebra de linha em textos longos */
 .compromisso-header h4 {
-    font-size: 1.1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--cor-texto-principal);
     white-space: normal;
     overflow-wrap: break-word;
-    word-break: break-word;
 }
 
-/* --- Botões de Ação Pequenos (Concluir/Resetar) --- */
-
-/* Container para os botões de ação circulares */
 .action-buttons-small {
     display: flex;
     gap: 0.5rem;
-    flex-shrink: 0; /* Impede que os botões diminuam de tamanho */
+    flex-shrink: 0;
 }
 
-/* Remove margens padrão se o botão estiver dentro de um <form> */
-.action-buttons-small form {
-    margin: 0;
-}
-
-/* Estilo base dos botões circulares de ação */
 .action-buttons-small button {
-    background: var(--cor-card-secundario);
-    border: none;
+    background: transparent;
+    border: 1px solid var(--cor-borda);
     color: var(--cor-texto-secundario);
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
-    padding: 0;
 }
 
-/* Efeito hover para o botão de concluir (verde) */
-.action-buttons-small button.done:hover {
-    background-color: var(--cor-verde-sucesso);
-    color: white;
-}
+.action-buttons-small button.done:hover { background-color: var(--cor-verde-sucesso); color: white; border-color: var(--cor-verde-sucesso); }
+.action-buttons-small button.reset:hover { background-color: var(--cor-laranja-aviso); color: white; border-color: var(--cor-laranja-aviso); }
 
-/* Efeito hover para o botão de redefinir (laranja) */
-.action-buttons-small button.reset:hover {
-    background-color: var(--cor-laranja-aviso);
-    color: white;
-}
-
-/* --- Detalhes do Card (Ícone + Texto) --- */
-
-/* Estiliza cada linha de detalhe (ex: data, hora, local) */
 p.compromisso-detail {
     display: flex;
-    align-items: flex-start;
-    line-height: 1.4;
-    font-size: 0.9rem;
+    align-items: center;
+    font-size: 0.85rem;
     color: var(--cor-texto-secundario);
     margin: 0;
+    gap: 0.5rem;
 }
 
-/* Alinhamento e espaçamento do ícone na linha de detalhe */
 p.compromisso-detail i {
-    margin-right: 0.6rem;
-    margin-top: 2px;
     width: 16px;
     text-align: center;
+    color: var(--cor-azul-primario);
 }
 
-/* Garante a quebra de linha correta para o texto de detalhe */
-p.compromisso-detail span {
-    flex-shrink: 1;
-    min-width: 0;
-    overflow-wrap: break-word;
-    word-break: break-word;
-}
-
-/* Estilo específico para o texto do lembrete */
-.lembrete-badge span {
-    font-weight: 500;
-    color: var(--cor-texto-principal);
-}
-
-/* --- Rodapé do Card e Status Badge --- */
-
-/* Container do rodapé, usado para empurrar o status para o final do card */
 .footer-details {
     margin-top: auto;
     padding-top: 0.5rem;
+    border-top: 1px solid var(--cor-borda); /* Separador sutil */
+    display: flex;
+    justify-content: flex-end;
 }
 
-/* Estilo base da etiqueta de status (Pendente, Realizado, Perdido) */
 .status-badge {
-    padding: 0.25rem 0.6rem;
+    padding: 2px 8px;
     border-radius: 12px;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    color: #fff;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-/* Cor para status pendente */
-.status-badge.pendente {
-    background-color: var(--cor-cinza-botao-hover);
-}
-
-/* Cor para status realizado */
-.status-badge.realizado {
-    background-color: var(--cor-verde-sucesso);
-}
-
-/* Cor para status perdido */
-.status-badge.perdido {
-    background-color: var(--cor-vermelho-delete);
-}
+.status-badge.pendente { background: rgba(255, 193, 7, 0.15); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3); }
+.status-badge.realizado { background: rgba(40, 167, 69, 0.15); color: #28a745; border: 1px solid rgba(40, 167, 69, 0.3); }
+.status-badge.perdido { background: rgba(231, 76, 60, 0.15); color: #e74c3c; border: 1px solid rgba(231, 76, 60, 0.3); }
 
 /* ============================================= */
-/* Componente: Calendário (Visualização de Dias) */
+/* 6. CALENDÁRIO                                 */
 /* ============================================= */
 
-/* --- Divisor de Mês --- */
-
-/* Título de separação entre os meses (ex: Setembro 2025) */
 .month-divider {
-    grid-column: 1 / -1; /* Faz o título ocupar toda a largura da grade */
+    grid-column: 1 / -1;
     width: 100%;
     text-align: left;
     margin-top: 1.5rem;
@@ -167,211 +359,111 @@ p.compromisso-detail span {
     border-bottom: 2px solid var(--cor-borda);
 }
 
-/* Estilo do texto do título do mês */
 .month-divider h2 {
-    font-size: 1.5rem;
+    font-size: 1.1rem; /* Mais sutil */
     font-weight: 600;
     color: var(--cor-texto-principal);
     margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-/* Ajuste de margem entre grupos de meses consecutivos */
-.month-group + .month-group {
-    margin-top: -1.75rem;
-}
-
-/* --- Grid dos Dias --- */
-
-/* Grade responsiva para as células dos dias do calendário */
 .dias-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
-    gap: 0.75rem;
-    padding: 0 10px;
+    grid-template-columns: repeat(auto-fit, minmax(50px, 1fr)); /* Células menores */
+    gap: 0.5rem;
+    padding-top: 1rem;
 }
 
-/* --- Card do Dia individual --- */
-
-/* Estilo base da célula de cada dia no calendário */
 .dia-card {
     background-color: var(--cor-card-secundario);
     border: 1px solid var(--cor-borda);
     border-radius: 8px;
-    padding: 0.75rem;
+    padding: 0.5rem;
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    gap: 0.25rem;
+    gap: 0.2rem;
     transition: all 0.2s ease;
-    min-height: 30px;
+    min-height: 50px;
     justify-content: center;
+    position: relative;
 }
 
-/* Estilo do número do dia (ex: 1, 2, 3...) */
-.dia-numero {
-    font-size: 1.25rem;
-    font-weight: 600;
-}
+.dia-numero { font-size: 1rem; font-weight: 600; }
+.dia-semana { font-size: 0.7rem; color: var(--cor-texto-secundario); }
 
-/* Estilo do nome da semana (ex: Seg, Ter, Qua...) */
-.dia-semana {
-    font-size: 0.8rem;
-    color: var(--cor-texto-secundario);
-    margin-bottom: 0.25rem;
-}
-
-/* Indicador de evento no card do dia (ponto colorido) */
 .compromisso-indicator {
-    height: 8px;
-    width: 8px;
+    height: 6px;
+    width: 6px;
     background-color: var(--cor-azul-primario);
     border-radius: 50%;
+    margin-top: 2px;
 }
+.compromisso-indicator.no-event { background-color: transparent; }
 
-/* Oculta o indicador se não houver eventos no dia */
-.compromisso-indicator.no-event {
-    background-color: transparent;
-}
+.dia-card.has-compromissos { cursor: pointer; border-color: var(--cor-azul-primario); background-color: rgba(74, 109, 255, 0.05); }
+.dia-card:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
-/* --- Estados do Card do Dia --- */
-
-/* Muda o cursor para indicar que o dia é clicável (quando tem compromissos) */
-.dia-card.has-compromissos {
-    cursor: pointer;
-}
-
-/* Efeito visual ao passar o mouse sobre a célula do dia */
-.dia-card:hover {
-    transform: translateY(-4px);
-    border-color: var(--cor-azul-primario);
-}
-
-/* Destaque especial para o dia atual */
 .dia-card.today {
     border: 2px solid var(--cor-azul-primario);
     background-color: var(--cor-card-principal);
 }
-
-/* Cor do número do dia atual */
-.dia-card.today .dia-numero {
-    color: var(--cor-azul-primario);
-}
+.dia-card.today .dia-numero { color: var(--cor-azul-primario); }
 
 /* ============================================= */
-/* Componente: Tooltip do Calendário             */
+/* 7. TOOLTIP                                    */
 /* ============================================= */
 
-/* Estilo base do container do tooltip (caixa flutuante) */
 .tooltip {
-    display: none; /* Oculto por padrão */
+    display: none;
     opacity: 0;
     position: absolute;
-    z-index: 1000; /* Garante que fique sobreposto a outros elementos */
+    z-index: 1000;
     background-color: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
     border-radius: 8px;
     padding: 0.75rem 1rem;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    width: 280px;
-    max-width: 90vw;
-    pointer-events: none; /* Impede que o mouse interaja com o tooltip */
+    width: 250px;
+    pointer-events: none;
     transition: opacity 0.2s ease;
 }
 
-/* Classe para tornar o tooltip visível (controlada por JS) */
-.tooltip.visible {
-    display: block;
-    opacity: 1;
-}
+.tooltip.visible { display: block; opacity: 1; }
 
-/* --- Itens dentro do Tooltip --- */
-
-/* Estilo de cada item de compromisso listado no tooltip */
 .tooltip-compromisso-item {
-    padding: 0.75rem 0;
+    padding: 0.5rem 0;
     border-bottom: 1px solid var(--cor-borda);
 }
+.tooltip-compromisso-item:last-child { border-bottom: none; }
 
-/* Remove preenchimento superior do primeiro item */
-.tooltip-compromisso-item:first-child {
-    padding-top: 0;
-}
-
-/* Remove borda inferior do último item */
-.tooltip-compromisso-item:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-}
-
-/* Alinhamento do conteúdo de texto dentro do item do tooltip */
-.tooltip-compromisso-item p {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 1rem;
-}
-
-/* Estilo do título do compromisso no tooltip */
-.tooltip-titulo {
-    font-weight: 600;
-    color: var(--cor-texto-principal);
-    font-size: 0.95rem;
-    overflow-wrap: break-word;
-    word-break: break-word;
-    min-width: 0;
-}
-
-/* Estilo da hora do compromisso no tooltip */
-.tooltip-hora {
-    font-size: 0.9rem;
-    color: var(--cor-texto-secundario);
-    white-space: nowrap; /* Impede que a hora quebre linha */
-    flex-shrink: 0;
-}
+.tooltip-titulo { font-weight: 600; color: var(--cor-texto-principal); font-size: 0.85rem; }
+.tooltip-hora { font-size: 0.8rem; color: var(--cor-texto-secundario); margin-left: auto; }
 
 /* ============================================= */
-/* Estilos para o Layout Moderno dos Modais      */
+/* 8. RESPONSIVIDADE                             */
 /* ============================================= */
 
-/* Aplica layout customizado aos modais de adição e edição */
-#add-compromisso-modal .modal-content,
-#edit-compromisso-modal .modal-content {
-    padding: 0;
-    max-width: 650px;
-}
-
-/* Seção do cabeçalho do modal */
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem 2rem;
-    border-bottom: 1px solid var(--cor-borda);
-}
-
-/* Reseta margem do título do modal */
-.modal-header h3 {
-    margin: 0;
-}
-
-/* Seção principal de conteúdo do modal (formulário) */
-.modal-body {
-    padding: 1.5rem 2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-/* Seção do rodapé do modal (botões de salvar/cancelar) */
-.modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 1.5rem 2rem;
-    border-top: 1px solid var(--cor-borda);
-    background-color: var(--cor-card-secundario);
-    border-bottom-left-radius: 16px;
-    border-bottom-right-radius: 16px;
+@media (max-width: 768px) {
+    .layout-grid-custom.agenda-layout {
+        grid-template-columns: 1fr;
+        gap: 2rem; 
+    }
+    
+    .agenda-column:not(:last-child) {
+        border-right: none;
+        border-bottom: 1px dashed var(--cor-borda);
+        padding-bottom: 2rem;
+        padding-right: 0;
+    }
+    
+    .column-header-flex {
+        margin: 0 0 1.5rem 0;
+        border-right: none;
+        border-radius: 12px;
+    }
+    .agenda-column:last-child .column-header-flex,
+    .agenda-column:first-child .column-header-flex { border-radius: 12px; }
 }
