@@ -35,8 +35,15 @@ class CategoriaCreate(CategoriaBase):
 
 class CategoriaResponse(CategoriaBase):
     id: int
-    total_gasto: Optional[float] = 0.0 # Campo calculado para o dashboard
-    total_ganho: Optional[float] = 0.0 # Campo calculado para o dashboard
+    
+    # Dados do Mês Atual (para o card fechado)
+    total_gasto: Optional[float] = 0.0 
+    total_ganho: Optional[float] = 0.0 
+
+    # Dados Históricos (para o card expandido/setinha)
+    total_historico: Optional[float] = 0.0
+    media_valor: Optional[float] = 0.0
+    qtd_transacoes: Optional[int] = 0
 
     class Config:
         from_attributes = True

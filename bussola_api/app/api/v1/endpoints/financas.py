@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc  # <--- Adicionado func e desc
+from sqlalchemy import func, desc
 from typing import Any, List
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -20,7 +20,7 @@ router = APIRouter()
 @router.get("/", response_model=FinancasDashboardResponse)
 def get_financas_dashboard(
     db: Session = Depends(deps.get_db),
-    current_user = Depends(deps.get_current_user) # <--- Auth descomentado
+    current_user = Depends(deps.get_current_user)
 ) -> Any:
     """
     Retorna todos os dados necessários para montar a tela de Finanças.
@@ -33,31 +33,61 @@ def get_financas_dashboard(
     start_of_month = today.replace(day=1, hour=0, minute=0, second=0)
     next_month = start_of_month + relativedelta(months=1)
 
-    # 3. Categorias com Totais (Mês Atual)
-    # query de categorias de despesa
+    # 3. Categorias com Totais (Mês Atual + Histórico para Expandir)
+    
+    # --- DESPESAS ---
     cats_despesa = db.query(Categoria).filter(Categoria.tipo == 'despesa').all()
     for cat in cats_despesa:
-        total = db.query(func.sum(Transacao.valor)).filter(
+        # A. Total do Mês Atual (Apenas efetivadas para consistência financeira)
+        total_mes = db.query(func.sum(Transacao.valor)).filter(
             Transacao.categoria_id == cat.id,
             Transacao.data >= start_of_month,
             Transacao.data < next_month,
             Transacao.status == 'Efetivada'
         ).scalar()
-        cat.total_gasto = total or 0.0
+        cat.total_gasto = total_mes or 0.0
 
-    # query de categorias de receita
+        # B. Estatísticas Históricas (Para o Card Expandido)
+        stats = db.query(
+            func.sum(Transacao.valor),   # [0] Total Histórico
+            func.avg(Transacao.valor),   # [1] Média por transação
+            func.count(Transacao.id)     # [2] Quantidade de transações
+        ).filter(
+            Transacao.categoria_id == cat.id,
+            Transacao.status == 'Efetivada'
+        ).first()
+
+        cat.total_historico = stats[0] or 0.0
+        cat.media_valor = stats[1] or 0.0
+        cat.qtd_transacoes = stats[2] or 0
+
+    # --- RECEITAS ---
     cats_receita = db.query(Categoria).filter(Categoria.tipo == 'receita').all()
     for cat in cats_receita:
-        total = db.query(func.sum(Transacao.valor)).filter(
+        # A. Total do Mês Atual
+        total_mes = db.query(func.sum(Transacao.valor)).filter(
             Transacao.categoria_id == cat.id,
             Transacao.data >= start_of_month,
             Transacao.data < next_month,
             Transacao.status == 'Efetivada'
         ).scalar()
-        cat.total_ganho = total or 0.0
+        cat.total_ganho = total_mes or 0.0
+
+        # B. Estatísticas Históricas
+        stats = db.query(
+            func.sum(Transacao.valor),
+            func.avg(Transacao.valor),
+            func.count(Transacao.id)
+        ).filter(
+            Transacao.categoria_id == cat.id,
+            Transacao.status == 'Efetivada'
+        ).first()
+
+        cat.total_historico = stats[0] or 0.0
+        cat.media_valor = stats[1] or 0.0
+        cat.qtd_transacoes = stats[2] or 0
 
     # 4. Transações Agrupadas por Mês
-    # Busca todas
     transacoes = db.query(Transacao).order_by(desc(Transacao.data)).all()
     
     pontuais_map = defaultdict(list)
@@ -89,7 +119,7 @@ def get_financas_dashboard(
 def create_transacao(
     transacao_in: TransacaoCreate,
     db: Session = Depends(deps.get_db),
-    current_user = Depends(deps.get_current_user) # Adicionado auth aqui também por segurança
+    current_user = Depends(deps.get_current_user)
 ):
     return financas_service.criar_transacao(db, transacao_in)
 

@@ -3,7 +3,6 @@
 /* ============================================= */
 
 .main-container {
-    /* Espaço para o scroll não cortar o conteúdo final */
     padding-bottom: 5rem !important; 
     min-height: 100vh; 
     box-sizing: border-box; 
@@ -74,7 +73,6 @@
 .layout-grid-custom {
     display: grid;
     grid-template-columns: 3.5fr 3.5fr 3fr; 
-    /* Gap zero para permitir conexão visual dos cabeçalhos */
     gap: 0; 
     align-items: stretch; 
 }
@@ -83,21 +81,14 @@
     display: flex;
     flex-direction: column;
     min-width: 0; 
-    position: relative; /* Necessário para posicionar a linha customizada */
+    position: relative;
     height: 100%;
-    /* Padding lateral interno para compensar o gap zero */
     padding: 0 1.2rem;
 }
 
-/* Remove padding das extremidades para alinhamento global */
 .agenda-column:first-child { padding-left: 0; }
 .agenda-column:last-child { padding-right: 0; }
 
-/* ALTERAÇÃO: 
-   1. Removemos o border-right direto da coluna.
-   2. Adicionamos o ::after para desenhar a linha tracejada
-      começando APENAS abaixo do cabeçalho (top: 3.6rem).
-*/
 .agenda-column:not(:last-child) {
     border-right: none; 
 }
@@ -105,7 +96,6 @@
 .agenda-column:not(:last-child)::after {
     content: "";
     position: absolute;
-    /* Pula a altura do cabeçalho para não sobrepor */
     top: 3.6rem; 
     bottom: 0;
     right: 0;
@@ -132,27 +122,16 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    
-    /* Margens negativas para expandir e conectar visualmente */
     margin: 0 -1.2rem 1.5rem -1.2rem; 
     padding: 0.8rem 1.5rem;
-    
     background-color: var(--cor-card-secundario);
     border-bottom: 1px solid var(--cor-borda);
-    
-    /* Separador vertical entre os cabeçalhos */
     border-right: 1px solid var(--cor-borda);
-    
     transition: background-color 0.2s, color 0.2s;
-
-    /* --- CORREÇÃO DA SOBREPOSIÇÃO --- */
-    /* Coloca o cabeçalho em uma camada acima da coluna.
-       Como ele tem cor de fundo, ele vai tapar a linha tracejada da coluna. */
     position: relative;
     z-index: 2;
 }
 
-/* Ajustes de borda e arredondamento nas extremidades */
 .agenda-column:last-child .column-header-flex {
     border-right: none;
     margin-right: 0;
@@ -164,7 +143,6 @@
     border-radius: 12px 0 0 12px;
 }
 
-/* Hover effect nos títulos */
 .column-header-flex:hover {
     background-color: var(--cor-card-principal);
     box-shadow: inset 0 -2px 0 var(--cor-azul-primario); 
@@ -200,7 +178,6 @@
     margin: 0;
 }
 
-/* Aplica margem superior apenas a partir do segundo grupo de mês */
 .month-group + .month-group {
     margin-top: 1.5rem !important; 
 }
@@ -210,10 +187,8 @@
     border: none !important;
     border-bottom: 1px solid var(--cor-borda) !important;
     border-radius: 0 !important;
-    
     padding: 0.2rem 0 0.4rem 0;
     margin-bottom: 0.5rem;
-    
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -259,10 +234,18 @@
     background-color: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
     border-radius: 10px;
-    padding: 1rem;
+    
+    /* ALTERAÇÃO AQUI: 
+       Mantive 1rem nos lados e topo, mas reduzi em baixo (0.6rem) 
+       para a borda ficar mais perto dos botões */
+    padding: 1rem 1rem .6rem 1rem;
+    
     display: flex;
     flex-direction: column;
-    gap: 0.8rem;
+    
+    /* Mantive 0.8rem para NÃO colar a linha no conteúdo de cima */
+    gap: 0.8rem; 
+    
     transition: transform 0.2s, box-shadow 0.2s;
     border-left: 4px solid var(--cor-borda);
 }
@@ -345,9 +328,13 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-top: 1px solid var(--cor-borda);
-    padding-top: 0.8rem;
-    margin-top: 0.5rem;
+    
+    /* ALTERAÇÃO AQUI:
+       margin-top: 0.5rem -> Mantém a distância da linha para o conteúdo de cima (Preservado).
+       padding-top: 0.4rem -> Reduzi (era 0.8rem). Isso puxa os botões para cima, colando na linha.
+    */
+    margin-top: 1.5rem; 
+    padding-top: 0.4rem; 
 }
 
 .status-badge {
@@ -402,6 +389,7 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     background: rgba(231, 76, 60, 0.15);
 }
 
+/* --- CARD DE CATEGORIA (MANTIDO PADRÃO) --- */
 .category-grid {
     display: flex;
     flex-direction: column;
@@ -415,15 +403,23 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
     border-radius: 8px;
     padding: 0.8rem;
     display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    transition: transform 0.2s;
+    flex-direction: column;
+    gap: 0; 
+    transition: transform 0.2s, box-shadow 0.2s;
     width: 100%;
 }
 
 .categoria-card:hover {
     transform: translateY(-2px);
     border-color: var(--cor-azul-primario);
+}
+
+/* Header do Card (Parte sempre visível) */
+.categoria-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    width: 100%;
 }
 
 .categoria-icon-box {
@@ -440,23 +436,134 @@ body.light-theme .status-badge.efetivada { background: #d4edda; color: #155724; 
 .categoria-info {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.categoria-main-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .categoria-info h4 {
     font-size: 0.9rem;
-    margin-bottom: 0.2rem;
+    margin: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     font-weight: 600;
 }
 
-.categoria-meta {
+.categoria-valor {
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.categoria-valor.despesa { color: var(--cor-vermelho-delete); }
+.categoria-valor.receita { color: var(--cor-verde-sucesso); }
+
+.categoria-meta-line {
     font-size: 0.75rem;
     color: var(--cor-texto-secundario);
     display: flex;
     justify-content: space-between;
+}
+
+.meta-text strong { color: var(--cor-texto-principal); }
+.meta-text-empty { font-style: italic; opacity: 0.7; }
+
+.progress-bar-container {
+    width: 100%;
+    height: 4px;
+    background-color: var(--cor-fundo-hover);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+/* Botão de Expandir (Setinha) */
+.btn-expand-card {
+    background: transparent;
+    border: none;
+    color: var(--cor-texto-secundario);
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    display: flex;
     align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.btn-expand-card:hover {
+    background-color: var(--cor-fundo-hover);
+    color: var(--cor-texto-principal);
+}
+
+.btn-expand-card i {
+    transition: transform 0.3s ease;
+    font-size: 0.8rem;
+}
+
+.btn-expand-card.rotate i {
+    transform: rotate(180deg);
+}
+
+/* Detalhes Expansíveis */
+.categoria-details-wrapper {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease-out;
+}
+
+.categoria-details-wrapper.open {
+    grid-template-rows: 1fr;
+}
+
+.categoria-details-inner {
+    overflow: hidden;
+    min-height: 0;
+}
+
+.stats-separator {
+    background-color: var(--cor-borda);
+    margin: 0.8rem 0;
+    opacity: 0.5;
+}
+
+.categoria-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.5rem;
+    padding-bottom: 0.2rem;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.stat-label {
+    font-size: 0.65rem;
+    color: var(--cor-texto-secundario);
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}
+
+.stat-value {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--cor-texto-principal);
 }
 
 /* ============================================= */
@@ -779,11 +886,11 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin
 @media (max-width: 768px) {
     .layout-grid-custom {
         grid-template-columns: 1fr;
-        gap: 2rem; /* Retorna o gap no mobile pois as colunas empilham */
+        gap: 2rem; 
     }
     
     .agenda-column {
-        padding: 0; /* Remove padding lateral extra no mobile */
+        padding: 0; 
     }
 
     .agenda-column:not(:last-child) {
@@ -793,12 +900,10 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin
         padding-right: 0;
     }
     
-    /* Reset dos cabeçalhos para ficarem normais no mobile */
     .column-header-flex {
         margin: 0 0 1.5rem 0;
         border-right: none;
         border-radius: 12px;
-        /* Remove o z-index no mobile pois não é necessário */
         z-index: auto;
     }
     

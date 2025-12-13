@@ -88,27 +88,62 @@ class FinancasService:
         db.commit()
 
     def criar_transacao(self, db: Session, dados: TransacaoCreate):
+        # --- CASO PONTUAL ---
         if dados.tipo_recorrencia == 'pontual':
             nova = Transacao(**dados.model_dump())
-            # Pontuais já nascem efetivadas na lógica antiga, ou pendentes? 
-            # O antigo forçava 'Efetivada'. Vamos manter padrão 'Pendente' se não especificado, ou seguir o form.
-            if not dados.status: nova.status = 'Efetivada' 
+            if not dados.status: nova.status = 'Pendente' # Padrão Pendente se não informado
             db.add(nova)
             db.commit()
             db.refresh(nova)
             return nova
 
+        # --- CASO PARCELADA (Lógica Nova: Cria TODAS as parcelas agora) ---
         elif dados.tipo_recorrencia == 'parcelada':
             grupo_id = uuid.uuid4().hex
-            # Cria a primeira parcela
-            primeira = Transacao(**dados.model_dump())
-            primeira.parcela_atual = 1
-            primeira.id_grupo_recorrencia = grupo_id
-            # Logica antiga: parcelas futuras nascem Pendentes. A primeira depende do input.
-            db.add(primeira)
-            db.commit()
-            return primeira
+            
+            valor_total = dados.valor
+            qtd_parcelas = dados.total_parcelas
+            
+            # 1. Calcula valor base (truncado em 2 casas)
+            valor_parcela_base = round(valor_total / qtd_parcelas, 2)
+            
+            # 2. Calcula a diferença de centavos (Ex: 100/3 -> 33.33 * 3 = 99.99 -> sobra 0.01)
+            diferenca = round(valor_total - (valor_parcela_base * qtd_parcelas), 2)
+            
+            primeira_criada = None
 
+            for i in range(1, qtd_parcelas + 1):
+                # Ajusta a primeira parcela com a diferença de centavos para fechar a conta
+                valor_desta = valor_parcela_base
+                if i == 1:
+                    valor_desta += diferenca
+                
+                # Calcula data do mês subsequente (Parcela 1 = Data informada, Parcela 2 = +1 mês...)
+                # Nota: i-1 porque a primeira (i=1) não soma meses, é na data atual
+                data_vencimento = dados.data + relativedelta(months=i-1)
+                
+                nova = Transacao(
+                    descricao=dados.descricao,
+                    valor=valor_desta,
+                    data=data_vencimento,
+                    categoria_id=dados.categoria_id,
+                    tipo_recorrencia='parcelada',
+                    parcela_atual=i,
+                    total_parcelas=qtd_parcelas,
+                    id_grupo_recorrencia=grupo_id,
+                    status=dados.status or 'Pendente'
+                )
+                
+                db.add(nova)
+                
+                if i == 1:
+                    primeira_criada = nova
+
+            db.commit()
+            db.refresh(primeira_criada) # Retorna a primeira para responder a API
+            return primeira_criada
+
+        # --- CASO RECORRENTE (Assinatura) ---
         elif dados.tipo_recorrencia == 'recorrente':
             grupo_id = uuid.uuid4().hex
             nova = Transacao(**dados.model_dump())
