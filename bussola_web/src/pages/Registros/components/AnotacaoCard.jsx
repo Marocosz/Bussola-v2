@@ -1,69 +1,70 @@
 import React from 'react';
-import { toggleFixarAnotacao, deleteAnotacao } from '../../../services/api';
-import { useToast } from '../../../context/ToastContext';
+import { deleteAnotacao, toggleFixarAnotacao } from '../../../services/api';
 
-export function AnotacaoCard({ anotacao, onUpdate, onEdit }) {
-    const { addToast } = useToast();
-
-    const handleFixar = async (e) => {
-        e.stopPropagation();
-        try {
-            await toggleFixarAnotacao(anotacao.id);
-            onUpdate();
-        } catch (error) { console.error(error); }
-    };
-
+export function AnotacaoCard({ anotacao, onUpdate, onEdit, onView }) {
+    
     const handleDelete = async (e) => {
         e.stopPropagation();
-        if (!confirm('Excluir esta anotação?')) return;
-        try {
+        if (window.confirm("Excluir esta anotação?")) {
             await deleteAnotacao(anotacao.id);
-            addToast({ type: 'success', title: 'Excluído', description: 'Anotação removida.' });
             onUpdate();
-        } catch {
-            addToast({ type: 'error', title: 'Erro', description: 'Falha ao excluir.' });
         }
     };
 
-    // Remove tags HTML para verificar se tem conteúdo
-    const conteudoLimpo = anotacao.conteudo ? anotacao.conteudo.replace(/<[^>]*>?/gm, '').trim() : '';
-    const temConteudo = conteudoLimpo.length > 0;
+    const handlePin = async (e) => {
+        e.stopPropagation();
+        await toggleFixarAnotacao(anotacao.id);
+        onUpdate();
+    };
 
-    // Proteção contra objeto grupo nulo
-    const nomeGrupo = anotacao.grupo ? anotacao.grupo.nome : 'Geral';
-    const corGrupo = anotacao.grupo ? anotacao.grupo.cor : '#e0e7ff';
+    const handleEditClick = (e) => {
+        e.stopPropagation();
+        onEdit(anotacao);
+    }
+
+    // Cor do Grupo (Default cinza se indefinido)
+    const grupoCor = anotacao.grupo?.cor || '#ccc';
+    
+    // Tratamento de data
+    const dateObj = new Date(anotacao.data_criacao);
+    const dateStr = dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+
+    // Remove tags HTML para o preview
+    const rawText = anotacao.conteudo.replace(/<[^>]+>/g, '');
+    const previewText = rawText.length > 80 ? rawText.substring(0, 80) + '...' : rawText;
 
     return (
-        <div className={`anotacao-card ${anotacao.fixado ? 'fixado' : ''}`} onClick={() => onEdit(anotacao)}>
+        <div 
+            className={`anotacao-card ${anotacao.fixado ? 'fixado' : ''}`} 
+            onClick={() => onView(anotacao)}
+            style={{ borderLeftColor: grupoCor }} // Borda dinâmica via JS inline, CSS cuida do estilo
+        >
             <div className="anotacao-header">
                 <div className="anotacao-title-group">
-                    <span className="anotacao-tipo-badge" style={{ backgroundColor: corGrupo }}>
-                        {nomeGrupo}
-                    </span>
-                    <h3 className="anotacao-titulo">{anotacao.titulo || 'Sem título'}</h3>
+                    <h3 className="anotacao-titulo">{anotacao.titulo}</h3>
+                    <span className="anotacao-data">{dateStr}</span>
                 </div>
-
+                
                 <div className="anotacao-actions">
-                    <button className="btn-action-icon btn-pin" onClick={handleFixar} title={anotacao.fixado ? "Desafixar" : "Fixar"}>
+                    <button className="btn-action-icon btn-pin" onClick={handlePin} title={anotacao.fixado ? "Desafixar" : "Fixar"}>
                         <i className={`fa-solid fa-thumbtack ${anotacao.fixado ? 'pinned' : ''}`}></i>
                     </button>
+                    <button className="btn-action-icon" onClick={handleEditClick} title="Editar">
+                        <i className="fa-solid fa-pen"></i>
+                    </button>
                     <button className="btn-action-icon btn-delete-registro" onClick={handleDelete} title="Excluir">
-                        <i className="fa-solid fa-trash-can"></i>
+                        <i className="fa-solid fa-trash"></i>
                     </button>
                 </div>
             </div>
 
-            {temConteudo && (
-                <div className="anotacao-conteudo ql-snow">
-                    <div className="ql-editor" dangerouslySetInnerHTML={{ __html: anotacao.conteudo }} />
-                </div>
-            )}
-            
-            {/* Footer apenas se tiver links */}
+            <div className="anotacao-conteudo">
+                {previewText || <span style={{opacity:0.5, fontStyle:'italic'}}>Sem conteúdo de texto...</span>}
+            </div>
+
             {anotacao.links && anotacao.links.length > 0 && (
-                <div className="anotacao-footer">
-                    <i className="fa-solid fa-link" style={{fontSize:'0.8rem', marginRight:'5px'}}></i> 
-                    <span style={{fontSize:'0.8rem'}}>{anotacao.links.length} links anexados</span>
+                <div className="anotacao-footer-links">
+                    <i className="fa-solid fa-paperclip"></i> {anotacao.links.length} anexo(s)
                 </div>
             )}
         </div>

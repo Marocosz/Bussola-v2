@@ -1,25 +1,34 @@
 /* ==========================================================================
    REGISTROS (ANOTAÇÕES & TAREFAS) - CSS ESCOPADO
-   Todas as regras começam com .registros-scope para não vazar para outras páginas
    ========================================================================== */
 
-/* Ajuste do Container Principal apenas nesta página */
 .registros-scope.main-container {
     padding-bottom: 5rem !important;
     min-height: 100vh;
+    box-sizing: border-box;
+}
+
+/* --- SCROLLBARS LIMPAS --- */
+.registros-scope .column-scroll-content {
+    padding-top: 0.5rem;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.registros-scope .column-scroll-content::-webkit-scrollbar {
+    display: none;
 }
 
 /* ============================================= */
-/* 1. HERO SECTION (Isolado)                     */
+/* 1. HERO INTERNO                               */
 /* ============================================= */
-
 .registros-scope .internal-hero {
     position: relative;
     text-align: center;
-    padding: 3rem 2rem 4rem 2rem;
+    padding: 4rem 2rem 5rem 2rem;
     overflow: hidden;
     border-radius: 0 0 20px 20px;
-    margin-bottom: 2rem;
     background: transparent;
 }
 
@@ -30,31 +39,24 @@
     transform: translateX(-50%);
     width: 60%;
     height: 200%;
-    background: radial-gradient(
-        ellipse at center, 
-        rgba(74, 109, 255, 0.15) 0%, 
-        rgba(168, 85, 247, 0.05) 40%, 
-        transparent 70%
-    );
+    background: radial-gradient(ellipse at center, rgba(74, 109, 255, 0.15) 0%, rgba(168, 85, 247, 0.05) 40%, transparent 70%);
     z-index: 0;
     pointer-events: none;
 }
 
-.registros-scope .internal-hero-content { 
-    position: relative; 
-    z-index: 1; 
+.registros-scope .internal-hero-content {
+    position: relative;
+    z-index: 1;
 }
 
 .registros-scope .internal-hero h1 {
-    font-size: 2.5rem;
+    font-size: 3rem;
     font-weight: 700;
     margin-bottom: 0.5rem;
     background: linear-gradient(90deg, #fff 0%, var(--cor-azul-primario) 50%, #fff 100%);
     background-size: 200% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    background-clip: text;
-    color: transparent;
     animation: registrosShine 5s linear infinite;
 }
 
@@ -66,42 +68,46 @@
 }
 
 @keyframes registrosShine {
-    to { background-position: 200% center; }
+    to {
+        background-position: 200% center;
+    }
 }
 
 /* ============================================= */
 /* 2. LAYOUT GRID PRINCIPAL                      */
 /* ============================================= */
-
 .registros-scope .registros-layout {
     display: grid;
-    grid-template-columns: 2fr 1fr; /* Anotações 2/3, Tarefas 1/3 */
-    gap: 2rem;
-    align-items: start;
+    grid-template-columns: 2fr 1fr;
+    gap: 0;
+    align-items: stretch;
     padding: 0 1rem;
 }
 
-@media (max-width: 900px) {
-    .registros-scope .registros-layout {
-        grid-template-columns: 1fr; /* Empilha no mobile */
-    }
+.registros-scope .registros-column {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    position: relative;
+    height: 100%;
+    padding: 0 1.5rem;
 }
 
 /* ============================================= */
-/* 3. HEADERS DAS COLUNAS                        */
+/* 3. HEADERS CONECTADOS                         */
 /* ============================================= */
-
 .registros-scope .column-header-flex {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.8rem 1.2rem;
+    padding: 0.8rem 1.5rem;
     background-color: var(--cor-card-secundario);
     border-bottom: 1px solid var(--cor-borda);
     border-right: 1px solid var(--cor-borda);
-    border-radius: 12px;
-    margin-bottom: 1.5rem;
     transition: background-color 0.2s;
+    position: relative;
+    min-height: 60px;
+    margin-bottom: 2rem;
 }
 
 .registros-scope .column-header-flex:hover {
@@ -118,129 +124,350 @@
     letter-spacing: 0.5px;
 }
 
+.registros-scope .column-header-flex:hover h2 {
+    color: var(--cor-texto-principal);
+}
+
+/* Overlap Tricks */
+.registros-scope .column-anotacoes {
+    padding-left: 0;
+    z-index: 10;
+}
+
+.registros-scope .column-anotacoes .column-header-flex {
+    margin-left: 0;
+    margin-right: -1.5rem;
+    border-radius: 12px 0 0 12px;
+}
+
+.registros-scope .column-tarefas {
+    padding-right: 0;
+    z-index: 1;
+}
+
+.registros-scope .column-tarefas .column-header-flex {
+    margin-left: -1.5rem;
+    margin-right: 0;
+    border-radius: 0 12px 12px 0;
+    border-right: 1px solid var(--cor-borda);
+    padding-left: 2.5rem;
+}
+
 .registros-scope .header-actions-group {
     display: flex;
     gap: 10px;
     align-items: center;
 }
 
-/* Elementos internos do header */
-.registros-scope .small-select {
-    padding: 4px 8px;
-    height: 32px;
-    font-size: 0.85rem;
-    width: auto;
-    background-color: var(--cor-fundo);
-    border: 1px solid var(--cor-borda);
-    border-radius: 6px;
-    color: var(--cor-texto-principal);
-    cursor: pointer;
-}
-
 .registros-scope .small-btn {
-    padding: 4px 12px;
+    padding: 6px 14px;
     font-size: 0.85rem;
-    height: 32px;
+    height: 36px;
     display: flex;
     align-items: center;
-    gap: 6px;
-}
-
-.registros-scope .column-content-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+    gap: 8px;
+    border-radius: 8px;
 }
 
 /* ============================================= */
-/* 4. ANOTAÇÕES                                  */
+/* 4. DROPDOWN                                   */
 /* ============================================= */
-
-.registros-scope .month-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
-    margin-bottom: 1.5rem;
+.registros-scope .custom-dropdown-wrapper {
+    position: relative;
+    margin-right: 15px;
 }
 
-.registros-scope .month-header {
+.registros-scope .dropdown-trigger-btn {
+    background-color: var(--cor-fundo);
+    border: 1px solid var(--cor-borda);
+    color: var(--cor-texto-principal);
+    padding: 6px 12px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 180px;
+    justify-content: space-between;
+    transition: all 0.2s;
+}
+
+.registros-scope .dropdown-trigger-btn:hover {
+    border-color: var(--cor-azul-primario);
+}
+
+.registros-scope .dropdown-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 99;
+}
+
+.registros-scope .custom-dropdown-menu {
+    position: absolute;
+    top: 115%;
+    left: 0;
+    width: 280px;
+    background: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    z-index: 100;
+    padding: 8px 0;
+    animation: fadeInDropdown 0.2s ease;
+}
+
+@keyframes fadeInDropdown {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.registros-scope .dropdown-action-row {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    color: var(--cor-azul-primario);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.registros-scope .dropdown-action-row:hover {
+    background-color: var(--cor-fundo-hover);
+}
+
+.registros-scope .action-icon-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--cor-azul-primario);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+}
+
+.registros-scope .dropdown-divider {
+    height: 1px;
+    background: var(--cor-borda);
+    margin: 6px 0;
+}
+
+.registros-scope .dropdown-scroll-area {
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.registros-scope .dropdown-item {
+    padding: 10px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: var(--cor-texto-principal);
+}
+
+.registros-scope .dropdown-item:hover {
+    background-color: var(--cor-fundo-hover);
+}
+
+.registros-scope .dropdown-item.selected {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: var(--cor-azul-primario);
+    font-weight: 600;
+}
+
+.registros-scope .dropdown-item-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.registros-scope .dropdown-item-info .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.registros-scope .dropdown-item-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.registros-scope .dropdown-item:hover .dropdown-item-actions {
+    opacity: 1;
+}
+
+.registros-scope .action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 6px;
+    border-radius: 6px;
+    color: var(--cor-texto-secundario);
+}
+
+.registros-scope .action-btn:hover {
+    background-color: var(--cor-borda);
+    color: var(--cor-texto-principal);
+}
+
+.registros-scope .action-btn.delete:hover {
+    color: var(--cor-vermelho-delete);
+    background-color: rgba(239, 68, 68, 0.1);
+}
+
+
+/* ============================================= */
+/* 5. ACCORDION (CORRIGIDO E ANIMADO)            */
+/* ============================================= */
+
+.registros-scope .group-accordion {
+    margin-bottom: 2rem;
+}
+
+.registros-scope .accordion-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     background: transparent;
-    padding: 0.5rem 0;
+    padding: 0.8rem 0;
+    /* Aumentei a área de clique */
     border-bottom: 1px solid var(--cor-borda);
     cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--cor-texto-secundario);
     transition: all 0.2s;
+    user-select: none;
+    /* Evita selecionar texto ao clicar rápido */
+    width: 100%;
+    /* Garante que pega a largura toda */
 }
 
-.registros-scope .month-header:hover, 
-.registros-scope .month-header.active {
+.registros-scope .accordion-header:hover,
+.registros-scope .accordion-header.active {
     color: var(--cor-azul-primario);
     border-color: var(--cor-azul-primario);
 }
 
-.registros-scope .month-header.pinned-header {
+.registros-scope .accordion-header.pinned-header {
     color: var(--cor-azul-primario);
 }
 
-.registros-scope .count-badge {
-    font-size: 0.75rem;
-    background: var(--cor-fundo-hover);
-    padding: 2px 8px;
-    border-radius: 10px;
-    margin-left: auto;
-    margin-right: 10px;
-    font-weight: 600;
-    color: var(--cor-texto-principal);
+.registros-scope .header-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
-.registros-scope .month-header i.rotate {
+.registros-scope .grp-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+/* Meta Info (Direita) */
+.registros-scope .header-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.registros-scope .count-text {
+    font-size: 0.8rem;
+    font-weight: 500;
+    opacity: 0.7;
+}
+
+.registros-scope .accordion-header i.rotate {
     transform: rotate(180deg);
-    transition: transform 0.3s;
 }
 
-.registros-scope .month-content {
-    animation: registrosFadeIn 0.3s ease;
-    padding-top: 0.5rem;
+/* Removido transition aqui, fica no i geral */
+.registros-scope .accordion-header i {
+    transition: transform 0.3s ease;
+}
+
+/* ANIMAÇÃO GRID ROWS (Padrão) */
+.registros-scope .accordion-wrapper {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease-out, opacity 0.3s ease-out;
+    opacity: 0;
+}
+
+.registros-scope .accordion-wrapper.open {
+    grid-template-rows: 1fr;
+    opacity: 1;
+}
+
+.registros-scope .accordion-inner {
+    overflow: hidden;
+    min-height: 0;
+}
+
+.registros-scope .accordion-content-padding {
+    padding-top: 1.5rem;
+    padding-bottom: 5px;
 }
 
 .registros-scope .notes-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.2rem;
+    gap: 1.5rem;
 }
 
-/* --- CARD DE ANOTAÇÃO --- */
+/* ============================================= */
+/* 6. CARD DE ANOTAÇÃO (DESIGN FINAL)            */
+/* ============================================= */
+
 .registros-scope .anotacao-card {
     background: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
-    border-radius: 12px;
-    padding: 1.2rem;
+    border-radius: 16px;
+    border-left-width: 6px;
+    /* Borda mais grossa */
+    border-left-style: solid;
+    /* border-left-color vem do JS */
+
+    padding: 1.5rem;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
     display: flex;
     flex-direction: column;
-    gap: 0.8rem;
-    min-height: 150px;
+    gap: 1rem;
+    min-height: 160px;
     position: relative;
     overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
 }
 
 .registros-scope .anotacao-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-    border-color: var(--cor-azul-primario);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
 }
 
 .registros-scope .anotacao-card.fixado {
-    border-top: 3px solid var(--cor-azul-primario);
-    background: linear-gradient(to bottom, rgba(74, 109, 255, 0.03), var(--cor-card-principal));
+    background: linear-gradient(to right bottom, rgba(74, 109, 255, 0.03), var(--cor-card-principal));
 }
 
 .registros-scope .anotacao-header {
@@ -256,176 +483,319 @@
     flex: 1;
 }
 
-.registros-scope .anotacao-tipo-badge {
-    font-size: 0.65rem;
-    font-weight: 700;
-    padding: 3px 8px;
-    border-radius: 4px;
-    color: #444;
-    text-transform: uppercase;
-    display: inline-block;
-    width: fit-content;
-}
-
 .registros-scope .anotacao-titulo {
-    font-size: 1.05rem;
-    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
     color: var(--cor-texto-principal);
-    line-height: 1.3;
-    font-weight: 600;
+    margin: 0;
+    line-height: 1.4;
 }
 
-.registros-scope .anotacao-actions { 
-    display: flex; 
-    gap: 5px; 
-    opacity: 0; 
-    transition: 0.2s; 
+.registros-scope .anotacao-data {
+    font-size: 0.75rem;
+    color: var(--cor-texto-secundario);
+    opacity: 0.8;
 }
-.registros-scope .anotacao-card:hover .anotacao-actions { opacity: 1; }
+
+/* Botões SEMPRE VISÍVEIS */
+.registros-scope .anotacao-actions {
+    display: flex;
+    gap: 8px;
+    opacity: 1;
+}
 
 .registros-scope .anotacao-actions .btn-action-icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    display: flex; align-items: center; justify-content: center;
-    background: var(--cor-fundo);
-    color: var(--cor-texto-secundario);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
     border: 1px solid var(--cor-borda);
+    color: var(--cor-texto-secundario);
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     transition: all 0.2s;
 }
 
+/* Evita propagação do click do card para o botão */
 .registros-scope .anotacao-actions .btn-action-icon:hover {
-    border-color: var(--cor-azul-primario);
-    color: white;
-    background-color: var(--cor-azul-primario);
+    background-color: var(--cor-fundo-hover);
+    color: var(--cor-texto-principal);
+    border-color: var(--cor-texto-principal);
 }
+
 .registros-scope .anotacao-actions .btn-delete-registro:hover {
-    background: var(--cor-vermelho-delete);
+    background-color: var(--cor-vermelho-delete);
     border-color: var(--cor-vermelho-delete);
+    color: white;
 }
-.registros-scope .btn-pin i.pinned { color: var(--cor-azul-primario); transform: rotate(45deg); }
+
+.registros-scope .btn-pin i.pinned {
+    color: var(--cor-azul-primario);
+    transform: rotate(45deg);
+}
 
 .registros-scope .anotacao-conteudo {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     color: var(--cor-texto-secundario);
-    max-height: 140px;
+    line-height: 1.6;
+    max-height: 100px;
     overflow: hidden;
     position: relative;
-    line-height: 1.5;
-}
-.registros-scope .anotacao-conteudo::after {
-    content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 30px;
-    background: linear-gradient(to bottom, transparent, var(--cor-card-principal));
 }
 
-.registros-scope .anotacao-footer {
+.registros-scope .anotacao-footer-links {
     margin-top: auto;
     padding-top: 0.8rem;
     border-top: 1px solid var(--cor-borda);
     font-size: 0.8rem;
     color: var(--cor-azul-primario);
-    display: flex; align-items: center; gap: 5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 /* ============================================= */
-/* 5. TAREFAS                                    */
+/* 7. MODAIS (CORREÇÃO DE POSICIONAMENTO)        */
 /* ============================================= */
 
-.registros-scope .tarefas-list { display: flex; flex-direction: column; gap: 12px; }
-
-.registros-scope .empty-msg-tarefas { 
-    text-align: center; 
-    padding: 2rem; 
-    color: var(--cor-texto-secundario); 
-    font-style: italic; 
-    border: 1px dashed var(--cor-borda);
-    border-radius: 8px;
+/* Sobreposição FIXA e CENTRALIZADA */
+.registros-scope .modal-overlay {
+    position: fixed;
+    inset: 0;
+    /* Top, Right, Bottom, Left = 0 */
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    /* Garante que fique acima de tudo */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeInOverlay 0.2s ease-out;
 }
 
-.registros-scope .concluidas-section { 
-    margin-top: 2.5rem; 
-    opacity: 0.6; 
-    transition: opacity 0.2s; 
-}
-.registros-scope .concluidas-section:hover { opacity: 1; }
-
-.registros-scope .concluidas-title { 
-    font-size: 0.85rem; 
-    color: var(--cor-texto-secundario); 
-    margin-bottom: 1rem; 
-    text-transform: uppercase; 
-    letter-spacing: 1px; 
-    border-bottom: 1px solid var(--cor-borda);
-    padding-bottom: 5px;
-}
-
-/* --- CARD DE TAREFA --- */
-.registros-scope .tarefa-card {
+/* Conteúdo do Modal */
+.registros-scope .modal-content,
+.registros-scope .view-modal {
     background: var(--cor-card-principal);
-    border: 1px solid var(--cor-borda);
-    border-radius: 8px;
-    padding: 1rem;
-    transition: 0.2s;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    width: 90%;
+    max-width: 600px;
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    /* Máximo 90% da altura da tela */
+    margin: 0;
+    /* Remove margens automáticas que podem bugar o flex */
+    animation: scaleInModal 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.registros-scope .tarefa-card:hover {
-    border-color: var(--cor-azul-primario);
-    transform: translateX(2px);
+.registros-scope .small-modal {
+    max-width: 400px;
 }
 
-.registros-scope .tarefa-card.concluida { background-color: var(--cor-fundo); }
+/* Animações Modal */
+@keyframes fadeInOverlay {
+    from {
+        opacity: 0;
+    }
 
-.registros-scope .tarefa-header {
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes scaleInModal {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* View Modal Específico */
+.registros-scope .view-modal-header {
+    padding: 1.5rem 2rem 1rem 2rem;
+    background: var(--cor-card-secundario);
+    border-bottom: 1px solid var(--cor-borda);
+}
+
+.registros-scope .view-meta-top {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
+    margin-bottom: 1rem;
 }
 
-.registros-scope .check-btn {
-    width: 20px; height: 20px;
-    border-radius: 50%;
-    border: 2px solid var(--cor-borda);
-    background: transparent;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
+.registros-scope .view-group-badge {
     color: white;
-    margin-top: 3px;
-    transition: all 0.2s;
-    flex-shrink: 0;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
 }
-.registros-scope .check-btn:hover { border-color: var(--cor-azul-primario); }
 
-.registros-scope .check-btn.checked {
-    background: var(--cor-azul-primario);
-    border-color: var(--cor-azul-primario);
+.registros-scope .view-actions {
+    display: flex;
+    gap: 10px;
 }
-.registros-scope .check-btn.checked i { font-size: 0.7rem; }
 
-.registros-scope .tarefa-titulo { margin: 0; font-size: 0.95rem; color: var(--cor-texto-principal); font-weight: 600; }
-.registros-scope .concluida .tarefa-titulo { text-decoration: line-through; color: var(--cor-texto-secundario); }
-.registros-scope .tarefa-desc { margin: 4px 0 0 0; font-size: 0.8rem; color: var(--cor-texto-secundario); line-height: 1.4; }
-
-.registros-scope .tarefa-card .btn-delete-mini {
-    background: none; border: none; color: var(--cor-texto-secundario);
-    cursor: pointer; font-size: 0.8rem; opacity: 0; transition: opacity 0.2s;
+.registros-scope .icon-btn {
+    background: transparent;
+    border: 1px solid var(--cor-borda);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--cor-texto-secundario);
+    transition: 0.2s;
 }
-.registros-scope .tarefa-card:hover .btn-delete-mini { opacity: 1; }
-.registros-scope .tarefa-card .btn-delete-mini:hover { color: var(--cor-vermelho-delete); }
 
-/* Subtarefas */
-.registros-scope .subtarefas-container { margin-top: 0.8rem; padding-left: 30px; }
-.registros-scope .progress-bar-bg { height: 3px; background: var(--cor-borda); border-radius: 2px; margin-bottom: 6px; width: 100%; }
-.registros-scope .progress-bar-fill { height: 100%; background: var(--cor-verde-sucesso); border-radius: 2px; transition: width 0.3s; }
+.registros-scope .icon-btn:hover {
+    background: var(--cor-card-principal);
+    color: var(--cor-texto-principal);
+}
 
-.registros-scope .subtarefas-list { list-style: none; padding: 0; margin: 0; font-size: 0.8rem; color: var(--cor-texto-secundario); }
-.registros-scope .subtarefas-list li { display: flex; gap: 8px; align-items: center; cursor: pointer; padding: 3px 0; }
-.registros-scope .subtarefas-list li:hover { color: var(--cor-texto-principal); }
-.registros-scope .riscado { text-decoration: line-through; opacity: 0.6; }
+.registros-scope .icon-btn.close:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--cor-vermelho-delete);
+    border-color: var(--cor-vermelho-delete);
+}
 
-/* Empty State */
+.registros-scope .view-title {
+    font-size: 1.5rem;
+    color: var(--cor-texto-principal);
+    margin: 0 0 0.5rem 0;
+    font-weight: 700;
+}
+
+.registros-scope .view-date {
+    font-size: 0.85rem;
+    color: var(--cor-texto-secundario);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.registros-scope .view-body {
+    padding: 2rem;
+    font-size: 1rem;
+    color: var(--cor-texto-principal);
+    line-height: 1.7;
+    overflow-y: auto;
+}
+
+.registros-scope .view-content-html p {
+    margin-bottom: 1rem;
+}
+
+.registros-scope .view-content-html ul {
+    padding-left: 20px;
+    margin-bottom: 1rem;
+}
+
+.registros-scope .view-links-section {
+    margin-top: 2rem;
+    padding: 1rem;
+    background: var(--cor-fundo);
+    border-radius: 8px;
+    border: 1px solid var(--cor-borda);
+}
+
+.registros-scope .view-links-section h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    color: var(--cor-texto-secundario);
+}
+
+.registros-scope .view-links-section ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.registros-scope .view-links-section li a {
+    color: var(--cor-azul-primario);
+    text-decoration: none;
+    word-break: break-all;
+    font-size: 0.9rem;
+}
+
+.registros-scope .view-links-section li a:hover {
+    text-decoration: underline;
+}
+
+.registros-scope .modal-footer {
+    padding: 1.2rem 1.5rem;
+    border-top: 1px solid var(--cor-borda);
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    background-color: var(--cor-card-secundario);
+}
+
+/* Form Styles para Modal Editar/Criar */
+.registros-scope .modal-header {
+    padding: 1.2rem 1.5rem;
+    border-bottom: 1px solid var(--cor-borda);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.registros-scope .close-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: var(--cor-texto-secundario);
+}
+
+.registros-scope .modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+.registros-scope .form-group {
+    margin-bottom: 1rem;
+}
+
+.registros-scope .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--cor-texto-secundario);
+}
+
+.registros-scope .form-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    background: var(--cor-fundo);
+    color: var(--cor-texto-principal);
+}
+
+/* ============================================= */
+/* 8. TAREFAS                                    */
+/* ============================================= */
+.registros-scope .tarefas-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
 .registros-scope .empty-state {
     text-align: center;
     padding: 3rem;
@@ -435,6 +805,177 @@
     border: 1px dashed var(--cor-borda);
     opacity: 0.8;
 }
-.registros-scope .empty-state i { font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5; }
 
-@keyframes registrosFadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+.registros-scope .empty-state i {
+    font-size: 2rem;
+    margin-bottom: 0.8rem;
+    opacity: 0.4;
+}
+
+.registros-scope .concluidas-section {
+    margin-top: 3rem;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.registros-scope .concluidas-section:hover {
+    opacity: 1;
+}
+
+.registros-scope .concluidas-title {
+    font-size: 0.85rem;
+    color: var(--cor-texto-secundario);
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--cor-borda);
+    padding-bottom: 6px;
+}
+
+.registros-scope .tarefa-card {
+    background: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    transition: 0.2s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+}
+
+.registros-scope .tarefa-card:hover {
+    border-color: var(--cor-azul-primario);
+    transform: translateX(3px);
+}
+
+.registros-scope .tarefa-card.concluida {
+    background-color: var(--cor-fundo);
+    opacity: 0.8;
+}
+
+.registros-scope .tarefa-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.registros-scope .check-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--cor-borda);
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.registros-scope .check-btn:hover {
+    border-color: var(--cor-azul-primario);
+}
+
+.registros-scope .check-btn.checked {
+    background: var(--cor-azul-primario);
+    border-color: var(--cor-azul-primario);
+}
+
+.registros-scope .tarefa-titulo {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--cor-texto-principal);
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.registros-scope .concluida .tarefa-titulo {
+    text-decoration: line-through;
+    color: var(--cor-texto-secundario);
+}
+
+.registros-scope .btn-delete-mini {
+    background: none;
+    border: none;
+    color: var(--cor-texto-secundario);
+    cursor: pointer;
+    font-size: 0.9rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+    padding: 4px;
+}
+
+.registros-scope .tarefa-card:hover .btn-delete-mini {
+    opacity: 1;
+}
+
+.registros-scope .btn-delete-mini:hover {
+    color: var(--cor-vermelho-delete);
+}
+
+.registros-scope .subtarefas-container {
+    margin-top: 1rem;
+    padding-left: 32px;
+}
+
+.registros-scope .progress-bar-bg {
+    height: 4px;
+    background: var(--cor-borda);
+    border-radius: 2px;
+    margin-bottom: 8px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.registros-scope .progress-bar-fill {
+    height: 100%;
+    background: var(--cor-verde-sucesso);
+    border-radius: 2px;
+    transition: width 0.3s;
+}
+
+.registros-scope .subtarefas-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--cor-texto-secundario);
+}
+
+.registros-scope .subtarefas-list li {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.registros-scope .subtarefas-list li:hover {
+    color: var(--cor-texto-principal);
+}
+
+.registros-scope .riscado {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+@media (max-width: 900px) {
+    .registros-scope .registros-layout {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    .registros-scope .column-anotacoes,
+    .registros-scope .column-tarefas {
+        padding: 0;
+        overflow: visible;
+    }
+
+    .registros-scope .column-anotacoes .column-header-flex,
+    .registros-scope .column-tarefas .column-header-flex {
+        margin-left: 0;
+        margin-right: 0;
+        border-radius: 12px;
+    }
+}

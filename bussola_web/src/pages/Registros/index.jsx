@@ -1,24 +1,34 @@
 import React, { useEffect, useState } from 'react';
-import { getRegistrosDashboard } from '../../services/api';
+import { getRegistrosDashboard, deleteGrupo } from '../../services/api'; 
 import { AnotacaoCard } from './components/AnotacaoCard';
 import { TarefaCard } from './components/TarefaCard';
 import { AnotacaoModal } from './components/AnotacaoModal';
 import { TarefaModal } from './components/TarefaModal';
+import { GrupoModal } from './components/GrupoModal';
+import { ViewAnotacaoModal } from './components/ViewAnotacaoModal';
 import './styles.css';
 
 export function Registros() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [filtroGrupo, setFiltroGrupo] = useState('Todos');
     
     // UI State
     const [notaModalOpen, setNotaModalOpen] = useState(false);
+    const [viewModalOpen, setViewModalOpen] = useState(false);
     const [tarefaModalOpen, setTarefaModalOpen] = useState(false);
+    const [grupoModalOpen, setGrupoModalOpen] = useState(false);
+    
     const [editingNota, setEditingNota] = useState(null);
+    const [viewingNota, setViewingNota] = useState(null);
+    const [editingGrupo, setEditingGrupo] = useState(null);
+
+    // Controle do Dropdown
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [filtroGrupo, setFiltroGrupo] = useState('Todos');
 
     // Accordion State
-    const [openMonths, setOpenMonths] = useState({'fixados': true});
+    const [openGroups, setOpenGroups] = useState({'fixados': true});
 
     const fetchData = async () => {
         setLoading(true);
@@ -26,11 +36,6 @@ export function Registros() {
             const result = await getRegistrosDashboard();
             setData(result);
             setError(null);
-            
-            if(result?.anotacoes_por_mes && Object.keys(result.anotacoes_por_mes).length > 0){
-                const firstMonth = Object.keys(result.anotacoes_por_mes)[0];
-                setOpenMonths(prev => ({...prev, [firstMonth]: true}));
-            }
         } catch (err) {
             console.error("Erro dashboard:", err);
             setError("Não foi possível carregar os registros.");
@@ -41,15 +46,80 @@ export function Registros() {
 
     useEffect(() => { fetchData(); }, []);
 
-    const toggleAccordion = (key) => setOpenMonths(prev => ({ ...prev, [key]: !prev[key] }));
+    // --- PROCESSAMENTO DE DADOS ---
+    const processDataByGroup = () => {
+        if (!data) return {};
+        const grouped = {};
+        let allNotes = [];
+        
+        if (data.anotacoes_por_mes) {
+            Object.values(data.anotacoes_por_mes).forEach(notesList => {
+                if(Array.isArray(notesList)) allNotes = [...allNotes, ...notesList];
+            });
+        }
+
+        allNotes.forEach(nota => {
+            const grupoNome = nota.grupo?.nome || 'Indefinido';
+            if (filtroGrupo !== 'Todos' && grupoNome !== filtroGrupo) return;
+            if (!grouped[grupoNome]) grouped[grupoNome] = [];
+            grouped[grupoNome].push(nota);
+        });
+        return grouped;
+    };
+
+    const groupedNotes = processDataByGroup();
+    const fixadas = data?.anotacoes_fixadas || [];
+    
+    const fixadasFiltered = filtroGrupo === 'Todos' 
+        ? fixadas 
+        : fixadas.filter(n => n.grupo?.nome === filtroGrupo);
+
+    const tarefasPendentes = data?.tarefas_pendentes || [];
+    const tarefasConcluidas = data?.tarefas_concluidas || [];
+    const grupos = data?.grupos_disponiveis || [];
+
+    // --- HANDLERS ---
+    const toggleAccordion = (key) => setOpenGroups(prev => ({ ...prev, [key]: !prev[key] }));
     const handleNewNota = () => { setEditingNota(null); setNotaModalOpen(true); };
     const handleEditNota = (nota) => { setEditingNota(nota); setNotaModalOpen(true); };
+    
+    // Abre Modal de Visualização
+    const handleViewNota = (nota) => {
+        setViewingNota(nota);
+        setViewModalOpen(true);
+    };
 
-    // --- RENDERIZAÇÃO CONDICIONAL ---
-    if (loading) return (
+    const handleNewGrupo = () => { 
+        setEditingGrupo(null); 
+        setGrupoModalOpen(true); 
+        setDropdownOpen(false); 
+    };
+    
+    const handleEditGrupo = (grupo, e) => {
+        e.stopPropagation();
+        setEditingGrupo(grupo);
+        setGrupoModalOpen(true);
+        setDropdownOpen(false);
+    };
+
+    const handleDeleteGrupo = async (grupoId, e) => {
+        e.stopPropagation();
+        if (!window.confirm("Tem certeza? As anotações deste grupo serão movidas para 'Indefinido'.")) return;
+        try {
+            if(deleteGrupo) {
+                await deleteGrupo(grupoId);
+                if (filtroGrupo !== 'Todos') setFiltroGrupo('Todos');
+                fetchData();
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Erro ao excluir grupo.");
+        }
+    };
+
+    if (loading && !data) return (
         <div className="container" style={{paddingTop:'100px', textAlign:'center'}}>
             <i className="fa-solid fa-circle-notch fa-spin" style={{fontSize:'2rem', color:'var(--cor-azul-primario)'}}></i>
-            <p style={{marginTop:'1rem'}}>Carregando registros...</p>
         </div>
     );
 
@@ -62,114 +132,158 @@ export function Registros() {
 
     if (!data) return null;
 
-    // --- LÓGICA DE FILTROS ---
-    const filterNotas = (notas) => {
-        if (!notas) return [];
-        return filtroGrupo === 'Todos' ? notas : notas.filter(n => n.grupo?.nome === filtroGrupo);
-    };
-
-    const fixadas = filterNotas(data.anotacoes_fixadas || []);
-    const meses = data.anotacoes_por_mes || {};
-    const tarefasPendentes = data.tarefas_pendentes || [];
-    const tarefasConcluidas = data.tarefas_concluidas || [];
-    const grupos = data.grupos_disponiveis || [];
-
     return (
-        /* ADICIONEI A CLASSE 'registros-scope' AQUI PARA ISOLAR O CSS */
         <div className="container main-container registros-scope">
             
-            {/* --- HERO SECTION --- */}
             <div className="internal-hero">
                 <div className="hero-bg-effect"></div>
                 <div className="internal-hero-content">
                     <h1>Caderno & Tarefas</h1>
-                    <p>Centralize suas ideias, anotações de estudo e pendências diárias.</p>
+                    <p>Organize suas ideias por grupos e gerencie suas pendências.</p>
                 </div>
             </div>
 
-            {/* --- LAYOUT DUAS COLUNAS --- */}
+            {/* LAYOUT GRID PRINCIPAL */}
             <div className="registros-layout">
                 
-                {/* 1. COLUNA ESQUERDA: ANOTAÇÕES */}
-                <div className="column-anotacoes">
+                {/* 1. COLUNA ESQUERDA: CADERNO */}
+                <div className="registros-column column-anotacoes">
+                    
                     <div className="column-header-flex">
                         <h2>CADERNO</h2>
                         <div className="header-actions-group">
-                            <select 
-                                className="form-input small-select" 
-                                value={filtroGrupo} 
-                                onChange={e => setFiltroGrupo(e.target.value)}
-                            >
-                                <option value="Todos">Todos</option>
-                                {grupos.map(g => (
-                                    <option key={g.id} value={g.nome}>{g.nome}</option>
-                                ))}
-                            </select>
+                            <div className="custom-dropdown-wrapper">
+                                <button 
+                                    className={`dropdown-trigger-btn ${filtroGrupo !== 'Todos' ? 'active-filter' : ''}`} 
+                                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                                >
+                                    <span>{filtroGrupo === 'Todos' ? 'Todos os Grupos' : filtroGrupo}</span>
+                                    <i className="fa-solid fa-chevron-down"></i>
+                                </button>
+
+                                {dropdownOpen && (
+                                    <>
+                                        <div className="dropdown-backdrop" onClick={() => setDropdownOpen(false)}></div>
+                                        <div className="custom-dropdown-menu">
+                                            <div className="dropdown-action-row" onClick={handleNewGrupo}>
+                                                <div className="action-icon-circle"><i className="fa-solid fa-plus"></i></div>
+                                                <span>Criar Novo Grupo</span>
+                                            </div>
+                                            <div className="dropdown-divider"></div>
+                                            <div className={`dropdown-item ${filtroGrupo === 'Todos' ? 'selected' : ''}`} onClick={() => { setFiltroGrupo('Todos'); setDropdownOpen(false); }}>
+                                                <span>Todos os Grupos</span>
+                                            </div>
+                                            <div className="dropdown-scroll-area">
+                                                {grupos.map(g => (
+                                                    <div key={g.id} className={`dropdown-item ${filtroGrupo === g.nome ? 'selected' : ''}`} onClick={() => { setFiltroGrupo(g.nome); setDropdownOpen(false); }}>
+                                                        <div className="dropdown-item-info">
+                                                            <span className="dot" style={{backgroundColor: g.cor}}></span>
+                                                            <span className="name">{g.nome}</span>
+                                                        </div>
+                                                        <div className="dropdown-item-actions">
+                                                            <button className="action-btn edit" onClick={(e) => handleEditGrupo(g, e)}><i className="fa-solid fa-pen"></i></button>
+                                                            <button className="action-btn delete" onClick={(e) => handleDeleteGrupo(g.id, e)}><i className="fa-solid fa-trash"></i></button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                <div className={`dropdown-item ${filtroGrupo === 'Indefinido' ? 'selected' : ''}`} onClick={() => { setFiltroGrupo('Indefinido'); setDropdownOpen(false); }}>
+                                                     <div className="dropdown-item-info"><span className="dot" style={{backgroundColor: '#ccc'}}></span><span className="name">Indefinido</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
                             <button className="btn-primary small-btn" onClick={handleNewNota}>
                                 <i className="fa-solid fa-plus"></i> Nota
                             </button>
                         </div>
                     </div>
-                    
-                    <div className="column-content-wrapper">
-                        {/* Fixados */}
-                        {fixadas.length > 0 && (
-                            <div className="month-group">
-                                <h3 className={`month-header pinned-header ${openMonths['fixados'] ? 'active' : ''}`} onClick={() => toggleAccordion('fixados')}>
-                                    <span><i className="fa-solid fa-thumbtack"></i> Fixados</span>
-                                    <i className={`fa-solid fa-chevron-down ${openMonths['fixados'] ? 'rotate' : ''}`}></i>
-                                </h3>
-                                {openMonths['fixados'] && (
-                                    <div className="month-content">
-                                        <div className="notes-grid">
-                                            {fixadas.map(n => (
-                                                <AnotacaoCard key={n.id} anotacao={n} onUpdate={fetchData} onEdit={handleEditNota}/>
-                                            ))}
-                                        </div>
+
+                    <div className="column-scroll-content">
+                        {fixadasFiltered.length > 0 && (
+                            <div className="group-accordion">
+                                <h3 className={`accordion-header pinned-header ${openGroups['fixados'] ? 'active' : ''}`} onClick={() => toggleAccordion('fixados')}>
+                                    <div className="header-title-wrapper">
+                                        <span><i className="fa-solid fa-thumbtack"></i> Fixados</span>
                                     </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Histórico Meses */}
-                        {Object.entries(meses).map(([mes, notas]) => {
-                            const filtered = filterNotas(notas);
-                            if(filtered.length === 0) return null;
-                            const isOpen = openMonths[mes];
-
-                            return (
-                                <div className="month-group" key={mes}>
-                                    <h3 className={`month-header ${isOpen ? 'active' : ''}`} onClick={() => toggleAccordion(mes)}>
-                                        <span>{mes}</span>
-                                        <span className="count-badge">{filtered.length}</span>
-                                        <i className={`fa-solid fa-chevron-down ${isOpen ? 'rotate' : ''}`}></i>
-                                    </h3>
-                                    
-                                    {isOpen && (
-                                        <div className="month-content">
+                                    <div className="header-meta">
+                                        <span className="count-text">{fixadasFiltered.length} {fixadasFiltered.length === 1 ? 'nota' : 'notas'}</span>
+                                        <i className={`fa-solid fa-chevron-down ${openGroups['fixados'] ? 'rotate' : ''}`}></i>
+                                    </div>
+                                </h3>
+                                
+                                <div className={`accordion-wrapper ${openGroups['fixados'] ? 'open' : ''}`}>
+                                    <div className="accordion-inner">
+                                        <div className="accordion-content-padding">
                                             <div className="notes-grid">
-                                                {filtered.map(n => (
-                                                    <AnotacaoCard key={n.id} anotacao={n} onUpdate={fetchData} onEdit={handleEditNota}/>
+                                                {fixadasFiltered.map(n => (
+                                                    <AnotacaoCard 
+                                                        key={n.id} 
+                                                        anotacao={n} 
+                                                        onUpdate={fetchData} 
+                                                        onEdit={handleEditNota} 
+                                                        onView={handleViewNota}
+                                                    />
                                                 ))}
                                             </div>
                                         </div>
-                                    )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {Object.entries(groupedNotes).map(([grupoNome, notas]) => {
+                            const isOpen = openGroups[grupoNome] !== false; 
+                            const grpObj = grupos.find(g => g.nome === grupoNome);
+                            const grpColor = grpObj ? grpObj.cor : '#999';
+
+                            return (
+                                <div className="group-accordion" key={grupoNome}>
+                                    <h3 className={`accordion-header ${isOpen ? 'active' : ''}`} onClick={() => toggleAccordion(grupoNome)}>
+                                        <div className="header-title-wrapper">
+                                            <span className="grp-dot" style={{backgroundColor: grpColor}}></span>
+                                            <span>{grupoNome}</span>
+                                        </div>
+                                        <div className="header-meta">
+                                            <span className="count-text">{notas.length} {notas.length === 1 ? 'nota' : 'notas'}</span>
+                                            <i className={`fa-solid fa-chevron-down ${isOpen ? 'rotate' : ''}`}></i>
+                                        </div>
+                                    </h3>
+                                    
+                                    <div className={`accordion-wrapper ${isOpen ? 'open' : ''}`}>
+                                        <div className="accordion-inner">
+                                            <div className="accordion-content-padding">
+                                                <div className="notes-grid">
+                                                    {notas.map(n => (
+                                                        <AnotacaoCard 
+                                                            key={n.id} 
+                                                            anotacao={n} 
+                                                            onUpdate={fetchData} 
+                                                            onEdit={handleEditNota}
+                                                            onView={handleViewNota}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             );
                         })}
                         
-                        {/* Empty State */}
-                        {fixadas.length === 0 && Object.keys(meses).length === 0 && (
+                        {fixadasFiltered.length === 0 && Object.keys(groupedNotes).length === 0 && (
                             <div className="empty-state">
                                 <i className="fa-regular fa-folder-open"></i>
-                                <p>Nenhuma anotação encontrada.</p>
+                                <p>Nenhuma anotação neste grupo.</p>
                             </div>
                         )}
                     </div>
                 </div>
 
                 {/* 2. COLUNA DIREITA: TAREFAS */}
-                <div className="column-tarefas">
+                <div className="registros-column column-tarefas">
                     <div className="column-header-flex">
                         <h2>TAREFAS</h2>
                         <button className="btn-primary small-btn" onClick={() => setTarefaModalOpen(true)}>
@@ -177,11 +291,12 @@ export function Registros() {
                         </button>
                     </div>
 
-                    <div className="column-content-wrapper">
+                    <div className="column-scroll-content">
                         <div className="tarefas-list">
                             {tarefasPendentes.length === 0 && tarefasConcluidas.length === 0 && (
-                                <div className="empty-msg-tarefas">
-                                    Nenhuma tarefa pendente.
+                                <div className="empty-state">
+                                    <i className="fa-solid fa-check-double"></i>
+                                    <p>Nenhuma tarefa pendente.</p>
                                 </div>
                             )}
                             
@@ -205,18 +320,15 @@ export function Registros() {
             </div>
 
             {/* MODAIS */}
-            <AnotacaoModal 
-                active={notaModalOpen} 
-                closeModal={() => setNotaModalOpen(false)} 
-                onUpdate={fetchData} 
-                editingData={editingNota}
-                gruposDisponiveis={grupos}
-            />
+            <AnotacaoModal active={notaModalOpen} closeModal={() => setNotaModalOpen(false)} onUpdate={fetchData} editingData={editingNota} gruposDisponiveis={grupos}/>
+            <TarefaModal active={tarefaModalOpen} closeModal={() => setTarefaModalOpen(false)} onUpdate={fetchData}/>
+            <GrupoModal active={grupoModalOpen} closeModal={() => setGrupoModalOpen(false)} onUpdate={fetchData} editingData={editingGrupo}/>
             
-            <TarefaModal 
-                active={tarefaModalOpen} 
-                closeModal={() => setTarefaModalOpen(false)} 
-                onUpdate={fetchData}
+            <ViewAnotacaoModal 
+                active={viewModalOpen} 
+                closeModal={() => setViewModalOpen(false)} 
+                nota={viewingNota}
+                onEdit={handleEditNota}
             />
         </div>
     );

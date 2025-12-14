@@ -234,6 +234,17 @@ export const createGrupo = async (data: { nome: string; cor?: string }) => {
     return response.data;
 };
 
+// --- NOVO: Funções para Editar e Excluir Grupos ---
+export const updateGrupo = async (id: number, data: { nome: string; cor?: string }) => {
+    const response = await api.put(`/registros/grupos/${id}`, data);
+    return response.data;
+};
+
+export const deleteGrupo = async (id: number) => {
+    const response = await api.delete(`/registros/grupos/${id}`);
+    return response.data;
+};
+
 // --- ANOTAÇÕES ---
 export const createAnotacao = async (data: any) => {
     const response = await api.post('/registros/anotacoes', data);
