@@ -22,23 +22,22 @@ export function AnotacaoCard({ anotacao, onUpdate, onEdit, onView }) {
         onEdit(anotacao);
     }
 
-    // Cor do Grupo (Default cinza se indefinido)
     const grupoCor = anotacao.grupo?.cor || '#ccc';
     
     // Tratamento de data
     const dateObj = new Date(anotacao.data_criacao);
     const dateStr = dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
 
-    // Remove tags HTML para o preview
-    const rawText = anotacao.conteudo.replace(/<[^>]+>/g, '');
-    const previewText = rawText.length > 80 ? rawText.substring(0, 80) + '...' : rawText;
-
+    // Remove tags HTML para o preview e limita texto
+    const rawText = anotacao.conteudo.replace(/<[^>]+>/g, ' ');
+    
     return (
         <div 
             className={`anotacao-card ${anotacao.fixado ? 'fixado' : ''}`} 
             onClick={() => onView(anotacao)}
-            style={{ borderLeftColor: grupoCor }} // Borda dinâmica via JS inline, CSS cuida do estilo
+            style={{ borderLeftColor: grupoCor }}
         >
+            {/* Header: Título, Data e Ações (Edit/Delete) */}
             <div className="anotacao-header">
                 <div className="anotacao-title-group">
                     <h3 className="anotacao-titulo">{anotacao.titulo}</h3>
@@ -46,27 +45,37 @@ export function AnotacaoCard({ anotacao, onUpdate, onEdit, onView }) {
                 </div>
                 
                 <div className="anotacao-actions">
-                    <button className="btn-action-icon btn-pin" onClick={handlePin} title={anotacao.fixado ? "Desafixar" : "Fixar"}>
-                        <i className={`fa-solid fa-thumbtack ${anotacao.fixado ? 'pinned' : ''}`}></i>
+                    {/* Botões padronizados com Finanças */}
+                    <button className="btn-action-icon btn-edit" onClick={handleEditClick} title="Editar">
+                        <i className="fa-solid fa-pen-to-square"></i>
                     </button>
-                    <button className="btn-action-icon" onClick={handleEditClick} title="Editar">
-                        <i className="fa-solid fa-pen"></i>
-                    </button>
-                    <button className="btn-action-icon btn-delete-registro" onClick={handleDelete} title="Excluir">
-                        <i className="fa-solid fa-trash"></i>
+                    <button className="btn-action-icon btn-delete" onClick={handleDelete} title="Excluir">
+                        <i className="fa-solid fa-trash-can"></i>
                     </button>
                 </div>
             </div>
 
             <div className="anotacao-conteudo">
-                {previewText || <span style={{opacity:0.5, fontStyle:'italic'}}>Sem conteúdo de texto...</span>}
+                {rawText.trim() ? rawText : <span style={{opacity:0.5, fontStyle:'italic'}}>Sem conteúdo de texto...</span>}
             </div>
 
-            {anotacao.links && anotacao.links.length > 0 && (
-                <div className="anotacao-footer-links">
-                    <i className="fa-solid fa-paperclip"></i> {anotacao.links.length} anexo(s)
-                </div>
-            )}
+            {/* Footer: Botão Fixar (Esq) e Links (Dir) */}
+            <div className="anotacao-footer">
+                <button 
+                    className={`footer-pin-btn ${anotacao.fixado ? 'pinned' : ''}`} 
+                    onClick={handlePin}
+                    title={anotacao.fixado ? "Desafixar" : "Fixar no topo"}
+                >
+                    <i className={`fa-solid fa-thumbtack ${anotacao.fixado ? 'pinned' : ''}`}></i>
+                    {anotacao.fixado ? '' : ''} 
+                </button>
+
+                {anotacao.links && anotacao.links.length > 0 && (
+                    <div className="anotacao-footer-links">
+                        <i className="fa-solid fa-paperclip"></i> {anotacao.links.length}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

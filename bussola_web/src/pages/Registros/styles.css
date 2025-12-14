@@ -1,5 +1,5 @@
 /* ==========================================================================
-   REGISTROS (ANOTAÇÕES & TAREFAS) - CSS ESCOPADO
+   REGISTROS (ANOTAÇÕES & TAREFAS) - CSS FINAL
    ========================================================================== */
 
 .registros-scope.main-container {
@@ -11,12 +11,12 @@
 /* --- SCROLLBARS LIMPAS --- */
 .registros-scope .column-scroll-content {
     padding-top: 0.5rem;
-    overflow-y: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    overflow: visible;
+    /* Deixa a página crescer */
+    height: auto;
 }
 
-.registros-scope .column-scroll-content::-webkit-scrollbar {
+.registros-scope *::-webkit-scrollbar {
     display: none;
 }
 
@@ -55,10 +55,10 @@
     margin-bottom: 0.5rem;
     background: linear-gradient(90deg, #fff 0%, var(--cor-azul-primario) 50%, #fff 100%);
     background-size: 200% auto;
-    background-clip: text;  
+    background-clip: text;
     -webkit-background-clip: text;
     color: transparent;
-    -webkit-text-fill-color: transparent; 
+    -webkit-text-fill-color: transparent;
     animation: registrosShine 5s linear infinite;
 }
 
@@ -82,8 +82,9 @@
     display: grid;
     grid-template-columns: 2fr 1fr;
     gap: 0;
-    align-items: stretch;
+    align-items: start;
     padding: 0 1rem;
+    height: auto;
 }
 
 .registros-scope .registros-column {
@@ -91,8 +92,9 @@
     flex-direction: column;
     min-width: 0;
     position: relative;
-    height: 100%;
+    height: auto;
     padding: 0 1.5rem;
+    overflow: visible;
 }
 
 /* ============================================= */
@@ -172,7 +174,7 @@
 }
 
 /* ============================================= */
-/* 4. DROPDOWN                                   */
+/* 4. DROPDOWN (ESTILO FINANÇAS - COPY)          */
 /* ============================================= */
 .registros-scope .custom-dropdown-wrapper {
     position: relative;
@@ -197,7 +199,7 @@
 }
 
 .registros-scope .dropdown-trigger-btn:hover {
-    border-color: var(--cor-azul-primario);
+    border-color: var(--cor-texto-secundario);
 }
 
 .registros-scope .dropdown-backdrop {
@@ -209,6 +211,7 @@
     z-index: 99;
 }
 
+/* Menu Dropdown - Estilo Idêntico ao .dropdown-menu de Finanças */
 .registros-scope .custom-dropdown-menu {
     position: absolute;
     top: 115%;
@@ -216,34 +219,37 @@
     width: 280px;
     background: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    /* Sombra mais forte igual Finanças */
     z-index: 100;
-    padding: 8px 0;
+    padding: 0.5rem;
+    /* Padding geral igual Finanças */
     animation: fadeInDropdown 0.2s ease;
 }
 
 @keyframes fadeInDropdown {
     from {
         opacity: 0;
-        transform: translateY(-5px);
     }
 
     to {
         opacity: 1;
-        transform: translateY(0);
     }
 }
 
 .registros-scope .dropdown-action-row {
-    padding: 12px 16px;
+    padding: 0.8rem 1rem;
+    /* Igual dropdown a */
     display: flex;
     align-items: center;
     gap: 12px;
     cursor: pointer;
     color: var(--cor-azul-primario);
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    border-radius: 6px;
+    transition: background 0.2s;
 }
 
 .registros-scope .dropdown-action-row:hover {
@@ -271,20 +277,35 @@
 .registros-scope .dropdown-scroll-area {
     max-height: 280px;
     overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+.registros-scope .dropdown-scroll-area::-webkit-scrollbar {
+    width: 4px;
+}
+
+.registros-scope .dropdown-scroll-area::-webkit-scrollbar-thumb {
+    background: var(--cor-borda);
+    border-radius: 4px;
 }
 
 .registros-scope .dropdown-item {
-    padding: 10px 16px;
+    padding: 0.8rem 1rem;
+    /* Igual dropdown a */
     display: flex;
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
     font-size: 0.95rem;
     color: var(--cor-texto-principal);
+    border-radius: 6px;
+    margin-bottom: 2px;
+    transition: background 0.2s;
 }
 
 .registros-scope .dropdown-item:hover {
     background-color: var(--cor-fundo-hover);
+    color: var(--cor-azul-primario);
 }
 
 .registros-scope .dropdown-item.selected {
@@ -300,8 +321,8 @@
 }
 
 .registros-scope .dropdown-item-info .dot {
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
 }
 
@@ -316,31 +337,10 @@
     opacity: 1;
 }
 
-.registros-scope .action-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 0.85rem;
-    padding: 6px;
-    border-radius: 6px;
-    color: var(--cor-texto-secundario);
-}
-
-.registros-scope .action-btn:hover {
-    background-color: var(--cor-borda);
-    color: var(--cor-texto-principal);
-}
-
-.registros-scope .action-btn.delete:hover {
-    color: var(--cor-vermelho-delete);
-    background-color: rgba(239, 68, 68, 0.1);
-}
-
 
 /* ============================================= */
-/* 5. ACCORDION (CORRIGIDO E ANIMADO)            */
+/* 5. ACCORDION & CONTEÚDO                       */
 /* ============================================= */
-
 .registros-scope .group-accordion {
     margin-bottom: 2rem;
 }
@@ -351,24 +351,17 @@
     align-items: center;
     background: transparent;
     padding: 0.8rem 0;
-    /* Aumentei a área de clique */
+    width: 100%;
     border-bottom: 1px solid var(--cor-borda);
     cursor: pointer;
     transition: all 0.2s;
     user-select: none;
-    /* Evita selecionar texto ao clicar rápido */
-    width: 100%;
-    /* Garante que pega a largura toda */
 }
 
 .registros-scope .accordion-header:hover,
 .registros-scope .accordion-header.active {
     color: var(--cor-azul-primario);
     border-color: var(--cor-azul-primario);
-}
-
-.registros-scope .accordion-header.pinned-header {
-    color: var(--cor-azul-primario);
 }
 
 .registros-scope .header-title-wrapper {
@@ -387,7 +380,6 @@
     border-radius: 50%;
 }
 
-/* Meta Info (Direita) */
 .registros-scope .header-meta {
     display: flex;
     align-items: center;
@@ -400,16 +392,14 @@
     opacity: 0.7;
 }
 
-.registros-scope .accordion-header i.rotate {
-    transform: rotate(180deg);
-}
-
-/* Removido transition aqui, fica no i geral */
 .registros-scope .accordion-header i {
     transition: transform 0.3s ease;
 }
 
-/* ANIMAÇÃO GRID ROWS (Padrão) */
+.registros-scope .accordion-header i.rotate {
+    transform: rotate(180deg);
+}
+
 .registros-scope .accordion-wrapper {
     display: grid;
     grid-template-rows: 0fr;
@@ -423,7 +413,7 @@
 }
 
 .registros-scope .accordion-inner {
-    overflow: hidden;
+    overflow: visible;
     min-height: 0;
 }
 
@@ -438,26 +428,23 @@
     gap: 1.5rem;
 }
 
-/* ============================================= */
-/* 6. CARD DE ANOTAÇÃO (DESIGN FINAL)            */
-/* ============================================= */
 
+/* ============================================= */
+/* 6. CARD DE ANOTAÇÃO (REVERTIDO AO ORIGINAL)   */
+/* ============================================= */
 .registros-scope .anotacao-card {
     background: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
     border-radius: 16px;
     border-left-width: 6px;
-    /* Borda mais grossa */
     border-left-style: solid;
-    /* border-left-color vem do JS */
-
+    /* SEM altura fixa, cresce com o conteúdo */
     padding: 1.5rem;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    min-height: 160px;
     position: relative;
     overflow: hidden;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
@@ -499,44 +486,10 @@
     opacity: 0.8;
 }
 
-/* Botões SEMPRE VISÍVEIS */
 .registros-scope .anotacao-actions {
     display: flex;
     gap: 8px;
     opacity: 1;
-}
-
-.registros-scope .anotacao-actions .btn-action-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: 1px solid var(--cor-borda);
-    color: var(--cor-texto-secundario);
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: all 0.2s;
-}
-
-/* Evita propagação do click do card para o botão */
-.registros-scope .anotacao-actions .btn-action-icon:hover {
-    background-color: var(--cor-fundo-hover);
-    color: var(--cor-texto-principal);
-    border-color: var(--cor-texto-principal);
-}
-
-.registros-scope .anotacao-actions .btn-delete-registro:hover {
-    background-color: var(--cor-vermelho-delete);
-    border-color: var(--cor-vermelho-delete);
-    color: white;
-}
-
-.registros-scope .btn-pin i.pinned {
-    color: var(--cor-azul-primario);
-    transform: rotate(45deg);
 }
 
 .registros-scope .anotacao-conteudo {
@@ -546,12 +499,44 @@
     max-height: 100px;
     overflow: hidden;
     position: relative;
+    /* Mantém o fade se quiser, ou remova max-height */
 }
 
-.registros-scope .anotacao-footer-links {
+.registros-scope .anotacao-footer {
     margin-top: auto;
     padding-top: 0.8rem;
     border-top: 1px solid var(--cor-borda);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.registros-scope .footer-pin-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--cor-texto-secundario);
+    font-size: 0.9rem;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 0;
+}
+
+.registros-scope .footer-pin-btn:hover {
+    color: var(--cor-texto-principal);
+}
+
+.registros-scope .footer-pin-btn.pinned {
+    color: var(--cor-azul-primario);
+}
+
+.registros-scope .footer-pin-btn i.pinned {
+    transform: rotate(45deg);
+}
+
+.registros-scope .anotacao-footer-links {
     font-size: 0.8rem;
     color: var(--cor-azul-primario);
     display: flex;
@@ -559,47 +544,429 @@
     gap: 6px;
 }
 
+
 /* ============================================= */
-/* 7. MODAIS (CORREÇÃO DE POSICIONAMENTO)        */
+/* 7. MODAIS (DESIGN REFINADO)                   */
 /* ============================================= */
 
-/* Sobreposição FIXA e CENTRALIZADA */
 .registros-scope .modal-overlay {
     position: fixed;
     inset: 0;
-    /* Top, Right, Bottom, Left = 0 */
-    background-color: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
+    background-color: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(5px);
     z-index: 9999;
-    /* Garante que fique acima de tudo */
     display: flex;
     align-items: center;
     justify-content: center;
     animation: fadeInOverlay 0.2s ease-out;
 }
 
-/* Conteúdo do Modal */
+/* Base do Modal */
 .registros-scope .modal-content,
 .registros-scope .view-modal {
     background: var(--cor-card-principal);
-    width: 90%;
-    max-width: 600px;
+    width: 95%;
+    max-width: 700px;
     border-radius: 16px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
     display: flex;
     flex-direction: column;
     max-height: 90vh;
-    /* Máximo 90% da altura da tela */
-    margin: 0;
-    /* Remove margens automáticas que podem bugar o flex */
     animation: scaleInModal 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
 }
 
-.registros-scope .small-modal {
-    max-width: 400px;
+/* Header */
+.registros-scope .modal-header,
+.registros-scope .view-modal-header {
+    padding: 1.2rem 2rem;
+    border-bottom: 1px solid var(--cor-borda);
+    background: var(--cor-card-secundario);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
 }
 
-/* Animações Modal */
+.registros-scope .modal-header h2 {
+    font-size: 1.3rem;
+    margin: 0;
+    color: var(--cor-texto-principal);
+}
+
+.registros-scope .close-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: var(--cor-texto-secundario);
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.registros-scope .close-btn:hover {
+    color: var(--cor-texto-principal);
+}
+
+/* Body Modal */
+.registros-scope .large-modal {
+    max-width: 800px;
+    height: 85vh;
+}
+
+.registros-scope .modal-body {
+    padding: 1.5rem 2rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: var(--cor-borda) transparent;
+}
+
+.registros-scope .modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.registros-scope .modal-body::-webkit-scrollbar-thumb {
+    background-color: var(--cor-borda);
+    border-radius: 4px;
+}
+
+/* Inputs */
+.registros-scope .form-row {
+    display: flex;
+    gap: 1.5rem;
+    flex-shrink: 0;
+}
+
+.registros-scope .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.registros-scope .form-group label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--cor-texto-secundario);
+}
+
+.registros-scope .form-input {
+    height: 45px;
+    padding: 0 12px;
+    padding-right: 35px;
+    /* Setinha afastada */
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    background: var(--cor-fundo);
+    color: var(--cor-texto-principal);
+    font-size: 1rem;
+}
+
+.registros-scope .form-input:focus {
+    border-color: var(--cor-azul-primario);
+    outline: none;
+}
+
+
+/* --- REACT QUILL FIXO (Mantido conforme pedido) --- */
+.registros-scope .editor-container {
+    display: flex;
+    flex-direction: column;
+    height: 350px !important;
+    min-height: 350px;
+    max-height: 350px;
+    margin-bottom: 1rem;
+    flex-shrink: 0;
+}
+
+.registros-scope .custom-quill-editor {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.registros-scope .quill {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.registros-scope .ql-toolbar {
+    border: 1px solid var(--cor-borda) !important;
+    border-radius: 8px 8px 0 0;
+    background: var(--cor-fundo);
+    flex-shrink: 0;
+    z-index: 2;
+}
+
+.registros-scope .ql-container {
+    border: 1px solid var(--cor-borda) !important;
+    border-top: none !important;
+    border-radius: 0 0 8px 8px;
+    background: var(--cor-fundo);
+    font-size: 1rem;
+    color: var(--cor-texto-principal);
+    font-family: inherit;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: auto !important;
+    overflow: hidden;
+}
+
+.registros-scope .ql-editor {
+    flex: 1;
+    height: 100%;
+    overflow-y: auto !important;
+    padding: 1rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--cor-borda) transparent;
+}
+
+.registros-scope .ql-editor.ql-blank::before {
+    color: var(--cor-texto-secundario) !important;
+    opacity: 0.5;
+    font-style: italic;
+}
+
+/* Links */
+.registros-scope .links-manager-section {
+    background: var(--cor-card-secundario);
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--cor-borda);
+    flex-shrink: 0;
+}
+
+.registros-scope .section-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--cor-texto-principal);
+    display: block;
+    margin-bottom: 8px;
+}
+
+.registros-scope .add-link-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 0.5rem;
+}
+
+.registros-scope .link-input {
+    flex: 1;
+    height: 38px;
+    font-size: 0.9rem;
+}
+
+.registros-scope .btn-add-link {
+    white-space: nowrap;
+    height: 38px;
+    padding: 0 15px;
+}
+
+.registros-scope .links-list-edit {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 100px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+.registros-scope .links-list-edit li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--cor-card-principal);
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--cor-borda);
+}
+
+.registros-scope .link-url-text {
+    font-size: 0.85rem;
+    color: var(--cor-azul-primario);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 90%;
+}
+
+.registros-scope .remove-link-btn {
+    background: none;
+    border: none;
+    color: var(--cor-texto-secundario);
+    cursor: pointer;
+}
+
+.registros-scope .remove-link-btn:hover {
+    color: var(--cor-vermelho-delete);
+}
+
+/* Footer Modal */
+.registros-scope .modal-footer-custom {
+    padding: 1.2rem 2rem;
+    border-top: 1px solid var(--cor-borda);
+    background-color: var(--cor-card-secundario);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.registros-scope .footer-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.registros-scope .checkbox-footer {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--cor-texto-secundario);
+    font-weight: 600;
+    user-select: none;
+}
+
+.registros-scope .checkbox-footer input {
+    display: none;
+}
+
+.registros-scope .checkmark-footer {
+    height: 18px;
+    width: 18px;
+    background-color: var(--cor-fundo);
+    border: 1px solid var(--cor-borda);
+    border-radius: 4px;
+    margin-right: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.registros-scope .checkbox-footer:hover .checkmark-footer {
+    border-color: var(--cor-azul-primario);
+}
+
+.registros-scope .checkbox-footer input:checked~.checkmark-footer {
+    background-color: var(--cor-azul-primario);
+    border-color: var(--cor-azul-primario);
+    color: white;
+}
+
+.registros-scope .checkmark-footer::after {
+    content: "\f00c";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    font-size: 0.7rem;
+    display: none;
+}
+
+.registros-scope .checkbox-footer input:checked~.checkmark-footer::after {
+    display: block;
+}
+
+/* View Modal */
+.registros-scope .view-modal-header {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.registros-scope .view-header-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.registros-scope .view-group-badge {
+    color: white;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.registros-scope .view-title {
+    font-size: 1.8rem;
+    color: var(--cor-texto-principal);
+    margin: 0 0 0.5rem 0;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.registros-scope .view-date {
+    font-size: 0.9rem;
+    color: var(--cor-texto-secundario);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.registros-scope .view-body {
+    padding: 2rem;
+    overflow-y: auto;
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: var(--cor-texto-principal);
+    scrollbar-width: thin;
+}
+
+.registros-scope .view-content-html p {
+    margin-bottom: 1rem;
+}
+
+.registros-scope .view-content-html ul,
+.registros-scope .view-content-html ol {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+}
+
+.registros-scope .view-links-container {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px dashed var(--cor-borda);
+}
+
+.registros-scope .link-item-view {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--cor-fundo);
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--cor-azul-primario);
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+.registros-scope .modal-footer {
+    padding: 1.5rem 2rem;
+    border-top: 1px solid var(--cor-borda);
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    background-color: var(--cor-card-secundario);
+}
+
+/* Animacoes Modais */
 @keyframes fadeInOverlay {
     from {
         opacity: 0;
@@ -622,175 +989,44 @@
     }
 }
 
-/* View Modal Específico */
-.registros-scope .view-modal-header {
-    padding: 1.5rem 2rem 1rem 2rem;
-    background: var(--cor-card-secundario);
-    border-bottom: 1px solid var(--cor-borda);
-}
+/* ============================================= */
+/* 8. BOTÕES DE AÇÃO UNIFICADOS (Estilo Finanças) */
+/* ============================================= */
 
-.registros-scope .view-meta-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.registros-scope .view-group-badge {
-    color: white;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-}
-
-.registros-scope .view-actions {
-    display: flex;
-    gap: 10px;
-}
-
-.registros-scope .icon-btn {
+/* Estilo Base do Botão Quadrado (Substitui o antigo) */
+.registros-scope .btn-action-icon {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.85rem;
+    color: var(--cor-texto-secundario);
     background: transparent;
-    border: 1px solid var(--cor-borda);
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
+    border: 1px solid var(--cor-borda) !important;
+    border-radius: 6px !important;
+    /* Quadrado arredondado */
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    color: var(--cor-texto-secundario);
-    transition: 0.2s;
-}
-
-.registros-scope .icon-btn:hover {
-    background: var(--cor-card-principal);
-    color: var(--cor-texto-principal);
-}
-
-.registros-scope .icon-btn.close:hover {
-    background: rgba(239, 68, 68, 0.1);
-    color: var(--cor-vermelho-delete);
-    border-color: var(--cor-vermelho-delete);
-}
-
-.registros-scope .view-title {
-    font-size: 1.5rem;
-    color: var(--cor-texto-principal);
-    margin: 0 0 0.5rem 0;
-    font-weight: 700;
-}
-
-.registros-scope .view-date {
-    font-size: 0.85rem;
-    color: var(--cor-texto-secundario);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.registros-scope .view-body {
-    padding: 2rem;
-    font-size: 1rem;
-    color: var(--cor-texto-principal);
-    line-height: 1.7;
-    overflow-y: auto;
-}
-
-.registros-scope .view-content-html p {
-    margin-bottom: 1rem;
-}
-
-.registros-scope .view-content-html ul {
-    padding-left: 20px;
-    margin-bottom: 1rem;
-}
-
-.registros-scope .view-links-section {
-    margin-top: 2rem;
-    padding: 1rem;
-    background: var(--cor-fundo);
-    border-radius: 8px;
-    border: 1px solid var(--cor-borda);
-}
-
-.registros-scope .view-links-section h4 {
-    margin: 0 0 0.5rem 0;
-    font-size: 0.9rem;
-    color: var(--cor-texto-secundario);
-}
-
-.registros-scope .view-links-section ul {
-    list-style: none;
     padding: 0;
-    margin: 0;
+    transition: all 0.2s;
 }
 
-.registros-scope .view-links-section li a {
-    color: var(--cor-azul-primario);
-    text-decoration: none;
-    word-break: break-all;
-    font-size: 0.9rem;
+/* Hover Específico - EDITAR (Laranja/Amarelo) */
+.registros-scope .btn-edit:hover {
+    background-color: #f59e0b !important;
+    border-color: #f59e0b !important;
+    color: #fff !important;
 }
 
-.registros-scope .view-links-section li a:hover {
-    text-decoration: underline;
-}
-
-.registros-scope .modal-footer {
-    padding: 1.2rem 1.5rem;
-    border-top: 1px solid var(--cor-borda);
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-    background-color: var(--cor-card-secundario);
-}
-
-/* Form Styles para Modal Editar/Criar */
-.registros-scope .modal-header {
-    padding: 1.2rem 1.5rem;
-    border-bottom: 1px solid var(--cor-borda);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.registros-scope .close-btn {
-    background: none;
-    border: none;
-    font-size: 1.2rem;
-    cursor: pointer;
-    color: var(--cor-texto-secundario);
-}
-
-.registros-scope .modal-body {
-    padding: 1.5rem;
-    overflow-y: auto;
-}
-
-.registros-scope .form-group {
-    margin-bottom: 1rem;
-}
-
-.registros-scope .form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
-    color: var(--cor-texto-secundario);
-}
-
-.registros-scope .form-input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid var(--cor-borda);
-    border-radius: 8px;
-    background: var(--cor-fundo);
-    color: var(--cor-texto-principal);
+/* Hover Específico - EXCLUIR (Vermelho) */
+.registros-scope .btn-delete:hover {
+    background-color: var(--cor-vermelho-delete) !important;
+    border-color: var(--cor-vermelho-delete) !important;
+    color: #fff !important;
 }
 
 /* ============================================= */
-/* 8. TAREFAS                                    */
+/* 9. TAREFAS                                    */
 /* ============================================= */
 .registros-scope .tarefas-list {
     display: flex;
@@ -841,6 +1077,9 @@
     padding: 1rem 1.2rem;
     transition: 0.2s;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .registros-scope .tarefa-card:hover {
@@ -855,14 +1094,14 @@
 
 .registros-scope .tarefa-header {
     display: flex;
-    justify-content: space-between;
     align-items: flex-start;
-    gap: 10px;
+    gap: 12px;
+    width: 100%;
 }
 
 .registros-scope .check-btn {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     border: 2px solid var(--cor-borda);
     background: transparent;
@@ -873,6 +1112,7 @@
     color: white;
     flex-shrink: 0;
     transition: all 0.2s;
+    margin-top: 2px;
 }
 
 .registros-scope .check-btn:hover {
@@ -884,12 +1124,24 @@
     border-color: var(--cor-azul-primario);
 }
 
+.registros-scope .check-btn.checked i {
+    font-size: 0.75rem;
+}
+
+.registros-scope .tarefa-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
 .registros-scope .tarefa-titulo {
     margin: 0;
     font-size: 0.95rem;
     color: var(--cor-texto-principal);
     font-weight: 600;
     line-height: 1.4;
+    word-break: break-word;
 }
 
 .registros-scope .concluida .tarefa-titulo {
@@ -903,9 +1155,10 @@
     color: var(--cor-texto-secundario);
     cursor: pointer;
     font-size: 0.9rem;
+    padding: 4px;
     opacity: 0;
     transition: opacity 0.2s;
-    padding: 4px;
+    flex-shrink: 0;
 }
 
 .registros-scope .tarefa-card:hover .btn-delete-mini {
@@ -917,8 +1170,8 @@
 }
 
 .registros-scope .subtarefas-container {
-    margin-top: 1rem;
-    padding-left: 32px;
+    margin-top: 0.5rem;
+    padding-left: 34px;
 }
 
 .registros-scope .progress-bar-bg {
@@ -968,8 +1221,7 @@
         gap: 2rem;
     }
 
-    .registros-scope .column-anotacoes,
-    .registros-scope .column-tarefas {
+    .registros-scope .registros-column {
         padding: 0;
         overflow: visible;
     }

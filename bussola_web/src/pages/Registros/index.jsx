@@ -27,21 +27,15 @@ export function Registros() {
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [filtroGrupo, setFiltroGrupo] = useState('Todos');
 
-    // --- MUDANÇA 1: Inicialização com LocalStorage ---
-    // Verifica se existe salvo, senão usa o padrão {'fixados': true}
+    // Inicialização com LocalStorage
     const [openGroups, setOpenGroups] = useState(() => {
         const savedState = localStorage.getItem('@Bussola:registros_accordions');
         if (savedState) {
-            try {
-                return JSON.parse(savedState);
-            } catch (e) {
-                console.error("Erro ao ler localStorage", e);
-            }
+            try { return JSON.parse(savedState); } catch (e) { console.error("Erro ao ler localStorage", e); }
         }
-        return {'fixados': true}; // Estado padrão inicial
+        return {'fixados': true}; 
     });
 
-    // --- MUDANÇA 2: Salvar no LocalStorage sempre que mudar ---
     useEffect(() => {
         localStorage.setItem('@Bussola:registros_accordions', JSON.stringify(openGroups));
     }, [openGroups]);
@@ -53,9 +47,6 @@ export function Registros() {
             const result = await getRegistrosDashboard();
             setData(result);
             setError(null);
-            
-            // REMOVIDO: A lógica antiga que forçava abrir o primeiro mês/grupo foi removida
-            // para respeitar a escolha salva do usuário no localStorage.
         } catch (err) {
             console.error("Erro dashboard:", err);
             setError("Não foi possível carregar os registros.");
@@ -99,8 +90,6 @@ export function Registros() {
     const grupos = data?.grupos_disponiveis || [];
 
     // --- HANDLERS ---
-    
-    // Toggle Accordion (Agora persiste automaticamente graças ao useEffect acima)
     const toggleAccordion = (key) => {
         setOpenGroups(prev => ({ ...prev, [key]: !prev[key] }));
     };
@@ -167,7 +156,6 @@ export function Registros() {
                 </div>
             </div>
 
-            {/* LAYOUT GRID PRINCIPAL */}
             <div className="registros-layout">
                 
                 {/* 1. COLUNA ESQUERDA: CADERNO */}
@@ -178,7 +166,7 @@ export function Registros() {
                         <div className="header-actions-group">
                             <div className="custom-dropdown-wrapper">
                                 <button 
-                                    className={`dropdown-trigger-btn ${filtroGrupo !== 'Todos' ? 'active-filter' : ''}`} 
+                                    className={`dropdown-trigger-btn ${filtroGrupo !== 'Todos' ? 'active' : ''}`} 
                                     onClick={() => setDropdownOpen(!dropdownOpen)}
                                 >
                                     <span>{filtroGrupo === 'Todos' ? 'Todos os Grupos' : filtroGrupo}</span>
@@ -188,6 +176,7 @@ export function Registros() {
                                 {dropdownOpen && (
                                     <>
                                         <div className="dropdown-backdrop" onClick={() => setDropdownOpen(false)}></div>
+                                        {/* DROPDOWN MENU COM ESTILO IGUAL FINANÇAS */}
                                         <div className="custom-dropdown-menu">
                                             <div className="dropdown-action-row" onClick={handleNewGrupo}>
                                                 <div className="action-icon-circle"><i className="fa-solid fa-plus"></i></div>
@@ -205,8 +194,9 @@ export function Registros() {
                                                             <span className="name">{g.nome}</span>
                                                         </div>
                                                         <div className="dropdown-item-actions">
-                                                            <button className="action-btn edit" onClick={(e) => handleEditGrupo(g, e)}><i className="fa-solid fa-pen"></i></button>
-                                                            <button className="action-btn delete" onClick={(e) => handleDeleteGrupo(g.id, e)}><i className="fa-solid fa-trash"></i></button>
+                                                            {/* Botões padronizados (btn-edit / btn-delete) */}
+                                                            <button className="btn-action-icon btn-edit" onClick={(e) => handleEditGrupo(g, e)}><i className="fa-solid fa-pen-to-square"></i></button>
+                                                            <button className="btn-action-icon btn-delete" onClick={(e) => handleDeleteGrupo(g.id, e)}><i className="fa-solid fa-trash-can"></i></button>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -259,8 +249,6 @@ export function Registros() {
                         )}
 
                         {Object.entries(groupedNotes).map(([grupoNome, notas]) => {
-                            // MUDANÇA: Agora se não existir no state, assume fechado (false), ou use lógica de default
-                            // Com o localStorage, o que estiver lá é lei.
                             const isOpen = !!openGroups[grupoNome]; 
                             const grpObj = grupos.find(g => g.nome === grupoNome);
                             const grpColor = grpObj ? grpObj.cor : '#999';
