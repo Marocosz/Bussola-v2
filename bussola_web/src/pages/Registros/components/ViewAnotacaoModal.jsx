@@ -15,17 +15,16 @@ export function ViewAnotacaoModal({ active, closeModal, nota, onEdit }) {
         <div className="modal-overlay registros-scope" onClick={closeModal}>
             <div className="modal-content view-modal" onClick={e => e.stopPropagation()}>
                 
-                {/* Header: Arredondado no topo, borda esquerda colorida */}
                 <div className="view-modal-header" style={{ borderLeft: `6px solid ${grupoCor}` }}>
                     <div className="view-header-top-row">
                         <span className="view-group-badge" style={{ backgroundColor: grupoCor }}>
                             {grupoNome}
                         </span>
                         
-                        {/* Botão X limpo */}
-                        <button className="clean-close-btn" onClick={closeModal} title="Fechar">
-                            <i className="fa-solid fa-xmark"></i>
-                        </button>
+                        {/* Botão X com &times; igual Finanças */}
+                        <span className="close-btn" onClick={closeModal} title="Fechar">
+                            &times;
+                        </span>
                     </div>
                     
                     <div className="view-header-main">
@@ -35,13 +34,11 @@ export function ViewAnotacaoModal({ active, closeModal, nota, onEdit }) {
                 </div>
 
                 <div className="modal-body view-body">
-                    {/* Conteúdo HTML Renderizado */}
                     <div 
                         className="view-content-html"
                         dangerouslySetInnerHTML={{ __html: nota.conteudo }}
                     />
 
-                    {/* Seção de Links (Visualização) */}
                     {nota.links && nota.links.length > 0 && (
                         <div className="view-links-container">
                             <h4 className="links-title"><i className="fa-solid fa-link"></i> Links Anexados</h4>
@@ -60,7 +57,7 @@ export function ViewAnotacaoModal({ active, closeModal, nota, onEdit }) {
                 <div className="modal-footer">
                     <button className="btn-secondary" onClick={closeModal}>Fechar</button>
                     <button className="btn-primary" onClick={() => { onEdit(nota); closeModal(); }}>
-                        <i className="fa-solid fa-pen"></i> Editar Nota
+                        <i className="fa-solid fa-pen-to-square"></i> Editar Nota
                     </button>
                 </div>
             </div>

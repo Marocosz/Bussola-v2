@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { createAnotacao, updateAnotacao } from '../../../services/api';
@@ -10,13 +10,14 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
     const [grupoId, setGrupoId] = useState('');
     const [fixado, setFixado] = useState(false);
     
-    // Gerenciamento de Links
     const [links, setLinks] = useState([]); 
     const [newLink, setNewLink] = useState('');
 
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const dropdownRef = useRef(null);
+
     const [loading, setLoading] = useState(false);
 
-    // Configuração da Toolbar
     const modules = {
         toolbar: [
             ['bold', 'italic', 'underline', 'strike'], 
@@ -41,10 +42,22 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
                 setLinks([]);
             }
             setNewLink('');
+            setDropdownOpen(false);
         }
     }, [active, editingData, gruposDisponiveis]);
 
-    // Handlers
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setDropdownOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
+
     const handleAddLink = (e) => {
         e.preventDefault();
         if (newLink.trim()) {
@@ -85,22 +98,23 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
         }
     };
 
+    const selectedGroupObj = gruposDisponiveis.find(g => g.id == grupoId);
+    const selectedLabel = selectedGroupObj ? selectedGroupObj.nome : "Sem Grupo";
+    const selectedColor = selectedGroupObj ? selectedGroupObj.cor : null;
+
     if (!active) return null;
 
     return (
         <div className="modal-overlay registros-scope">
             <div className="modal-content large-modal" onClick={e => e.stopPropagation()}>
                 
-                {/* Header com X Padrão */}
                 <div className="modal-header">
                     <h2>{editingData ? 'Editar Anotação' : 'Nova Anotação'}</h2>
-                    <button className="close-btn" onClick={closeModal}>
-                        <i className="fa-solid fa-times"></i>
-                    </button>
+                    {/* Alterado para SPAN e &times; para ficar IDÊNTICO ao Finanças */}
+                    <span className="close-btn" onClick={closeModal}>&times;</span>
                 </div>
                 
                 <div className="modal-body">
-                    {/* Linha 1: Título e Grupo */}
                     <div className="form-row">
                         <div className="form-group" style={{flex: 2}}>
                             <label>Título</label>
@@ -113,22 +127,43 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
                                 autoFocus
                             />
                         </div>
-                        <div className="form-group" style={{flex: 1}}>
+                        
+                        <div className="form-group" style={{flex: 1}} ref={dropdownRef}>
                             <label>Grupo</label>
-                            <select 
-                                className="form-input" 
-                                value={grupoId} 
-                                onChange={e => setGrupoId(e.target.value)}
+                            <div 
+                                className={`custom-select-trigger ${dropdownOpen ? 'open' : ''}`} 
+                                onClick={() => setDropdownOpen(!dropdownOpen)}
                             >
-                                <option value="">Sem Grupo</option>
-                                {gruposDisponiveis.map(g => (
-                                    <option key={g.id} value={g.id}>{g.nome}</option>
-                                ))}
-                            </select>
+                                <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                                    {selectedColor && <span className="option-dot" style={{backgroundColor: selectedColor}}></span>}
+                                    <span>{selectedLabel}</span>
+                                </div>
+                                <i className="fa-solid fa-chevron-down arrow-icon"></i>
+                            </div>
+                            
+                            {dropdownOpen && (
+                                <div className="custom-select-options">
+                                    <div 
+                                        className={`custom-option ${!grupoId ? 'selected' : ''}`}
+                                        onClick={() => { setGrupoId(''); setDropdownOpen(false); }}
+                                    >
+                                        Sem Grupo
+                                    </div>
+                                    {gruposDisponiveis.map(g => (
+                                        <div 
+                                            key={g.id} 
+                                            className={`custom-option ${grupoId == g.id ? 'selected' : ''}`}
+                                            onClick={() => { setGrupoId(g.id); setDropdownOpen(false); }}
+                                        >
+                                            <span className="option-dot" style={{backgroundColor: g.cor}}></span>
+                                            {g.nome}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    {/* Editor Rico com Scroll Interno */}
                     <div className="form-group editor-container">
                         <label>Conteúdo</label>
                         <ReactQuill 
@@ -141,7 +176,6 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
                         />
                     </div>
 
-                    {/* Seção de Links */}
                     <div className="links-manager-section">
                         <label className="section-label"><i className="fa-solid fa-link"></i> Links e Referências</label>
                         
@@ -174,10 +208,7 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
                     </div>
                 </div>
 
-                {/* Footer Customizado (Fixar na esquerda, Botões na direita) */}
                 <div className="modal-footer-custom">
-                    
-                    {/* Lado Esquerdo: Checkbox Fixar */}
                     <label className="checkbox-footer">
                         <input 
                             type="checkbox" 
@@ -188,7 +219,6 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
                         Fixar no topo
                     </label>
 
-                    {/* Lado Direito: Botões de Ação */}
                     <div className="footer-buttons">
                         <button className="btn-secondary" onClick={closeModal}>Cancelar</button>
                         <button className="btn-primary" onClick={handleSave} disabled={loading}>
