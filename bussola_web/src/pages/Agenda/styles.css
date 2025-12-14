@@ -31,18 +31,6 @@
     padding: 0 1.2rem;
 }
 
-/* Linha divisória vertical (tracejada) */
-.agenda-column:not(:last-child)::after {
-    content: "";
-    position: absolute;
-    top: 3.6rem; 
-    bottom: 0;
-    right: 0;
-    width: 1px;
-    border-right: 1px dashed var(--cor-borda);
-    z-index: 0;
-}
-
 /* Mensagem de lista vazia */
 .empty-list-msg {
     color: var(--cor-texto-secundario);
@@ -163,6 +151,10 @@
     min-height: 30px;
 }
 
+.agenda-column:last-child .column-header-flex {
+    margin-bottom: 0.5rem !important; /* Era 1.5rem. Ajuste esse valor conforme seu gosto */
+}
+
 /* ============================================= */
 /* 4. AJUSTE PARA 2 COLUNAS CONECTADAS (FIX)     */
 /* ============================================= */
@@ -196,7 +188,7 @@
 }
 
 /* ============================================= */
-/* 5. LISTA DE COMPROMISSOS (ACCORDION)          */
+/* 5. LISTA DE COMPROMISSOS (GRID INTELIGENTE)   */
 /* ============================================= */
 
 .month-group {
@@ -244,10 +236,16 @@
 .accordion-inner { overflow: hidden; min-height: 0; }
 .month-content { padding-top: 0; padding-bottom: 0; }
 
+/* GRID PRINCIPAL DE COMPROMISSOS */
 .compromissos-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Duas colunas */
+    gap: 1rem; /* Espaço entre os cards */
+}
+
+/* Lógica para card solitário na última linha */
+.compromissos-grid > .compromisso-card-modern:last-child:nth-child(odd) {
+    grid-column: span 2;
 }
 
 /* ============================================= */
@@ -265,7 +263,11 @@
     transition: transform 0.2s, box-shadow 0.2s;
     position: relative;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    /* Removido o padding-bottom exagerado pois o footer não é mais absoluto */
+    
+    /* ADICIONADO: Garante que o card ocupe 100% da altura da Grid */
+    height: 100%;
+    /* Importante para que o height 100% funcione corretamente com padding */
+    box-sizing: border-box; 
 }
 
 .compromisso-card-modern:hover {
@@ -331,7 +333,7 @@
     color: var(--cor-texto-secundario);
     background: transparent;
     border: 1px solid var(--cor-borda) !important;
-    border-radius: 6px !important; /* Quadrado arredondado igual Finanças */
+    border-radius: 6px !important; 
     display: flex;
     align-items: center;
     justify-content: center;
@@ -376,6 +378,7 @@
     align-items: flex-start;
     gap: 12px;
     max-width: 100%;
+    padding: 0 10px;
 }
 
 /* Estilo específico para o bloco de local (borda discreta) */
@@ -403,8 +406,6 @@
     color: var(--cor-texto-secundario);
     line-height: 1.4;
     padding-top: 2px;
-    
-    /* Quebra de linha garantida */
     white-space: normal;
     word-break: break-word;
     overflow-wrap: break-word;
@@ -413,14 +414,17 @@
 /* --- 4. Footer --- */
 .card-footer-row {
     display: flex;
-    justify-content: space-between; /* Status na esquerda, Botão na direita */
+    justify-content: space-between; 
     align-items: center;
-    /* AUMENTADO ESPAÇAMENTO DO CONTEÚDO ACIMA */
-    margin-top: 2rem; 
+    
+    /* ADICIONADO: Empurra o footer para o final do card */
+    margin-top: auto; 
+    padding-top: 2rem; /* Mantive um respiro minimo do conteúdo de cima */
+    
     position: relative;
 }
 
-/* Badge de Status (Agora estático, alinhado à esquerda) */
+/* Badge de Status */
 .status-badge-modern {
     position: static;
     font-size: 0.85rem; 
@@ -435,7 +439,7 @@
 .status-badge-modern.realizado { background: rgba(40, 167, 69, 0.15); color: #28a745; }
 .status-badge-modern.perdido { background: rgba(231, 76, 60, 0.15); color: #e74c3c; }
 
-/* Botão Concluir (Alinhado à direita pelo space-between) */
+/* Botão Concluir */
 .btn-concluir-action {
     display: flex;
     align-items: center;
@@ -477,7 +481,6 @@
 /* 7. MODAL E FORMULÁRIOS (Estilo Finanças)      */
 /* ============================================= */
 
-/* Fundo do Modal (Backdrop) */
 .modal {
     display: flex;
     position: fixed; 
@@ -493,7 +496,6 @@
     animation: fadeIn 0.2s ease-out;
 }
 
-/* Container do Conteúdo do Modal */
 .modal-content {
     background-color: var(--cor-card-principal);
     margin: auto;
@@ -544,11 +546,10 @@
     border-radius: 0 0 16px 16px;
 }
 
-/* Animações */
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-/* --- INPUTS E FORMULÁRIOS (Padronizados) --- */
+/* --- INPUTS E FORMULÁRIOS --- */
 
 .form-row {
     display: flex;
@@ -623,12 +624,10 @@ textarea.form-input {
 
 .dias-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr); /* 7 Colunas FIXAS */
+    grid-template-columns: repeat(7, 1fr); 
     gap: 0.5rem;
-    padding-top: 1rem;
 }
 
-/* --- CARD DE DIA PADRÃO --- */
 .dia-card {
     background-color: var(--cor-card-secundario);
     border: 1px solid var(--cor-borda);
@@ -643,15 +642,9 @@ textarea.form-input {
     transition: all 0.2s;
 }
 
-/* --- DIA DE PADDING (MÊS ANTERIOR/PRÓXIMO) --- */
 .dia-card.dia-padding {
-    /* Fundo transparente para aceitar o gradiente */
     background-color: transparent !important;
-    
-    /* Borda tracejada suave */
     border: 1px dashed var(--cor-borda) !important;
-    
-    /* Efeito de listras diagonais (Hachuras) */
     background-image: repeating-linear-gradient(
         45deg,
         transparent,
@@ -659,14 +652,11 @@ textarea.form-input {
         rgba(128, 128, 128, 0.08) 5px,
         rgba(128, 128, 128, 0.08) 10px
     ) !important;
-    
-    /* Reduz opacidade e desativa cliques */
     opacity: 0.6;
     pointer-events: none;
     box-shadow: none !important;
 }
 
-/* Estilos de texto para dias de padding */
 .dia-card.dia-padding .dia-numero,
 .dia-card.dia-padding .dia-semana {
     color: var(--cor-texto-secundario);
@@ -674,19 +664,16 @@ textarea.form-input {
 }
 .dia-card.dia-padding .compromisso-indicator { display: none; }
 
-/* --- DIA DE HOJE --- */
 .dia-card.today {
     border: 2px solid var(--cor-azul-primario);
     background-color: var(--cor-card-principal);
 }
 .dia-card.today .dia-numero { color: var(--cor-azul-primario); }
 
-/* --- DIAS COM COMPROMISSOS (ATIVOS) --- */
 .dia-card:not(.dia-padding).has-compromissos {
-    background-color: rgba(74, 109, 255, 0.05); /* Fundo azul sutil */
+    background-color: rgba(74, 109, 255, 0.05); 
 }
 
-/* --- INTERAÇÃO (HOVER) --- */
 .dia-card:not(.dia-padding):hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(0,0,0,0.2);
@@ -694,11 +681,9 @@ textarea.form-input {
     cursor: pointer;
 }
 
-/* Tipografia Interna do Dia */
 .dia-numero { font-size: 0.9rem; font-weight: 600; }
 .dia-semana { font-size: 0.65rem; color: var(--cor-texto-secundario); text-transform: uppercase; }
 
-/* Bolinha Indicadora */
 .compromisso-indicator {
     height: 5px; width: 5px;
     background-color: var(--cor-azul-primario);
@@ -719,7 +704,7 @@ textarea.form-input {
     display: none;
     opacity: 0;
     position: absolute;
-    z-index: 2500; /* Aumentei para garantir */
+    z-index: 2500; 
     background-color: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
     border-radius: 8px;
@@ -746,9 +731,20 @@ textarea.form-input {
 /* ============================================= */
 
 @media (max-width: 768px) {
+    /* No mobile, volta tudo para 1 coluna */
     .layout-grid-custom.agenda-layout {
         grid-template-columns: 1fr;
         gap: 2rem; 
+    }
+
+    /* Grid de compromissos no mobile vira 1 coluna também */
+    .compromissos-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Remove o span do último item no mobile */
+    .compromissos-grid > .compromisso-card-modern:last-child:nth-child(odd) {
+        grid-column: span 1;
     }
     
     .agenda-column:not(:last-child) {
