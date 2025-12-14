@@ -33,6 +33,11 @@ class CalendarDay(BaseModel):
     day_number: Optional[str] = None
     weekday_short: Optional[str] = None
     is_today: bool = False
+    
+    # --- CAMPO ADICIONADO ---
+    is_padding: bool = False 
+    # ------------------------
+
     compromissos: List[Dict[str, Any]] = [] # Lista simplificada para o tooltip
     
     # Campos apenas para o divisor

@@ -11,18 +11,21 @@ export function Agenda() {
     const [editingItem, setEditingItem] = useState(null);
     const [openMonths, setOpenMonths] = useState({});
     
-    // Tooltip State
     const [tooltip, setTooltip] = useState({ visible: false, x: 0, y: 0, compromissos: [] });
 
     const fetchData = async () => {
         try {
             const result = await getAgendaDashboard();
             setData(result);
-            if(result.compromissos_por_mes && Object.keys(result.compromissos_por_mes).length > 0){
+            if (result.compromissos_por_mes && Object.keys(result.compromissos_por_mes).length > 0) {
+                // Abre o primeiro mês por padrão se não houver estado anterior
                 const firstMonth = Object.keys(result.compromissos_por_mes)[0];
-                setOpenMonths(prev => ({...prev, [firstMonth]: true}));
+                setOpenMonths(prev => {
+                    if (Object.keys(prev).length === 0) return { [firstMonth]: true };
+                    return prev;
+                });
             }
-        } catch(err) {
+        } catch (err) {
             console.error(err);
         } finally {
             setLoading(false);
@@ -35,13 +38,12 @@ export function Agenda() {
     const handleNew = () => { setEditingItem(null); setModalOpen(true); };
     const handleEdit = (item) => { setEditingItem(item); setModalOpen(true); };
 
-    // Tooltip Logic
     const handleDayHover = (e, compromissos) => {
         if (!compromissos || compromissos.length === 0) return;
         const rect = e.target.getBoundingClientRect();
         setTooltip({
             visible: true,
-            x: rect.right + window.scrollX - 280, 
+            x: rect.right + window.scrollX - 280, // Ajuste para o tooltip não sair da tela
             y: rect.bottom + window.scrollY + 5,
             compromissos
         });
@@ -53,7 +55,6 @@ export function Agenda() {
 
     return (
         <div className="container main-container">
-            {/* HERO SECTION */}
             <div className="internal-hero">
                 <div className="hero-bg-effect"></div>
                 <div className="internal-hero-content">
@@ -62,9 +63,7 @@ export function Agenda() {
                 </div>
             </div>
 
-            {/* LAYOUT GRID */}
             <div className="layout-grid-custom agenda-layout">
-                
                 {/* Coluna da Esquerda: Lista */}
                 <div className="agenda-column">
                     <div className="column-header-flex">
@@ -104,31 +103,41 @@ export function Agenda() {
                     <div className="column-header-flex">
                         <h2>Calendário</h2>
                     </div>
+
                     <div className="dias-grid">
-                        {data.calendar_days.map((item, idx) => (
-                            item.type === 'month_divider' ? (
-                                <div className="month-divider" key={idx}>
-                                    <h2>{item.month_name} {item.year}</h2>
-                                </div>
-                            ) : (
-                                <div 
-                                    className={`dia-card ${item.is_today ? 'today' : ''} ${item.compromissos.length > 0 ? 'has-compromissos' : ''}`}
+                        {data.calendar_days.map((item, idx) => {
+                            if (item.type === 'month_divider') {
+                                return (
+                                    <div className="month-divider" key={idx}>
+                                        <h2>{item.month_name} {item.year}</h2>
+                                    </div>
+                                );
+                            }
+
+                            // Determina classes dinamicamente
+                            let cardClasses = 'dia-card';
+                            if (item.is_today) cardClasses += ' today';
+                            if (item.is_padding) cardClasses += ' dia-padding'; // Classe para o CSS "riscado"
+                            if (!item.is_padding && item.compromissos?.length > 0) cardClasses += ' has-compromissos';
+
+                            return (
+                                <div
+                                    className={cardClasses}
                                     key={idx}
-                                    onMouseEnter={(e) => handleDayHover(e, item.compromissos)}
+                                    onMouseEnter={(e) => !item.is_padding && handleDayHover(e, item.compromissos)}
                                     onMouseLeave={handleDayLeave}
                                 >
                                     <span className="dia-numero">{item.day_number}</span>
                                     <span className="dia-semana">{item.weekday_short}</span>
-                                    <div className={`compromisso-indicator ${item.compromissos.length === 0 ? 'no-event' : ''}`}></div>
+                                    <div className={`compromisso-indicator ${item.compromissos?.length > 0 && !item.is_padding ? '' : 'no-event'}`}></div>
                                 </div>
-                            )
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             </div>
 
-            {/* Tooltip Flutuante */}
-            <div className={`tooltip ${tooltip.visible ? 'visible' : ''}`} style={{top: tooltip.y, left: tooltip.x}}>
+            <div className={`tooltip ${tooltip.visible ? 'visible' : ''}`} style={{ top: tooltip.y, left: tooltip.x }}>
                 {tooltip.compromissos.map((c, i) => (
                     <div key={i} className="tooltip-compromisso-item">
                         <p><span className="tooltip-titulo">{c.titulo}</span> <span className="tooltip-hora">{c.hora}</span></p>
@@ -136,11 +145,11 @@ export function Agenda() {
                 ))}
             </div>
 
-            <AgendaModal 
-                active={modalOpen} 
-                closeModal={() => setModalOpen(false)} 
-                onUpdate={fetchData} 
-                editingData={editingItem} 
+            <AgendaModal
+                active={modalOpen}
+                closeModal={() => setModalOpen(false)}
+                onUpdate={fetchData}
+                editingData={editingItem}
             />
         </div>
     );

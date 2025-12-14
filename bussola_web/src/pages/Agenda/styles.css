@@ -1,3 +1,8 @@
+/* ==========================================================================
+   AGENDA - ESTILOS GERAIS E MODAL
+   Arquivo: styles.css
+   ========================================================================== */
+
 /* ============================================= */
 /* 1. ESTRUTURA GERAL E LAYOUT                   */
 /* ============================================= */
@@ -16,7 +21,7 @@
     align-items: stretch; 
 }
 
-/* Colunas Individuais */
+/* --- COLUNAS INDIVIDUAIS --- */
 .agenda-column {
     display: flex;
     flex-direction: column;
@@ -26,11 +31,7 @@
     padding: 0 1.2rem;
 }
 
-.agenda-column:first-child { padding-left: 0; }
-.agenda-column:last-child { padding-right: 0; }
-
-/* Linha divisória entre colunas */
-.agenda-column:not(:last-child) { border-right: none; }
+/* Linha divisória vertical (tracejada) */
 .agenda-column:not(:last-child)::after {
     content: "";
     position: absolute;
@@ -109,13 +110,12 @@
 }
 
 /* ============================================= */
-/* 3. CABEÇALHOS DAS COLUNAS                     */
+/* 3. CABEÇALHOS DAS COLUNAS (HEADER)            */
 /* ============================================= */
 
-/* --- RESTAURAÇÃO DO PADRÃO GLOBAL (Seguro para Finanças) --- */
 .column-header-flex {
     display: flex;
-    justify-content: space-between; /* VOLTA AO PADRÃO: Um em cada ponta */
+    justify-content: space-between;
     align-items: center;
     margin: 0 -1.2rem 1.5rem -1.2rem; 
     padding: 0.8rem 1.5rem;
@@ -125,7 +125,6 @@
     transition: background-color 0.2s, color 0.2s;
     position: relative; 
     z-index: 2;
-    /* Removemos min-height global */
 }
 
 .column-header-flex:hover {
@@ -141,25 +140,21 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
     transition: color 0.2s;
-    /* text-align: center; -> REMOVIDO DO GLOBAL */
 }
 
 .column-header-flex:hover h2 { color: var(--cor-texto-principal); }
 
-
-/* --- AGORA SIM: REGRAS ESPECÍFICAS SÓ PARA AGENDA --- */
-/* O seletor .agenda-layout blinda essas alterações */
-
+/* --- REGRAS ESPECÍFICAS PARA AGENDA (.agenda-layout) --- */
 .agenda-layout .column-header-flex {
-    justify-content: center; /* Centraliza só na agenda */
-    min-height: 60px;       /* Altura fixa só na agenda */
+    justify-content: center;
+    min-height: 60px;
 }
 
 .agenda-layout .column-header-flex h2 {
-    text-align: center;     /* Alinhamento de texto só na agenda */
+    text-align: center;
 }
 
-/* Posicionamento absoluto do botão SÓ NA AGENDA */
+/* Botão "Adicionar": Posicionamento absoluto dentro do Header */
 .agenda-layout .column-header-flex .btn-primary {
     position: absolute;
     right: 1.5rem;
@@ -167,37 +162,41 @@
     padding: 4px 12px;
     min-height: 30px;
 }
-/* --------------------------------------------------- */
 
-/* BOTÃO PADRÃO (Para Finanças não quebrar) */
-.column-header-flex .btn-primary {
-    font-size: 0.8rem;
-    padding: 4px 12px;
-    min-height: 30px;
-    /* Sem position absolute aqui */
+/* ============================================= */
+/* 4. AJUSTE PARA 2 COLUNAS CONECTADAS (FIX)     */
+/* ============================================= */
+
+/* 1. Coluna Esquerda: Trazemos para FRENTE (Z-Index maior) */
+.agenda-column:first-child { 
+    padding-left: 0; 
+    
+    /* [FIX] IMPORTANTE: Garante que o botão seja clicável */
+    position: relative; 
+    z-index: 10; 
 }
 
-/* AJUSTE PARA 2 COLUNAS CONECTADAS */
-
-/* 1. Coluna Esquerda: Arredonda só a esquerda */
 .agenda-column:first-child .column-header-flex {
     margin-left: 0;           
     margin-right: -1.2rem;    
     border-radius: 12px 0 0 12px;
-    z-index: 2;
 }
 
-/* 2. Coluna Direita: Arredonda só a direita */
+/* 2. Coluna Direita: Fica na camada de BAIXO */
+.agenda-column:last-child { 
+    padding-right: 0;
+    z-index: 1; /* Menor que a esquerda */
+}
+
 .agenda-column:last-child .column-header-flex {
     margin-left: -1.2rem;     
     margin-right: 0;          
     border-radius: 0 12px 12px 0;
     border-right: 1px solid var(--cor-borda); 
-    z-index: 2;
 }
 
 /* ============================================= */
-/* 4. ACCORDION E LISTA DE COMPROMISSOS          */
+/* 5. LISTA DE COMPROMISSOS (ACCORDION)          */
 /* ============================================= */
 
 .month-group {
@@ -247,12 +246,12 @@
 
 .compromissos-grid {
     display: flex;
-    flex-direction: column; /* Lista vertical em vez de grid */
+    flex-direction: column;
     gap: 0.8rem;
 }
 
 /* ============================================= */
-/* 5. CARD DE COMPROMISSO (Estilo Finanças)      */
+/* 6. CARD DE COMPROMISSO                        */
 /* ============================================= */
 
 .compromisso-card-detailed {
@@ -264,7 +263,7 @@
     flex-direction: column;
     gap: 0.8rem;
     transition: transform 0.2s, box-shadow 0.2s;
-    border-left: 4px solid var(--cor-azul-primario); /* Cor padrão */
+    border-left: 4px solid var(--cor-azul-primario);
 }
 
 .compromisso-card-detailed:hover {
@@ -287,6 +286,7 @@
     overflow-wrap: break-word;
 }
 
+/* Botões de Ação (Check/Reset) */
 .action-buttons-small {
     display: flex;
     gap: 0.5rem;
@@ -328,7 +328,7 @@ p.compromisso-detail i {
 .footer-details {
     margin-top: auto;
     padding-top: 0.5rem;
-    border-top: 1px solid var(--cor-borda); /* Separador sutil */
+    border-top: 1px solid var(--cor-borda);
     display: flex;
     justify-content: flex-end;
 }
@@ -347,80 +347,252 @@ p.compromisso-detail i {
 .status-badge.perdido { background: rgba(231, 76, 60, 0.15); color: #e74c3c; border: 1px solid rgba(231, 76, 60, 0.3); }
 
 /* ============================================= */
-/* 6. CALENDÁRIO                                 */
+/* 7. MODAL E FORMULÁRIOS (Estilo Finanças)      */
+/* ============================================= */
+
+/* Fundo do Modal (Backdrop) */
+.modal {
+    display: flex;
+    position: fixed; /* Isso corrige o problema de posição */
+    z-index: 2000;   /* Garante que fique acima de tudo */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* Container do Conteúdo do Modal */
+.modal-content {
+    background-color: var(--cor-card-principal);
+    margin: auto;
+    width: 90%;
+    max-width: 500px; /* Tamanho controlado */
+    border-radius: 16px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--cor-borda);
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.modal-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--cor-borda);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--cor-card-secundario);
+    border-radius: 16px 16px 0 0;
+}
+
+.close-btn {
+    color: var(--cor-texto-secundario);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.close-btn:hover { color: var(--cor-texto-principal); }
+
+.modal-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    overflow-y: auto;
+}
+
+.modal-footer {
+    padding: 1.2rem 1.5rem;
+    border-top: 1px solid var(--cor-borda);
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    background-color: var(--cor-fundo);
+    border-radius: 0 0 16px 16px;
+}
+
+/* Animações */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* --- INPUTS E FORMULÁRIOS (Padronizados) --- */
+
+.form-row {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    width: 100%;
+}
+
+.form-group label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--cor-texto-secundario);
+}
+
+.form-input {
+    width: 100%;
+    height: 45px; /* Altura padrão Finanças */
+    padding: 0 0.8rem;
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    background-color: var(--cor-fundo);
+    color: var(--cor-texto-principal);
+    font-size: 0.95rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+}
+
+textarea.form-input {
+    height: auto;
+    padding-top: 0.8rem;
+    resize: vertical;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--cor-azul-primario);
+    box-shadow: 0 0 0 3px rgba(74, 109, 255, 0.1);
+}
+
+.form-group-checkbox {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    cursor: pointer;
+}
+
+/* ============================================= */
+/* 8. CALENDÁRIO (DIAS E VISUALIZAÇÃO)           */
 /* ============================================= */
 
 .month-divider {
     grid-column: 1 / -1;
     width: 100%;
-    text-align: left;
     margin-top: 1.5rem;
     padding-bottom: 0.5rem;
     border-bottom: 2px solid var(--cor-borda);
 }
 
 .month-divider h2 {
-    font-size: 1.1rem; /* Mais sutil */
+    font-size: 1.1rem;
     font-weight: 600;
     color: var(--cor-texto-principal);
     margin: 0;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
 .dias-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(50px, 1fr)); /* Células menores */
+    grid-template-columns: repeat(7, 1fr); /* 7 Colunas FIXAS */
     gap: 0.5rem;
     padding-top: 1rem;
 }
 
+/* --- CARD DE DIA PADRÃO --- */
 .dia-card {
     background-color: var(--cor-card-secundario);
     border: 1px solid var(--cor-borda);
     border-radius: 8px;
-    padding: 0.5rem;
+    padding: 0.2rem;
     display: flex;
     flex-direction: column;
     align-items: center;
-    text-align: center;
-    gap: 0.2rem;
-    transition: all 0.2s ease;
-    min-height: 50px;
     justify-content: center;
+    aspect-ratio: 1 / 1;
     position: relative;
+    transition: all 0.2s;
 }
 
-.dia-numero { font-size: 1rem; font-weight: 600; }
-.dia-semana { font-size: 0.7rem; color: var(--cor-texto-secundario); }
-
-.compromisso-indicator {
-    height: 6px;
-    width: 6px;
-    background-color: var(--cor-azul-primario);
-    border-radius: 50%;
-    margin-top: 2px;
+/* --- DIA DE PADDING (MÊS ANTERIOR/PRÓXIMO) --- */
+.dia-card.dia-padding {
+    /* Fundo transparente para aceitar o gradiente */
+    background-color: transparent !important;
+    
+    /* Borda tracejada suave */
+    border: 1px dashed var(--cor-borda) !important;
+    
+    /* Efeito de listras diagonais (Hachuras) */
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 5px,
+        rgba(128, 128, 128, 0.08) 5px,
+        rgba(128, 128, 128, 0.08) 10px
+    ) !important;
+    
+    /* Reduz opacidade e desativa cliques */
+    opacity: 0.6;
+    pointer-events: none;
+    box-shadow: none !important;
 }
-.compromisso-indicator.no-event { background-color: transparent; }
 
-.dia-card.has-compromissos { cursor: pointer; border-color: var(--cor-azul-primario); background-color: rgba(74, 109, 255, 0.05); }
-.dia-card:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+/* Estilos de texto para dias de padding */
+.dia-card.dia-padding .dia-numero,
+.dia-card.dia-padding .dia-semana {
+    color: var(--cor-texto-secundario);
+    opacity: 0.5;
+}
+.dia-card.dia-padding .compromisso-indicator { display: none; }
 
+/* --- DIA DE HOJE --- */
 .dia-card.today {
     border: 2px solid var(--cor-azul-primario);
     background-color: var(--cor-card-principal);
 }
 .dia-card.today .dia-numero { color: var(--cor-azul-primario); }
 
+/* --- DIAS COM COMPROMISSOS (ATIVOS) --- */
+.dia-card:not(.dia-padding).has-compromissos {
+    background-color: rgba(74, 109, 255, 0.05); /* Fundo azul sutil */
+}
+
+/* --- INTERAÇÃO (HOVER) --- */
+.dia-card:not(.dia-padding):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    border-color: var(--cor-azul-primario);
+    cursor: pointer;
+}
+
+/* Tipografia Interna do Dia */
+.dia-numero { font-size: 0.9rem; font-weight: 600; }
+.dia-semana { font-size: 0.65rem; color: var(--cor-texto-secundario); text-transform: uppercase; }
+
+/* Bolinha Indicadora */
+.compromisso-indicator {
+    height: 5px; width: 5px;
+    background-color: var(--cor-azul-primario);
+    border-radius: 50%; margin-top: 2px;
+}
+.compromisso-indicator.no-event { background-color: transparent; }
+
+@media (max-width: 480px) {
+    .dias-grid { gap: 2px; }
+    .dia-semana { display: none; }
+}
+
 /* ============================================= */
-/* 7. TOOLTIP                                    */
+/* 9. TOOLTIP                                    */
 /* ============================================= */
 
 .tooltip {
     display: none;
     opacity: 0;
     position: absolute;
-    z-index: 1000;
+    z-index: 2500; /* Aumentei para garantir */
     background-color: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
     border-radius: 8px;
@@ -443,7 +615,7 @@ p.compromisso-detail i {
 .tooltip-hora { font-size: 0.8rem; color: var(--cor-texto-secundario); margin-left: auto; }
 
 /* ============================================= */
-/* 8. RESPONSIVIDADE                             */
+/* 10. RESPONSIVIDADE                             */
 /* ============================================= */
 
 @media (max-width: 768px) {
@@ -466,4 +638,9 @@ p.compromisso-detail i {
     }
     .agenda-column:last-child .column-header-flex,
     .agenda-column:first-child .column-header-flex { border-radius: 12px; }
+    
+    .modal-content {
+        width: 95%;
+        margin: 1rem;
+    }
 }

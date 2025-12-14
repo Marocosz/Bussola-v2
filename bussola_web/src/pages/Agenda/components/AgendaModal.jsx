@@ -53,7 +53,7 @@ export function AgendaModal({ active, closeModal, onUpdate, editingData }) {
     };
 
     return (
-        <div className="modal" style={{display:'flex'}}>
+        <div className="modal">
             <div className="modal-content">
                 <div className="modal-header">
                     <h3>{editingData ? 'Editar Compromisso' : 'Novo Compromisso'}</h3>
@@ -64,26 +64,55 @@ export function AgendaModal({ active, closeModal, onUpdate, editingData }) {
                         <div className="form-row">
                             <div className="form-group" style={{flexGrow:2}}>
                                 <label>Título</label>
-                                <input className="form-input" value={titulo} onChange={e => setTitulo(e.target.value)} required />
+                                <input 
+                                    className="form-input" 
+                                    value={titulo} 
+                                    onChange={e => setTitulo(e.target.value)} 
+                                    required 
+                                    placeholder="Ex: Reunião de Equipe"
+                                />
                             </div>
                             <div className="form-group" style={{flexGrow:1}}>
                                 <label>Data e Hora</label>
-                                <input type="datetime-local" className="form-input" value={dataHora} onChange={e => setDataHora(e.target.value)} required />
+                                <input 
+                                    type="datetime-local" 
+                                    className="form-input" 
+                                    value={dataHora} 
+                                    onChange={e => setDataHora(e.target.value)} 
+                                    required 
+                                />
                             </div>
                         </div>
                         <div className="form-group">
                             <label>Local (Opcional)</label>
-                            <input className="form-input" value={local} onChange={e => setLocal(e.target.value)} />
+                            <input 
+                                className="form-input" 
+                                value={local} 
+                                onChange={e => setLocal(e.target.value)} 
+                                placeholder="Ex: Sala de Reunião 1 ou Google Meet"
+                            />
                         </div>
                         <div className="form-group">
                             <label>Descrição (Opcional)</label>
-                            <textarea className="form-input" rows="3" value={descricao} onChange={e => setDescricao(e.target.value)}></textarea>
+                            <textarea 
+                                className="form-input" 
+                                rows="3" 
+                                value={descricao} 
+                                onChange={e => setDescricao(e.target.value)}
+                                placeholder="Detalhes adicionais..."
+                            ></textarea>
                         </div>
                     </div>
                     <div className="modal-footer">
-                        <div className="form-group-checkbox" style={{marginRight:'auto', display:'flex', gap:'5px', alignItems:'center'}}>
-                            <input type="checkbox" checked={lembrete} onChange={e => setLembrete(e.target.checked)} id="lembrete-check" />
-                            <label htmlFor="lembrete-check">Lembrete?</label>
+                        <div className="form-group-checkbox" style={{marginRight:'auto'}}>
+                            <input 
+                                type="checkbox" 
+                                checked={lembrete} 
+                                onChange={e => setLembrete(e.target.checked)} 
+                                id="lembrete-check" 
+                                style={{width:'18px', height:'18px', cursor:'pointer'}}
+                            />
+                            <label htmlFor="lembrete-check" style={{cursor:'pointer'}}>Ativar Lembrete</label>
                         </div>
                         <button type="button" className="btn-secondary" onClick={closeModal}>Cancelar</button>
                         <button type="submit" className="btn-primary">Salvar</button>
