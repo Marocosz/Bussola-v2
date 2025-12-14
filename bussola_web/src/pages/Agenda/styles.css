@@ -8,24 +8,25 @@
 /* ============================================= */
 
 .main-container {
-    padding-bottom: 5rem !important; 
-    min-height: 100vh; 
-    box-sizing: border-box; 
+    padding-bottom: 5rem !important;
+    min-height: 100vh;
+    box-sizing: border-box;
 }
 
 /* LAYOUT GRID ESPECÍFICO DA AGENDA (2 Colunas) */
 .layout-grid-custom.agenda-layout {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* Duas colunas iguais */
-    gap: 0; 
-    align-items: stretch; 
+    grid-template-columns: 1fr 1fr;
+    /* Duas colunas iguais */
+    gap: 0;
+    align-items: stretch;
 }
 
 /* --- COLUNAS INDIVIDUAIS --- */
 .agenda-column {
     display: flex;
     flex-direction: column;
-    min-width: 0; 
+    min-width: 0;
     position: relative;
     height: 100%;
     padding: 0 1.2rem;
@@ -33,13 +34,12 @@
 
 /* Mensagem de lista vazia */
 .empty-list-msg {
+    text-align: center;
+    padding: 2rem;
     color: var(--cor-texto-secundario);
     font-style: italic;
-    font-size: 0.9rem;
-    padding: 1rem;
-    background: var(--cor-fundo-hover);
+    border: 1px dashed var(--cor-borda);
     border-radius: 8px;
-    text-align: center;
 }
 
 /* ============================================= */
@@ -61,17 +61,18 @@
     transform: translateX(-50%);
     width: 60%;
     height: 200%;
-    background: radial-gradient(
-        ellipse at center, 
-        rgba(74, 109, 255, 0.15) 0%, 
-        rgba(168, 85, 247, 0.05) 40%, 
-        transparent 70%
-    );
+    background: radial-gradient(ellipse at center,
+            rgba(74, 109, 255, 0.15) 0%,
+            rgba(168, 85, 247, 0.05) 40%,
+            transparent 70%);
     z-index: 0;
     pointer-events: none;
 }
 
-.internal-hero-content { position: relative; z-index: 1; }
+.internal-hero-content {
+    position: relative;
+    z-index: 1;
+}
 
 .internal-hero h1 {
     font-size: 3rem;
@@ -94,7 +95,9 @@
 }
 
 @keyframes shine {
-    to { background-position: 200% center; }
+    to {
+        background-position: 200% center;
+    }
 }
 
 /* ============================================= */
@@ -105,19 +108,19 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin: 0 -1.2rem 1.5rem -1.2rem; 
+    margin: 0 -1.2rem 1.5rem -1.2rem;
     padding: 0.8rem 1.5rem;
     background-color: var(--cor-card-secundario);
     border-bottom: 1px solid var(--cor-borda);
     border-right: 1px solid var(--cor-borda);
     transition: background-color 0.2s, color 0.2s;
-    position: relative; 
+    position: relative;
     z-index: 2;
 }
 
 .column-header-flex:hover {
     background-color: var(--cor-card-principal);
-    box-shadow: inset 0 -2px 0 var(--cor-azul-primario); 
+    box-shadow: inset 0 -2px 0 var(--cor-azul-primario);
 }
 
 .column-header-flex h2 {
@@ -130,7 +133,9 @@
     transition: color 0.2s;
 }
 
-.column-header-flex:hover h2 { color: var(--cor-texto-principal); }
+.column-header-flex:hover h2 {
+    color: var(--cor-texto-principal);
+}
 
 /* --- REGRAS ESPECÍFICAS PARA AGENDA (.agenda-layout) --- */
 .agenda-layout .column-header-flex {
@@ -152,7 +157,8 @@
 }
 
 .agenda-column:last-child .column-header-flex {
-    margin-bottom: 0.5rem !important; /* Era 1.5rem. Ajuste esse valor conforme seu gosto */
+    margin-bottom: 0.5rem !important;
+    /* Era 1.5rem. Ajuste esse valor conforme seu gosto */
 }
 
 /* ============================================= */
@@ -160,31 +166,32 @@
 /* ============================================= */
 
 /* 1. Coluna Esquerda: Trazemos para FRENTE (Z-Index maior) */
-.agenda-column:first-child { 
-    padding-left: 0; 
-    
+.agenda-column:first-child {
+    padding-left: 0;
+
     /* [FIX] IMPORTANTE: Garante que o botão seja clicável */
-    position: relative; 
-    z-index: 10; 
+    position: relative;
+    z-index: 10;
 }
 
 .agenda-column:first-child .column-header-flex {
-    margin-left: 0;           
-    margin-right: -1.2rem;    
+    margin-left: 0;
+    margin-right: -1.2rem;
     border-radius: 12px 0 0 12px;
 }
 
 /* 2. Coluna Direita: Fica na camada de BAIXO */
-.agenda-column:last-child { 
+.agenda-column:last-child {
     padding-right: 0;
-    z-index: 1; /* Menor que a esquerda */
+    z-index: 1;
+    /* Menor que a esquerda */
 }
 
 .agenda-column:last-child .column-header-flex {
-    margin-left: -1.2rem;     
-    margin-right: 0;          
+    margin-left: -1.2rem;
+    margin-right: 0;
     border-radius: 0 12px 12px 0;
-    border-right: 1px solid var(--cor-borda); 
+    border-right: 1px solid var(--cor-borda);
 }
 
 /* ============================================= */
@@ -197,7 +204,9 @@
     margin: 0;
 }
 
-.month-group + .month-group { margin-top: 1.5rem !important; }
+.month-group+.month-group {
+    margin-top: 1.5rem !important;
+}
 
 .month-header {
     background: transparent !important;
@@ -218,13 +227,20 @@
     transition: all 0.2s;
 }
 
-.month-header:hover, .month-header.active {
+.month-header:hover,
+.month-header.active {
     color: var(--cor-azul-primario);
     border-bottom-color: var(--cor-azul-primario) !important;
 }
 
-.month-header i { font-size: 0.8rem; transition: transform 0.3s ease; }
-.month-header i.rotate { transform: rotate(180deg); }
+.month-header i {
+    font-size: 0.8rem;
+    transition: transform 0.3s ease;
+}
+
+.month-header i.rotate {
+    transform: rotate(180deg);
+}
 
 /* Animação do Accordion */
 .accordion-wrapper {
@@ -232,19 +248,32 @@
     grid-template-rows: 0fr;
     transition: grid-template-rows 0.3s ease-out;
 }
-.accordion-wrapper.open { grid-template-rows: 1fr; }
-.accordion-inner { overflow: hidden; min-height: 0; }
-.month-content { padding-top: 0; padding-bottom: 0; }
+
+.accordion-wrapper.open {
+    grid-template-rows: 1fr;
+}
+
+.accordion-inner {
+    overflow: hidden;
+    min-height: 0;
+}
+
+.month-content {
+    padding-top: 0.5rem;
+    padding-bottom: 0;
+}
 
 /* GRID PRINCIPAL DE COMPROMISSOS */
 .compromissos-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* Duas colunas */
-    gap: 1rem; /* Espaço entre os cards */
+    grid-template-columns: 1fr 1fr;
+    /* Duas colunas */
+    gap: 1rem;
+    /* Espaço entre os cards */
 }
 
 /* Lógica para card solitário na última linha */
-.compromissos-grid > .compromisso-card-modern:last-child:nth-child(odd) {
+.compromissos-grid>.compromisso-card-modern:last-child:nth-child(odd) {
     grid-column: span 2;
 }
 
@@ -259,37 +288,47 @@
     padding: 1.2rem;
     display: flex;
     flex-direction: column;
-    gap: 0.8rem; /* Espaçamento geral */
+    gap: 0.8rem;
+    /* Espaçamento geral */
     transition: transform 0.2s, box-shadow 0.2s;
     position: relative;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
     /* ADICIONADO: Garante que o card ocupe 100% da altura da Grid */
     height: 100%;
     /* Importante para que o height 100% funcione corretamente com padding */
-    box-sizing: border-box; 
+    box-sizing: border-box;
 }
 
 .compromisso-card-modern:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
 
 /* Bordas laterais de status */
-.compromisso-card-modern.pendente { border-left: 5px solid var(--cor-azul-primario); }
-.compromisso-card-modern.realizado { border-left: 5px solid var(--cor-verde-sucesso); opacity: 0.8; }
-.compromisso-card-modern.perdido { border-left: 5px solid var(--cor-vermelho-delete); }
+.compromisso-card-modern.pendente {
+    border-left: 5px solid var(--cor-azul-primario);
+}
+
+.compromisso-card-modern.realizado {
+    border-left: 5px solid var(--cor-verde-sucesso);
+    opacity: 0.8;
+}
+
+.compromisso-card-modern.perdido {
+    border-left: 5px solid var(--cor-vermelho-delete);
+}
 
 /* --- 1. Header: Data e Botões --- */
 .card-header-row {
     display: flex;
     justify-content: space-between;
-    align-items: center; 
+    align-items: center;
 }
 
 .date-highlight {
     display: flex;
-    align-items: center; 
+    align-items: center;
     gap: 12px;
     color: var(--cor-azul-primario);
 }
@@ -333,7 +372,7 @@
     color: var(--cor-texto-secundario);
     background: transparent;
     border: 1px solid var(--cor-borda) !important;
-    border-radius: 6px !important; 
+    border-radius: 6px !important;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -393,7 +432,7 @@
 .info-icon-badge {
     width: 24px;
     height: 24px;
-    min-width: 24px; 
+    min-width: 24px;
     color: var(--cor-azul-primario);
     display: flex;
     align-items: center;
@@ -414,20 +453,21 @@
 /* --- 4. Footer --- */
 .card-footer-row {
     display: flex;
-    justify-content: space-between; 
+    justify-content: space-between;
     align-items: center;
-    
+
     /* ADICIONADO: Empurra o footer para o final do card */
-    margin-top: auto; 
-    padding-top: 2rem; /* Mantive um respiro minimo do conteúdo de cima */
-    
+    margin-top: auto;
+    padding-top: 2rem;
+    /* Mantive um respiro minimo do conteúdo de cima */
+
     position: relative;
 }
 
 /* Badge de Status */
 .status-badge-modern {
     position: static;
-    font-size: 0.85rem; 
+    font-size: 0.85rem;
     padding: 6px 14px;
     border-radius: 8px;
     font-weight: 800;
@@ -435,9 +475,20 @@
     letter-spacing: 0.5px;
 }
 
-.status-badge-modern.pendente { background: rgba(255, 193, 7, 0.15); color: #f59e0b; }
-.status-badge-modern.realizado { background: rgba(40, 167, 69, 0.15); color: #28a745; }
-.status-badge-modern.perdido { background: rgba(231, 76, 60, 0.15); color: #e74c3c; }
+.status-badge-modern.pendente {
+    background: rgba(255, 193, 7, 0.15);
+    color: #f59e0b;
+}
+
+.status-badge-modern.realizado {
+    background: rgba(40, 167, 69, 0.15);
+    color: #28a745;
+}
+
+.status-badge-modern.perdido {
+    background: rgba(231, 76, 60, 0.15);
+    color: #e74c3c;
+}
 
 /* Botão Concluir */
 .btn-concluir-action {
@@ -483,8 +534,8 @@
 
 .modal {
     display: flex;
-    position: fixed; 
-    z-index: 2000;   
+    position: fixed;
+    z-index: 2000;
     left: 0;
     top: 0;
     width: 100%;
@@ -500,7 +551,7 @@
     background-color: var(--cor-card-principal);
     margin: auto;
     width: 90%;
-    max-width: 500px; 
+    max-width: 500px;
     border-radius: 16px;
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
     border: 1px solid var(--cor-borda);
@@ -526,7 +577,10 @@
     cursor: pointer;
     transition: color 0.2s;
 }
-.close-btn:hover { color: var(--cor-texto-principal); }
+
+.close-btn:hover {
+    color: var(--cor-texto-principal);
+}
 
 .modal-body {
     padding: 1.5rem;
@@ -546,8 +600,27 @@
     border-radius: 0 0 16px 16px;
 }
 
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes scaleUp {
+    from {
+        transform: scale(0.95);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
 
 /* --- INPUTS E FORMULÁRIOS --- */
 
@@ -572,7 +645,7 @@
 
 .form-input {
     width: 100%;
-    height: 45px; 
+    height: 45px;
     padding: 0 0.8rem;
     border: 1px solid var(--cor-borda);
     border-radius: 8px;
@@ -624,7 +697,7 @@ textarea.form-input {
 
 .dias-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr); 
+    grid-template-columns: repeat(7, 1fr);
     gap: 0.5rem;
 }
 
@@ -645,13 +718,11 @@ textarea.form-input {
 .dia-card.dia-padding {
     background-color: transparent !important;
     border: 1px dashed var(--cor-borda) !important;
-    background-image: repeating-linear-gradient(
-        45deg,
-        transparent,
-        transparent 5px,
-        rgba(128, 128, 128, 0.08) 5px,
-        rgba(128, 128, 128, 0.08) 10px
-    ) !important;
+    background-image: repeating-linear-gradient(45deg,
+            transparent,
+            transparent 5px,
+            rgba(128, 128, 128, 0.08) 5px,
+            rgba(128, 128, 128, 0.08) 10px) !important;
     opacity: 0.6;
     pointer-events: none;
     box-shadow: none !important;
@@ -662,38 +733,62 @@ textarea.form-input {
     color: var(--cor-texto-secundario);
     opacity: 0.5;
 }
-.dia-card.dia-padding .compromisso-indicator { display: none; }
+
+.dia-card.dia-padding .compromisso-indicator {
+    display: none;
+}
 
 .dia-card.today {
     border: 2px solid var(--cor-azul-primario);
     background-color: var(--cor-card-principal);
 }
-.dia-card.today .dia-numero { color: var(--cor-azul-primario); }
+
+.dia-card.today .dia-numero {
+    color: var(--cor-azul-primario);
+}
 
 .dia-card:not(.dia-padding).has-compromissos {
-    background-color: rgba(74, 109, 255, 0.05); 
+    background-color: rgba(74, 109, 255, 0.05);
 }
 
 .dia-card:not(.dia-padding):hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     border-color: var(--cor-azul-primario);
     cursor: pointer;
 }
 
-.dia-numero { font-size: 0.9rem; font-weight: 600; }
-.dia-semana { font-size: 0.65rem; color: var(--cor-texto-secundario); text-transform: uppercase; }
+.dia-numero {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.dia-semana {
+    font-size: 0.65rem;
+    color: var(--cor-texto-secundario);
+    text-transform: uppercase;
+}
 
 .compromisso-indicator {
-    height: 5px; width: 5px;
+    height: 5px;
+    width: 5px;
     background-color: var(--cor-azul-primario);
-    border-radius: 50%; margin-top: 2px;
+    border-radius: 50%;
+    margin-top: 2px;
 }
-.compromisso-indicator.no-event { background-color: transparent; }
+
+.compromisso-indicator.no-event {
+    background-color: transparent;
+}
 
 @media (max-width: 480px) {
-    .dias-grid { gap: 2px; }
-    .dia-semana { display: none; }
+    .dias-grid {
+        gap: 2px;
+    }
+
+    .dia-semana {
+        display: none;
+    }
 }
 
 /* ============================================= */
@@ -704,7 +799,7 @@ textarea.form-input {
     display: none;
     opacity: 0;
     position: absolute;
-    z-index: 2500; 
+    z-index: 2500;
     background-color: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
     border-radius: 8px;
@@ -715,53 +810,72 @@ textarea.form-input {
     transition: opacity 0.2s ease;
 }
 
-.tooltip.visible { display: block; opacity: 1; }
+.tooltip.visible {
+    display: block;
+    opacity: 1;
+}
 
 .tooltip-compromisso-item {
     padding: 0.5rem 0;
     border-bottom: 1px solid var(--cor-borda);
 }
-.tooltip-compromisso-item:last-child { border-bottom: none; }
 
-.tooltip-titulo { font-weight: 600; color: var(--cor-texto-principal); font-size: 0.85rem; }
-.tooltip-hora { font-size: 0.8rem; color: var(--cor-texto-secundario); margin-left: auto; }
+.tooltip-compromisso-item:last-child {
+    border-bottom: none;
+}
+
+.tooltip-titulo {
+    font-weight: 600;
+    color: var(--cor-texto-principal);
+    font-size: 0.85rem;
+}
+
+.tooltip-hora {
+    font-size: 0.8rem;
+    color: var(--cor-texto-secundario);
+    margin-left: auto;
+}
 
 /* ============================================= */
 /* 10. RESPONSIVIDADE                             */
 /* ============================================= */
 
 @media (max-width: 768px) {
+
     /* No mobile, volta tudo para 1 coluna */
     .layout-grid-custom.agenda-layout {
         grid-template-columns: 1fr;
-        gap: 2rem; 
+        gap: 2rem;
     }
 
     /* Grid de compromissos no mobile vira 1 coluna também */
     .compromissos-grid {
         grid-template-columns: 1fr;
     }
-    
+
     /* Remove o span do último item no mobile */
-    .compromissos-grid > .compromisso-card-modern:last-child:nth-child(odd) {
+    .compromissos-grid>.compromisso-card-modern:last-child:nth-child(odd) {
         grid-column: span 1;
     }
-    
+
     .agenda-column:not(:last-child) {
         border-right: none;
         border-bottom: 1px dashed var(--cor-borda);
         padding-bottom: 2rem;
         padding-right: 0;
     }
-    
+
     .column-header-flex {
         margin: 0 0 1.5rem 0;
         border-right: none;
         border-radius: 12px;
     }
+
     .agenda-column:last-child .column-header-flex,
-    .agenda-column:first-child .column-header-flex { border-radius: 12px; }
-    
+    .agenda-column:first-child .column-header-flex {
+        border-radius: 12px;
+    }
+
     .modal-content {
         width: 95%;
         margin: 1rem;

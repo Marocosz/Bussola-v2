@@ -12,12 +12,12 @@ export function Registros() {
     const [error, setError] = useState(null);
     const [filtroGrupo, setFiltroGrupo] = useState('Todos');
     
-    // UI State - Controle de Modais
+    // UI State
     const [notaModalOpen, setNotaModalOpen] = useState(false);
     const [tarefaModalOpen, setTarefaModalOpen] = useState(false);
     const [editingNota, setEditingNota] = useState(null);
 
-    // Controle de Accordion (Quais meses estão abertos)
+    // Accordion State
     const [openMonths, setOpenMonths] = useState({'fixados': true});
 
     const fetchData = async () => {
@@ -27,14 +27,13 @@ export function Registros() {
             setData(result);
             setError(null);
             
-            // Abre o primeiro mês automaticamente se houver dados
             if(result?.anotacoes_por_mes && Object.keys(result.anotacoes_por_mes).length > 0){
                 const firstMonth = Object.keys(result.anotacoes_por_mes)[0];
                 setOpenMonths(prev => ({...prev, [firstMonth]: true}));
             }
         } catch (err) {
             console.error("Erro dashboard:", err);
-            setError("Não foi possível carregar os registros. Verifique a conexão com o servidor.");
+            setError("Não foi possível carregar os registros.");
         } finally {
             setLoading(false);
         }
@@ -42,14 +41,11 @@ export function Registros() {
 
     useEffect(() => { fetchData(); }, []);
 
-    // Função para abrir/fechar meses
     const toggleAccordion = (key) => setOpenMonths(prev => ({ ...prev, [key]: !prev[key] }));
-
-    // Handlers para abrir modais
     const handleNewNota = () => { setEditingNota(null); setNotaModalOpen(true); };
     const handleEditNota = (nota) => { setEditingNota(nota); setNotaModalOpen(true); };
 
-    // --- RENDERIZAÇÃO CONDICIONAL (Evita tela branca) ---
+    // --- RENDERIZAÇÃO CONDICIONAL ---
     if (loading) return (
         <div className="container" style={{paddingTop:'100px', textAlign:'center'}}>
             <i className="fa-solid fa-circle-notch fa-spin" style={{fontSize:'2rem', color:'var(--cor-azul-primario)'}}></i>
@@ -59,13 +55,12 @@ export function Registros() {
 
     if (error) return (
         <div className="container" style={{paddingTop:'100px', textAlign:'center', color:'var(--cor-vermelho-delete)'}}>
-            <i className="fa-solid fa-triangle-exclamation" style={{fontSize:'2rem', marginBottom:'1rem'}}></i>
             <p>{error}</p>
-            <button className="btn-secondary" onClick={fetchData} style={{marginTop:'1rem'}}>Tentar Novamente</button>
+            <button className="btn-secondary" onClick={fetchData}>Tentar Novamente</button>
         </div>
     );
 
-    if (!data) return null; // Proteção final
+    if (!data) return null;
 
     // --- LÓGICA DE FILTROS ---
     const filterNotas = (notas) => {
@@ -80,29 +75,15 @@ export function Registros() {
     const grupos = data.grupos_disponiveis || [];
 
     return (
-        <div className="container" style={{paddingTop: '100px'}}>
+        /* ADICIONEI A CLASSE 'registros-scope' AQUI PARA ISOLAR O CSS */
+        <div className="container main-container registros-scope">
             
-            {/* --- HEADER --- */}
-            <div className="registros-header">
-                <div>
+            {/* --- HERO SECTION --- */}
+            <div className="internal-hero">
+                <div className="hero-bg-effect"></div>
+                <div className="internal-hero-content">
                     <h1>Caderno & Tarefas</h1>
-                    <p>Gerencie suas anotações e pendências.</p>
-                </div>
-                <div className="header-controls">
-                    {/* Select de Grupos */}
-                    <select className="form-input" style={{width:'auto'}} value={filtroGrupo} onChange={e => setFiltroGrupo(e.target.value)}>
-                        <option value="Todos">Todos os Grupos</option>
-                        {grupos.map(g => (
-                            <option key={g.id} value={g.nome}>{g.nome}</option>
-                        ))}
-                    </select>
-                    
-                    <button className="btn-primary" onClick={handleNewNota}>
-                        <i className="fa-solid fa-note-sticky"></i> Nota
-                    </button>
-                    <button className="btn-secondary" onClick={() => setTarefaModalOpen(true)}>
-                        <i className="fa-solid fa-check"></i> Tarefa
-                    </button>
+                    <p>Centralize suas ideias, anotações de estudo e pendências diárias.</p>
                 </div>
             </div>
 
@@ -111,89 +92,119 @@ export function Registros() {
                 
                 {/* 1. COLUNA ESQUERDA: ANOTAÇÕES */}
                 <div className="column-anotacoes">
-                    <h2 className="column-title">Caderno</h2>
-                    
-                    {/* Seção Fixados */}
-                    {fixadas.length > 0 && (
-                        <div className="section-group">
-                            <h3 className="section-title"><i className="fa-solid fa-thumbtack"></i> Fixados</h3>
-                            <div className="notes-grid">
-                                {fixadas.map(n => (
-                                    <AnotacaoCard key={n.id} anotacao={n} onUpdate={fetchData} onEdit={handleEditNota}/>
+                    <div className="column-header-flex">
+                        <h2>CADERNO</h2>
+                        <div className="header-actions-group">
+                            <select 
+                                className="form-input small-select" 
+                                value={filtroGrupo} 
+                                onChange={e => setFiltroGrupo(e.target.value)}
+                            >
+                                <option value="Todos">Todos</option>
+                                {grupos.map(g => (
+                                    <option key={g.id} value={g.nome}>{g.nome}</option>
                                 ))}
-                            </div>
+                            </select>
+                            <button className="btn-primary small-btn" onClick={handleNewNota}>
+                                <i className="fa-solid fa-plus"></i> Nota
+                            </button>
                         </div>
-                    )}
-
-                    {/* Seção por Mês (Accordion) */}
-                    {Object.entries(meses).map(([mes, notas]) => {
-                        const filtered = filterNotas(notas);
-                        if(filtered.length === 0) return null;
-
-                        const isOpen = openMonths[mes];
-
-                        return (
-                            <div className="section-group" key={mes}>
-                                <h3 className={`month-header ${isOpen ? 'active' : ''}`} onClick={() => toggleAccordion(mes)}>
-                                    <span>{mes}</span>
-                                    <span style={{fontSize:'0.8rem', opacity:0.7, marginLeft:'auto', marginRight:'10px'}}>
-                                        {filtered.length} notas
-                                    </span>
-                                    <i className={`fa-solid fa-chevron-down ${isOpen ? 'rotate' : ''}`}></i>
+                    </div>
+                    
+                    <div className="column-content-wrapper">
+                        {/* Fixados */}
+                        {fixadas.length > 0 && (
+                            <div className="month-group">
+                                <h3 className={`month-header pinned-header ${openMonths['fixados'] ? 'active' : ''}`} onClick={() => toggleAccordion('fixados')}>
+                                    <span><i className="fa-solid fa-thumbtack"></i> Fixados</span>
+                                    <i className={`fa-solid fa-chevron-down ${openMonths['fixados'] ? 'rotate' : ''}`}></i>
                                 </h3>
-                                
-                                {isOpen && (
-                                    <div className="month-content" style={{marginTop:'1rem'}}>
+                                {openMonths['fixados'] && (
+                                    <div className="month-content">
                                         <div className="notes-grid">
-                                            {filtered.map(n => (
+                                            {fixadas.map(n => (
                                                 <AnotacaoCard key={n.id} anotacao={n} onUpdate={fetchData} onEdit={handleEditNota}/>
                                             ))}
                                         </div>
                                     </div>
                                 )}
                             </div>
-                        );
-                    })}
-                    
-                    {/* Empty State das Notas */}
-                    {fixadas.length === 0 && Object.keys(meses).length === 0 && (
-                        <div className="empty-state">
-                            <i className="fa-regular fa-folder-open" style={{fontSize:'2.5rem', marginBottom:'1rem', opacity:0.3}}></i>
-                            <p>Nenhuma anotação encontrada.</p>
-                        </div>
-                    )}
+                        )}
+
+                        {/* Histórico Meses */}
+                        {Object.entries(meses).map(([mes, notas]) => {
+                            const filtered = filterNotas(notas);
+                            if(filtered.length === 0) return null;
+                            const isOpen = openMonths[mes];
+
+                            return (
+                                <div className="month-group" key={mes}>
+                                    <h3 className={`month-header ${isOpen ? 'active' : ''}`} onClick={() => toggleAccordion(mes)}>
+                                        <span>{mes}</span>
+                                        <span className="count-badge">{filtered.length}</span>
+                                        <i className={`fa-solid fa-chevron-down ${isOpen ? 'rotate' : ''}`}></i>
+                                    </h3>
+                                    
+                                    {isOpen && (
+                                        <div className="month-content">
+                                            <div className="notes-grid">
+                                                {filtered.map(n => (
+                                                    <AnotacaoCard key={n.id} anotacao={n} onUpdate={fetchData} onEdit={handleEditNota}/>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                        
+                        {/* Empty State */}
+                        {fixadas.length === 0 && Object.keys(meses).length === 0 && (
+                            <div className="empty-state">
+                                <i className="fa-regular fa-folder-open"></i>
+                                <p>Nenhuma anotação encontrada.</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* 2. COLUNA DIREITA: TAREFAS */}
                 <div className="column-tarefas">
-                    <h2 className="column-title">Lista de Tarefas</h2>
-                    
-                    <div className="tarefas-list">
-                        {tarefasPendentes.length === 0 && tarefasConcluidas.length === 0 && (
-                            <div className="empty-msg" style={{textAlign:'center', padding:'2rem', color:'var(--cor-texto-secundario)'}}>
-                                Nenhuma tarefa pendente.
-                            </div>
-                        )}
-                        
-                        {tarefasPendentes.map(t => (
-                            <TarefaCard key={t.id} tarefa={t} onUpdate={fetchData} />
-                        ))}
+                    <div className="column-header-flex">
+                        <h2>TAREFAS</h2>
+                        <button className="btn-primary small-btn" onClick={() => setTarefaModalOpen(true)}>
+                            <i className="fa-solid fa-plus"></i> Tarefa
+                        </button>
                     </div>
 
-                    {tarefasConcluidas.length > 0 && (
-                        <div className="concluidas-section">
-                            <h4 className="concluidas-title">Concluídas Recentemente</h4>
-                            <div className="tarefas-list completed">
-                                {tarefasConcluidas.map(t => (
-                                    <TarefaCard key={t.id} tarefa={t} onUpdate={fetchData} />
-                                ))}
-                            </div>
+                    <div className="column-content-wrapper">
+                        <div className="tarefas-list">
+                            {tarefasPendentes.length === 0 && tarefasConcluidas.length === 0 && (
+                                <div className="empty-msg-tarefas">
+                                    Nenhuma tarefa pendente.
+                                </div>
+                            )}
+                            
+                            {tarefasPendentes.map(t => (
+                                <TarefaCard key={t.id} tarefa={t} onUpdate={fetchData} />
+                            ))}
                         </div>
-                    )}
+
+                        {tarefasConcluidas.length > 0 && (
+                            <div className="concluidas-section">
+                                <h4 className="concluidas-title">Concluídas</h4>
+                                <div className="tarefas-list completed">
+                                    {tarefasConcluidas.map(t => (
+                                        <TarefaCard key={t.id} tarefa={t} onUpdate={fetchData} />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
-            {/* --- MODAIS --- */}
+            {/* MODAIS */}
             <AnotacaoModal 
                 active={notaModalOpen} 
                 closeModal={() => setNotaModalOpen(false)} 

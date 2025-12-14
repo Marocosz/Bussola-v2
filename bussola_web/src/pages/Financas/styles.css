@@ -57,13 +57,12 @@
 
 /* Mensagem de lista vazia */
 .financas-scope .empty-list-msg {
-    color: var(--cor-texto-secundario);
-    font-style: italic;
-    font-size: 0.9rem;
-    padding: 1rem;
-    background: var(--cor-fundo-hover);
+    text-align: center; 
+    padding: 2rem; 
+    color: var(--cor-texto-secundario); 
+    font-style: italic; 
+    border: 1px dashed var(--cor-borda);
     border-radius: 8px;
-    text-align: center;
 }
 
 /* ============================================= */
@@ -284,7 +283,7 @@
 }
 
 .financas-scope .month-content {
-    padding-top: 0;
+    padding-top: 0.5rem;
     padding-bottom: 0;
 }
 

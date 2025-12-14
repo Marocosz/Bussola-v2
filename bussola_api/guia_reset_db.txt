@@ -1,0 +1,20 @@
+# 1. Apague o banco atual (se existir) para começar limpo
+rm bussola.db
+
+# 2. Apague versões antigas de migração para evitar conflitos
+rm alembic/versions/*.py
+
+# 3. Gere uma nova migração inicial (Lê seus models e cria o script)
+alembic revision --autogenerate -m "Reset tables"
+
+# 4. Aplique a migração (Cria as tabelas fisicamente no SQLite)
+alembic upgrade head
+
+# 5
+python create_user.py
+
+# 6
+python populate_db.py
+
+# 7 
+uvicorn app.main:app --reload
