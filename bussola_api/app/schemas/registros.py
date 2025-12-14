@@ -2,43 +2,105 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 
-class LinkBase(BaseModel):
-    url: str
+# --- Schemas de Grupo ---
+class GrupoBase(BaseModel):
+    nome: str
+    cor: Optional[str] = "#FFFFFF"
 
-class LinkCreate(LinkBase):
+class GrupoCreate(GrupoBase):
     pass
 
-class LinkResponse(LinkBase):
+class GrupoResponse(GrupoBase):
     id: int
     class Config:
         from_attributes = True
 
+# --- Schemas de Link ---
+class LinkResponse(BaseModel):
+    id: int
+    url: str
+    class Config:
+        from_attributes = True
+
+# --- Schemas de Anotação ---
 class AnotacaoBase(BaseModel):
-    titulo: str
+    titulo: Optional[str] = None
     conteudo: Optional[str] = None
-    tipo: str = 'Geral'
-    is_tarefa: bool = False
-    status_tarefa: str = 'Pendente'
     fixado: bool = False
+    grupo_id: Optional[int] = None # ID do grupo
 
 class AnotacaoCreate(AnotacaoBase):
-    links: Optional[List[str]] = [] # Lista de URLs strings
+    links: Optional[List[str]] = []
 
 class AnotacaoUpdate(BaseModel):
     titulo: Optional[str] = None
     conteudo: Optional[str] = None
-    tipo: Optional[str] = None
-    is_tarefa: Optional[bool] = None
+    fixado: Optional[bool] = None
+    grupo_id: Optional[int] = None
     links: Optional[List[str]] = None
 
 class AnotacaoResponse(AnotacaoBase):
     id: int
     data_criacao: datetime
     links: List[LinkResponse] = []
+    grupo: Optional[GrupoResponse] = None # Retorna objeto grupo completo
 
     class Config:
         from_attributes = True
 
+# --- Schemas de Tarefa e Subtarefa ---
+
+class SubtarefaBase(BaseModel):
+    titulo: str
+    concluido: bool = False
+
+class SubtarefaCreate(SubtarefaBase):
+    pass
+
+class SubtarefaUpdate(BaseModel):
+    titulo: Optional[str] = None
+    concluido: Optional[bool] = None
+
+class SubtarefaResponse(SubtarefaBase):
+    id: int
+    class Config:
+        from_attributes = True
+
+class TarefaBase(BaseModel):
+    titulo: str
+    descricao: Optional[str] = None
+    status: str = "Pendente"
+    fixado: bool = False
+
+class TarefaCreate(TarefaBase):
+    subtarefas: Optional[List[SubtarefaCreate]] = []
+
+class TarefaUpdate(BaseModel):
+    titulo: Optional[str] = None
+    descricao: Optional[str] = None
+    status: Optional[str] = None
+    fixado: Optional[bool] = None
+    # Subtarefas geralmente são atualizadas por endpoints específicos, 
+    # mas podem vir aqui se for substituir tudo.
+
+class TarefaResponse(TarefaBase):
+    id: int
+    data_criacao: datetime
+    data_conclusao: Optional[datetime] = None
+    subtarefas: List[SubtarefaResponse] = []
+
+    class Config:
+        from_attributes = True
+
+# --- Dashboard ---
 class RegistrosDashboardResponse(BaseModel):
+    # Anotações
     anotacoes_fixadas: List[AnotacaoResponse]
-    anotacoes_por_mes: dict[str, List[AnotacaoResponse]] # {"Janeiro/2025": [...]}
+    anotacoes_por_mes: dict[str, List[AnotacaoResponse]]
+    
+    # Tarefas
+    tarefas_pendentes: List[TarefaResponse] # Inclui "Em andamento"
+    tarefas_concluidas: List[TarefaResponse]
+    
+    # Grupos (para filtros no front)
+    grupos_disponiveis: List[GrupoResponse]

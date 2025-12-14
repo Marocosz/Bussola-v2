@@ -176,8 +176,14 @@ export const getCategoryHistory = async (categoryId: number) => {
 };
 
 // ==========================================================
-// 5. MÓDULO REGISTROS
+// 5. MÓDULO REGISTROS (ANOTAÇÕES E TAREFAS) - ATUALIZADO
 // ==========================================================
+
+export interface GrupoAnotacao {
+    id: number;
+    nome: string;
+    cor: string;
+}
 
 export interface LinkItem { id: number; url: string; }
 
@@ -185,48 +191,99 @@ export interface Anotacao {
     id: number;
     titulo: string;
     conteudo: string; // HTML
-    tipo: string;
     fixado: boolean;
-    is_tarefa: boolean;
-    status_tarefa: 'Pendente' | 'Concluído';
     data_criacao: string;
+    grupo: GrupoAnotacao;
     links: LinkItem[];
+}
+
+export interface Subtarefa {
+    id: number;
+    titulo: string;
+    concluido: boolean;
+}
+
+export interface Tarefa {
+    id: number;
+    titulo: string;
+    descricao: string;
+    status: 'Pendente' | 'Em andamento' | 'Concluído';
+    fixado: boolean;
+    data_criacao: string;
+    data_conclusao?: string;
+    subtarefas: Subtarefa[];
 }
 
 export interface RegistrosDashboard {
     anotacoes_fixadas: Anotacao[];
     anotacoes_por_mes: Record<string, Anotacao[]>;
+    tarefas_pendentes: Tarefa[];
+    tarefas_concluidas: Tarefa[];
+    grupos_disponiveis: GrupoAnotacao[];
 }
 
+// --- DASHBOARD ---
 export const getRegistrosDashboard = async (): Promise<RegistrosDashboard> => {
     const response = await api.get('/registros/');
     return response.data;
 };
 
-export const createRegistro = async (data: any) => {
-    const response = await api.post('/registros/', data);
+// --- GRUPOS ---
+export const createGrupo = async (data: { nome: string; cor?: string }) => {
+    const response = await api.post('/registros/grupos', data);
     return response.data;
 };
 
-export const updateRegistro = async (id: number, data: any) => {
-    const response = await api.put(`/registros/${id}`, data);
+// --- ANOTAÇÕES ---
+export const createAnotacao = async (data: any) => {
+    const response = await api.post('/registros/anotacoes', data);
     return response.data;
 };
 
-export const deleteRegistro = async (id: number) => {
-    const response = await api.delete(`/registros/${id}`);
+export const updateAnotacao = async (id: number, data: any) => {
+    const response = await api.put(`/registros/anotacoes/${id}`, data);
     return response.data;
 };
 
-export const toggleFixarRegistro = async (id: number) => {
-    const response = await api.patch(`/registros/${id}/toggle-fixar`);
+export const deleteAnotacao = async (id: number) => {
+    const response = await api.delete(`/registros/anotacoes/${id}`);
     return response.data;
 };
 
-export const toggleTarefaStatus = async (id: number) => {
-    const response = await api.patch(`/registros/${id}/toggle-tarefa`);
+export const toggleFixarAnotacao = async (id: number) => {
+    const response = await api.patch(`/registros/anotacoes/${id}/toggle-fixar`);
     return response.data;
 };
+
+// --- TAREFAS ---
+export const createTarefa = async (data: any) => {
+    const response = await api.post('/registros/tarefas', data);
+    return response.data;
+};
+
+export const updateTarefaStatus = async (id: number, status: string) => {
+    // Backend espera body: { "status": "Concluído" }
+    const response = await api.patch(`/registros/tarefas/${id}/status`, { status });
+    return response.data;
+};
+
+export const deleteTarefa = async (id: number) => {
+    const response = await api.delete(`/registros/tarefas/${id}`);
+    return response.data;
+};
+
+// --- SUBTAREFAS ---
+export const addSubtarefa = async (tarefaId: number, titulo: string) => {
+    // Backend espera body: { "titulo": "..." }
+    const response = await api.post(`/registros/tarefas/${tarefaId}/subtarefas`, { titulo });
+    return response.data;
+};
+
+export const toggleSubtarefa = async (subId: number) => {
+    const response = await api.patch(`/registros/subtarefas/${subId}/toggle`);
+    return response.data;
+};
+
 
 // ==========================================================
 // 6. MÓDULO COFRE
