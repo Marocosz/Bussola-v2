@@ -27,8 +27,25 @@ export function Registros() {
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [filtroGrupo, setFiltroGrupo] = useState('Todos');
 
-    // Accordion State
-    const [openGroups, setOpenGroups] = useState({'fixados': true});
+    // --- MUDANÇA 1: Inicialização com LocalStorage ---
+    // Verifica se existe salvo, senão usa o padrão {'fixados': true}
+    const [openGroups, setOpenGroups] = useState(() => {
+        const savedState = localStorage.getItem('@Bussola:registros_accordions');
+        if (savedState) {
+            try {
+                return JSON.parse(savedState);
+            } catch (e) {
+                console.error("Erro ao ler localStorage", e);
+            }
+        }
+        return {'fixados': true}; // Estado padrão inicial
+    });
+
+    // --- MUDANÇA 2: Salvar no LocalStorage sempre que mudar ---
+    useEffect(() => {
+        localStorage.setItem('@Bussola:registros_accordions', JSON.stringify(openGroups));
+    }, [openGroups]);
+
 
     const fetchData = async () => {
         setLoading(true);
@@ -36,6 +53,9 @@ export function Registros() {
             const result = await getRegistrosDashboard();
             setData(result);
             setError(null);
+            
+            // REMOVIDO: A lógica antiga que forçava abrir o primeiro mês/grupo foi removida
+            // para respeitar a escolha salva do usuário no localStorage.
         } catch (err) {
             console.error("Erro dashboard:", err);
             setError("Não foi possível carregar os registros.");
@@ -79,11 +99,15 @@ export function Registros() {
     const grupos = data?.grupos_disponiveis || [];
 
     // --- HANDLERS ---
-    const toggleAccordion = (key) => setOpenGroups(prev => ({ ...prev, [key]: !prev[key] }));
+    
+    // Toggle Accordion (Agora persiste automaticamente graças ao useEffect acima)
+    const toggleAccordion = (key) => {
+        setOpenGroups(prev => ({ ...prev, [key]: !prev[key] }));
+    };
+
     const handleNewNota = () => { setEditingNota(null); setNotaModalOpen(true); };
     const handleEditNota = (nota) => { setEditingNota(nota); setNotaModalOpen(true); };
     
-    // Abre Modal de Visualização
     const handleViewNota = (nota) => {
         setViewingNota(nota);
         setViewModalOpen(true);
@@ -235,7 +259,9 @@ export function Registros() {
                         )}
 
                         {Object.entries(groupedNotes).map(([grupoNome, notas]) => {
-                            const isOpen = openGroups[grupoNome] !== false; 
+                            // MUDANÇA: Agora se não existir no state, assume fechado (false), ou use lógica de default
+                            // Com o localStorage, o que estiver lá é lei.
+                            const isOpen = !!openGroups[grupoNome]; 
                             const grpObj = grupos.find(g => g.nome === grupoNome);
                             const grpColor = grpObj ? grpObj.cor : '#999';
 

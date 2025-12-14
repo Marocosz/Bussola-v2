@@ -9,18 +9,40 @@ export function Agenda() {
     const [loading, setLoading] = useState(true);
     const [modalOpen, setModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
-    const [openMonths, setOpenMonths] = useState({});
     
     const [tooltip, setTooltip] = useState({ visible: false, x: 0, y: 0, compromissos: [] });
+
+    // --- MUDANÇA 1: Inicialização com LocalStorage ---
+    // Tenta ler o estado salvo. Se não existir, inicia vazio {}.
+    const [openMonths, setOpenMonths] = useState(() => {
+        const savedState = localStorage.getItem('@Bussola:agenda_accordions');
+        if (savedState) {
+            try {
+                return JSON.parse(savedState);
+            } catch (e) {
+                console.error("Erro ao ler localStorage", e);
+            }
+        }
+        return {};
+    });
+
+    // --- MUDANÇA 2: Salvar no LocalStorage sempre que mudar ---
+    useEffect(() => {
+        localStorage.setItem('@Bussola:agenda_accordions', JSON.stringify(openMonths));
+    }, [openMonths]);
 
     const fetchData = async () => {
         try {
             const result = await getAgendaDashboard();
             setData(result);
+            
+            // Lógica inteligente: Só abre o primeiro mês automaticamente se
+            // o usuário NUNCA mexeu no accordion (estado vazio).
+            // Se ele já abriu/fechou algo (estado salvo), respeitamos a escolha dele.
             if (result.compromissos_por_mes && Object.keys(result.compromissos_por_mes).length > 0) {
-                // Abre o primeiro mês por padrão se não houver estado anterior
                 const firstMonth = Object.keys(result.compromissos_por_mes)[0];
                 setOpenMonths(prev => {
+                    // Se não tem chaves (primeiro acesso), abre o primeiro mês
                     if (Object.keys(prev).length === 0) return { [firstMonth]: true };
                     return prev;
                 });
@@ -43,7 +65,7 @@ export function Agenda() {
         const rect = e.target.getBoundingClientRect();
         setTooltip({
             visible: true,
-            x: rect.right + window.scrollX - 280, // Ajuste para o tooltip não sair da tela
+            x: rect.right + window.scrollX - 280,
             y: rect.bottom + window.scrollY + 5,
             compromissos
         });
@@ -80,6 +102,8 @@ export function Agenda() {
                                     <span>{mes}</span>
                                     <i className={`fa-solid fa-chevron-down ${openMonths[mes] ? 'rotate' : ''}`}></i>
                                 </h3>
+                                
+                                {/* A classe 'open' controla a animação CSS (height) */}
                                 <div className={`accordion-wrapper ${openMonths[mes] ? 'open' : ''}`}>
                                     <div className="accordion-inner">
                                         <div className="month-content">
@@ -117,7 +141,7 @@ export function Agenda() {
                             // Determina classes dinamicamente
                             let cardClasses = 'dia-card';
                             if (item.is_today) cardClasses += ' today';
-                            if (item.is_padding) cardClasses += ' dia-padding'; // Classe para o CSS "riscado"
+                            if (item.is_padding) cardClasses += ' dia-padding';
                             if (!item.is_padding && item.compromissos?.length > 0) cardClasses += ' has-compromissos';
 
                             return (

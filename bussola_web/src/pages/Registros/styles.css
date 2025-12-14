@@ -55,8 +55,10 @@
     margin-bottom: 0.5rem;
     background: linear-gradient(90deg, #fff 0%, var(--cor-azul-primario) 50%, #fff 100%);
     background-size: 200% auto;
+    background-clip: text;  
     -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: transparent;
+    -webkit-text-fill-color: transparent; 
     animation: registrosShine 5s linear infinite;
 }
 
