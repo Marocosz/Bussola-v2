@@ -251,100 +251,227 @@
 }
 
 /* ============================================= */
-/* 6. CARD DE COMPROMISSO                        */
+/* 6. CARD DE COMPROMISSO (DESIGN MODERNO V2)    */
 /* ============================================= */
 
-.compromisso-card-detailed {
+.compromisso-card-modern {
     background-color: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
-    border-radius: 10px;
-    padding: 1rem;
+    border-radius: 16px;
+    padding: 1.2rem;
     display: flex;
     flex-direction: column;
-    gap: 0.8rem;
+    gap: 0.8rem; /* Espaçamento geral */
     transition: transform 0.2s, box-shadow 0.2s;
-    border-left: 4px solid var(--cor-azul-primario);
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    /* Removido o padding-bottom exagerado pois o footer não é mais absoluto */
 }
 
-.compromisso-card-detailed:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+.compromisso-card-modern:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
 }
 
-.compromisso-header {
+/* Bordas laterais de status */
+.compromisso-card-modern.pendente { border-left: 5px solid var(--cor-azul-primario); }
+.compromisso-card-modern.realizado { border-left: 5px solid var(--cor-verde-sucesso); opacity: 0.8; }
+.compromisso-card-modern.perdido { border-left: 5px solid var(--cor-vermelho-delete); }
+
+/* --- 1. Header: Data e Botões --- */
+.card-header-row {
     display: flex;
     justify-content: space-between;
-    gap: 1rem;
-    align-items: flex-start;
+    align-items: center; 
 }
 
-.compromisso-header h4 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--cor-texto-principal);
-    white-space: normal;
-    overflow-wrap: break-word;
-}
-
-/* Botões de Ação (Check/Reset) */
-.action-buttons-small {
+.date-highlight {
     display: flex;
-    gap: 0.5rem;
-    flex-shrink: 0;
-}
-
-.action-buttons-small button {
-    background: transparent;
-    border: 1px solid var(--cor-borda);
-    color: var(--cor-texto-secundario);
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-}
-
-.action-buttons-small button.done:hover { background-color: var(--cor-verde-sucesso); color: white; border-color: var(--cor-verde-sucesso); }
-.action-buttons-small button.reset:hover { background-color: var(--cor-laranja-aviso); color: white; border-color: var(--cor-laranja-aviso); }
-
-p.compromisso-detail {
-    display: flex;
-    align-items: center;
-    font-size: 0.85rem;
-    color: var(--cor-texto-secundario);
-    margin: 0;
-    gap: 0.5rem;
-}
-
-p.compromisso-detail i {
-    width: 16px;
-    text-align: center;
+    align-items: center; 
+    gap: 12px;
     color: var(--cor-azul-primario);
 }
 
-.footer-details {
-    margin-top: auto;
-    padding-top: 0.5rem;
-    border-top: 1px solid var(--cor-borda);
-    display: flex;
-    justify-content: flex-end;
+.date-big {
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -1px;
 }
 
-.status-badge {
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 0.75rem;
+.time-group {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.time-big {
+    font-size: 1.2rem;
     font-weight: 600;
+    opacity: 0.9;
+}
+
+/* Dia da semana na mesma linha */
+.weekday-inline {
+    font-size: 0.9rem;
+    color: var(--cor-texto-secundario);
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+/* --- Botões de Ação (Estilo Finanças - Quadrados) --- */
+.top-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-action-icon {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.8rem;
+    color: var(--cor-texto-secundario);
+    background: transparent;
+    border: 1px solid var(--cor-borda) !important;
+    border-radius: 6px !important; /* Quadrado arredondado igual Finanças */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.2s;
+}
+
+/* Hover Editar: Amarelo/Laranja */
+.btn-action-icon.btn-edit-transacao:hover {
+    background-color: #f59e0b !important;
+    border-color: #f59e0b !important;
+    color: #fff !important;
+}
+
+/* Hover Excluir: Vermelho */
+.btn-action-icon.btn-delete-transacao:hover {
+    background-color: var(--cor-vermelho-delete) !important;
+    border-color: var(--cor-vermelho-delete) !important;
+    color: #fff !important;
+}
+
+/* --- 2. Título --- */
+.card-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--cor-texto-principal);
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* --- 3. Informações Modernas --- */
+.card-infos-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin-top: 0.2rem;
+}
+
+.info-modern-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    max-width: 100%;
+}
+
+/* Estilo específico para o bloco de local (borda discreta) */
+.location-box {
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    padding: 6px 10px;
+    width: fit-content;
+}
+
+/* Badge do Ícone */
+.info-icon-badge {
+    width: 24px;
+    height: 24px;
+    min-width: 24px; 
+    color: var(--cor-azul-primario);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+
+.info-text {
+    font-size: 0.95rem;
+    color: var(--cor-texto-secundario);
+    line-height: 1.4;
+    padding-top: 2px;
+    
+    /* Quebra de linha garantida */
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+/* --- 4. Footer --- */
+.card-footer-row {
+    display: flex;
+    justify-content: space-between; /* Status na esquerda, Botão na direita */
+    align-items: center;
+    /* AUMENTADO ESPAÇAMENTO DO CONTEÚDO ACIMA */
+    margin-top: 2rem; 
+    position: relative;
+}
+
+/* Badge de Status (Agora estático, alinhado à esquerda) */
+.status-badge-modern {
+    position: static;
+    font-size: 0.85rem; 
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-.status-badge.pendente { background: rgba(255, 193, 7, 0.15); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3); }
-.status-badge.realizado { background: rgba(40, 167, 69, 0.15); color: #28a745; border: 1px solid rgba(40, 167, 69, 0.3); }
-.status-badge.perdido { background: rgba(231, 76, 60, 0.15); color: #e74c3c; border: 1px solid rgba(231, 76, 60, 0.3); }
+.status-badge-modern.pendente { background: rgba(255, 193, 7, 0.15); color: #f59e0b; }
+.status-badge-modern.realizado { background: rgba(40, 167, 69, 0.15); color: #28a745; }
+.status-badge-modern.perdido { background: rgba(231, 76, 60, 0.15); color: #e74c3c; }
+
+/* Botão Concluir (Alinhado à direita pelo space-between) */
+.btn-concluir-action {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+
+.btn-concluir-action.complete {
+    background-color: var(--cor-azul-primario);
+    color: white;
+    box-shadow: 0 4px 12px rgba(74, 109, 255, 0.25);
+}
+
+.btn-concluir-action.complete:hover {
+    background-color: var(--cor-azul-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(74, 109, 255, 0.35);
+}
+
+.btn-concluir-action.undo {
+    background-color: var(--cor-fundo);
+    border: 1px solid var(--cor-borda);
+    color: var(--cor-texto-secundario);
+}
+
+.btn-concluir-action.undo:hover {
+    background-color: var(--cor-fundo-hover);
+    color: var(--cor-texto-principal);
+    border-color: var(--cor-texto-secundario);
+}
 
 /* ============================================= */
 /* 7. MODAL E FORMULÁRIOS (Estilo Finanças)      */
@@ -353,8 +480,8 @@ p.compromisso-detail i {
 /* Fundo do Modal (Backdrop) */
 .modal {
     display: flex;
-    position: fixed; /* Isso corrige o problema de posição */
-    z-index: 2000;   /* Garante que fique acima de tudo */
+    position: fixed; 
+    z-index: 2000;   
     left: 0;
     top: 0;
     width: 100%;
@@ -371,7 +498,7 @@ p.compromisso-detail i {
     background-color: var(--cor-card-principal);
     margin: auto;
     width: 90%;
-    max-width: 500px; /* Tamanho controlado */
+    max-width: 500px; 
     border-radius: 16px;
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
     border: 1px solid var(--cor-borda);
@@ -444,7 +571,7 @@ p.compromisso-detail i {
 
 .form-input {
     width: 100%;
-    height: 45px; /* Altura padrão Finanças */
+    height: 45px; 
     padding: 0 0.8rem;
     border: 1px solid var(--cor-borda);
     border-radius: 8px;

@@ -20,32 +20,88 @@ export function CompromissoCard({ comp, onUpdate, onEdit }) {
     const dataObj = new Date(comp.data_hora);
     const dia = dataObj.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
     const hora = dataObj.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-    const diaSemana = dataObj.toLocaleDateString('pt-BR', {weekday:'long'});
+    
+    // Dia da semana completo e Capitalizado
+    const diaSemanaRaw = dataObj.toLocaleDateString('pt-BR', {weekday:'long'});
+    const diaSemana = diaSemanaRaw.charAt(0).toUpperCase() + diaSemanaRaw.slice(1);
 
+    // Classes de Status
     let statusClass = 'pendente';
     if(comp.status === 'Realizado') statusClass = 'realizado';
     if(comp.status === 'Perdido') statusClass = 'perdido';
 
+    const isRealizado = comp.status === 'Realizado';
+
     return (
-        <div className="compromisso-card-detailed">
-            <div className="compromisso-header">
-                <h4>{comp.titulo}</h4>
-                <div className="action-buttons-small">
-                    <button className="reset" onClick={() => onEdit(comp)} title="Editar"><i className="fa-solid fa-pencil"></i></button>
-                    <button className="done" onClick={handleToggle} title="Concluir/Reabrir">
-                        <i className={comp.status === 'Realizado' ? "fa-solid fa-rotate-left" : "fa-solid fa-check"}></i>
+        <div className={`compromisso-card-modern ${statusClass}`}>
+            
+            {/* 1. TOPO: Data, Hora, Dia da Semana e Botões */}
+            <div className="card-header-row">
+                <div className="date-highlight">
+                    <span className="date-big">{dia}</span>
+                    <span className="time-group">
+                        <span className="time-big">{hora}</span>
+                        <span className="weekday-inline">• {diaSemana}</span>
+                    </span>
+                </div>
+                
+                <div className="top-actions">
+                    {/* Botões atualizados: Ícones novos e classes para hover específico */}
+                    <button className="btn-action-icon btn-edit-transacao" onClick={() => onEdit(comp)} title="Editar">
+                        <i className="fa-solid fa-pen-to-square"></i>
                     </button>
-                    <button className="reset" onClick={handleDelete} title="Excluir"><i className="fa-solid fa-trash"></i></button>
+                    <button className="btn-action-icon btn-delete-transacao" onClick={handleDelete} title="Excluir">
+                        <i className="fa-solid fa-trash-can"></i>
+                    </button>
                 </div>
             </div>
+
+            {/* 2. TÍTULO */}
+            <h3 className="card-title">{comp.titulo}</h3>
+
+            {/* 3. INFORMAÇÕES */}
+            <div className="card-infos-container">
+                {comp.local && (
+                    <div className="info-modern-row location-box">
+                        <div className="info-icon-badge">
+                            <i className="fa-solid fa-location-dot"></i>
+                        </div>
+                        <span className="info-text">{comp.local}</span>
+                    </div>
+                )}
+                {comp.descricao && (
+                    <div className="info-modern-row">
+                        <div className="info-icon-badge">
+                            <i className="fa-solid fa-align-left"></i>
+                        </div>
+                        <span className="info-text">{comp.descricao}</span>
+                    </div>
+                )}
+            </div>
             
-            <p className="compromisso-detail"><i className="fa-regular fa-calendar"></i> <span>{dia} ({diaSemana})</span></p>
-            <p className="compromisso-detail"><i className="fa-regular fa-clock"></i> <span>{hora}</span></p>
-            {comp.local && <p className="compromisso-detail"><i className="fa-solid fa-location-dot"></i> <span>{comp.local}</span></p>}
-            {comp.descricao && <p className="compromisso-detail"><i className="fa-solid fa-align-left"></i> <span>{comp.descricao}</span></p>}
-            
-            <div className="footer-details">
-                <span className={`status-badge ${statusClass}`}>{comp.status}</span>
+            {/* 4. RODAPÉ (Status Esquerda | Botão Direita) */}
+            <div className="card-footer-row">
+                
+                {/* Status na Esquerda */}
+                <span className={`status-badge-modern ${statusClass}`}>
+                    {comp.status}
+                </span>
+
+                {/* Botão na Direita */}
+                <button 
+                    className={`btn-concluir-action ${isRealizado ? 'undo' : 'complete'}`} 
+                    onClick={handleToggle}
+                >
+                    {isRealizado ? (
+                        <>
+                            <i className="fa-solid fa-rotate-left"></i> Reabrir
+                        </>
+                    ) : (
+                        <>
+                            Concluir <i className="fa-solid fa-check"></i>
+                        </>
+                    )}
+                </button>
             </div>
         </div>
     );
