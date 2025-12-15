@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Boolean, Text, DateTime, ForeignKey, Enum
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from datetime import datetime
 from app.db.base_class import Base
 import enum
@@ -70,4 +70,15 @@ class Subtarefa(Base):
     concluido = Column(Boolean, default=False)
     
     tarefa_id = Column(Integer, ForeignKey('tarefa.id'), nullable=False)
+    
+    parent_id = Column(Integer, ForeignKey('subtarefa.id'), nullable=True)
+    
+    # Relacionamentos
     tarefa = relationship("Tarefa", back_populates="subtarefas")
+    
+    # Filhos (Subtarefas desta subtarefa)
+    subtarefas = relationship(
+        "Subtarefa",
+        backref=backref('parent', remote_side=[id]),
+        cascade="all, delete-orphan"
+    )

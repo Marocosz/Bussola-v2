@@ -1,8 +1,8 @@
 """Reset tables
 
-Revision ID: 617b8cde7af9
+Revision ID: b6d973211123
 Revises: 
-Create Date: 2025-12-14 21:11:14.591474
+Create Date: 2025-12-14 21:38:35.760703
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '617b8cde7af9'
+revision: str = 'b6d973211123'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -109,6 +109,8 @@ def upgrade() -> None:
     sa.Column('titulo', sa.String(length=200), nullable=False),
     sa.Column('concluido', sa.Boolean(), nullable=True),
     sa.Column('tarefa_id', sa.Integer(), nullable=False),
+    sa.Column('parent_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['parent_id'], ['subtarefa.id'], ),
     sa.ForeignKeyConstraint(['tarefa_id'], ['tarefa.id'], ),
     sa.PrimaryKeyConstraint('id')
     )

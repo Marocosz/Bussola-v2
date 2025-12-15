@@ -22,6 +22,7 @@ export function Registros() {
     const [editingNota, setEditingNota] = useState(null);
     const [viewingNota, setViewingNota] = useState(null);
     const [editingGrupo, setEditingGrupo] = useState(null);
+    const [editingTarefa, setEditingTarefa] = useState(null); // NOVO
 
     // Controle do Dropdown
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -100,6 +101,18 @@ export function Registros() {
     const handleViewNota = (nota) => {
         setViewingNota(nota);
         setViewModalOpen(true);
+    };
+
+    // Handler Nova Tarefa
+    const handleNewTarefa = () => {
+        setEditingTarefa(null);
+        setTarefaModalOpen(true);
+    };
+
+    // Handler Editar Tarefa (NOVO)
+    const handleEditTarefa = (tarefa) => {
+        setEditingTarefa(tarefa);
+        setTarefaModalOpen(true);
     };
 
     const handleNewGrupo = () => { 
@@ -194,7 +207,6 @@ export function Registros() {
                                                             <span className="name">{g.nome}</span>
                                                         </div>
                                                         <div className="dropdown-item-actions">
-                                                            {/* Botões padronizados (btn-edit / btn-delete) */}
                                                             <button className="btn-action-icon btn-edit" onClick={(e) => handleEditGrupo(g, e)}><i className="fa-solid fa-pen-to-square"></i></button>
                                                             <button className="btn-action-icon btn-delete" onClick={(e) => handleDeleteGrupo(g.id, e)}><i className="fa-solid fa-trash-can"></i></button>
                                                         </div>
@@ -300,7 +312,7 @@ export function Registros() {
                 <div className="registros-column column-tarefas">
                     <div className="column-header-flex">
                         <h2>TAREFAS</h2>
-                        <button className="btn-primary small-btn" onClick={() => setTarefaModalOpen(true)}>
+                        <button className="btn-primary small-btn" onClick={handleNewTarefa}>
                             <i className="fa-solid fa-plus"></i> Tarefa
                         </button>
                     </div>
@@ -315,7 +327,12 @@ export function Registros() {
                             )}
                             
                             {tarefasPendentes.map(t => (
-                                <TarefaCard key={t.id} tarefa={t} onUpdate={fetchData} />
+                                <TarefaCard 
+                                    key={t.id} 
+                                    tarefa={t} 
+                                    onUpdate={fetchData} 
+                                    onEdit={handleEditTarefa} // Passando a função
+                                />
                             ))}
                         </div>
 
@@ -324,7 +341,12 @@ export function Registros() {
                                 <h4 className="concluidas-title">Concluídas</h4>
                                 <div className="tarefas-list completed">
                                     {tarefasConcluidas.map(t => (
-                                        <TarefaCard key={t.id} tarefa={t} onUpdate={fetchData} />
+                                        <TarefaCard 
+                                            key={t.id} 
+                                            tarefa={t} 
+                                            onUpdate={fetchData}
+                                            onEdit={handleEditTarefa} // Passando a função
+                                        />
                                     ))}
                                 </div>
                             </div>
@@ -335,7 +357,15 @@ export function Registros() {
 
             {/* MODAIS */}
             <AnotacaoModal active={notaModalOpen} closeModal={() => setNotaModalOpen(false)} onUpdate={fetchData} editingData={editingNota} gruposDisponiveis={grupos}/>
-            <TarefaModal active={tarefaModalOpen} closeModal={() => setTarefaModalOpen(false)} onUpdate={fetchData}/>
+            
+            {/* TAREFA MODAL ATUALIZADO */}
+            <TarefaModal 
+                active={tarefaModalOpen} 
+                closeModal={() => setTarefaModalOpen(false)} 
+                onUpdate={fetchData} 
+                editingData={editingTarefa} // Passando dados de edição
+            />
+            
             <GrupoModal active={grupoModalOpen} closeModal={() => setGrupoModalOpen(false)} onUpdate={fetchData} editingData={editingGrupo}/>
             
             <ViewAnotacaoModal 

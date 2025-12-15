@@ -175,8 +175,8 @@ class RegistrosService:
         return True
 
     # --- SUBTAREFAS ---
-    def add_subtarefa(self, db: Session, tarefa_id: int, titulo: str):
-        nova_sub = Subtarefa(titulo=titulo, tarefa_id=tarefa_id)
+    def add_subtarefa(self, db: Session, tarefa_id: int, titulo: str, parent_id: int = None):
+        nova_sub = Subtarefa(titulo=titulo, tarefa_id=tarefa_id, parent_id=parent_id)
         db.add(nova_sub)
         db.commit()
         db.refresh(nova_sub)

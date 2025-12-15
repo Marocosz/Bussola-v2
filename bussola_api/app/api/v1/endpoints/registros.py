@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
-from typing import List, Any
+from typing import List, Any, Optional
 from app.api import deps
 from app.schemas.registros import (
     RegistrosDashboardResponse, 
@@ -101,8 +101,13 @@ def delete_tarefa(id: int, db: Session = Depends(deps.get_db)):
 # SUBTAREFAS
 # ==========================================================
 @router.post("/tarefas/{id}/subtarefas")
-def add_subtarefa(id: int, titulo: str = Body(..., embed=True), db: Session = Depends(deps.get_db)):
-    return registros_service.add_subtarefa(db, id, titulo)
+def add_subtarefa(
+    id: int, 
+    titulo: str = Body(..., embed=True), 
+    parent_id: Optional[int] = Body(None, embed=True), # Novo param opcional
+    db: Session = Depends(deps.get_db)
+):
+    return registros_service.add_subtarefa(db, id, titulo, parent_id)
 
 @router.patch("/subtarefas/{id}/toggle")
 def toggle_subtarefa(id: int, db: Session = Depends(deps.get_db)):

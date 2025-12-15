@@ -201,6 +201,8 @@ export interface Subtarefa {
     id: number;
     titulo: string;
     concluido: boolean;
+    parent_id?: number | null;
+    subtarefas?: Subtarefa[]; // Aninhamento
 }
 
 export interface Tarefa {
@@ -209,6 +211,10 @@ export interface Tarefa {
     descricao: string;
     status: 'Pendente' | 'Em andamento' | 'Concluído';
     fixado: boolean;
+    // --- NOVOS CAMPOS ---
+    prioridade?: 'Baixa' | 'Média' | 'Alta' | 'Crítica';
+    prazo?: string; // Data ISO ou null
+    // --------------------
     data_criacao: string;
     data_conclusao?: string;
     subtarefas: Subtarefa[];
@@ -272,6 +278,12 @@ export const createTarefa = async (data: any) => {
     return response.data;
 };
 
+// --- NOVO: Função para atualizar tarefa completa (PUT) ---
+export const updateTarefa = async (id: number, data: any) => {
+    const response = await api.put(`/registros/tarefas/${id}`, data);
+    return response.data;
+};
+
 export const updateTarefaStatus = async (id: number, status: string) => {
     // Backend espera body: { "status": "Concluído" }
     const response = await api.patch(`/registros/tarefas/${id}/status`, { status });
@@ -284,9 +296,12 @@ export const deleteTarefa = async (id: number) => {
 };
 
 // --- SUBTAREFAS ---
-export const addSubtarefa = async (tarefaId: number, titulo: string) => {
-    // Backend espera body: { "titulo": "..." }
-    const response = await api.post(`/registros/tarefas/${tarefaId}/subtarefas`, { titulo });
+export const addSubtarefa = async (tarefaId: number, titulo: string, parentId?: number) => {
+    // Agora envia parent_id se existir
+    const response = await api.post(`/registros/tarefas/${tarefaId}/subtarefas`, { 
+        titulo, 
+        parent_id: parentId || null 
+    });
     return response.data;
 };
 

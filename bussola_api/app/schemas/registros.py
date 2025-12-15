@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import List, Optional
+from pydantic import BaseModel, field_validator
+from typing import List, Optional, ForwardRef, Any
 from datetime import datetime
 
 # --- Schemas de Grupo ---
@@ -27,7 +27,7 @@ class AnotacaoBase(BaseModel):
     titulo: Optional[str] = None
     conteudo: Optional[str] = None
     fixado: bool = False
-    grupo_id: Optional[int] = None # ID do grupo
+    grupo_id: Optional[int] = None 
 
 class AnotacaoCreate(AnotacaoBase):
     links: Optional[List[str]] = []
@@ -43,19 +43,21 @@ class AnotacaoResponse(AnotacaoBase):
     id: int
     data_criacao: datetime
     links: List[LinkResponse] = []
-    grupo: Optional[GrupoResponse] = None # Retorna objeto grupo completo
+    grupo: Optional[GrupoResponse] = None 
 
     class Config:
         from_attributes = True
 
-# --- Schemas de Tarefa e Subtarefa ---
+# --- Schemas de Tarefa e Subtarefa (RECURSIVO & FILTRADO) ---
+
+SubtarefaResponse = ForwardRef('SubtarefaResponse')
 
 class SubtarefaBase(BaseModel):
     titulo: str
     concluido: bool = False
 
 class SubtarefaCreate(SubtarefaBase):
-    pass
+    parent_id: Optional[int] = None
 
 class SubtarefaUpdate(BaseModel):
     titulo: Optional[str] = None
@@ -63,16 +65,21 @@ class SubtarefaUpdate(BaseModel):
 
 class SubtarefaResponse(SubtarefaBase):
     id: int
+    parent_id: Optional[int] = None
+    subtarefas: List[SubtarefaResponse] = []
+
     class Config:
         from_attributes = True
+
+SubtarefaResponse.model_rebuild()
 
 class TarefaBase(BaseModel):
     titulo: str
     descricao: Optional[str] = None
     status: str = "Pendente"
     fixado: bool = False
-    prioridade: str = "Média"       # Novo campo (Crítica, Alta, Média, Baixa)
-    prazo: Optional[datetime] = None # Novo campo
+    prioridade: str = "Média"
+    prazo: Optional[datetime] = None
 
 class TarefaCreate(TarefaBase):
     subtarefas: Optional[List[SubtarefaCreate]] = []
@@ -82,10 +89,8 @@ class TarefaUpdate(BaseModel):
     descricao: Optional[str] = None
     status: Optional[str] = None
     fixado: Optional[bool] = None
-    prioridade: Optional[str] = None # Novo campo
-    prazo: Optional[datetime] = None # Novo campo
-    # Subtarefas geralmente são atualizadas por endpoints específicos, 
-    # mas podem vir aqui se for substituir tudo.
+    prioridade: Optional[str] = None
+    prazo: Optional[datetime] = None
 
 class TarefaResponse(TarefaBase):
     id: int
@@ -93,18 +98,23 @@ class TarefaResponse(TarefaBase):
     data_conclusao: Optional[datetime] = None
     subtarefas: List[SubtarefaResponse] = []
 
+    # --- CORREÇÃO DO BUG DE DUPLICAÇÃO ---
+    @field_validator('subtarefas', mode='before')
+    def filter_root_subtarefas(cls, v: Any):
+        # Se v for uma lista de objetos ORM (SQLAlchemy), filtramos aqui
+        # Retorna apenas as subtarefas que NÃO têm pai (parent_id é None)
+        # As que têm pai já estarão aninhadas dentro dos objetos pai
+        if isinstance(v, list):
+            return [sub for sub in v if getattr(sub, 'parent_id', None) is None]
+        return v
+
     class Config:
         from_attributes = True
 
 # --- Dashboard ---
 class RegistrosDashboardResponse(BaseModel):
-    # Anotações
     anotacoes_fixadas: List[AnotacaoResponse]
     anotacoes_por_mes: dict[str, List[AnotacaoResponse]]
-    
-    # Tarefas
-    tarefas_pendentes: List[TarefaResponse] # Inclui "Em andamento"
+    tarefas_pendentes: List[TarefaResponse]
     tarefas_concluidas: List[TarefaResponse]
-    
-    # Grupos (para filtros no front)
     grupos_disponiveis: List[GrupoResponse]

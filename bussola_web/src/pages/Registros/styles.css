@@ -488,18 +488,18 @@
     background: none;
     border: none;
     padding: 0;
-    
+
     font-size: 1.5rem;
     color: var(--cor-texto-secundario);
     cursor: pointer;
-    
+
     display: flex;
     align-items: center;
     justify-content: center;
     line-height: 1;
-    
+
     transition: color 0.2s;
-    
+
     /* Garante que não tenha tamanho fixo p/ formar quadrado/círculo */
     width: auto;
     height: auto;
@@ -507,7 +507,8 @@
 
 .registros-scope .close-btn:hover {
     color: var(--cor-texto-principal);
-    background: none; /* Garante que não apareça fundo */
+    background: none;
+    /* Garante que não apareça fundo */
     box-shadow: none;
 }
 
@@ -1573,12 +1574,13 @@
 }
 
 /* ============================================= */
-/* 9. TAREFAS                                    */
+/* 9. TAREFAS (DESIGN MODERNO)                   */
 /* ============================================= */
 .registros-scope .tarefas-list {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
+    padding-bottom: 2rem;
 }
 
 .registros-scope .empty-state {
@@ -1598,7 +1600,7 @@
 }
 
 .registros-scope .concluidas-section {
-    margin-top: 3rem;
+    margin-top: 2rem;
     opacity: 0.7;
     transition: opacity 0.2s;
 }
@@ -1608,48 +1610,54 @@
 }
 
 .registros-scope .concluidas-title {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--cor-texto-secundario);
     margin-bottom: 1rem;
     text-transform: uppercase;
     letter-spacing: 1px;
+    font-weight: 700;
     border-bottom: 1px solid var(--cor-borda);
     padding-bottom: 6px;
 }
 
+/* --- CARD DE TAREFA --- */
 .registros-scope .tarefa-card {
     background: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
     border-radius: 12px;
-    padding: 1rem 1.2rem;
-    transition: 0.2s;
+    padding: 1rem;
+    transition: all 0.2s ease;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.8rem;
+    position: relative;
 }
 
 .registros-scope .tarefa-card:hover {
     border-color: var(--cor-azul-primario);
-    transform: translateX(3px);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
 }
 
 .registros-scope .tarefa-card.concluida {
     background-color: var(--cor-fundo);
-    opacity: 0.8;
+    border-color: transparent;
+    opacity: 0.7;
 }
 
+/* Header: Check + Título */
 .registros-scope .tarefa-header {
     display: flex;
     align-items: flex-start;
     gap: 12px;
-    width: 100%;
 }
 
 .registros-scope .check-btn {
     width: 22px;
     height: 22px;
-    border-radius: 50%;
+    border-radius: 6px;
+    /* Quadrado arredondado moderno */
     border: 2px solid var(--cor-borda);
     background: transparent;
     cursor: pointer;
@@ -1659,7 +1667,7 @@
     color: white;
     flex-shrink: 0;
     transition: all 0.2s;
-    margin-top: 2px;
+    margin-top: 3px;
 }
 
 .registros-scope .check-btn:hover {
@@ -1667,18 +1675,16 @@
 }
 
 .registros-scope .check-btn.checked {
-    background: var(--cor-azul-primario);
-    border-color: var(--cor-azul-primario);
+    background: var(--cor-verde-sucesso);
+    border-color: var(--cor-verde-sucesso);
 }
 
 .registros-scope .check-btn.checked i {
     font-size: 0.75rem;
 }
 
-.registros-scope .tarefa-info {
+.registros-scope .tarefa-content {
     flex: 1;
-    display: flex;
-    flex-direction: column;
     min-width: 0;
 }
 
@@ -1696,53 +1702,141 @@
     color: var(--cor-texto-secundario);
 }
 
-.registros-scope .btn-delete-mini {
+.registros-scope .tarefa-desc {
+    font-size: 0.85rem;
+    color: var(--cor-texto-secundario);
+    margin: 4px 0 0 0;
+    line-height: 1.4;
+    
+    /* Configuração para cortar texto em 2 linhas */
+    display: -webkit-box;
+    /* autoprefixer: ignore next */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Boa prática adicionar */
+}
+
+/* Meta Info: Prioridade e Prazo */
+.registros-scope .tarefa-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+}
+
+/* Badges de Prioridade */
+.registros-scope .badge-prio {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.registros-scope .badge-prio.critica {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.registros-scope .badge-prio.alta {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+.registros-scope .badge-prio.media {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+}
+
+.registros-scope .badge-prio.baixa {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.registros-scope .tarefa-prazo {
+    font-size: 0.75rem;
+    color: var(--cor-texto-secundario);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.registros-scope .tarefa-prazo.atrasado {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+/* Ações (Edit/Delete) */
+.registros-scope .tarefa-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.registros-scope .tarefa-card:hover .tarefa-actions {
+    opacity: 1;
+}
+
+.registros-scope .btn-icon-sm {
     background: none;
     border: none;
     color: var(--cor-texto-secundario);
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     padding: 4px;
-    opacity: 0;
-    transition: opacity 0.2s;
-    flex-shrink: 0;
+    border-radius: 4px;
 }
 
-.registros-scope .tarefa-card:hover .btn-delete-mini {
-    opacity: 1;
+.registros-scope .btn-icon-sm:hover {
+    background-color: var(--cor-fundo-hover);
+    color: var(--cor-texto-principal);
 }
 
-.registros-scope .btn-delete-mini:hover {
+.registros-scope .btn-icon-sm.delete:hover {
     color: var(--cor-vermelho-delete);
 }
 
+/* Subtarefas e Progresso */
 .registros-scope .subtarefas-container {
     margin-top: 0.5rem;
     padding-left: 34px;
+}
+
+.registros-scope .progress-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
 }
 
 .registros-scope .progress-bar-bg {
     height: 4px;
     background: var(--cor-borda);
     border-radius: 2px;
-    margin-bottom: 8px;
-    width: 100%;
+    flex: 1;
     overflow: hidden;
 }
 
 .registros-scope .progress-bar-fill {
     height: 100%;
-    background: var(--cor-verde-sucesso);
+    background: var(--cor-azul-primario);
     border-radius: 2px;
     transition: width 0.3s;
+}
+
+.registros-scope .progress-text {
+    font-size: 0.7rem;
+    color: var(--cor-texto-secundario);
+    font-weight: 600;
 }
 
 .registros-scope .subtarefas-list {
     list-style: none;
     padding: 0;
     margin: 0;
-    font-size: 0.85rem;
-    color: var(--cor-texto-secundario);
 }
 
 .registros-scope .subtarefas-list li {
@@ -1750,33 +1844,21 @@
     gap: 8px;
     align-items: center;
     cursor: pointer;
-    padding: 4px 0;
+    padding: 3px 0;
+    font-size: 0.85rem;
+    color: var(--cor-texto-secundario);
+    transition: color 0.2s;
 }
 
 .registros-scope .subtarefas-list li:hover {
     color: var(--cor-texto-principal);
 }
 
+.registros-scope .subtarefas-list li i {
+    font-size: 0.9rem;
+}
+
 .registros-scope .riscado {
     text-decoration: line-through;
     opacity: 0.6;
-}
-
-@media (max-width: 900px) {
-    .registros-scope .registros-layout {
-        grid-template-columns: 1fr;
-        gap: 2rem;
-    }
-
-    .registros-scope .registros-column {
-        padding: 0;
-        overflow: visible;
-    }
-
-    .registros-scope .column-anotacoes .column-header-flex,
-    .registros-scope .column-tarefas .column-header-flex {
-        margin-left: 0;
-        margin-right: 0;
-        border-radius: 12px;
-    }
 }
