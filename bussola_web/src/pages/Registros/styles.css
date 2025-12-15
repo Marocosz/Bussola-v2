@@ -1574,15 +1574,18 @@
 }
 
 /* ============================================= */
-/* 9. TAREFAS (DESIGN MODERNO)                   */
+/* 9. TAREFAS (DESIGN MODERNO & REFINADO)        */
 /* ============================================= */
+
+/* Lista Principal */
 .registros-scope .tarefas-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
     padding-bottom: 2rem;
 }
 
+/* Empty State */
 .registros-scope .empty-state {
     text-align: center;
     padding: 3rem;
@@ -1599,8 +1602,9 @@
     opacity: 0.4;
 }
 
+/* Seção Concluídas */
 .registros-scope .concluidas-section {
-    margin-top: 2rem;
+    margin-top: 2.5rem;
     opacity: 0.7;
     transition: opacity 0.2s;
 }
@@ -1624,40 +1628,39 @@
 .registros-scope .tarefa-card {
     background: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
-    border-radius: 12px;
-    padding: 1rem;
+    border-radius: 16px;
+    padding: 1.2rem;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
     display: flex;
     flex-direction: column;
-    gap: 0.8rem;
+    gap: 1rem;
     position: relative;
 }
 
 .registros-scope .tarefa-card:hover {
     border-color: var(--cor-azul-primario);
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
 }
 
 .registros-scope .tarefa-card.concluida {
     background-color: var(--cor-fundo);
     border-color: transparent;
-    opacity: 0.7;
+    opacity: 0.75;
 }
 
-/* Header: Check + Título */
+/* Header: Check + Título + Meta */
 .registros-scope .tarefa-header {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
+    gap: 14px;
 }
 
 .registros-scope .check-btn {
-    width: 22px;
-    height: 22px;
-    border-radius: 6px;
-    /* Quadrado arredondado moderno */
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
     border: 2px solid var(--cor-borda);
     background: transparent;
     cursor: pointer;
@@ -1680,7 +1683,7 @@
 }
 
 .registros-scope .check-btn.checked i {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
 }
 
 .registros-scope .tarefa-content {
@@ -1690,9 +1693,9 @@
 
 .registros-scope .tarefa-titulo {
     margin: 0;
-    font-size: 0.95rem;
+    font-size: 1rem;
     color: var(--cor-texto-principal);
-    font-weight: 600;
+    font-weight: 700;
     line-height: 1.4;
     word-break: break-word;
 }
@@ -1703,35 +1706,33 @@
 }
 
 .registros-scope .tarefa-desc {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     color: var(--cor-texto-secundario);
-    margin: 4px 0 0 0;
-    line-height: 1.4;
-    
-    /* Configuração para cortar texto em 2 linhas */
+    margin: 6px 0 0 0;
+    line-height: 1.5;
     display: -webkit-box;
     /* autoprefixer: ignore next */
     -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis; /* Boa prática adicionar */
+    text-overflow: ellipsis;
 }
 
-/* Meta Info: Prioridade e Prazo */
+/* Meta Info (Prioridade e Prazo) */
 .registros-scope .tarefa-meta {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-top: 4px;
+    margin-top: 8px;
     flex-wrap: wrap;
 }
 
-/* Badges de Prioridade */
 .registros-scope .badge-prio {
     font-size: 0.7rem;
-    padding: 2px 8px;
-    border-radius: 4px;
+    padding: 3px 10px;
+    border-radius: 6px;
     font-weight: 700;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .registros-scope .badge-prio.critica {
@@ -1755,23 +1756,27 @@
 }
 
 .registros-scope .tarefa-prazo {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     color: var(--cor-texto-secundario);
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
+    background: var(--cor-fundo);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--cor-borda);
 }
 
 .registros-scope .tarefa-prazo.atrasado {
     color: #ef4444;
-    font-weight: 600;
+    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.05);
 }
 
 /* Ações (Edit/Delete) */
 .registros-scope .tarefa-actions {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    gap: 6px;
     opacity: 0;
     transition: opacity 0.2s;
 }
@@ -1780,42 +1785,38 @@
     opacity: 1;
 }
 
-.registros-scope .btn-icon-sm {
-    background: none;
-    border: none;
-    color: var(--cor-texto-secundario);
-    cursor: pointer;
-    font-size: 0.85rem;
-    padding: 4px;
-    border-radius: 4px;
-}
-
-.registros-scope .btn-icon-sm:hover {
-    background-color: var(--cor-fundo-hover);
-    color: var(--cor-texto-principal);
-}
-
-.registros-scope .btn-icon-sm.delete:hover {
-    color: var(--cor-vermelho-delete);
-}
-
-/* Subtarefas e Progresso */
+/* --- SEÇÃO DE PROGRESSO E SUBTAREFAS NO CARD --- */
 .registros-scope .subtarefas-container {
-    margin-top: 0.5rem;
-    padding-left: 34px;
+    margin-top: 1rem;
+    padding-top: 1rem;
 }
 
-.registros-scope .progress-wrapper {
+.registros-scope .progresso-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
+}
+
+.registros-scope .progresso-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--cor-texto-secundario);
+    letter-spacing: 0.5px;
+}
+
+.registros-scope .progress-text {
+    font-size: 0.8rem;
+    color: var(--cor-azul-primario);
+    font-weight: 700;
 }
 
 .registros-scope .progress-bar-bg {
-    height: 4px;
-    background: var(--cor-borda);
-    border-radius: 2px;
+    height: 8px;
+    /* Barra mais visível */
+    background: var(--cor-fundo-hover);
+    border-radius: 4px;
     flex: 1;
     overflow: hidden;
 }
@@ -1823,42 +1824,185 @@
 .registros-scope .progress-bar-fill {
     height: 100%;
     background: var(--cor-azul-primario);
-    border-radius: 2px;
-    transition: width 0.3s;
+    border-radius: 4px;
+    transition: width 0.4s ease;
 }
 
-.registros-scope .progress-text {
-    font-size: 0.7rem;
-    color: var(--cor-texto-secundario);
-    font-weight: 600;
-}
-
+/* Lista no Card */
 .registros-scope .subtarefas-list {
     list-style: none;
     padding: 0;
-    margin: 0;
-}
-
-.registros-scope .subtarefas-list li {
+    margin: 10px 0 0 0;
     display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.registros-scope .subtask-row {
+    transition: background 0.2s;
+    border-radius: 6px;
+}
+
+.registros-scope .subtask-row:hover {
+    background-color: var(--cor-fundo-hover);
+}
+
+
+/* ============================================= */
+/* MODAL TAREFA - ÁRVORE DE SUBTAREFAS (NOVO)    */
+/* ============================================= */
+
+/* Container da Árvore */
+.registros-scope .subtasks-tree-container {
+    display: flex;
+    flex-direction: column;
     gap: 8px;
+    margin-top: 10px;
+    /* Sem overflow hidden aqui para permitir que o modal cresça */
+}
+
+/* Nó da Árvore */
+.registros-scope .tree-node {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+/* Conteúdo do Item (Linha) */
+.registros-scope .tree-item-content {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    cursor: pointer;
-    padding: 3px 0;
-    font-size: 0.85rem;
-    color: var(--cor-texto-secundario);
-    transition: color 0.2s;
+    padding: 10px 12px;
+    background: var(--cor-fundo);
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    transition: all 0.2s;
 }
 
-.registros-scope .subtarefas-list li:hover {
+.registros-scope .tree-item-content:hover {
+    border-color: var(--cor-azul-primario);
+    background: var(--cor-fundo-hover);
+}
+
+.registros-scope .tree-text {
+    font-size: 0.9rem;
     color: var(--cor-texto-principal);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
 }
 
-.registros-scope .subtarefas-list li i {
+.registros-scope .tree-text i {
+    color: var(--cor-texto-secundario);
     font-size: 0.9rem;
 }
 
-.registros-scope .riscado {
-    text-decoration: line-through;
-    opacity: 0.6;
+.registros-scope .tree-actions {
+    display: flex;
+    gap: 4px;
+    margin-left: 10px;
+}
+
+/* ESTILIZAÇÃO DOS BOTÕES DA ÁRVORE (NOVO) */
+.registros-scope .tree-actions .btn-icon-sm {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--cor-texto-secundario);
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    padding: 0;
+}
+
+.registros-scope .tree-actions .btn-icon-sm:hover {
+    background-color: var(--cor-fundo-hover);
+    color: var(--cor-azul-primario);
+    border-color: var(--cor-borda);
+}
+
+.registros-scope .tree-actions .btn-icon-sm.delete:hover {
+    color: var(--cor-vermelho-delete);
+    background-color: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+.registros-scope .tree-actions .btn-icon-sm i {
+    font-size: 0.85rem;
+}
+
+/* Container Filhos (Recuo e Linha) */
+.registros-scope .tree-children {
+    margin-left: 20px;
+    padding-left: 10px;
+    border-left: 2px solid var(--cor-borda);
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Input para adicionar filho */
+.registros-scope .add-child-input-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+    margin-bottom: 4px;
+    animation: fadeIn 0.2s ease;
+}
+
+/* Botões do Input aninhado (Check e X) */
+.registros-scope .add-child-input-row button {
+    cursor: pointer;
+    border-radius: 6px;
+    border: none;
+    transition: filter 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.registros-scope .add-child-input-row button:hover {
+    filter: brightness(0.9);
+}
+
+.registros-scope .add-child-input-row button.btn-primary {
+    background-color: var(--cor-azul-primario);
+    color: white;
+}
+
+.registros-scope .add-child-input-row button.btn-secondary {
+    background-color: var(--cor-fundo-hover);
+    color: var(--cor-texto-secundario);
+    border: 1px solid var(--cor-borda);
+}
+
+.registros-scope .add-child-input-row button.btn-secondary:hover {
+    color: var(--cor-vermelho-delete);
+    border-color: var(--cor-vermelho-delete);
+}
+
+/* Empty State do Modal */
+.registros-scope .empty-tree-msg {
+    text-align: center;
+    padding: 2rem;
+    color: var(--cor-texto-secundario);
+    font-style: italic;
+    font-size: 0.9rem;
+    border: 1px dashed var(--cor-borda);
+    border-radius: 8px;
+    background: var(--cor-fundo-hover);
+}
+
+/* Card Atrasado (Borda Vermelha) */
+.registros-scope .tarefa-card.card-atrasado {
+    border-color: var(--cor-vermelho-delete);
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.1);
 }

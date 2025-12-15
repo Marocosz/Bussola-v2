@@ -1,36 +1,120 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createTarefa, updateTarefa, addSubtarefa } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 import '../styles.css';
 
+// --- COMPONENTE RECURSIVO PARA O MODAL (VISUAL ÁRVORE) ---
+const ModalSubtaskEdit = ({ sub, index, path, onUpdate, onDelete, onAddChild }) => {
+    const [isAdding, setIsAdding] = useState(false);
+    const [newChildTitle, setNewChildTitle] = useState('');
+
+    const handleAdd = (e) => {
+        e.preventDefault();
+        if (newChildTitle.trim()) {
+            onAddChild(path, newChildTitle);
+            setNewChildTitle('');
+            setIsAdding(false);
+        }
+    };
+
+    return (
+        <div className="tree-node">
+            {/* Conteúdo do Item */}
+            <div className="tree-item-content">
+                <div className="tree-text">
+                    <i className={`fa-regular ${sub.concluido ? 'fa-square-check' : 'fa-square'}`}></i>
+                    <span style={{ textDecoration: sub.concluido ? 'line-through' : 'none', opacity: sub.concluido ? 0.6 : 1 }}>
+                        {sub.titulo}
+                    </span>
+                </div>
+                
+                <div className="tree-actions">
+                    <button type="button" className="btn-icon-sm" onClick={() => setIsAdding(!isAdding)} title="Adicionar sub-tarefa">
+                        <i className="fa-solid fa-plus"></i>
+                    </button>
+                    <button type="button" className="btn-icon-sm delete" onClick={() => onDelete(path)} title="Remover">
+                        <i className="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+
+            {/* Input para adicionar filho (Aparece ao clicar no +) */}
+            {isAdding && (
+                <div className="tree-children">
+                    <div className="add-child-input-row">
+                        <input 
+                            className="form-input" 
+                            style={{ height: '32px', fontSize: '0.85rem' }} 
+                            value={newChildTitle}
+                            onChange={e => setNewChildTitle(e.target.value)}
+                            placeholder="Nome da sub-tarefa..."
+                            autoFocus
+                            onKeyDown={e => e.key === 'Enter' && handleAdd(e)}
+                        />
+                        <button type="button" className="btn-primary" style={{width:'32px', height:'32px', padding:0, display:'flex', alignItems:'center', justifyContent:'center'}} onClick={handleAdd}>
+                            <i className="fa-solid fa-check"></i>
+                        </button>
+                        <button type="button" className="btn-secondary" style={{width:'32px', height:'32px', padding:0, display:'flex', alignItems:'center', justifyContent:'center'}} onClick={() => setIsAdding(false)}>
+                            <i className="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Renderiza Filhos Recursivamente (Se houver) */}
+            {sub.subtarefas && sub.subtarefas.length > 0 && (
+                <div className="tree-children">
+                    {sub.subtarefas.map((child, i) => (
+                        <ModalSubtaskEdit 
+                            key={i} 
+                            sub={child} 
+                            index={i} 
+                            path={[...path, i]} // Mantém o rastro da árvore
+                            onUpdate={onUpdate} 
+                            onDelete={onDelete} 
+                            onAddChild={onAddChild} 
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
 export function TarefaModal({ active, closeModal, onUpdate, editingData }) {
     const { addToast } = useToast();
     
-    // States do Formulário
+    // States
     const [titulo, setTitulo] = useState('');
     const [descricao, setDescricao] = useState('');
     const [prioridade, setPrioridade] = useState('Média');
     const [prazo, setPrazo] = useState('');
     
-    // Subtarefas (Apenas para criação ou adição visual na edição)
+    // Árvore de Subtarefas
     const [subtarefas, setSubtarefas] = useState([]);
-    const [novaSub, setNovaSub] = useState('');
+    const [novaSubRaiz, setNovaSubRaiz] = useState('');
+    
+    const [prioDropdownOpen, setPrioDropdownOpen] = useState(false);
+    const prioWrapperRef = useRef(null);
     const [loading, setLoading] = useState(false);
 
-    // Carregar dados na edição
+    const prioOptions = [
+        { value: 'Baixa', label: 'Baixa', color: '#10b981' },
+        { value: 'Média', label: 'Média', color: '#3b82f6' },
+        { value: 'Alta', label: 'Alta', color: '#f59e0b' },
+        { value: 'Crítica', label: 'Crítica', color: '#ef4444' }
+    ];
+
+    // Carregar dados
     useEffect(() => {
         if (active) {
             if (editingData) {
                 setTitulo(editingData.titulo);
                 setDescricao(editingData.descricao || '');
                 setPrioridade(editingData.prioridade || 'Média');
-                // Formata data para o input datetime-local ou date
-                if (editingData.prazo) {
-                    setPrazo(editingData.prazo.split('T')[0]); 
-                } else {
-                    setPrazo('');
-                }
-                setSubtarefas([]); // Reset subtarefas locais (edição de subs é feita no card por enquanto)
+                setPrazo(editingData.prazo ? editingData.prazo.split('T')[0] : '');
+                // Importante: Deep copy para não mutar o original diretamente antes de salvar
+                setSubtarefas(editingData.subtarefas ? JSON.parse(JSON.stringify(editingData.subtarefas)) : []); 
             } else {
                 setTitulo('');
                 setDescricao('');
@@ -38,21 +122,71 @@ export function TarefaModal({ active, closeModal, onUpdate, editingData }) {
                 setPrazo('');
                 setSubtarefas([]);
             }
-            setNovaSub('');
+            setNovaSubRaiz('');
+            setPrioDropdownOpen(false);
         }
     }, [active, editingData]);
 
-    if (!active) return null;
+    // Fechar dropdown ao clicar fora
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (prioWrapperRef.current && !prioWrapperRef.current.contains(event.target)) {
+                setPrioDropdownOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => { document.removeEventListener("mousedown", handleClickOutside); };
+    }, []);
 
-    const handleAddSubLocal = () => {
-        if(!novaSub.trim()) return;
-        setSubtarefas([...subtarefas, { titulo: novaSub, concluido: false }]);
-        setNovaSub('');
+    // --- LÓGICA DE MANIPULAÇÃO DA ÁRVORE ---
+
+    const addSubRaiz = (e) => {
+        if(e) e.preventDefault();
+        if (!novaSubRaiz.trim()) return;
+        setSubtarefas([...subtarefas, { titulo: novaSubRaiz, concluido: false, subtarefas: [] }]);
+        setNovaSubRaiz('');
     };
 
-    const handleRemoveSubLocal = (index) => {
-        const newSubs = [...subtarefas];
-        newSubs.splice(index, 1);
+    const addChildToNode = (path, title) => {
+        const newSubs = JSON.parse(JSON.stringify(subtarefas));
+        let currentLevel = newSubs;
+        
+        // Navega até o pai
+        for (let i = 0; i < path.length; i++) {
+            currentLevel = currentLevel[path[i]];
+            if (i < path.length - 1) {
+                if(!currentLevel.subtarefas) currentLevel.subtarefas = [];
+                currentLevel = currentLevel.subtarefas;
+            }
+        }
+        
+        if (!currentLevel.subtarefas) currentLevel.subtarefas = [];
+        currentLevel.subtarefas.push({ titulo: title, concluido: false, subtarefas: [] });
+        
+        setSubtarefas(newSubs);
+    };
+
+    const deleteNode = (path) => {
+        const newSubs = JSON.parse(JSON.stringify(subtarefas));
+        
+        if (path.length === 1) {
+            newSubs.splice(path[0], 1);
+        } else {
+            let currentLevel = newSubs;
+            // Vai até o pai do item a ser deletado
+            for (let i = 0; i < path.length - 1; i++) {
+                currentLevel = currentLevel[path[i]];
+                if (i < path.length - 2) currentLevel = currentLevel.subtarefas;
+            }
+            // Acessa o array de filhos do pai e remove o item
+            // O pai é o objeto, precisamos acessar .subtarefas dele, a menos que o loop acima já tenha entrado
+            // Correção da lógica de navegação:
+            let parent = newSubs;
+            for(let k=0; k < path.length -1; k++) {
+                parent = parent[path[k]].subtarefas;
+            }
+            parent.splice(path[path.length - 1], 1);
+        }
         setSubtarefas(newSubs);
     };
 
@@ -61,55 +195,46 @@ export function TarefaModal({ active, closeModal, onUpdate, editingData }) {
         setLoading(true);
         try {
             const payload = { 
-                titulo, 
-                descricao, 
-                prioridade, 
+                titulo, descricao, prioridade, 
                 prazo: prazo || null,
-                // Se for criação, manda as subtarefas
-                subtarefas: !editingData ? subtarefas : undefined 
+                subtarefas: subtarefas // Envia a árvore completa atualizada
             };
 
-            let tarefaId;
-
             if (editingData) {
-                // UPDATE
                 await updateTarefa(editingData.id, payload);
-                tarefaId = editingData.id;
-                addToast({type:'success', title:'Atualizado', description:'Tarefa atualizada.'});
+                addToast({type:'success', title:'Atualizado', description:'Tarefa salva.'});
             } else {
-                // CREATE
-                const res = await createTarefa(payload);
-                tarefaId = res.id;
+                await createTarefa(payload);
                 addToast({type:'success', title:'Criado', description:'Tarefa criada.'});
-            }
-
-            // Se estiver editando e o usuário adicionou novas subs no modal
-            if (editingData && subtarefas.length > 0) {
-                for (const sub of subtarefas) {
-                    await addSubtarefa(tarefaId, sub.titulo);
-                }
             }
 
             onUpdate();
             closeModal();
         } catch (error) {
             console.error(error);
-            addToast({type:'error', title:'Erro', description:'Falha ao salvar tarefa.'});
+            addToast({type:'error', title:'Erro', description:'Falha ao salvar.'});
         } finally {
             setLoading(false);
         }
     };
 
+    const selectedPrioObj = prioOptions.find(p => p.value === prioridade);
+
+    if (!active) return null;
+
     return (
         <div className="modal-overlay registros-scope">
-            <div className="modal-content" onClick={e => e.stopPropagation()} style={{maxWidth:'550px'}}>
+            {/* Modal com altura automática, max-height grande para permitir scroll interno geral */}
+            <div className="modal-content large-modal" onClick={e => e.stopPropagation()} style={{maxWidth:'650px', height:'auto', maxHeight:'90vh', overflow:'hidden'}}>
+                
                 <div className="modal-header">
                     <h2>{editingData ? 'Editar Tarefa' : 'Nova Tarefa'}</h2>
                     <span className="close-btn" onClick={closeModal}>&times;</span>
                 </div>
                 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} style={{display:'flex', flexDirection:'column', flex:1, overflowY:'auto'}}>
                     <div className="modal-body">
+                        
                         {/* Título */}
                         <div className="form-group">
                             <label>O que precisa ser feito?</label>
@@ -117,30 +242,43 @@ export function TarefaModal({ active, closeModal, onUpdate, editingData }) {
                                 className="form-input" 
                                 value={titulo} 
                                 onChange={e => setTitulo(e.target.value)} 
-                                placeholder="Ex: Pagar fornecedor X..."
+                                placeholder="Ex: Projeto X..."
                                 required 
                                 autoFocus 
                             />
                         </div>
 
-                        {/* Linha: Prioridade e Prazo */}
+                        {/* Prioridade e Prazo */}
                         <div className="form-row">
-                            <div className="form-group" style={{flex:1}}>
+                            <div className="form-group" style={{flex:1}} ref={prioWrapperRef}>
                                 <label>Prioridade</label>
-                                <div className="custom-select-trigger" style={{padding:'0 5px'}}>
-                                    <select 
-                                        className="form-input" 
-                                        value={prioridade} 
-                                        onChange={e => setPrioridade(e.target.value)}
-                                        style={{border:'none', height:'100%', width:'100%', background:'transparent'}}
-                                    >
-                                        <option value="Baixa">🟢 Baixa</option>
-                                        <option value="Média">🔵 Média</option>
-                                        <option value="Alta">🟠 Alta</option>
-                                        <option value="Crítica">🔴 Crítica</option>
-                                    </select>
+                                <div 
+                                    className={`custom-select-trigger ${prioDropdownOpen ? 'open' : ''}`} 
+                                    onClick={() => setPrioDropdownOpen(!prioDropdownOpen)}
+                                >
+                                    <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                                        {selectedPrioObj && <span className="option-dot" style={{backgroundColor: selectedPrioObj.color}}></span>}
+                                        <span>{selectedPrioObj ? selectedPrioObj.label : 'Selecione'}</span>
+                                    </div>
+                                    <i className="fa-solid fa-chevron-down arrow-icon"></i>
                                 </div>
+
+                                {prioDropdownOpen && (
+                                    <div className="custom-select-options">
+                                        {prioOptions.map(opt => (
+                                            <div 
+                                                key={opt.value} 
+                                                className={`custom-option ${prioridade === opt.value ? 'selected' : ''}`}
+                                                onClick={() => { setPrioridade(opt.value); setPrioDropdownOpen(false); }}
+                                            >
+                                                <span className="option-dot" style={{backgroundColor: opt.color}}></span>
+                                                {opt.label}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
+
                             <div className="form-group" style={{flex:1}}>
                                 <label>Prazo (Opcional)</label>
                                 <input 
@@ -164,51 +302,58 @@ export function TarefaModal({ active, closeModal, onUpdate, editingData }) {
                             />
                         </div>
 
-                        {/* Subtarefas */}
-                        <div className="links-manager-section">
-                            <label className="section-label">
-                                <i className="fa-solid fa-list-check"></i> 
-                                {editingData ? ' Adicionar Subtarefas' : ' Subtarefas'}
+                        <hr style={{margin:'10px 0', border:'0', borderTop:'1px solid var(--cor-borda)'}}/>
+
+                        {/* GERENCIADOR DE SUBTAREFAS */}
+                        <div className="links-manager-section" style={{background:'transparent', border:'none', padding:'0'}}>
+                            <label className="section-label" style={{fontSize:'1rem', marginBottom:'10px'}}>
+                                <i className="fa-solid fa-list-check"></i> Subtarefas e Etapas
                             </label>
                             
+                            {/* Input Principal (Raiz) */}
                             <div className="add-link-row">
                                 <input 
                                     className="form-input link-input" 
-                                    value={novaSub} 
-                                    onChange={e => setNovaSub(e.target.value)} 
-                                    placeholder="Adicionar passo..." 
-                                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddSubLocal())}
+                                    value={novaSubRaiz} 
+                                    onChange={e => setNovaSubRaiz(e.target.value)} 
+                                    placeholder="Adicionar etapa principal..." 
+                                    onKeyDown={e => e.key === 'Enter' && addSubRaiz(e)}
                                 />
-                                <button type="button" className="btn-secondary btn-add-link" onClick={handleAddSubLocal}>
+                                <button type="button" className="btn-secondary btn-add-link" onClick={addSubRaiz}>
                                     <i className="fa-solid fa-plus"></i>
                                 </button>
                             </div>
 
-                            {subtarefas.length > 0 && (
-                                <ul className="links-list-edit">
-                                    {subtarefas.map((s, i) => (
-                                        <li key={i}>
-                                            <span className="link-url-text">{s.titulo}</span>
-                                            <button type="button" className="remove-link-btn" onClick={() => handleRemoveSubLocal(i)}>
-                                                <i className="fa-solid fa-trash"></i>
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                            {editingData && (
-                                <p style={{fontSize:'0.8rem', color:'var(--cor-texto-secundario)', marginTop:'5px', fontStyle:'italic'}}>
-                                    * Subtarefas existentes podem ser gerenciadas diretamente no card.
-                                </p>
-                            )}
+                            {/* Container da Árvore (Sem scroll interno, usa o do modal) */}
+                            <div className="subtasks-tree-container">
+                                {subtarefas.length === 0 ? (
+                                    <div className="empty-tree-msg">
+                                        Nenhuma subtarefa adicionada ainda.
+                                    </div>
+                                ) : (
+                                    subtarefas.map((sub, i) => (
+                                        <ModalSubtaskEdit 
+                                            key={i} 
+                                            sub={sub} 
+                                            index={i} 
+                                            path={[i]} 
+                                            onDelete={deleteNode} 
+                                            onAddChild={addChildToNode} 
+                                        />
+                                    ))
+                                )}
+                            </div>
                         </div>
                     </div>
 
-                    <div className="modal-footer">
-                        <button type="button" className="btn-secondary" onClick={closeModal}>Cancelar</button>
-                        <button type="submit" className="btn-primary" disabled={loading}>
-                            {loading ? 'Salvando...' : (editingData ? 'Salvar Alterações' : 'Criar Tarefa')}
-                        </button>
+                    <div className="modal-footer-custom" style={{borderRadius: '0 0 16px 16px', flexShrink:0}}>
+                        <div style={{flex:1}}></div>
+                        <div className="footer-buttons">
+                            <button type="button" className="btn-secondary" onClick={closeModal}>Cancelar</button>
+                            <button type="submit" className="btn-primary" disabled={loading}>
+                                {loading ? 'Salvando...' : (editingData ? 'Salvar Alterações' : 'Criar Tarefa')}
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>

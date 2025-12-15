@@ -10,7 +10,7 @@ const SubtaskItem = ({ sub, tarefaId, onToggle, onUpdate, level = 0 }) => {
     const handleAddChild = async () => {
         if (!newSubTitle.trim()) return;
         try {
-            await addSubtarefa(tarefaId, newSubTitle, sub.id); // ID atual é o PAI da nova
+            await addSubtarefa(tarefaId, newSubTitle, sub.id); 
             onUpdate();
             setNewSubTitle("");
             setIsAdding(false);
@@ -19,92 +19,62 @@ const SubtaskItem = ({ sub, tarefaId, onToggle, onUpdate, level = 0 }) => {
         }
     };
 
-    // Recuo visual baseado no nível de profundidade
-    const paddingLeft = level * 15; 
+    const paddingLeft = level * 18; 
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-            {/* Linha da Subtarefa */}
             <div 
                 className="subtask-row" 
-                style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '8px', 
-                    padding: '4px 0',
-                    paddingLeft: `${paddingLeft}px` 
-                }}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '5px 8px', paddingLeft: `${paddingLeft}px` }}
             >
-                {/* Ícone de Toggle */}
                 <i 
                     className={`fa-regular ${sub.concluido ? 'fa-square-check' : 'fa-square'}`}
                     onClick={(e) => { e.stopPropagation(); onToggle(sub.id); }}
                     style={{ 
                         cursor: 'pointer', 
                         color: sub.concluido ? 'var(--cor-verde-sucesso)' : 'var(--cor-texto-secundario)',
-                        fontSize: '0.95rem'
+                        fontSize: '1rem'
                     }}
                 ></i>
                 
-                {/* Texto */}
                 <span 
                     className={sub.concluido ? 'riscado' : ''} 
-                    style={{ 
-                        flex: 1, 
-                        fontSize: '0.85rem', 
-                        color: 'var(--cor-texto-secundario)', 
-                        cursor:'default' 
-                    }}
+                    style={{ flex: 1, fontSize: '0.9rem', color: 'var(--cor-texto-secundario)', cursor:'default' }}
                 >
                     {sub.titulo}
                 </span>
 
-                {/* Botão Adicionar Filha (+ pequeno) */}
                 <button 
                     onClick={() => setIsAdding(!isAdding)} 
-                    style={{ 
-                        background: 'none', 
-                        border: 'none', 
-                        cursor: 'pointer', 
-                        color: 'var(--cor-texto-secundario)', 
-                        fontSize: '0.75rem', 
-                        padding:'4px',
-                        opacity: 0.6
-                    }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--cor-texto-secundario)', opacity: 0.5, transition:'opacity 0.2s' }}
                     title="Adicionar sub-etapa"
                     onMouseEnter={e => e.target.style.opacity = 1}
-                    onMouseLeave={e => e.target.style.opacity = 0.6}
+                    onMouseLeave={e => e.target.style.opacity = 0.5}
                 >
                     <i className="fa-solid fa-plus"></i>
                 </button>
             </div>
 
-            {/* Input para nova filha (aparece abaixo do pai) */}
             {isAdding && (
-                <div style={{ marginLeft: `${paddingLeft + 24}px`, marginBottom: '5px', display:'flex', gap:'5px', marginTop:'2px' }}>
+                <div style={{ marginLeft: `${paddingLeft + 24}px`, marginBottom: '8px', display:'flex', gap:'5px', marginTop:'4px' }}>
                     <input 
                         className="form-input" 
-                        style={{ height: '26px', fontSize: '0.8rem', padding: '0 8px', borderRadius:'4px' }}
+                        style={{ height: '30px', fontSize: '0.85rem', padding: '0 8px', borderRadius:'6px' }}
                         value={newSubTitle}
                         onChange={e => setNewSubTitle(e.target.value)}
-                        placeholder="Nova etapa..."
+                        placeholder="Nome da sub-etapa..."
                         onKeyDown={e => e.key === 'Enter' && handleAddChild()}
                         autoFocus
                     />
                     <button 
                         onClick={handleAddChild}
-                        style={{ 
-                            background: 'var(--cor-azul-primario)', color:'white', 
-                            border:'none', borderRadius:'4px', width:'26px', height:'26px', 
-                            cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' 
-                        }}
+                        style={{ background: 'var(--cor-azul-primario)', color:'white', border:'none', borderRadius:'6px', width:'30px', height:'30px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}
                     >
-                        <i className="fa-solid fa-check" style={{fontSize:'0.7rem'}}></i>
+                        <i className="fa-solid fa-check" style={{fontSize:'0.8rem'}}></i>
                     </button>
                 </div>
             )}
 
-            {/* Recursividade: Renderiza os filhos deste item */}
             {sub.subtarefas && sub.subtarefas.length > 0 && (
                 <div className="subtask-children">
                     {sub.subtarefas.map(child => (
@@ -114,7 +84,7 @@ const SubtaskItem = ({ sub, tarefaId, onToggle, onUpdate, level = 0 }) => {
                             tarefaId={tarefaId}
                             onToggle={onToggle} 
                             onUpdate={onUpdate}
-                            level={level + 1} // Aumenta o nível para recuo
+                            level={level + 1}
                         />
                     ))}
                 </div>
@@ -152,29 +122,23 @@ export function TarefaCard({ tarefa, onUpdate, onEdit }) {
         } catch (error) { console.error(error); }
     };
 
-    // Calcula progresso percorrendo a árvore recursivamente
     const calculateProgress = (subs) => {
         let total = 0;
         let checked = 0;
-
         const traverse = (items) => {
             if (!items) return;
             items.forEach(item => {
                 total++;
                 if (item.concluido) checked++;
-                if (item.subtarefas && item.subtarefas.length > 0) {
-                    traverse(item.subtarefas);
-                }
+                if (item.subtarefas && item.subtarefas.length > 0) traverse(item.subtarefas);
             });
         };
-
         traverse(subs);
         return { total, checked, percent: total > 0 ? Math.round((checked / total) * 100) : 0 };
     };
 
     const progressData = calculateProgress(tarefa.subtarefas);
 
-    // Formatação
     const formatDate = (dateString) => {
         if (!dateString) return null;
         const date = new Date(dateString);
@@ -185,14 +149,11 @@ export function TarefaCard({ tarefa, onUpdate, onEdit }) {
     const prazoFormatado = formatDate(tarefa.prazo);
 
     const prioClass = {
-        'Crítica': 'critica',
-        'Alta': 'alta',
-        'Média': 'media',
-        'Baixa': 'baixa'
+        'Crítica': 'critica', 'Alta': 'alta', 'Média': 'media', 'Baixa': 'baixa'
     }[tarefa.prioridade] || 'media';
 
     return (
-        <div className={`tarefa-card ${isConcluido ? 'concluida' : ''}`}>
+        <div className={`tarefa-card ${isConcluido ? 'concluida' : ''} ${isAtrasado ? 'card-atrasado' : ''}`}>
             <div className="tarefa-header">
                 <button className={`check-btn ${isConcluido ? 'checked' : ''}`} onClick={handleCheck}>
                     {isConcluido && <i className="fa-solid fa-check"></i>}
@@ -203,7 +164,6 @@ export function TarefaCard({ tarefa, onUpdate, onEdit }) {
                     
                     <div className="tarefa-meta">
                         <span className={`badge-prio ${prioClass}`}>{tarefa.prioridade}</span>
-                        
                         {prazoFormatado && (
                             <span className={`tarefa-prazo ${isAtrasado ? 'atrasado' : ''}`} title="Prazo">
                                 <i className="fa-regular fa-calendar"></i> {prazoFormatado}
@@ -214,33 +174,35 @@ export function TarefaCard({ tarefa, onUpdate, onEdit }) {
                     {tarefa.descricao && <p className="tarefa-desc">{tarefa.descricao}</p>}
                 </div>
 
+                {/* BOTÕES PADRONIZADOS COM ANOTAÇÃO */}
                 <div className="tarefa-actions">
-                    <button className="btn-icon-sm" onClick={() => onEdit(tarefa)} title="Editar">
-                        <i className="fa-solid fa-pen"></i>
+                    <button className="btn-action-icon btn-edit" onClick={() => onEdit(tarefa)} title="Editar">
+                        <i className="fa-solid fa-pen-to-square"></i>
                     </button>
-                    <button className="btn-icon-sm delete" onClick={handleDelete} title="Excluir">
-                        <i className="fa-solid fa-xmark"></i>
+                    <button className="btn-action-icon btn-delete" onClick={handleDelete} title="Excluir">
+                        <i className="fa-solid fa-trash-can"></i>
                     </button>
                 </div>
             </div>
 
-            {/* Barra de Progresso e Lista */}
+            {/* Subtarefas e Barra de Progresso Melhorada */}
             {progressData.total > 0 && (
                 <div className="subtarefas-container">
-                    <div className="progress-wrapper">
-                        <div className="progress-bar-bg">
-                            <div 
-                                className="progress-bar-fill" 
-                                style={{
-                                    width: `${progressData.percent}%`, 
-                                    backgroundColor: progressData.percent === 100 ? 'var(--cor-verde-sucesso)' : ''
-                                }}
-                            ></div>
-                        </div>
+                    <div className="progresso-header">
+                        <span className="progresso-title">Progresso</span>
                         <span className="progress-text">{progressData.percent}%</span>
                     </div>
                     
-                    {/* Renderiza a lista recursiva */}
+                    <div className="progress-bar-bg">
+                        <div 
+                            className="progress-bar-fill" 
+                            style={{
+                                width: `${progressData.percent}%`, 
+                                backgroundColor: progressData.percent === 100 ? 'var(--cor-verde-sucesso)' : ''
+                            }}
+                        ></div>
+                    </div>
+                    
                     <div className="subtarefas-list">
                         {tarefa.subtarefas && tarefa.subtarefas.map(sub => (
                             <SubtaskItem 

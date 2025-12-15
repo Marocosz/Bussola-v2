@@ -48,21 +48,27 @@ class AnotacaoResponse(AnotacaoBase):
     class Config:
         from_attributes = True
 
-# --- Schemas de Tarefa e Subtarefa (RECURSIVO & FILTRADO) ---
+# --- Schemas de Tarefa e Subtarefa (RECURSIVIDADE COMPLETA) ---
 
+SubtarefaCreate = ForwardRef('SubtarefaCreate')
+SubtarefaUpdate = ForwardRef('SubtarefaUpdate')
 SubtarefaResponse = ForwardRef('SubtarefaResponse')
 
+# Schema Base
 class SubtarefaBase(BaseModel):
     titulo: str
     concluido: bool = False
 
+# Create: Aceita lista de si mesmo (filhos)
 class SubtarefaCreate(SubtarefaBase):
-    parent_id: Optional[int] = None
+    subtarefas: List[SubtarefaCreate] = [] 
 
-class SubtarefaUpdate(BaseModel):
-    titulo: Optional[str] = None
-    concluido: Optional[bool] = None
+# Update: Aceita ID (para identificar existente) e lista de filhos
+class SubtarefaUpdate(SubtarefaBase):
+    id: Optional[int] = None 
+    subtarefas: List[SubtarefaUpdate] = []
 
+# Response: Retorno padrão recursivo
 class SubtarefaResponse(SubtarefaBase):
     id: int
     parent_id: Optional[int] = None
@@ -71,6 +77,9 @@ class SubtarefaResponse(SubtarefaBase):
     class Config:
         from_attributes = True
 
+# Validando as referências circulares
+SubtarefaCreate.model_rebuild()
+SubtarefaUpdate.model_rebuild()
 SubtarefaResponse.model_rebuild()
 
 class TarefaBase(BaseModel):
@@ -82,6 +91,7 @@ class TarefaBase(BaseModel):
     prazo: Optional[datetime] = None
 
 class TarefaCreate(TarefaBase):
+    # Agora aceita a estrutura de árvore na criação
     subtarefas: Optional[List[SubtarefaCreate]] = []
 
 class TarefaUpdate(BaseModel):
@@ -91,6 +101,8 @@ class TarefaUpdate(BaseModel):
     fixado: Optional[bool] = None
     prioridade: Optional[str] = None
     prazo: Optional[datetime] = None
+    # Permite atualizar a árvore de subtarefas inteira
+    subtarefas: Optional[List[SubtarefaUpdate]] = None
 
 class TarefaResponse(TarefaBase):
     id: int
@@ -98,12 +110,9 @@ class TarefaResponse(TarefaBase):
     data_conclusao: Optional[datetime] = None
     subtarefas: List[SubtarefaResponse] = []
 
-    # --- CORREÇÃO DO BUG DE DUPLICAÇÃO ---
+    # Filtra apenas as raízes para não duplicar visualmente
     @field_validator('subtarefas', mode='before')
     def filter_root_subtarefas(cls, v: Any):
-        # Se v for uma lista de objetos ORM (SQLAlchemy), filtramos aqui
-        # Retorna apenas as subtarefas que NÃO têm pai (parent_id é None)
-        # As que têm pai já estarão aninhadas dentro dos objetos pai
         if isinstance(v, list):
             return [sub for sub in v if getattr(sub, 'parent_id', None) is None]
         return v
