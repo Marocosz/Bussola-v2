@@ -289,14 +289,10 @@
     display: flex;
     flex-direction: column;
     gap: 0.8rem;
-    /* Espaçamento geral */
     transition: transform 0.2s, box-shadow 0.2s;
     position: relative;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-
-    /* ADICIONADO: Garante que o card ocupe 100% da altura da Grid */
     height: 100%;
-    /* Importante para que o height 100% funcione corretamente com padding */
     box-sizing: border-box;
 }
 
@@ -305,7 +301,6 @@
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
 
-/* Bordas laterais de status */
 .compromisso-card-modern.pendente {
     border-left: 5px solid var(--cor-azul-primario);
 }
@@ -351,7 +346,6 @@
     opacity: 0.9;
 }
 
-/* Dia da semana na mesma linha */
 .weekday-inline {
     font-size: 0.9rem;
     color: var(--cor-texto-secundario);
@@ -359,10 +353,23 @@
     text-transform: capitalize;
 }
 
-/* --- Botões de Ação (Estilo Finanças - Quadrados) --- */
+/* --- Botões de Ação (Hover Effect) --- */
 .top-actions {
     display: flex;
     gap: 8px;
+    opacity: 0; /* Oculto por padrão */
+    transition: opacity 0.2s ease;
+}
+
+.compromisso-card-modern:hover .top-actions {
+    opacity: 1; /* Visível no hover */
+}
+
+/* Mobile: Sempre visível */
+@media (max-width: 768px) {
+    .top-actions {
+        opacity: 1 !important;
+    }
 }
 
 .btn-action-icon {
@@ -381,14 +388,12 @@
     transition: all 0.2s;
 }
 
-/* Hover Editar: Amarelo/Laranja */
 .btn-action-icon.btn-edit-transacao:hover {
     background-color: #f59e0b !important;
     border-color: #f59e0b !important;
     color: #fff !important;
 }
 
-/* Hover Excluir: Vermelho */
 .btn-action-icon.btn-delete-transacao:hover {
     background-color: var(--cor-vermelho-delete) !important;
     border-color: var(--cor-vermelho-delete) !important;
@@ -420,7 +425,6 @@
     padding: 0 10px;
 }
 
-/* Estilo específico para o bloco de local (borda discreta) */
 .location-box {
     border: 1px solid var(--cor-borda);
     border-radius: 8px;
@@ -428,7 +432,6 @@
     width: fit-content;
 }
 
-/* Badge do Ícone */
 .info-icon-badge {
     width: 24px;
     height: 24px;
@@ -455,16 +458,11 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-
-    /* ADICIONADO: Empurra o footer para o final do card */
     margin-top: auto;
     padding-top: 2rem;
-    /* Mantive um respiro minimo do conteúdo de cima */
-
     position: relative;
 }
 
-/* Badge de Status */
 .status-badge-modern {
     position: static;
     font-size: 0.85rem;
@@ -490,7 +488,6 @@
     color: #e74c3c;
 }
 
-/* Botão Concluir */
 .btn-concluir-action {
     display: flex;
     align-items: center;

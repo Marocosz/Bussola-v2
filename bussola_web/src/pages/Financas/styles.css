@@ -422,6 +422,19 @@
 .financas-scope .transacao-actions {
     display: flex;
     gap: 0.5rem;
+    opacity: 0; /* Oculto por padrão */
+    transition: opacity 0.2s ease;
+}
+
+.financas-scope .transacao-card:hover .transacao-actions {
+    opacity: 1; /* Visível no hover */
+}
+
+/* Mobile: Sempre visível */
+@media (max-width: 768px) {
+    .financas-scope .transacao-actions {
+        opacity: 1 !important;
+    }
 }
 
 .financas-scope .btn-sm-pagar,
@@ -429,7 +442,6 @@
     border: none;
     padding: 4px 10px;
     border-radius: 6px;
-    /* Quadrados suaves */
     font-size: 0.8rem;
     cursor: pointer;
     font-weight: 500;
@@ -452,9 +464,7 @@
     border: 1px solid var(--cor-borda);
 }
 
-/* --- UNIFICAÇÃO DOS BOTÕES DE AÇÃO (Quadrados e Coloridos) --- */
-/* Aplica-se a TODOS os botões .btn-action-icon dentro do escopo financas */
-
+/* --- UNIFICAÇÃO DOS BOTÕES DE AÇÃO --- */
 .financas-scope .btn-action-icon {
     width: 32px !important;
     height: 32px !important;
@@ -463,7 +473,6 @@
     background: transparent;
     border: 1px solid var(--cor-borda) !important;
     border-radius: 6px !important;
-    /* FORÇA QUADRADO */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -472,14 +481,12 @@
     transition: all 0.2s;
 }
 
-/* Hover Editar (Global na página): Amarelo/Laranja */
 .financas-scope .btn-edit-transacao:hover {
     background-color: #f59e0b !important;
     border-color: #f59e0b !important;
     color: #fff !important;
 }
 
-/* Hover Excluir (Global na página): Vermelho */
 .financas-scope .btn-delete-transacao:hover {
     background-color: var(--cor-vermelho-delete) !important;
     border-color: var(--cor-vermelho-delete) !important;
@@ -544,12 +551,10 @@
     padding-top: 2px;
 }
 
-/* CORREÇÃO DO ALINHAMENTO TÍTULO / VALOR */
 .financas-scope .categoria-main-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    /* ISSO ALINHA VERTICALMENTE O TEXTO COM O VALOR */
 }
 
 .financas-scope .categoria-info h4 {
@@ -562,7 +567,6 @@
     line-height: 1.2;
 }
 
-/* Removemos o 'top' negativo para usar o alinhamento do flex */
 .financas-scope .categoria-valor {
     font-size: 0.95rem;
     font-weight: 700;
@@ -627,12 +631,27 @@
     min-width: max-content;
 }
 
+/* Oculta APENAS os botões de ação, não o valor se ele estiver lá */
+.financas-scope .header-actions-top .btn-action-icon {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.financas-scope .categoria-card:hover .header-actions-top .btn-action-icon {
+    opacity: 1;
+}
+
+/* Mobile: Sempre visível */
+@media (max-width: 768px) {
+    .financas-scope .header-actions-top .btn-action-icon {
+        opacity: 1 !important;
+    }
+}
+
 .financas-scope .header-actions-top .categoria-valor {
     line-height: 1;
     display: flex;
     align-items: center;
-    /* Ajuste fino apenas para o valor "solto" na direita, se precisar */
-    /* position: relative; top: -1px; */
 }
 
 /* Seta de Expandir */

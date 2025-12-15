@@ -112,7 +112,6 @@
     min-height: 60px;
     margin-bottom: 2rem;
     z-index: 20;
-    /* Importante para o dropdown ficar por cima */
 }
 
 .registros-scope .column-header-flex:hover {
@@ -576,7 +575,7 @@
     animation: fadeInOverlay 0.2s ease-out;
 }
 
-/* Base do Modal */
+/* Base do Modal - Padrão Visível */
 .registros-scope .modal-content,
 .registros-scope .view-modal {
     background: var(--cor-card-principal);
@@ -590,21 +589,17 @@
     max-height: 90vh;
     animation: scaleInModal 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     
-    /* IMPORTANTE: Padrão é hidden para scroll interno funcionar */
-    overflow: hidden; 
+    /* ESSENCIAL: Permite que o popup de cor vaze */
+    overflow: visible !important; 
 }
 
-/* EXCEÇÃO: Modais compactos (como GrupoModal) PRECISAM de visible para o popup de cor sair */
-.registros-scope .modal-content.compact-modal {
-    overflow: visible !important;
-    max-height: none; /* Remove limite de altura para não cortar */
+/* EXCEÇÃO: Modais Grandes (Anotação/Tarefa) precisam de hidden para scroll interno */
+.registros-scope .modal-content.large-modal,
+.registros-scope .view-modal {
+    overflow: hidden !important; 
 }
 
-/* Garante que o corpo do modal compacto também não corte */
-.registros-scope .modal-content.compact-modal .modal-body {
-    overflow: visible !important;
-}
-
+/* --- HEADER --- */
 .registros-scope .modal-header,
 .registros-scope .view-modal-header {
     padding: 1.25rem 1.5rem;
@@ -638,25 +633,30 @@
     color: var(--cor-texto-principal);
 }
 
+/* Modal Grande */
 .registros-scope .large-modal {
     max-width: 800px;
     height: 85vh;
 }
 
+/* --- BODY --- */
 .registros-scope .modal-body {
     padding: 1.5rem;
-    overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 1.2rem;
     flex: 1;
-    scrollbar-width: thin;
-    scrollbar-color: var(--cor-borda) transparent;
+    
+    /* Configuração Padrão: Visível (Para Grupos) */
+    overflow: visible !important;
 }
 
-/* Para modal de grupo, o corpo precisa ser visível */
-.registros-scope .modal-content.compact-modal .modal-body {
-    overflow: visible !important;
+/* Scroll apenas em modais grandes */
+.registros-scope .modal-content.large-modal .modal-body,
+.registros-scope .view-modal .modal-body {
+    overflow-y: auto !important;
+    scrollbar-width: thin;
+    scrollbar-color: var(--cor-borda) transparent;
 }
 
 .registros-scope .modal-body::-webkit-scrollbar {
@@ -703,442 +703,7 @@
     outline: none;
 }
 
-/* --- CUSTOM SELECT E PICKERS --- */
-.registros-scope .custom-select-trigger {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    height: 45px;
-    padding: 0 12px;
-    border: 1px solid var(--cor-borda);
-    border-radius: 8px;
-    background-color: var(--cor-fundo);
-    cursor: pointer;
-    font-size: 0.95rem;
-    color: var(--cor-texto-principal);
-    transition: all 0.2s;
-    user-select: none;
-}
-
-.registros-scope .custom-select-trigger:hover {
-    border-color: var(--cor-texto-secundario);
-}
-
-.registros-scope .custom-select-trigger.open {
-    border-color: var(--cor-azul-primario);
-    box-shadow: 0 0 0 3px rgba(74, 109, 255, 0.1);
-}
-
-.registros-scope .arrow-icon {
-    font-size: 0.8rem;
-    color: var(--cor-texto-secundario);
-    transition: transform 0.2s;
-}
-
-.registros-scope .custom-select-trigger.open .arrow-icon {
-    transform: rotate(180deg);
-}
-
-.registros-scope .custom-select-options {
-    position: absolute;
-    top: calc(100% + 5px);
-    left: 0;
-    right: 0;
-    background-color: var(--cor-card-principal);
-    border: 1px solid var(--cor-borda);
-    border-radius: 10px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
-    z-index: 1000;
-    max-height: 200px;
-    overflow-y: auto;
-    padding: 5px;
-    animation: fadeInDropdown 0.1s ease-out;
-}
-
-.registros-scope .custom-select-options::-webkit-scrollbar {
-    width: 6px;
-}
-
-.registros-scope .custom-select-options::-webkit-scrollbar-thumb {
-    background-color: var(--cor-borda);
-    border-radius: 3px;
-}
-
-.registros-scope .custom-option {
-    padding: 10px;
-    font-size: 0.9rem;
-    color: var(--cor-texto-principal);
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.registros-scope .custom-option:hover,
-.registros-scope .custom-option.selected {
-    background-color: var(--cor-azul-primario);
-    color: white;
-}
-
-.registros-scope .option-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    display: inline-block;
-}
-
-/* --- SELETOR DE COR ESTILO FINANÇAS (NOVO) --- */
-.registros-scope .picker-wrapper {
-    position: relative;
-    /* Necessário para o popover se posicionar em relação a ele */
-}
-
-.registros-scope .picker-preview {
-    width: 45px;
-    height: 45px;
-    border: 1px solid var(--cor-borda);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    background: var(--cor-fundo);
-    transition: all 0.2s;
-    box-sizing: border-box;
-}
-
-.registros-scope .picker-preview:hover {
-    border-color: var(--cor-azul-primario);
-    transform: scale(1.02);
-}
-
-.registros-scope .picker-popover {
-    position: absolute;
-    background: var(--cor-card-principal);
-    border: 1px solid var(--cor-borda);
-    padding: 12px;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-    z-index: 9999;
-    /* Z-index alto */
-    display: none;
-    gap: 8px;
-    width: max-content;
-    max-width: 240px;
-    animation: fadeInDropdown 0.2s ease;
-}
-
-.registros-scope .picker-popover.visible {
-    display: grid;
-}
-
-.registros-scope .picker-popover.color-grid {
-    grid-template-columns: repeat(5, 1fr);
-}
-
-.registros-scope .color-swatch {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.1s, border 0.2s;
-    border: 2px solid transparent;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.registros-scope .color-swatch:hover {
-    transform: scale(1.15);
-    border-color: var(--cor-texto-principal);
-    z-index: 2;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-}
-
-/* --- REACT QUILL FIXO --- */
-.registros-scope .editor-container {
-    display: flex;
-    flex-direction: column;
-    height: 350px !important;
-    min-height: 350px;
-    max-height: 350px;
-    margin-bottom: 1rem;
-    flex-shrink: 0;
-}
-
-.registros-scope .custom-quill-editor {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-.registros-scope .quill {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-.registros-scope .ql-toolbar {
-    border: 1px solid var(--cor-borda) !important;
-    border-radius: 8px 8px 0 0;
-    background: var(--cor-fundo);
-    flex-shrink: 0;
-    z-index: 2;
-}
-
-.registros-scope .ql-container {
-    border: 1px solid var(--cor-borda) !important;
-    border-top: none !important;
-    border-radius: 0 0 8px 8px;
-    background: var(--cor-fundo);
-    font-size: 1rem;
-    color: var(--cor-texto-principal);
-    font-family: inherit;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    height: auto !important;
-    overflow: hidden;
-}
-
-.registros-scope .ql-editor {
-    flex: 1;
-    height: 100%;
-    overflow-y: auto !important;
-    padding: 1rem;
-    scrollbar-width: thin;
-    scrollbar-color: var(--cor-borda) transparent;
-}
-
-.registros-scope .ql-editor.ql-blank::before {
-    color: var(--cor-texto-secundario) !important;
-    opacity: 0.5;
-    font-style: italic;
-}
-
-/* Links */
-.registros-scope .links-manager-section {
-    background: var(--cor-card-secundario);
-    padding: 1rem 1.5rem;
-    border-radius: 12px;
-    border: 1px solid var(--cor-borda);
-    flex-shrink: 0;
-}
-
-.registros-scope .section-label {
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: var(--cor-texto-principal);
-    display: block;
-    margin-bottom: 8px;
-}
-
-.registros-scope .add-link-row {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 0.5rem;
-}
-
-.registros-scope .link-input {
-    flex: 1;
-    height: 38px;
-    font-size: 0.9rem;
-}
-
-.registros-scope .btn-add-link {
-    white-space: nowrap;
-    height: 38px;
-    padding: 0 15px;
-}
-
-.registros-scope .links-list-edit {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    max-height: 100px;
-    overflow-y: auto;
-    scrollbar-width: thin;
-}
-
-.registros-scope .links-list-edit li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--cor-card-principal);
-    padding: 6px 12px;
-    border-radius: 6px;
-    border: 1px solid var(--cor-borda);
-}
-
-.registros-scope .link-url-text {
-    font-size: 0.85rem;
-    color: var(--cor-azul-primario);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 90%;
-}
-
-.registros-scope .remove-link-btn {
-    background: none;
-    border: none;
-    color: var(--cor-texto-secundario);
-    cursor: pointer;
-}
-
-.registros-scope .remove-link-btn:hover {
-    color: var(--cor-vermelho-delete);
-}
-
-/* Footer Modal */
-.registros-scope .modal-footer-custom {
-    padding: 1.2rem 2rem;
-    border-top: 1px solid var(--cor-borda);
-    background-color: var(--cor-fundo);
-    border-radius: 0 0 16px 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.registros-scope .footer-buttons {
-    display: flex;
-    gap: 10px;
-}
-
-.registros-scope .checkbox-footer {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    font-size: 0.9rem;
-    color: var(--cor-texto-secundario);
-    font-weight: 600;
-    user-select: none;
-}
-
-.registros-scope .checkbox-footer input {
-    display: none;
-}
-
-.registros-scope .checkmark-footer {
-    height: 18px;
-    width: 18px;
-    background-color: var(--cor-fundo);
-    border: 1px solid var(--cor-borda);
-    border-radius: 4px;
-    margin-right: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-}
-
-.registros-scope .checkbox-footer:hover .checkmark-footer {
-    border-color: var(--cor-azul-primario);
-}
-
-.registros-scope .checkbox-footer input:checked~.checkmark-footer {
-    background-color: var(--cor-azul-primario);
-    border-color: var(--cor-azul-primario);
-    color: white;
-}
-
-.registros-scope .checkmark-footer::after {
-    content: "\f00c";
-    font-family: "Font Awesome 6 Free";
-    font-weight: 900;
-    font-size: 0.7rem;
-    display: block;
-}
-
-/* View Modal Ajustes */
-.registros-scope .view-modal-header {
-    flex-direction: column;
-    align-items: stretch;
-}
-
-.registros-scope .view-header-top-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.registros-scope .view-group-badge {
-    color: white;
-    padding: 5px 14px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.registros-scope .view-title {
-    font-size: 1.8rem;
-    color: var(--cor-texto-principal);
-    margin: 0 0 0.5rem 0;
-    font-weight: 800;
-    line-height: 1.2;
-}
-
-.registros-scope .view-date {
-    font-size: 0.9rem;
-    color: var(--cor-texto-secundario);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.registros-scope .view-body {
-    padding: 1.5rem;
-    overflow-y: auto;
-    font-size: 1.05rem;
-    line-height: 1.8;
-    color: var(--cor-texto-principal);
-    scrollbar-width: thin;
-}
-
-.registros-scope .view-content-html p {
-    margin-bottom: 1rem;
-}
-
-.registros-scope .view-content-html ul,
-.registros-scope .view-content-html ol {
-    margin-bottom: 1rem;
-    padding-left: 1.5rem;
-}
-
-.registros-scope .view-links-container {
-    margin-top: 2.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px dashed var(--cor-borda);
-}
-
-.registros-scope .link-item-view {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    background: var(--cor-fundo);
-    border: 1px solid var(--cor-borda);
-    border-radius: 8px;
-    text-decoration: none;
-    color: var(--cor-azul-primario);
-    transition: all 0.2s;
-    font-size: 0.9rem;
-}
-
+/* --- FOOTER --- */
 .registros-scope .modal-footer {
     padding: 1.2rem 1.5rem;
     border-top: 1px solid var(--cor-borda);
@@ -1147,28 +712,8 @@
     gap: 1rem;
     background-color: var(--cor-fundo);
     border-radius: 0 0 16px 16px;
-}
-
-@keyframes fadeInOverlay {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
-}
-
-@keyframes scaleInModal {
-    from {
-        opacity: 0;
-        transform: scale(0.95) translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
+    position: relative; 
+    z-index: 1; /* Garante que fique atrás do dropdown de cor */
 }
 
 /* ============================================= */
@@ -1657,11 +1202,13 @@
 
 .registros-scope .picker-wrapper {
     position: relative;
+    width: 45px;
+    height: 45px;
 }
 
 .registros-scope .picker-preview {
-    width: 45px;
-    height: 45px;
+    width: 100%;
+    height: 100%;
     border: 1px solid var(--cor-borda);
     border-radius: 8px;
     display: flex;
@@ -1671,7 +1218,8 @@
     background: var(--cor-fundo);
     font-size: 1.2rem;
     transition: all 0.2s;
-    box-sizing: border-box; /* Garante tamanho correto */
+    box-sizing: border-box;
+    /* Garante tamanho correto */
 }
 
 .registros-scope .picker-preview:hover {
@@ -1685,7 +1233,8 @@
     padding: 12px;
     border-radius: 12px;
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
-    z-index: 3000; /* Z-index alto para flutuar */
+    z-index: 9999;
+    /* Z-index altíssimo */
     display: none;
     gap: 8px;
     width: max-content;
@@ -1717,5 +1266,5 @@
     transform: scale(1.15);
     border-color: white;
     z-index: 2;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
