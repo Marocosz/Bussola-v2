@@ -49,6 +49,11 @@ class Tarefa(Base):
     id = Column(Integer, primary_key=True, index=True)
     titulo = Column(String(200), nullable=False)
     descricao = Column(Text, nullable=True)
+    
+    # Novos Campos Solicitados
+    prioridade = Column(String(20), default="Média") # Crítica, Alta, Média, Baixa
+    prazo = Column(DateTime, nullable=True)          # Prazo opcional
+    
     status = Column(String(50), default=StatusTarefa.PENDENTE.value) # Pendente, Em andamento, Concluído
     fixado = Column(Boolean, default=False)
     

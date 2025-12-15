@@ -5,8 +5,8 @@ from app.api import deps
 from app.schemas.registros import (
     RegistrosDashboardResponse, 
     AnotacaoCreate, AnotacaoResponse, AnotacaoUpdate,
-    TarefaCreate, TarefaResponse, 
-    GrupoCreate, GrupoResponse # Assumindo que GrupoCreate serve para update também
+    TarefaCreate, TarefaResponse, TarefaUpdate, # Importado TarefaUpdate
+    GrupoCreate, GrupoResponse 
 )
 from app.services.registros import registros_service
 
@@ -74,6 +74,14 @@ def toggle_fixar_anotacao(id: int, db: Session = Depends(deps.get_db)):
 @router.post("/tarefas", response_model=TarefaResponse)
 def create_tarefa(dados: TarefaCreate, db: Session = Depends(deps.get_db)):
     return registros_service.create_tarefa(db, dados)
+
+# [NOVO] Endpoint para Editar Tarefa Completa
+@router.put("/tarefas/{id}", response_model=TarefaResponse)
+def update_tarefa(id: int, dados: TarefaUpdate, db: Session = Depends(deps.get_db)):
+    reg = registros_service.update_tarefa(db, id, dados)
+    if not reg:
+        raise HTTPException(status_code=404, detail="Tarefa não encontrada")
+    return reg
 
 @router.patch("/tarefas/{id}/status")
 def update_tarefa_status(id: int, status: str = Body(..., embed=True), db: Session = Depends(deps.get_db)):

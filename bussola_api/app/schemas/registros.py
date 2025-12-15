@@ -71,6 +71,8 @@ class TarefaBase(BaseModel):
     descricao: Optional[str] = None
     status: str = "Pendente"
     fixado: bool = False
+    prioridade: str = "Média"       # Novo campo (Crítica, Alta, Média, Baixa)
+    prazo: Optional[datetime] = None # Novo campo
 
 class TarefaCreate(TarefaBase):
     subtarefas: Optional[List[SubtarefaCreate]] = []
@@ -80,6 +82,8 @@ class TarefaUpdate(BaseModel):
     descricao: Optional[str] = None
     status: Optional[str] = None
     fixado: Optional[bool] = None
+    prioridade: Optional[str] = None # Novo campo
+    prazo: Optional[datetime] = None # Novo campo
     # Subtarefas geralmente são atualizadas por endpoints específicos, 
     # mas podem vir aqui se for substituir tudo.
 

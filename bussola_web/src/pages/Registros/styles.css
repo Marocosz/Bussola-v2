@@ -222,7 +222,7 @@
     border-radius: 10px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
     /* Sombra mais forte igual Finanças */
-    z-index: 100;
+    z-index: 99999;
     padding: 0.5rem;
     /* Padding geral igual Finanças */
     animation: fadeInDropdown 0.2s ease;

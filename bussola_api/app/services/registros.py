@@ -114,12 +114,42 @@ class RegistrosService:
         nova_tarefa = Tarefa(
             titulo=tarefa_data.titulo,
             descricao=tarefa_data.descricao,
-            fixado=tarefa_data.fixado
+            fixado=tarefa_data.fixado,
+            prioridade=tarefa_data.prioridade, # NOVO
+            prazo=tarefa_data.prazo            # NOVO
         )
         db.add(nova_tarefa)
         db.commit()
         db.refresh(nova_tarefa)
         return nova_tarefa
+
+    # [NOVO] Função para atualização completa da tarefa (Titulo, Prioridade, Prazo, etc)
+    def update_tarefa(self, db: Session, tarefa_id: int, tarefa_data):
+        tarefa = db.query(Tarefa).filter(Tarefa.id == tarefa_id).first()
+        if not tarefa:
+            return None
+        
+        # Atualiza campos se eles vierem no payload
+        if tarefa_data.titulo is not None:
+            tarefa.titulo = tarefa_data.titulo
+        if tarefa_data.descricao is not None:
+            tarefa.descricao = tarefa_data.descricao
+        if tarefa_data.prioridade is not None:
+            tarefa.prioridade = tarefa_data.prioridade
+        if tarefa_data.prazo is not None:
+            tarefa.prazo = tarefa_data.prazo
+        if tarefa_data.fixado is not None:
+            tarefa.fixado = tarefa_data.fixado
+        if tarefa_data.status is not None:
+            tarefa.status = tarefa_data.status
+            if tarefa_data.status == "Concluído":
+                tarefa.data_conclusao = datetime.now()
+            else:
+                tarefa.data_conclusao = None
+
+        db.commit()
+        db.refresh(tarefa)
+        return tarefa
 
     def update_status_tarefa(self, db: Session, tarefa_id: int, status: str):
         tarefa = db.query(Tarefa).filter(Tarefa.id == tarefa_id).first()
@@ -166,18 +196,14 @@ class RegistrosService:
         # 1. Fixadas
         fixadas = db.query(Anotacao).filter(Anotacao.fixado == True).all()
         
-        # 2. Por Mês (Não fixadas) - Agora agruparemos por GRUPO no Front, mas o back manda tudo
-        # Para facilitar, vamos mandar apenas a lista completa de não fixadas e o front organiza
-        # Mas para manter compatibilidade com o código atual, vamos manter a estrutura
-        
-        # Ajuste: Buscar todas não fixadas
+        # 2. Por Mês (Não fixadas)
         nao_fixadas = db.query(Anotacao).filter(Anotacao.fixado == False).order_by(Anotacao.data_criacao.desc()).all()
         
-        # Agrupamento por Mês (Para o front antigo ou lógica atual)
+        # Agrupamento por Mês
         por_mes = {}
         for nota in nao_fixadas:
             mes_ano = nota.data_criacao.strftime("%B %Y").capitalize() # Ex: Outubro 2023
-            # Tradução simples manual ou usar locale
+            # Tradução simples manual
             meses_pt = {
                 'January': 'Janeiro', 'February': 'Fevereiro', 'March': 'Março', 'April': 'Abril',
                 'May': 'Maio', 'June': 'Junho', 'July': 'Julho', 'August': 'Agosto',
