@@ -1,104 +1,146 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createGrupo, updateGrupo } from '../../../services/api';
+import { useToast } from '../../../context/ToastContext';
 import '../styles.css';
 
-export function GrupoModal({ active, closeModal, onUpdate, editingData }) {
-    const [nome, setNome] = useState('');
-    const [cor, setCor] = useState('#3b82f6');
-    const [loading, setLoading] = useState(false);
+const PRESET_COLORS = [
+    '#ef4444', '#f97316', '#f59e0b', '#eab308', 
+    '#84cc16', '#10b981', '#06b6d4', '#0ea5e9', 
+    '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', 
+    '#f43f5e', '#64748b', '#78716c'
+];
 
-    // Cores pré-definidas para facilitar
-    const coresPredefinidas = [
-        '#3b82f6', // Azul
-        '#ef4444', // Vermelho
-        '#10b981', // Verde
-        '#f59e0b', // Laranja
-        '#8b5cf6', // Roxo
-        '#ec4899', // Rosa
-        '#64748b'  // Cinza
-    ];
+export function GrupoModal({ active, closeModal, onUpdate, editingData, existingGroups = [] }) {
+    const { addToast } = useToast();
+    
+    const [nome, setNome] = useState('');
+    const [cor, setCor] = useState(PRESET_COLORS[0]);
+    const [showColorPicker, setShowColorPicker] = useState(false);
+    const [loading, setLoading] = useState(false);
+    
+    // Ref idêntico ao Finanças para fechar ao clicar fora
+    const colorWrapperRef = useRef(null);
 
     useEffect(() => {
         if (active) {
             if (editingData) {
                 setNome(editingData.nome);
-                setCor(editingData.cor || '#3b82f6');
+                setCor(editingData.cor);
             } else {
                 setNome('');
-                setCor('#3b82f6');
+                const used = existingGroups.map(g => g.cor);
+                const firstAvailable = PRESET_COLORS.find(c => !used.includes(c)) || PRESET_COLORS[0];
+                setCor(firstAvailable);
+            }
+            setShowColorPicker(false);
+        }
+    }, [active, editingData, existingGroups]);
+
+    // Listener para fechar o picker (Cópia exata da lógica do Finanças)
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (showColorPicker && colorWrapperRef.current && !colorWrapperRef.current.contains(event.target)) {
+                setShowColorPicker(false);
             }
         }
-    }, [active, editingData]);
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => { document.removeEventListener("mousedown", handleClickOutside); };
+    }, [showColorPicker]);
 
-    const handleSave = async () => {
+    if (!active) return null;
+
+    const availableColors = PRESET_COLORS.filter(c => {
+        if (editingData && editingData.cor === c) return true; 
+        return !existingGroups.some(g => g.cor === c);
+    });
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
         if (!nome.trim()) return;
-
         setLoading(true);
-        // Aqui simula a chamada (você deve ter essas funções no seu api.ts)
-        // Se não tiver, precisa criar: createGrupo e updateGrupo
         try {
-            const { createGrupo, updateGrupo } = await import('../../../services/api');
-            
             if (editingData) {
                 await updateGrupo(editingData.id, { nome, cor });
+                addToast({type:'success', title:'Atualizado', description:'Grupo alterado.'});
             } else {
                 await createGrupo({ nome, cor });
+                addToast({type:'success', title:'Criado', description:'Novo grupo adicionado.'});
             }
             onUpdate();
             closeModal();
         } catch (error) {
-            console.error("Erro ao salvar grupo:", error);
-            alert("Erro ao salvar grupo.");
+            console.error(error);
+            addToast({type:'error', title:'Erro', description:'Falha ao salvar grupo.'});
         } finally {
             setLoading(false);
         }
     };
 
-    if (!active) return null;
-
     return (
         <div className="modal-overlay registros-scope">
-            <div className="modal-content small-modal">
+            {/* Adicionado overflow: visible inline para garantir que nada corte o popup */}
+            <div className="modal-content" onClick={e => e.stopPropagation()} style={{maxWidth:'450px', overflow: 'visible'}}>
                 <div className="modal-header">
                     <h2>{editingData ? 'Editar Grupo' : 'Novo Grupo'}</h2>
-                    <button className="close-btn" onClick={closeModal}><i className="fa-solid fa-times"></i></button>
+                    <span className="close-btn" onClick={closeModal}>&times;</span>
                 </div>
                 
-                <div className="modal-body">
-                    <div className="form-group">
-                        <label>Nome do Grupo</label>
-                        <input 
-                            type="text" 
-                            className="form-input" 
-                            value={nome} 
-                            onChange={(e) => setNome(e.target.value)}
-                            placeholder="Ex: Pessoal, Trabalho..."
-                            maxLength={30}
-                        />
-                    </div>
+                <form onSubmit={handleSubmit}>
+                    {/* Overflow visible aqui também é crucial */}
+                    <div className="modal-body" style={{overflow: 'visible'}}> 
+                        
+                        <div className="form-row" style={{display:'grid', gridTemplateColumns:'1fr auto', alignItems:'end', gap:'15px'}}>
+                            
+                            <div className="form-group">
+                                <label>Nome do Grupo</label>
+                                <input 
+                                    className="form-input" 
+                                    value={nome} 
+                                    onChange={e => setNome(e.target.value)} 
+                                    placeholder="Ex: Estudos..."
+                                    required 
+                                    autoFocus 
+                                />
+                            </div>
 
-                    <div className="form-group">
-                        <label>Cor da Etiqueta</label>
-                        <div className="color-picker-container">
-                            {coresPredefinidas.map(c => (
-                                <div 
-                                    key={c}
-                                    className={`color-circle ${cor === c ? 'selected' : ''}`}
-                                    style={{backgroundColor: c}}
-                                    onClick={() => setCor(c)}
-                                >
-                                    {cor === c && <i className="fa-solid fa-check"></i>}
+                            {/* ESTRUTURA IDÊNTICA AO FINANÇAS */}
+                            <div className="form-group" style={{width: 'auto'}}>
+                                <label>Cor</label>
+                                <div className="picker-wrapper" ref={colorWrapperRef}>
+                                    <div className="picker-preview" onClick={() => setShowColorPicker(!showColorPicker)}>
+                                        <div style={{ width: 20, height: 20, borderRadius: '50%', backgroundColor: cor }}></div>
+                                    </div>
+                                    
+                                    {showColorPicker && (
+                                        <div className="picker-popover color-grid visible" style={{right: 0, top: '110%'}}>
+                                            {availableColors.map(c => (
+                                                <div 
+                                                    key={c} 
+                                                    className="color-swatch" 
+                                                    style={{backgroundColor: c}} 
+                                                    onClick={() => { setCor(c); setShowColorPicker(false); }}
+                                                ></div>
+                                            ))}
+                                            {availableColors.length === 0 && (
+                                                <p style={{gridColumn:'span 5', fontSize:'0.7rem', color:'#999', textAlign:'center', padding:'5px'}}>
+                                                    Uso total.
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
-                            ))}
+                            </div>
+
                         </div>
                     </div>
-                </div>
 
-                <div className="modal-footer">
-                    <button className="btn-secondary" onClick={closeModal}>Cancelar</button>
-                    <button className="btn-primary" onClick={handleSave} disabled={loading}>
-                        {loading ? <i className="fa-solid fa-spinner fa-spin"></i> : (editingData ? 'Salvar' : 'Criar')}
-                    </button>
-                </div>
+                    <div className="modal-footer">
+                        <button type="button" className="btn-secondary" onClick={closeModal}>Cancelar</button>
+                        <button type="submit" className="btn-primary" disabled={loading}>
+                            {loading ? 'Salvando...' : 'Salvar'}
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     );

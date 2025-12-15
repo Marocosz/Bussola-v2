@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, case
 from app.models.registros import GrupoAnotacao, Anotacao, Link, Tarefa, Subtarefa
 from datetime import datetime
 
@@ -190,6 +190,7 @@ class RegistrosService:
 
     # --- DASHBOARD ---
     def get_dashboard_data(self, db: Session):
+        # 1. Anotações (Mantido igual)
         fixadas = db.query(Anotacao).filter(Anotacao.fixado == True).all()
         nao_fixadas = db.query(Anotacao).filter(Anotacao.fixado == False).order_by(Anotacao.data_criacao.desc()).all()
         
@@ -204,7 +205,22 @@ class RegistrosService:
             if mes_ano not in por_mes: por_mes[mes_ano] = []
             por_mes[mes_ano].append(nota)
 
-        t_pendentes = db.query(Tarefa).filter(Tarefa.status != 'Concluído').all()
+        # 2. Tarefas Pendentes (ORDENAÇÃO INTELIGENTE)
+        # Prioridade: Crítica (1) > Alta (2) > Média (3) > Baixa (4)
+        # Desempate: Prazo (Mais urgente primeiro, nulos por último)
+        ordenacao_prioridade = case(
+            (Tarefa.prioridade == 'Crítica', 1),
+            (Tarefa.prioridade == 'Alta', 2),
+            (Tarefa.prioridade == 'Média', 3),
+            (Tarefa.prioridade == 'Baixa', 4),
+            else_=5
+        )
+
+        t_pendentes = db.query(Tarefa)\
+            .filter(Tarefa.status != 'Concluído')\
+            .order_by(ordenacao_prioridade.asc(), Tarefa.prazo.asc().nullslast(), Tarefa.id.desc())\
+            .all()
+
         t_concluidas = db.query(Tarefa).filter(Tarefa.status == 'Concluído').order_by(Tarefa.data_conclusao.desc()).limit(10).all()
         grupos = db.query(GrupoAnotacao).all()
 

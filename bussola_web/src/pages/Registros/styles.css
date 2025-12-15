@@ -1,5 +1,5 @@
 /* ==========================================================================
-   REGISTROS (ANOTAÇÕES & TAREFAS) - CSS FINAL
+   REGISTROS (ANOTAÇÕES & TAREFAS) - CSS COMPLETO
    ========================================================================== */
 
 .registros-scope.main-container {
@@ -8,11 +8,10 @@
     box-sizing: border-box;
 }
 
-/* --- SCROLLBARS LIMPAS --- */
+/* --- SCROLLBARS --- */
 .registros-scope .column-scroll-content {
     padding-top: 0.5rem;
     overflow: visible;
-    /* Deixa a página crescer */
     height: auto;
 }
 
@@ -112,6 +111,8 @@
     position: relative;
     min-height: 60px;
     margin-bottom: 2rem;
+    z-index: 20;
+    /* Importante para o dropdown ficar por cima */
 }
 
 .registros-scope .column-header-flex:hover {
@@ -132,10 +133,8 @@
     color: var(--cor-texto-principal);
 }
 
-/* Overlap Tricks */
 .registros-scope .column-anotacoes {
     padding-left: 0;
-    z-index: 10;
 }
 
 .registros-scope .column-anotacoes .column-header-flex {
@@ -174,7 +173,7 @@
 }
 
 /* ============================================= */
-/* 4. DROPDOWN (ESTILO FINANÇAS - COPY)          */
+/* 4. DROPDOWN (ESTILO FINANÇAS)                 */
 /* ============================================= */
 .registros-scope .custom-dropdown-wrapper {
     position: relative;
@@ -202,16 +201,21 @@
     border-color: var(--cor-texto-secundario);
 }
 
+.registros-scope .dropdown-trigger-btn.active {
+    border-color: var(--cor-azul-primario);
+    color: var(--cor-azul-primario);
+}
+
 .registros-scope .dropdown-backdrop {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    z-index: 99;
+    z-index: 98;
+    cursor: default;
 }
 
-/* Menu Dropdown - Estilo Idêntico ao .dropdown-menu de Finanças */
 .registros-scope .custom-dropdown-menu {
     position: absolute;
     top: 115%;
@@ -221,26 +225,25 @@
     border: 1px solid var(--cor-borda);
     border-radius: 10px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-    /* Sombra mais forte igual Finanças */
-    z-index: 99999;
+    z-index: 100;
     padding: 0.5rem;
-    /* Padding geral igual Finanças */
     animation: fadeInDropdown 0.2s ease;
 }
 
 @keyframes fadeInDropdown {
     from {
         opacity: 0;
+        transform: translateY(-5px);
     }
 
     to {
         opacity: 1;
+        transform: translateY(0);
     }
 }
 
 .registros-scope .dropdown-action-row {
     padding: 0.8rem 1rem;
-    /* Igual dropdown a */
     display: flex;
     align-items: center;
     gap: 12px;
@@ -278,20 +281,30 @@
     max-height: 280px;
     overflow-y: auto;
     scrollbar-width: thin;
+    scrollbar-color: var(--cor-borda) transparent;
 }
 
 .registros-scope .dropdown-scroll-area::-webkit-scrollbar {
-    width: 4px;
+    width: 6px;
+}
+
+.registros-scope .dropdown-scroll-area::-webkit-scrollbar-track {
+    background: transparent;
 }
 
 .registros-scope .dropdown-scroll-area::-webkit-scrollbar-thumb {
-    background: var(--cor-borda);
-    border-radius: 4px;
+    background-color: var(--cor-borda);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+.registros-scope .dropdown-scroll-area::-webkit-scrollbar-thumb:hover {
+    background-color: var(--cor-texto-secundario);
 }
 
 .registros-scope .dropdown-item {
     padding: 0.8rem 1rem;
-    /* Igual dropdown a */
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -337,9 +350,8 @@
     opacity: 1;
 }
 
-
 /* ============================================= */
-/* 5. ACCORDION & CONTEÚDO (CORREÇÃO DO BUG)     */
+/* 5. ACCORDION & CONTEÚDO                       */
 /* ============================================= */
 .registros-scope .group-accordion {
     margin-bottom: 2rem;
@@ -358,7 +370,6 @@
     user-select: none;
     position: relative;
     z-index: 2;
-    /* Garante que o header fique sobre o conteúdo */
 }
 
 .registros-scope .accordion-header:hover,
@@ -416,9 +427,7 @@
 }
 
 .registros-scope .accordion-inner {
-    /* AQUI ESTÁ A CORREÇÃO DO BUG: */
     overflow: hidden;
-    /* Corta o conteúdo quando fechado, impedindo cliques fantasmas */
     min-height: 0;
 }
 
@@ -433,461 +442,8 @@
     gap: 1.5rem;
 }
 
-
 /* ============================================= */
-/* 7. MODAIS (DESIGN CORRIGIDO VIEW + EDIT)      */
-/* ============================================= */
-
-.registros-scope .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.65);
-    backdrop-filter: blur(5px);
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: fadeInOverlay 0.2s ease-out;
-}
-
-/* Base do Modal */
-.registros-scope .modal-content,
-.registros-scope .view-modal {
-    background: var(--cor-card-principal);
-    width: 95%;
-    max-width: 700px;
-    border-radius: 16px;
-    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
-    display: flex;
-    flex-direction: column;
-    max-height: 90vh;
-    animation: scaleInModal 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    overflow: hidden;
-}
-
-/* Header Geral */
-.registros-scope .modal-header,
-.registros-scope .view-modal-header {
-    padding: 1.2rem 2rem;
-    border-bottom: 1px solid var(--cor-borda);
-    background: var(--cor-card-secundario);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.registros-scope .modal-header h2 {
-    font-size: 1.3rem;
-    margin: 0;
-    color: var(--cor-texto-principal);
-}
-
-/* --- BOTÃO FECHAR (X) - LIMPO IGUAL FINANÇAS --- */
-.registros-scope .close-btn {
-    background: none;
-    border: none;
-    padding: 0;
-
-    font-size: 1.5rem;
-    color: var(--cor-texto-secundario);
-    cursor: pointer;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-
-    transition: color 0.2s;
-
-    /* Garante que não tenha tamanho fixo p/ formar quadrado/círculo */
-    width: auto;
-    height: auto;
-}
-
-.registros-scope .close-btn:hover {
-    color: var(--cor-texto-principal);
-    background: none;
-    /* Garante que não apareça fundo */
-    box-shadow: none;
-}
-
-/* --- VIEW MODAL ESPECÍFICO --- */
-.registros-scope .view-modal-header {
-    flex-direction: column;
-    align-items: stretch;
-}
-
-.registros-scope .view-header-top-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.registros-scope .view-group-badge {
-    color: white;
-    padding: 5px 14px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.registros-scope .view-title {
-    font-size: 1.8rem;
-    color: var(--cor-texto-principal);
-    margin: 0 0 0.5rem 0;
-    font-weight: 800;
-    line-height: 1.2;
-}
-
-.registros-scope .view-date {
-    font-size: 0.9rem;
-    color: var(--cor-texto-secundario);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.registros-scope .view-body {
-    padding: 2rem;
-    overflow-y: auto;
-    font-size: 1.05rem;
-    line-height: 1.8;
-    color: var(--cor-texto-principal);
-    scrollbar-width: thin;
-}
-
-.registros-scope .view-body::-webkit-scrollbar {
-    width: 6px;
-}
-
-.registros-scope .view-body::-webkit-scrollbar-thumb {
-    background-color: var(--cor-borda);
-    border-radius: 4px;
-}
-
-.registros-scope .view-content-html p {
-    margin-bottom: 1rem;
-}
-
-.registros-scope .view-content-html ul,
-.registros-scope .view-content-html ol {
-    margin-bottom: 1rem;
-    padding-left: 1.5rem;
-}
-
-.registros-scope .view-links-container {
-    margin-top: 2.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px dashed var(--cor-borda);
-}
-
-.registros-scope .link-item-view {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    background: var(--cor-fundo);
-    border: 1px solid var(--cor-borda);
-    border-radius: 8px;
-    text-decoration: none;
-    color: var(--cor-azul-primario);
-    transition: all 0.2s;
-    font-size: 0.9rem;
-}
-
-.registros-scope .modal-footer {
-    padding: 1.5rem 2rem;
-    border-top: 1px solid var(--cor-borda);
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-    background-color: var(--cor-card-secundario);
-}
-
-/* --- EDIT MODAL (Inputs & Quill) --- */
-.registros-scope .large-modal {
-    max-width: 800px;
-    height: 85vh;
-}
-
-.registros-scope .modal-body {
-    padding: 1.5rem 2rem;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 1.2rem;
-    flex: 1;
-    scrollbar-width: thin;
-}
-
-.registros-scope .form-row {
-    display: flex;
-    gap: 1.5rem;
-    flex-shrink: 0;
-}
-
-.registros-scope .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.registros-scope .form-input {
-    height: 45px;
-    padding: 0 12px;
-    padding-right: 35px;
-    border: 1px solid var(--cor-borda);
-    border-radius: 8px;
-    background: var(--cor-fundo);
-    color: var(--cor-texto-principal);
-    font-size: 1rem;
-}
-
-/* React Quill Fixo */
-.registros-scope .editor-container {
-    display: flex;
-    flex-direction: column;
-    height: 350px !important;
-    min-height: 350px;
-    max-height: 350px;
-    margin-bottom: 1rem;
-    flex-shrink: 0;
-}
-
-.registros-scope .custom-quill-editor,
-.registros-scope .quill {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-.registros-scope .ql-toolbar {
-    border: 1px solid var(--cor-borda) !important;
-    border-radius: 8px 8px 0 0;
-    background: var(--cor-fundo);
-    flex-shrink: 0;
-    z-index: 2;
-}
-
-.registros-scope .ql-container {
-    border: 1px solid var(--cor-borda) !important;
-    border-top: none !important;
-    border-radius: 0 0 8px 8px;
-    background: var(--cor-fundo);
-    font-size: 1rem;
-    color: var(--cor-texto-principal);
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    height: auto !important;
-    overflow: hidden;
-}
-
-.registros-scope .ql-editor {
-    flex: 1;
-    height: 100%;
-    overflow-y: auto !important;
-    padding: 1rem;
-    scrollbar-width: thin;
-}
-
-/* Links */
-.registros-scope .links-manager-section {
-    background: var(--cor-card-secundario);
-    padding: 1rem 1.5rem;
-    border-radius: 12px;
-    border: 1px solid var(--cor-borda);
-    flex-shrink: 0;
-}
-
-.registros-scope .section-label {
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: var(--cor-texto-principal);
-    display: block;
-    margin-bottom: 8px;
-}
-
-.registros-scope .add-link-row {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 0.5rem;
-}
-
-.registros-scope .link-input {
-    flex: 1;
-    height: 38px;
-    font-size: 0.9rem;
-}
-
-.registros-scope .btn-add-link {
-    white-space: nowrap;
-    height: 38px;
-    padding: 0 15px;
-}
-
-.registros-scope .links-list-edit {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    max-height: 100px;
-    overflow-y: auto;
-    scrollbar-width: thin;
-}
-
-.registros-scope .links-list-edit li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--cor-card-principal);
-    padding: 6px 12px;
-    border-radius: 6px;
-    border: 1px solid var(--cor-borda);
-}
-
-/* Footer Custom */
-.registros-scope .modal-footer-custom {
-    padding: 1.2rem 2rem;
-    border-top: 1px solid var(--cor-borda);
-    background-color: var(--cor-card-secundario);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.registros-scope .footer-buttons {
-    display: flex;
-    gap: 10px;
-}
-
-.registros-scope .checkbox-footer {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    font-size: 0.9rem;
-    color: var(--cor-texto-secundario);
-    font-weight: 600;
-}
-
-.registros-scope .checkbox-footer input {
-    display: none;
-}
-
-.registros-scope .checkmark-footer {
-    height: 18px;
-    width: 18px;
-    background-color: var(--cor-fundo);
-    border: 1px solid var(--cor-borda);
-    border-radius: 4px;
-    margin-right: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.registros-scope .checkbox-footer input:checked~.checkmark-footer {
-    background-color: var(--cor-azul-primario);
-    border-color: var(--cor-azul-primario);
-    color: white;
-}
-
-.registros-scope .checkbox-footer input:checked~.checkmark-footer::after {
-    content: "\f00c";
-    font-family: "Font Awesome 6 Free";
-    font-weight: 900;
-    font-size: 0.7rem;
-    display: block;
-}
-
-/* Custom Select CSS */
-.registros-scope .custom-select-trigger {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    height: 45px;
-    padding: 0 15px;
-    border: 1px solid var(--cor-borda);
-    border-radius: 8px;
-    background-color: var(--cor-fundo);
-    cursor: pointer;
-    font-size: 1rem;
-    color: var(--cor-texto-principal);
-    transition: all 0.2s;
-    user-select: none;
-}
-
-.registros-scope .custom-select-trigger:hover {
-    border-color: var(--cor-texto-secundario);
-}
-
-.registros-scope .custom-select-trigger.open {
-    border-color: var(--cor-azul-primario);
-    box-shadow: 0 0 0 3px rgba(74, 109, 255, 0.1);
-}
-
-.registros-scope .arrow-icon {
-    font-size: 0.8rem;
-    color: var(--cor-texto-secundario);
-    transition: transform 0.2s;
-}
-
-.registros-scope .custom-select-trigger.open .arrow-icon {
-    transform: rotate(180deg);
-}
-
-.registros-scope .custom-select-options {
-    position: absolute;
-    top: calc(100% + 5px);
-    left: 0;
-    right: 0;
-    background-color: var(--cor-card-principal);
-    border: 1px solid var(--cor-borda);
-    border-radius: 10px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    z-index: 1000;
-    max-height: 200px;
-    overflow-y: auto;
-    padding: 5px;
-    animation: fadeInDropdown 0.1s ease-out;
-}
-
-.registros-scope .custom-option {
-    padding: 10px 12px;
-    font-size: 0.95rem;
-    color: var(--cor-texto-principal);
-    border-radius: 6px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.registros-scope .custom-option:hover,
-.registros-scope .custom-option.selected {
-    background-color: var(--cor-azul-primario);
-    color: white;
-}
-
-.registros-scope .option-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    display: inline-block;
-}
-
-
-/* ============================================= */
-/* 6. CARD DE ANOTAÇÃO (REVERTIDO AO ORIGINAL)   */
+/* 6. CARD DE ANOTAÇÃO                           */
 /* ============================================= */
 .registros-scope .anotacao-card {
     background: var(--cor-card-principal);
@@ -895,7 +451,6 @@
     border-radius: 16px;
     border-left-width: 6px;
     border-left-style: solid;
-    /* SEM altura fixa, cresce com o conteúdo */
     padding: 1.5rem;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
@@ -946,6 +501,11 @@
 .registros-scope .anotacao-actions {
     display: flex;
     gap: 8px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.registros-scope .anotacao-card:hover .anotacao-actions {
     opacity: 1;
 }
 
@@ -956,7 +516,6 @@
     max-height: 100px;
     overflow: hidden;
     position: relative;
-    /* Mantém o fade se quiser, ou remova max-height */
 }
 
 .registros-scope .anotacao-footer {
@@ -1001,9 +560,8 @@
     gap: 6px;
 }
 
-
 /* ============================================= */
-/* 7. MODAIS (ESTILO IDÊNTICO FINANÇAS)          */
+/* 7. MODAIS (GERAL)                             */
 /* ============================================= */
 
 .registros-scope .modal-overlay {
@@ -1031,11 +589,22 @@
     flex-direction: column;
     max-height: 90vh;
     animation: scaleInModal 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    overflow: visible;
-    /* Necessário para dropdowns */
+    
+    /* IMPORTANTE: Padrão é hidden para scroll interno funcionar */
+    overflow: hidden; 
 }
 
-/* --- HEADER --- */
+/* EXCEÇÃO: Modais compactos (como GrupoModal) PRECISAM de visible para o popup de cor sair */
+.registros-scope .modal-content.compact-modal {
+    overflow: visible !important;
+    max-height: none; /* Remove limite de altura para não cortar */
+}
+
+/* Garante que o corpo do modal compacto também não corte */
+.registros-scope .modal-content.compact-modal .modal-body {
+    overflow: visible !important;
+}
+
 .registros-scope .modal-header,
 .registros-scope .view-modal-header {
     padding: 1.25rem 1.5rem;
@@ -1054,15 +623,12 @@
     color: var(--cor-texto-principal);
 }
 
-/* --- BOTÃO FECHAR (X) - IGUAL FINANÇAS --- */
 .registros-scope .close-btn {
     color: var(--cor-texto-secundario);
     font-size: 1.5rem;
     cursor: pointer;
     line-height: 1;
-    /* Garante alinhamento vertical */
     transition: color 0.2s;
-    /* Reset de botão caso seja tag button, mas usaremos span */
     background: none;
     border: none;
     padding: 0;
@@ -1072,8 +638,6 @@
     color: var(--cor-texto-principal);
 }
 
-
-/* --- BODY --- */
 .registros-scope .large-modal {
     max-width: 800px;
     height: 85vh;
@@ -1090,6 +654,11 @@
     scrollbar-color: var(--cor-borda) transparent;
 }
 
+/* Para modal de grupo, o corpo precisa ser visível */
+.registros-scope .modal-content.compact-modal .modal-body {
+    overflow: visible !important;
+}
+
 .registros-scope .modal-body::-webkit-scrollbar {
     width: 6px;
 }
@@ -1099,7 +668,6 @@
     border-radius: 4px;
 }
 
-/* Inputs e Forms */
 .registros-scope .form-row {
     display: flex;
     gap: 1.5rem;
@@ -1135,8 +703,7 @@
     outline: none;
 }
 
-
-/* --- CUSTOM SELECT --- */
+/* --- CUSTOM SELECT E PICKERS --- */
 .registros-scope .custom-select-trigger {
     display: flex;
     justify-content: space-between;
@@ -1223,6 +790,74 @@
     display: inline-block;
 }
 
+/* --- SELETOR DE COR ESTILO FINANÇAS (NOVO) --- */
+.registros-scope .picker-wrapper {
+    position: relative;
+    /* Necessário para o popover se posicionar em relação a ele */
+}
+
+.registros-scope .picker-preview {
+    width: 45px;
+    height: 45px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: var(--cor-fundo);
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.registros-scope .picker-preview:hover {
+    border-color: var(--cor-azul-primario);
+    transform: scale(1.02);
+}
+
+.registros-scope .picker-popover {
+    position: absolute;
+    background: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    padding: 12px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    z-index: 9999;
+    /* Z-index alto */
+    display: none;
+    gap: 8px;
+    width: max-content;
+    max-width: 240px;
+    animation: fadeInDropdown 0.2s ease;
+}
+
+.registros-scope .picker-popover.visible {
+    display: grid;
+}
+
+.registros-scope .picker-popover.color-grid {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+.registros-scope .color-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s, border 0.2s;
+    border: 2px solid transparent;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.registros-scope .color-swatch:hover {
+    transform: scale(1.15);
+    border-color: var(--cor-texto-principal);
+    z-index: 2;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
 
 /* --- REACT QUILL FIXO --- */
 .registros-scope .editor-container {
@@ -1365,7 +1000,7 @@
 
 /* Footer Modal */
 .registros-scope .modal-footer-custom {
-    padding: 1.2rem 1.5rem;
+    padding: 1.2rem 2rem;
     border-top: 1px solid var(--cor-borda);
     background-color: var(--cor-fundo);
     border-radius: 0 0 16px 16px;
@@ -1514,7 +1149,6 @@
     border-radius: 0 0 16px 16px;
 }
 
-/* Animacoes Modais */
 @keyframes fadeInOverlay {
     from {
         opacity: 0;
@@ -1538,10 +1172,8 @@
 }
 
 /* ============================================= */
-/* 8. BOTÕES DE AÇÃO UNIFICADOS (Estilo Finanças) */
+/* 8. BOTÕES DE AÇÃO UNIFICADOS                  */
 /* ============================================= */
-
-/* Estilo Base do Botão Quadrado (Substitui o antigo) */
 .registros-scope .btn-action-icon {
     width: 32px !important;
     height: 32px !important;
@@ -1550,7 +1182,6 @@
     background: transparent;
     border: 1px solid var(--cor-borda) !important;
     border-radius: 6px !important;
-    /* Quadrado arredondado */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1559,14 +1190,12 @@
     transition: all 0.2s;
 }
 
-/* Hover Específico - EDITAR (Laranja/Amarelo) */
 .registros-scope .btn-edit:hover {
     background-color: #f59e0b !important;
     border-color: #f59e0b !important;
     color: #fff !important;
 }
 
-/* Hover Específico - EXCLUIR (Vermelho) */
 .registros-scope .btn-delete:hover {
     background-color: var(--cor-vermelho-delete) !important;
     border-color: var(--cor-vermelho-delete) !important;
@@ -1577,7 +1206,6 @@
 /* 9. TAREFAS (DESIGN MODERNO & REFINADO)        */
 /* ============================================= */
 
-/* Lista Principal */
 .registros-scope .tarefas-list {
     display: flex;
     flex-direction: column;
@@ -1585,7 +1213,6 @@
     padding-bottom: 2rem;
 }
 
-/* Empty State */
 .registros-scope .empty-state {
     text-align: center;
     padding: 3rem;
@@ -1602,26 +1229,42 @@
     opacity: 0.4;
 }
 
-/* Seção Concluídas */
 .registros-scope .concluidas-section {
-    margin-top: 2.5rem;
-    opacity: 0.7;
-    transition: opacity 0.2s;
+    margin-top: 2rem;
+    border-top: 1px dashed var(--cor-borda);
+    padding-top: 1rem;
 }
 
-.registros-scope .concluidas-section:hover {
-    opacity: 1;
-}
-
-.registros-scope .concluidas-title {
-    font-size: 0.8rem;
+.registros-scope .concluidas-header-accordion {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.8rem 0;
     color: var(--cor-texto-secundario);
-    margin-bottom: 1rem;
+    font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 1px;
     font-weight: 700;
-    border-bottom: 1px solid var(--cor-borda);
-    padding-bottom: 6px;
+    transition: color 0.2s;
+    user-select: none;
+}
+
+.registros-scope .concluidas-header-accordion:hover,
+.registros-scope .concluidas-header-accordion.active {
+    color: var(--cor-azul-primario);
+}
+
+.registros-scope .concluidas-header-accordion i {
+    transition: transform 0.3s ease;
+}
+
+.registros-scope .concluidas-header-accordion.active i {
+    transform: rotate(180deg);
+}
+
+.registros-scope .concluidas-content-wrapper {
+    animation: fadeIn 0.3s ease;
 }
 
 /* --- CARD DE TAREFA --- */
@@ -1650,7 +1293,12 @@
     opacity: 0.75;
 }
 
-/* Header: Check + Título + Meta */
+/* Card Atrasado (Borda Vermelha) */
+.registros-scope .tarefa-card.card-atrasado {
+    border-color: var(--cor-vermelho-delete);
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.1);
+}
+
 .registros-scope .tarefa-header {
     display: flex;
     align-items: flex-start;
@@ -1717,7 +1365,6 @@
     text-overflow: ellipsis;
 }
 
-/* Meta Info (Prioridade e Prazo) */
 .registros-scope .tarefa-meta {
     display: flex;
     align-items: center;
@@ -1773,7 +1420,6 @@
     background: rgba(239, 68, 68, 0.05);
 }
 
-/* Ações (Edit/Delete) */
 .registros-scope .tarefa-actions {
     display: flex;
     gap: 6px;
@@ -1785,10 +1431,10 @@
     opacity: 1;
 }
 
-/* --- SEÇÃO DE PROGRESSO E SUBTAREFAS NO CARD --- */
 .registros-scope .subtarefas-container {
     margin-top: 1rem;
-    padding-top: 1rem;
+    padding-top: 0.5rem;
+    border-top: none;
 }
 
 .registros-scope .progresso-header {
@@ -1814,7 +1460,6 @@
 
 .registros-scope .progress-bar-bg {
     height: 8px;
-    /* Barra mais visível */
     background: var(--cor-fundo-hover);
     border-radius: 4px;
     flex: 1;
@@ -1828,7 +1473,6 @@
     transition: width 0.4s ease;
 }
 
-/* Lista no Card */
 .registros-scope .subtarefas-list {
     list-style: none;
     padding: 0;
@@ -1847,28 +1491,20 @@
     background-color: var(--cor-fundo-hover);
 }
 
-
-/* ============================================= */
-/* MODAL TAREFA - ÁRVORE DE SUBTAREFAS (NOVO)    */
-/* ============================================= */
-
-/* Container da Árvore */
+/* --- MODAL TAREFA - ÁRVORE DE SUBTAREFAS --- */
 .registros-scope .subtasks-tree-container {
     display: flex;
     flex-direction: column;
     gap: 8px;
     margin-top: 10px;
-    /* Sem overflow hidden aqui para permitir que o modal cresça */
 }
 
-/* Nó da Árvore */
 .registros-scope .tree-node {
     display: flex;
     flex-direction: column;
     position: relative;
 }
 
-/* Conteúdo do Item (Linha) */
 .registros-scope .tree-item-content {
     display: flex;
     justify-content: space-between;
@@ -1906,7 +1542,6 @@
     margin-left: 10px;
 }
 
-/* ESTILIZAÇÃO DOS BOTÕES DA ÁRVORE (NOVO) */
 .registros-scope .tree-actions .btn-icon-sm {
     background: transparent;
     border: 1px solid transparent;
@@ -1938,7 +1573,6 @@
     font-size: 0.85rem;
 }
 
-/* Container Filhos (Recuo e Linha) */
 .registros-scope .tree-children {
     margin-left: 20px;
     padding-left: 10px;
@@ -1949,7 +1583,6 @@
     gap: 8px;
 }
 
-/* Input para adicionar filho */
 .registros-scope .add-child-input-row {
     display: flex;
     gap: 6px;
@@ -1958,7 +1591,6 @@
     animation: fadeIn 0.2s ease;
 }
 
-/* Botões do Input aninhado (Check e X) */
 .registros-scope .add-child-input-row button {
     cursor: pointer;
     border-radius: 6px;
@@ -1989,7 +1621,6 @@
     border-color: var(--cor-vermelho-delete);
 }
 
-/* Empty State do Modal */
 .registros-scope .empty-tree-msg {
     text-align: center;
     padding: 2rem;
@@ -2001,8 +1632,90 @@
     background: var(--cor-fundo-hover);
 }
 
-/* Card Atrasado (Borda Vermelha) */
-.registros-scope .tarefa-card.card-atrasado {
-    border-color: var(--cor-vermelho-delete);
-    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.1);
+@media (max-width: 900px) {
+    .registros-scope .registros-layout {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    .registros-scope .registros-column {
+        padding: 0;
+        overflow: visible;
+    }
+
+    .registros-scope .column-anotacoes .column-header-flex,
+    .registros-scope .column-tarefas .column-header-flex {
+        margin-left: 0;
+        margin-right: 0;
+        border-radius: 12px;
+    }
+}
+
+/* ============================================= */
+/* 10. SELETORES DE COR/ÍCONE (CÓPIA FINANÇAS)   */
+/* ============================================= */
+
+.registros-scope .picker-wrapper {
+    position: relative;
+}
+
+.registros-scope .picker-preview {
+    width: 45px;
+    height: 45px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: var(--cor-fundo);
+    font-size: 1.2rem;
+    transition: all 0.2s;
+    box-sizing: border-box; /* Garante tamanho correto */
+}
+
+.registros-scope .picker-preview:hover {
+    border-color: var(--cor-azul-primario);
+}
+
+.registros-scope .picker-popover {
+    position: absolute;
+    background: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    padding: 12px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+    z-index: 3000; /* Z-index alto para flutuar */
+    display: none;
+    gap: 8px;
+    width: max-content;
+    max-width: 260px;
+    animation: fadeInDropdown 0.2s ease;
+}
+
+.registros-scope .picker-popover.visible {
+    display: grid;
+}
+
+.registros-scope .picker-popover.color-grid {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+.registros-scope .color-swatch {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s, background 0.2s;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.registros-scope .color-swatch:hover {
+    transform: scale(1.15);
+    border-color: white;
+    z-index: 2;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }

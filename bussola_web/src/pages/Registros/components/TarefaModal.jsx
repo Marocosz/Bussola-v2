@@ -4,7 +4,8 @@ import { useToast } from '../../../context/ToastContext';
 import '../styles.css';
 
 // --- COMPONENTE RECURSIVO PARA O MODAL (VISUAL ÁRVORE) ---
-const ModalSubtaskEdit = ({ sub, index, path, onUpdate, onDelete, onAddChild }) => {
+// ALTERAÇÃO 1: Recebe 'level' como prop, padrão 0
+const ModalSubtaskEdit = ({ sub, index, path, onUpdate, onDelete, onAddChild, level = 0 }) => {
     const [isAdding, setIsAdding] = useState(false);
     const [newChildTitle, setNewChildTitle] = useState('');
 
@@ -29,9 +30,13 @@ const ModalSubtaskEdit = ({ sub, index, path, onUpdate, onDelete, onAddChild }) 
                 </div>
                 
                 <div className="tree-actions">
-                    <button type="button" className="btn-icon-sm" onClick={() => setIsAdding(!isAdding)} title="Adicionar sub-tarefa">
-                        <i className="fa-solid fa-plus"></i>
-                    </button>
+                    {/* ALTERAÇÃO 2: Só mostra o botão de adicionar se o nível for menor que 4 (Total 5 níveis: 0,1,2,3,4) */}
+                    {level < 4 && (
+                        <button type="button" className="btn-icon-sm" onClick={() => setIsAdding(!isAdding)} title="Adicionar sub-tarefa">
+                            <i className="fa-solid fa-plus"></i>
+                        </button>
+                    )}
+                    
                     <button type="button" className="btn-icon-sm delete" onClick={() => onDelete(path)} title="Remover">
                         <i className="fa-solid fa-trash"></i>
                     </button>
@@ -72,7 +77,9 @@ const ModalSubtaskEdit = ({ sub, index, path, onUpdate, onDelete, onAddChild }) 
                             path={[...path, i]} // Mantém o rastro da árvore
                             onUpdate={onUpdate} 
                             onDelete={onDelete} 
-                            onAddChild={onAddChild} 
+                            onAddChild={onAddChild}
+                            // ALTERAÇÃO 3: Passa o próximo nível para os filhos
+                            level={level + 1} 
                         />
                     ))}
                 </div>
@@ -174,12 +181,6 @@ export function TarefaModal({ active, closeModal, onUpdate, editingData }) {
         } else {
             let currentLevel = newSubs;
             // Vai até o pai do item a ser deletado
-            for (let i = 0; i < path.length - 1; i++) {
-                currentLevel = currentLevel[path[i]];
-                if (i < path.length - 2) currentLevel = currentLevel.subtarefas;
-            }
-            // Acessa o array de filhos do pai e remove o item
-            // O pai é o objeto, precisamos acessar .subtarefas dele, a menos que o loop acima já tenha entrado
             // Correção da lógica de navegação:
             let parent = newSubs;
             for(let k=0; k < path.length -1; k++) {
@@ -339,6 +340,7 @@ export function TarefaModal({ active, closeModal, onUpdate, editingData }) {
                                             path={[i]} 
                                             onDelete={deleteNode} 
                                             onAddChild={addChildToNode} 
+                                            level={0} // Nível inicial
                                         />
                                     ))
                                 )}

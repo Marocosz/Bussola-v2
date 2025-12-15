@@ -13,7 +13,7 @@ export function Registros() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     
-    // UI State
+    // UI State - Modais
     const [notaModalOpen, setNotaModalOpen] = useState(false);
     const [viewModalOpen, setViewModalOpen] = useState(false);
     const [tarefaModalOpen, setTarefaModalOpen] = useState(false);
@@ -22,13 +22,11 @@ export function Registros() {
     const [editingNota, setEditingNota] = useState(null);
     const [viewingNota, setViewingNota] = useState(null);
     const [editingGrupo, setEditingGrupo] = useState(null);
-    const [editingTarefa, setEditingTarefa] = useState(null); // NOVO
+    const [editingTarefa, setEditingTarefa] = useState(null);
 
-    // Controle do Dropdown
+    // UI State - Filtros e Accordions (Esquerda - Grupos)
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [filtroGrupo, setFiltroGrupo] = useState('Todos');
-
-    // Inicialização com LocalStorage
     const [openGroups, setOpenGroups] = useState(() => {
         const savedState = localStorage.getItem('@Bussola:registros_accordions');
         if (savedState) {
@@ -36,6 +34,11 @@ export function Registros() {
         }
         return {'fixados': true}; 
     });
+
+    // UI State - Filtros e Accordions (Direita - Tarefas)
+    const [prioDropdownOpen, setPrioDropdownOpen] = useState(false);
+    const [filtroPrioridade, setFiltroPrioridade] = useState('Todas');
+    const [showConcluidas, setShowConcluidas] = useState(false);
 
     useEffect(() => {
         localStorage.setItem('@Bussola:registros_accordions', JSON.stringify(openGroups));
@@ -58,7 +61,7 @@ export function Registros() {
 
     useEffect(() => { fetchData(); }, []);
 
-    // --- PROCESSAMENTO DE DADOS ---
+    // --- PROCESSAMENTO DE DADOS (ANOTAÇÕES) ---
     const processDataByGroup = () => {
         if (!data) return {};
         const grouped = {};
@@ -86,9 +89,28 @@ export function Registros() {
         ? fixadas 
         : fixadas.filter(n => n.grupo?.nome === filtroGrupo);
 
-    const tarefasPendentes = data?.tarefas_pendentes || [];
-    const tarefasConcluidas = data?.tarefas_concluidas || [];
     const grupos = data?.grupos_disponiveis || [];
+
+    // --- PROCESSAMENTO DE DADOS (TAREFAS) ---
+    const tarefasPendentesRaw = data?.tarefas_pendentes || [];
+    const tarefasConcluidasRaw = data?.tarefas_concluidas || [];
+
+    // Filtro de Prioridade
+    const filterByPrio = (list) => {
+        if (filtroPrioridade === 'Todas') return list;
+        return list.filter(t => t.prioridade === filtroPrioridade);
+    };
+
+    const tarefasPendentes = filterByPrio(tarefasPendentesRaw);
+    const tarefasConcluidas = filterByPrio(tarefasConcluidasRaw);
+
+    // Prioridades para o Dropdown
+    const prioridades = [
+        { label: 'Crítica', color: '#ef4444' },
+        { label: 'Alta', color: '#f59e0b' },
+        { label: 'Média', color: '#3b82f6' },
+        { label: 'Baixa', color: '#10b981' }
+    ];
 
     // --- HANDLERS ---
     const toggleAccordion = (key) => {
@@ -103,13 +125,11 @@ export function Registros() {
         setViewModalOpen(true);
     };
 
-    // Handler Nova Tarefa
     const handleNewTarefa = () => {
         setEditingTarefa(null);
         setTarefaModalOpen(true);
     };
 
-    // Handler Editar Tarefa (NOVO)
     const handleEditTarefa = (tarefa) => {
         setEditingTarefa(tarefa);
         setTarefaModalOpen(true);
@@ -189,7 +209,6 @@ export function Registros() {
                                 {dropdownOpen && (
                                     <>
                                         <div className="dropdown-backdrop" onClick={() => setDropdownOpen(false)}></div>
-                                        {/* DROPDOWN MENU COM ESTILO IGUAL FINANÇAS */}
                                         <div className="custom-dropdown-menu">
                                             <div className="dropdown-action-row" onClick={handleNewGrupo}>
                                                 <div className="action-icon-circle"><i className="fa-solid fa-plus"></i></div>
@@ -312,9 +331,44 @@ export function Registros() {
                 <div className="registros-column column-tarefas">
                     <div className="column-header-flex">
                         <h2>TAREFAS</h2>
-                        <button className="btn-primary small-btn" onClick={handleNewTarefa}>
-                            <i className="fa-solid fa-plus"></i> Tarefa
-                        </button>
+                        
+                        <div className="header-actions-group">
+                            {/* --- DROPDOWN FILTRO DE PRIORIDADE --- */}
+                            <div className="custom-dropdown-wrapper">
+                                <button 
+                                    className={`dropdown-trigger-btn ${filtroPrioridade !== 'Todas' ? 'active' : ''}`} 
+                                    onClick={() => setPrioDropdownOpen(!prioDropdownOpen)}
+                                    style={{minWidth: '140px'}}
+                                >
+                                    <span>{filtroPrioridade === 'Todas' ? 'Todas' : filtroPrioridade}</span>
+                                    <i className="fa-solid fa-chevron-down"></i>
+                                </button>
+
+                                {prioDropdownOpen && (
+                                    <>
+                                        <div className="dropdown-backdrop" onClick={() => setPrioDropdownOpen(false)}></div>
+                                        <div className="custom-dropdown-menu" style={{width: '200px'}}>
+                                            <div className={`dropdown-item ${filtroPrioridade === 'Todas' ? 'selected' : ''}`} onClick={() => { setFiltroPrioridade('Todas'); setPrioDropdownOpen(false); }}>
+                                                <span>Todas as Prioridades</span>
+                                            </div>
+                                            <div className="dropdown-divider"></div>
+                                            {prioridades.map(p => (
+                                                <div key={p.label} className={`dropdown-item ${filtroPrioridade === p.label ? 'selected' : ''}`} onClick={() => { setFiltroPrioridade(p.label); setPrioDropdownOpen(false); }}>
+                                                    <div className="dropdown-item-info">
+                                                        <span className="dot" style={{backgroundColor: p.color}}></span>
+                                                        <span className="name">{p.label}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
+                            <button className="btn-primary small-btn" onClick={handleNewTarefa}>
+                                <i className="fa-solid fa-plus"></i> Tarefa
+                            </button>
+                        </div>
                     </div>
 
                     <div className="column-scroll-content">
@@ -331,23 +385,37 @@ export function Registros() {
                                     key={t.id} 
                                     tarefa={t} 
                                     onUpdate={fetchData} 
-                                    onEdit={handleEditTarefa} // Passando a função
+                                    onEdit={handleEditTarefa}
                                 />
                             ))}
                         </div>
 
-                        {tarefasConcluidas.length > 0 && (
+                        {/* --- ACCORDION CONCLUÍDAS CORRIGIDO (Com Animação CSS) --- */}
+                        {tarefasConcluidasRaw.length > 0 && (
                             <div className="concluidas-section">
-                                <h4 className="concluidas-title">Concluídas</h4>
-                                <div className="tarefas-list completed">
-                                    {tarefasConcluidas.map(t => (
-                                        <TarefaCard 
-                                            key={t.id} 
-                                            tarefa={t} 
-                                            onUpdate={fetchData}
-                                            onEdit={handleEditTarefa} // Passando a função
-                                        />
-                                    ))}
+                                <div 
+                                    className={`concluidas-header-accordion ${showConcluidas ? 'active' : ''}`} 
+                                    onClick={() => setShowConcluidas(!showConcluidas)}
+                                >
+                                    <span>Concluídas ({tarefasConcluidas.length})</span>
+                                    <i className={`fa-solid fa-chevron-down ${showConcluidas ? 'rotate' : ''}`}></i>
+                                </div>
+                                
+                                <div className={`accordion-wrapper ${showConcluidas ? 'open' : ''}`}>
+                                    <div className="accordion-inner">
+                                        <div className="concluidas-content-wrapper" style={{paddingTop: '10px'}}>
+                                            <div className="tarefas-list completed">
+                                                {tarefasConcluidas.map(t => (
+                                                    <TarefaCard 
+                                                        key={t.id} 
+                                                        tarefa={t} 
+                                                        onUpdate={fetchData}
+                                                        onEdit={handleEditTarefa}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -357,23 +425,9 @@ export function Registros() {
 
             {/* MODAIS */}
             <AnotacaoModal active={notaModalOpen} closeModal={() => setNotaModalOpen(false)} onUpdate={fetchData} editingData={editingNota} gruposDisponiveis={grupos}/>
-            
-            {/* TAREFA MODAL ATUALIZADO */}
-            <TarefaModal 
-                active={tarefaModalOpen} 
-                closeModal={() => setTarefaModalOpen(false)} 
-                onUpdate={fetchData} 
-                editingData={editingTarefa} // Passando dados de edição
-            />
-            
+            <TarefaModal active={tarefaModalOpen} closeModal={() => setTarefaModalOpen(false)} onUpdate={fetchData} editingData={editingTarefa}/>
             <GrupoModal active={grupoModalOpen} closeModal={() => setGrupoModalOpen(false)} onUpdate={fetchData} editingData={editingGrupo}/>
-            
-            <ViewAnotacaoModal 
-                active={viewModalOpen} 
-                closeModal={() => setViewModalOpen(false)} 
-                nota={viewingNota}
-                onEdit={handleEditNota}
-            />
+            <ViewAnotacaoModal active={viewModalOpen} closeModal={() => setViewModalOpen(false)} nota={viewingNota} onEdit={handleEditNota}/>
         </div>
     );
 }
