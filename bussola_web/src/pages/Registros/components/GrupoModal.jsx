@@ -33,7 +33,7 @@ export function GrupoModal({ active, closeModal, onUpdate, editingData, existing
             }
             setShowColorPicker(false);
         }
-    }, [active, editingData, existingGroups]);
+    }, [active, editingData]);
 
     useEffect(() => {
         function handleClickOutside(event) {

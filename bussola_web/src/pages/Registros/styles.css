@@ -1,5 +1,5 @@
 /* ==========================================================================
-   REGISTROS (ANOTAÇÕES & TAREFAS) - CSS COMPLETO
+   REGISTROS (ANOTAÇÕES & TAREFAS) - CSS DEFINITIVO (MERGED)
    ========================================================================== */
 
 .registros-scope.main-container {
@@ -8,7 +8,7 @@
     box-sizing: border-box;
 }
 
-/* --- SCROLLBARS --- */
+/* --- SCROLLBARS GLOBAIS (LIMPAS) --- */
 .registros-scope .column-scroll-content {
     padding-top: 0.5rem;
     overflow: visible;
@@ -111,7 +111,8 @@
     position: relative;
     min-height: 60px;
     margin-bottom: 2rem;
-    z-index: 20;
+    /* AUMENTADO PARA GARANTIR QUE O DROPDOWN FIQUE ACIMA DOS TITULOS */
+    z-index: 50; 
 }
 
 .registros-scope .column-header-flex:hover {
@@ -132,8 +133,11 @@
     color: var(--cor-texto-principal);
 }
 
+/* Overlap Tricks (Correção do Bloco 1 aplicada) */
 .registros-scope .column-anotacoes {
     padding-left: 0;
+    z-index: 10;
+    /* Garante que a sombra fique sobre a col tarefas */
 }
 
 .registros-scope .column-anotacoes .column-header-flex {
@@ -215,6 +219,7 @@
     cursor: default;
 }
 
+/* Menu Dropdown - Alta Prioridade de Z-Index */
 .registros-scope .custom-dropdown-menu {
     position: absolute;
     top: 115%;
@@ -224,7 +229,8 @@
     border: 1px solid var(--cor-borda);
     border-radius: 10px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-    z-index: 100;
+    /* Z-INDEX BEM ALTO */
+    z-index: 1000; 
     padding: 0.5rem;
     animation: fadeInDropdown 0.2s ease;
 }
@@ -280,26 +286,15 @@
     max-height: 280px;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: var(--cor-borda) transparent;
 }
 
 .registros-scope .dropdown-scroll-area::-webkit-scrollbar {
-    width: 6px;
-}
-
-.registros-scope .dropdown-scroll-area::-webkit-scrollbar-track {
-    background: transparent;
+    width: 4px;
 }
 
 .registros-scope .dropdown-scroll-area::-webkit-scrollbar-thumb {
-    background-color: var(--cor-borda);
-    border-radius: 10px;
-    border: 2px solid transparent;
-    background-clip: content-box;
-}
-
-.registros-scope .dropdown-scroll-area::-webkit-scrollbar-thumb:hover {
-    background-color: var(--cor-texto-secundario);
+    background: var(--cor-borda);
+    border-radius: 4px;
 }
 
 .registros-scope .dropdown-item {
@@ -350,7 +345,7 @@
 }
 
 /* ============================================= */
-/* 5. ACCORDION & CONTEÚDO                       */
+/* 5. ACCORDION & CONTEÚDO (CORREÇÃO DE BUGS)    */
 /* ============================================= */
 .registros-scope .group-accordion {
     margin-bottom: 2rem;
@@ -426,6 +421,7 @@
 }
 
 .registros-scope .accordion-inner {
+    /* CORREÇÃO IMPORTANTE DO BLOCO 1: */
     overflow: hidden;
     min-height: 0;
 }
@@ -560,7 +556,7 @@
 }
 
 /* ============================================= */
-/* 7. MODAIS (GERAL)                             */
+/* 7. MODAIS (HÍBRIDO: Visible + Hidden)         */
 /* ============================================= */
 
 .registros-scope .modal-overlay {
@@ -575,7 +571,7 @@
     animation: fadeInOverlay 0.2s ease-out;
 }
 
-/* Base do Modal - Padrão Visível */
+/* CONFIGURAÇÃO IMPORTANTE DO BLOCO 2 PARA O PICKER FUNCIONAR */
 .registros-scope .modal-content,
 .registros-scope .view-modal {
     background: var(--cor-card-principal);
@@ -588,18 +584,18 @@
     flex-direction: column;
     max-height: 90vh;
     animation: scaleInModal 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    
-    /* ESSENCIAL: Permite que o popup de cor vaze */
-    overflow: visible !important; 
+
+    /* Padrão: Visível para popups (GrupoModal) */
+    overflow: visible !important;
 }
 
-/* EXCEÇÃO: Modais Grandes (Anotação/Tarefa) precisam de hidden para scroll interno */
+/* EXCEÇÃO: Modais Grandes (Anotação/Tarefa) precisam de hidden para scroll interno seguro */
 .registros-scope .modal-content.large-modal,
 .registros-scope .view-modal {
-    overflow: hidden !important; 
+    overflow: hidden !important;
 }
 
-/* --- HEADER --- */
+/* Header */
 .registros-scope .modal-header,
 .registros-scope .view-modal-header {
     padding: 1.25rem 1.5rem;
@@ -618,15 +614,21 @@
     color: var(--cor-texto-principal);
 }
 
+/* Botão Fechar (Limpo) */
 .registros-scope .close-btn {
-    color: var(--cor-texto-secundario);
-    font-size: 1.5rem;
-    cursor: pointer;
-    line-height: 1;
-    transition: color 0.2s;
     background: none;
     border: none;
     padding: 0;
+    font-size: 1.5rem;
+    color: var(--cor-texto-secundario);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: color 0.2s;
+    width: auto;
+    height: auto;
 }
 
 .registros-scope .close-btn:hover {
@@ -639,19 +641,18 @@
     height: 85vh;
 }
 
-/* --- BODY --- */
+/* Body */
 .registros-scope .modal-body {
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
     gap: 1.2rem;
     flex: 1;
-    
-    /* Configuração Padrão: Visível (Para Grupos) */
     overflow: visible !important;
+    /* Padrão */
 }
 
-/* Scroll apenas em modais grandes */
+/* Scroll seguro para modais grandes */
 .registros-scope .modal-content.large-modal .modal-body,
 .registros-scope .view-modal .modal-body {
     overflow-y: auto !important;
@@ -712,12 +713,146 @@
     gap: 1rem;
     background-color: var(--cor-fundo);
     border-radius: 0 0 16px 16px;
-    position: relative; 
-    z-index: 1; /* Garante que fique atrás do dropdown de cor */
+    position: relative;
+    z-index: 1;
+}
+
+/* Custom Footer (Anotação/Tarefa) */
+.registros-scope .modal-footer-custom {
+    padding: 1.2rem 1.5rem;
+    border-top: 1px solid var(--cor-borda);
+    background-color: var(--cor-fundo);
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.registros-scope .footer-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.registros-scope .checkbox-footer {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--cor-texto-secundario);
+    font-weight: 600;
+    user-select: none;
+}
+
+.registros-scope .checkbox-footer input {
+    display: none;
+}
+
+.registros-scope .checkmark-footer {
+    height: 18px;
+    width: 18px;
+    background-color: var(--cor-fundo);
+    border: 1px solid var(--cor-borda);
+    border-radius: 4px;
+    margin-right: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.registros-scope .checkbox-footer input:checked~.checkmark-footer {
+    background-color: var(--cor-azul-primario);
+    border-color: var(--cor-azul-primario);
+    color: white;
+}
+
+/* CORREÇÃO AQUI: O check só aparece quando o input está checked */
+.registros-scope .checkmark-footer::after {
+    content: "\f00c";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    font-size: 0.7rem;
+    /* Padrão é NONE (escondido) */
+    display: none; 
+}
+
+/* Só mostra BLOCK quando o input anterior estiver marcado */
+.registros-scope .checkbox-footer input:checked~.checkmark-footer::after {
+    display: block;
+}
+
+/* --- VIEW MODAL --- */
+.registros-scope .view-modal-header {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.registros-scope .view-header-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.registros-scope .view-group-badge {
+    color: white;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.registros-scope .view-title {
+    font-size: 1.8rem;
+    color: var(--cor-texto-principal);
+    margin: 0 0 0.5rem 0;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.registros-scope .view-date {
+    font-size: 0.9rem;
+    color: var(--cor-texto-secundario);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.registros-scope .view-content-html p {
+    margin-bottom: 1rem;
+}
+
+.registros-scope .view-content-html ul,
+.registros-scope .view-content-html ol {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+}
+
+.registros-scope .view-links-container {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px dashed var(--cor-borda);
+}
+
+.registros-scope .link-item-view {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--cor-fundo);
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--cor-azul-primario);
+    transition: all 0.2s;
+    font-size: 0.9rem;
 }
 
 /* ============================================= */
-/* 8. BOTÕES DE AÇÃO UNIFICADOS                  */
+/* 8. BOTÕES DE AÇÃO UNIFICADOS (Estilo Finanças) */
 /* ============================================= */
 .registros-scope .btn-action-icon {
     width: 32px !important;
@@ -748,9 +883,8 @@
 }
 
 /* ============================================= */
-/* 9. TAREFAS (DESIGN MODERNO & REFINADO)        */
+/* 9. TAREFAS (DESIGN MODERNO & ARVORE)          */
 /* ============================================= */
-
 .registros-scope .tarefas-list {
     display: flex;
     flex-direction: column;
@@ -833,15 +967,22 @@
 }
 
 .registros-scope .tarefa-card.concluida {
-    background-color: var(--cor-fundo);
+    background-color: var(--cor-card-secundario);
     border-color: transparent;
     opacity: 0.75;
 }
 
-/* Card Atrasado (Borda Vermelha) */
 .registros-scope .tarefa-card.card-atrasado {
     border-color: var(--cor-vermelho-delete);
     box-shadow: 0 4px 15px rgba(239, 68, 68, 0.1);
+}
+
+.registros-scope .ql-editor.ql-blank::before {
+    /* AQUI VOCÊ CONTROLA A COR DO PLACEHOLDER */
+    color: var(--cor-texto-secundario) !important; /* Ou coloque uma cor fixa ex: #aaaaaa */
+    
+    opacity: 0.7; /* Aumente a opacidade se quiser mais forte (max 1.0) */
+    font-style: italic;
 }
 
 .registros-scope .tarefa-header {
@@ -904,7 +1045,6 @@
     margin: 6px 0 0 0;
     line-height: 1.5;
     display: -webkit-box;
-    /* autoprefixer: ignore next */
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -976,6 +1116,7 @@
     opacity: 1;
 }
 
+/* Subtarefas e Progresso */
 .registros-scope .subtarefas-container {
     margin-top: 1rem;
     padding-top: 0.5rem;
@@ -1036,7 +1177,12 @@
     background-color: var(--cor-fundo-hover);
 }
 
-/* --- MODAL TAREFA - ÁRVORE DE SUBTAREFAS --- */
+.registros-scope .riscado {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+/* --- ÁRVORE DE SUBTAREFAS (MODAL) --- */
 .registros-scope .subtasks-tree-container {
     display: flex;
     flex-direction: column;
@@ -1177,29 +1323,231 @@
     background: var(--cor-fundo-hover);
 }
 
-@media (max-width: 900px) {
-    .registros-scope .registros-layout {
-        grid-template-columns: 1fr;
-        gap: 2rem;
-    }
+/* ============================================= */
+/* 10. EDITOR QUILL & PICKERS EXTRAS             */
+/* ============================================= */
 
-    .registros-scope .registros-column {
-        padding: 0;
-        overflow: visible;
-    }
-
-    .registros-scope .column-anotacoes .column-header-flex,
-    .registros-scope .column-tarefas .column-header-flex {
-        margin-left: 0;
-        margin-right: 0;
-        border-radius: 12px;
-    }
+.registros-scope .editor-container {
+    display: flex;
+    flex-direction: column;
+    height: 350px !important;
+    min-height: 350px;
+    max-height: 350px;
+    margin-bottom: 1rem;
+    flex-shrink: 0;
 }
 
-/* ============================================= */
-/* 10. SELETORES DE COR/ÍCONE (CÓPIA FINANÇAS)   */
-/* ============================================= */
+.registros-scope .custom-quill-editor {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
 
+.registros-scope .quill {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.registros-scope .ql-toolbar {
+    border: 1px solid var(--cor-borda) !important;
+    border-radius: 8px 8px 0 0;
+    background: var(--cor-fundo);
+    flex-shrink: 0;
+    z-index: 2;
+}
+
+.registros-scope .ql-container {
+    border: 1px solid var(--cor-borda) !important;
+    border-top: none !important;
+    border-radius: 0 0 8px 8px;
+    background: var(--cor-fundo);
+    font-size: 1rem;
+    color: var(--cor-texto-principal);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: auto !important;
+    overflow: hidden;
+}
+
+.registros-scope .ql-editor {
+    flex: 1;
+    height: 100%;
+    overflow-y: auto !important;
+    padding: 1rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--cor-borda) transparent;
+}
+
+.registros-scope .links-manager-section {
+    background: var(--cor-card-secundario);
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--cor-borda);
+    flex-shrink: 0;
+}
+
+.registros-scope .section-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--cor-texto-principal);
+    display: block;
+    margin-bottom: 8px;
+}
+
+.registros-scope .add-link-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 0.5rem;
+}
+
+.registros-scope .link-input {
+    flex: 1;
+    height: 38px;
+    font-size: 0.9rem;
+}
+
+.registros-scope .btn-add-link {
+    white-space: nowrap;
+    height: 38px;
+    padding: 0 15px;
+}
+
+.registros-scope .links-list-edit {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 100px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+.registros-scope .links-list-edit li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--cor-card-principal);
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--cor-borda);
+}
+
+.registros-scope .link-url-text {
+    font-size: 0.85rem;
+    color: var(--cor-azul-primario);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 85%; /* Espaço para o botão */
+}
+
+/* BOTÃO DE EXCLUIR LINK - ESTILIZADO */
+.registros-scope .remove-link-btn {
+    background: transparent;
+    border: none;
+    color: var(--cor-texto-secundario);
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.registros-scope .remove-link-btn:hover {
+    background-color: rgba(239, 68, 68, 0.1); /* Fundo vermelho suave */
+    color: var(--cor-vermelho-delete);
+}
+
+.registros-scope .remove-link-btn i {
+    font-size: 0.9rem;
+}
+
+/* Custom Select CSS */
+.registros-scope .custom-select-trigger {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: 45px;
+    padding: 0 15px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    background-color: var(--cor-fundo);
+    cursor: pointer;
+    font-size: 1rem;
+    color: var(--cor-texto-principal);
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.registros-scope .custom-select-trigger:hover {
+    border-color: var(--cor-texto-secundario);
+}
+
+.registros-scope .custom-select-trigger.open {
+    border-color: var(--cor-azul-primario);
+    box-shadow: 0 0 0 3px rgba(74, 109, 255, 0.1);
+}
+
+.registros-scope .arrow-icon {
+    font-size: 0.8rem;
+    color: var(--cor-texto-secundario);
+    transition: transform 0.2s;
+}
+
+.registros-scope .custom-select-trigger.open .arrow-icon {
+    transform: rotate(180deg);
+}
+
+.registros-scope .custom-select-options {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    right: 0;
+    background-color: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 5px;
+    animation: fadeInDropdown 0.1s ease-out;
+}
+
+.registros-scope .custom-option {
+    padding: 10px 12px;
+    font-size: 0.95rem;
+    color: var(--cor-texto-principal);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.registros-scope .custom-option:hover,
+.registros-scope .custom-option.selected {
+    background-color: var(--cor-azul-primario);
+    color: white;
+}
+
+.registros-scope .option-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* Color Picker Popover (GrupoModal) */
 .registros-scope .picker-wrapper {
     position: relative;
     width: 45px;
@@ -1219,7 +1567,6 @@
     font-size: 1.2rem;
     transition: all 0.2s;
     box-sizing: border-box;
-    /* Garante tamanho correto */
 }
 
 .registros-scope .picker-preview:hover {
@@ -1234,7 +1581,6 @@
     border-radius: 12px;
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
     z-index: 9999;
-    /* Z-index altíssimo */
     display: none;
     gap: 8px;
     width: max-content;
@@ -1267,4 +1613,45 @@
     border-color: white;
     z-index: 2;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 900px) {
+    .registros-scope .registros-layout {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    .registros-scope .registros-column {
+        padding: 0;
+        overflow: visible;
+    }
+
+    .registros-scope .column-anotacoes .column-header-flex,
+    .registros-scope .column-tarefas .column-header-flex {
+        margin-left: 0;
+        margin-right: 0;
+        border-radius: 12px;
+    }
+}
+
+@keyframes fadeInOverlay {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes scaleInModal {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }

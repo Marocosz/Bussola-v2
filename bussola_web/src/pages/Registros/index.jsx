@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getRegistrosDashboard, deleteGrupo } from '../../services/api'; 
+import { getRegistrosDashboard, deleteGrupo } from '../../services/api';
 import { AnotacaoCard } from './components/AnotacaoCard';
 import { TarefaCard } from './components/TarefaCard';
 import { AnotacaoModal } from './components/AnotacaoModal';
@@ -12,13 +12,13 @@ export function Registros() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    
+
     // UI State - Modais
     const [notaModalOpen, setNotaModalOpen] = useState(false);
     const [viewModalOpen, setViewModalOpen] = useState(false);
     const [tarefaModalOpen, setTarefaModalOpen] = useState(false);
     const [grupoModalOpen, setGrupoModalOpen] = useState(false);
-    
+
     const [editingNota, setEditingNota] = useState(null);
     const [viewingNota, setViewingNota] = useState(null);
     const [editingGrupo, setEditingGrupo] = useState(null);
@@ -32,7 +32,7 @@ export function Registros() {
         if (savedState) {
             try { return JSON.parse(savedState); } catch (e) { console.error("Erro ao ler localStorage", e); }
         }
-        return {'fixados': true}; 
+        return { 'fixados': true };
     });
 
     // UI State - Filtros e Accordions (Direita - Tarefas)
@@ -66,10 +66,10 @@ export function Registros() {
         if (!data) return {};
         const grouped = {};
         let allNotes = [];
-        
+
         if (data.anotacoes_por_mes) {
             Object.values(data.anotacoes_por_mes).forEach(notesList => {
-                if(Array.isArray(notesList)) allNotes = [...allNotes, ...notesList];
+                if (Array.isArray(notesList)) allNotes = [...allNotes, ...notesList];
             });
         }
 
@@ -84,9 +84,9 @@ export function Registros() {
 
     const groupedNotes = processDataByGroup();
     const fixadas = data?.anotacoes_fixadas || [];
-    
-    const fixadasFiltered = filtroGrupo === 'Todos' 
-        ? fixadas 
+
+    const fixadasFiltered = filtroGrupo === 'Todos'
+        ? fixadas
         : fixadas.filter(n => n.grupo?.nome === filtroGrupo);
 
     const grupos = data?.grupos_disponiveis || [];
@@ -119,7 +119,7 @@ export function Registros() {
 
     const handleNewNota = () => { setEditingNota(null); setNotaModalOpen(true); };
     const handleEditNota = (nota) => { setEditingNota(nota); setNotaModalOpen(true); };
-    
+
     const handleViewNota = (nota) => {
         setViewingNota(nota);
         setViewModalOpen(true);
@@ -135,12 +135,12 @@ export function Registros() {
         setTarefaModalOpen(true);
     };
 
-    const handleNewGrupo = () => { 
-        setEditingGrupo(null); 
-        setGrupoModalOpen(true); 
-        setDropdownOpen(false); 
+    const handleNewGrupo = () => {
+        setEditingGrupo(null);
+        setGrupoModalOpen(true);
+        setDropdownOpen(false);
     };
-    
+
     const handleEditGrupo = (grupo, e) => {
         e.stopPropagation();
         setEditingGrupo(grupo);
@@ -152,7 +152,7 @@ export function Registros() {
         e.stopPropagation();
         if (!window.confirm("Tem certeza? As anotações deste grupo serão movidas para 'Indefinido'.")) return;
         try {
-            if(deleteGrupo) {
+            if (deleteGrupo) {
                 await deleteGrupo(grupoId);
                 if (filtroGrupo !== 'Todos') setFiltroGrupo('Todos');
                 fetchData();
@@ -164,13 +164,13 @@ export function Registros() {
     };
 
     if (loading && !data) return (
-        <div className="container" style={{paddingTop:'100px', textAlign:'center'}}>
-            <i className="fa-solid fa-circle-notch fa-spin" style={{fontSize:'2rem', color:'var(--cor-azul-primario)'}}></i>
+        <div className="container" style={{ paddingTop: '100px', textAlign: 'center' }}>
+            <i className="fa-solid fa-circle-notch fa-spin" style={{ fontSize: '2rem', color: 'var(--cor-azul-primario)' }}></i>
         </div>
     );
 
     if (error) return (
-        <div className="container" style={{paddingTop:'100px', textAlign:'center', color:'var(--cor-vermelho-delete)'}}>
+        <div className="container" style={{ paddingTop: '100px', textAlign: 'center', color: 'var(--cor-vermelho-delete)' }}>
             <p>{error}</p>
             <button className="btn-secondary" onClick={fetchData}>Tentar Novamente</button>
         </div>
@@ -180,7 +180,7 @@ export function Registros() {
 
     return (
         <div className="container main-container registros-scope">
-            
+
             <div className="internal-hero">
                 <div className="hero-bg-effect"></div>
                 <div className="internal-hero-content">
@@ -190,16 +190,16 @@ export function Registros() {
             </div>
 
             <div className="registros-layout">
-                
+
                 {/* 1. COLUNA ESQUERDA: CADERNO */}
                 <div className="registros-column column-anotacoes">
-                    
+
                     <div className="column-header-flex">
                         <h2>CADERNO</h2>
                         <div className="header-actions-group">
                             <div className="custom-dropdown-wrapper">
-                                <button 
-                                    className={`dropdown-trigger-btn ${filtroGrupo !== 'Todos' ? 'active' : ''}`} 
+                                <button
+                                    className={`dropdown-trigger-btn ${filtroGrupo !== 'Todos' ? 'active' : ''}`}
                                     onClick={() => setDropdownOpen(!dropdownOpen)}
                                 >
                                     <span>{filtroGrupo === 'Todos' ? 'Todos os Grupos' : filtroGrupo}</span>
@@ -222,7 +222,7 @@ export function Registros() {
                                                 {grupos.map(g => (
                                                     <div key={g.id} className={`dropdown-item ${filtroGrupo === g.nome ? 'selected' : ''}`} onClick={() => { setFiltroGrupo(g.nome); setDropdownOpen(false); }}>
                                                         <div className="dropdown-item-info">
-                                                            <span className="dot" style={{backgroundColor: g.cor}}></span>
+                                                            <span className="dot" style={{ backgroundColor: g.cor }}></span>
                                                             <span className="name">{g.nome}</span>
                                                         </div>
                                                         <div className="dropdown-item-actions">
@@ -232,7 +232,7 @@ export function Registros() {
                                                     </div>
                                                 ))}
                                                 <div className={`dropdown-item ${filtroGrupo === 'Indefinido' ? 'selected' : ''}`} onClick={() => { setFiltroGrupo('Indefinido'); setDropdownOpen(false); }}>
-                                                     <div className="dropdown-item-info"><span className="dot" style={{backgroundColor: '#ccc'}}></span><span className="name">Indefinido</span></div>
+                                                    <div className="dropdown-item-info"><span className="dot" style={{ backgroundColor: '#ccc' }}></span><span className="name">Indefinido</span></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -258,17 +258,17 @@ export function Registros() {
                                         <i className={`fa-solid fa-chevron-down ${openGroups['fixados'] ? 'rotate' : ''}`}></i>
                                     </div>
                                 </h3>
-                                
+
                                 <div className={`accordion-wrapper ${openGroups['fixados'] ? 'open' : ''}`}>
                                     <div className="accordion-inner">
                                         <div className="accordion-content-padding">
                                             <div className="notes-grid">
                                                 {fixadasFiltered.map(n => (
-                                                    <AnotacaoCard 
-                                                        key={n.id} 
-                                                        anotacao={n} 
-                                                        onUpdate={fetchData} 
-                                                        onEdit={handleEditNota} 
+                                                    <AnotacaoCard
+                                                        key={n.id}
+                                                        anotacao={n}
+                                                        onUpdate={fetchData}
+                                                        onEdit={handleEditNota}
                                                         onView={handleViewNota}
                                                     />
                                                 ))}
@@ -280,7 +280,7 @@ export function Registros() {
                         )}
 
                         {Object.entries(groupedNotes).map(([grupoNome, notas]) => {
-                            const isOpen = !!openGroups[grupoNome]; 
+                            const isOpen = !!openGroups[grupoNome];
                             const grpObj = grupos.find(g => g.nome === grupoNome);
                             const grpColor = grpObj ? grpObj.cor : '#999';
 
@@ -288,7 +288,7 @@ export function Registros() {
                                 <div className="group-accordion" key={grupoNome}>
                                     <h3 className={`accordion-header ${isOpen ? 'active' : ''}`} onClick={() => toggleAccordion(grupoNome)}>
                                         <div className="header-title-wrapper">
-                                            <span className="grp-dot" style={{backgroundColor: grpColor}}></span>
+                                            <span className="grp-dot" style={{ backgroundColor: grpColor }}></span>
                                             <span>{grupoNome}</span>
                                         </div>
                                         <div className="header-meta">
@@ -296,16 +296,16 @@ export function Registros() {
                                             <i className={`fa-solid fa-chevron-down ${isOpen ? 'rotate' : ''}`}></i>
                                         </div>
                                     </h3>
-                                    
+
                                     <div className={`accordion-wrapper ${isOpen ? 'open' : ''}`}>
                                         <div className="accordion-inner">
                                             <div className="accordion-content-padding">
                                                 <div className="notes-grid">
                                                     {notas.map(n => (
-                                                        <AnotacaoCard 
-                                                            key={n.id} 
-                                                            anotacao={n} 
-                                                            onUpdate={fetchData} 
+                                                        <AnotacaoCard
+                                                            key={n.id}
+                                                            anotacao={n}
+                                                            onUpdate={fetchData}
                                                             onEdit={handleEditNota}
                                                             onView={handleViewNota}
                                                         />
@@ -317,7 +317,7 @@ export function Registros() {
                                 </div>
                             );
                         })}
-                        
+
                         {fixadasFiltered.length === 0 && Object.keys(groupedNotes).length === 0 && (
                             <div className="empty-state">
                                 <i className="fa-regular fa-folder-open"></i>
@@ -331,14 +331,14 @@ export function Registros() {
                 <div className="registros-column column-tarefas">
                     <div className="column-header-flex">
                         <h2>TAREFAS</h2>
-                        
+
                         <div className="header-actions-group">
                             {/* --- DROPDOWN FILTRO DE PRIORIDADE --- */}
                             <div className="custom-dropdown-wrapper">
-                                <button 
-                                    className={`dropdown-trigger-btn ${filtroPrioridade !== 'Todas' ? 'active' : ''}`} 
+                                <button
+                                    className={`dropdown-trigger-btn ${filtroPrioridade !== 'Todas' ? 'active' : ''}`}
                                     onClick={() => setPrioDropdownOpen(!prioDropdownOpen)}
-                                    style={{minWidth: '140px'}}
+                                    style={{ minWidth: '140px' }}
                                 >
                                     <span>{filtroPrioridade === 'Todas' ? 'Todas' : filtroPrioridade}</span>
                                     <i className="fa-solid fa-chevron-down"></i>
@@ -347,7 +347,7 @@ export function Registros() {
                                 {prioDropdownOpen && (
                                     <>
                                         <div className="dropdown-backdrop" onClick={() => setPrioDropdownOpen(false)}></div>
-                                        <div className="custom-dropdown-menu" style={{width: '200px'}}>
+                                        <div className="custom-dropdown-menu" style={{ width: '200px' }}>
                                             <div className={`dropdown-item ${filtroPrioridade === 'Todas' ? 'selected' : ''}`} onClick={() => { setFiltroPrioridade('Todas'); setPrioDropdownOpen(false); }}>
                                                 <span>Todas as Prioridades</span>
                                             </div>
@@ -355,7 +355,7 @@ export function Registros() {
                                             {prioridades.map(p => (
                                                 <div key={p.label} className={`dropdown-item ${filtroPrioridade === p.label ? 'selected' : ''}`} onClick={() => { setFiltroPrioridade(p.label); setPrioDropdownOpen(false); }}>
                                                     <div className="dropdown-item-info">
-                                                        <span className="dot" style={{backgroundColor: p.color}}></span>
+                                                        <span className="dot" style={{ backgroundColor: p.color }}></span>
                                                         <span className="name">{p.label}</span>
                                                     </div>
                                                 </div>
@@ -379,12 +379,12 @@ export function Registros() {
                                     <p>Nenhuma tarefa pendente.</p>
                                 </div>
                             )}
-                            
+
                             {tarefasPendentes.map(t => (
-                                <TarefaCard 
-                                    key={t.id} 
-                                    tarefa={t} 
-                                    onUpdate={fetchData} 
+                                <TarefaCard
+                                    key={t.id}
+                                    tarefa={t}
+                                    onUpdate={fetchData}
                                     onEdit={handleEditTarefa}
                                 />
                             ))}
@@ -393,22 +393,22 @@ export function Registros() {
                         {/* --- ACCORDION CONCLUÍDAS CORRIGIDO (Com Animação CSS) --- */}
                         {tarefasConcluidasRaw.length > 0 && (
                             <div className="concluidas-section">
-                                <div 
-                                    className={`concluidas-header-accordion ${showConcluidas ? 'active' : ''}`} 
+                                <div
+                                    className={`concluidas-header-accordion ${showConcluidas ? 'active' : ''}`}
                                     onClick={() => setShowConcluidas(!showConcluidas)}
                                 >
                                     <span>Concluídas ({tarefasConcluidas.length})</span>
                                     <i className={`fa-solid fa-chevron-down ${showConcluidas ? 'rotate' : ''}`}></i>
                                 </div>
-                                
+
                                 <div className={`accordion-wrapper ${showConcluidas ? 'open' : ''}`}>
                                     <div className="accordion-inner">
-                                        <div className="concluidas-content-wrapper" style={{paddingTop: '10px'}}>
+                                        <div className="concluidas-content-wrapper" style={{ paddingTop: '10px' }}>
                                             <div className="tarefas-list completed">
                                                 {tarefasConcluidas.map(t => (
-                                                    <TarefaCard 
-                                                        key={t.id} 
-                                                        tarefa={t} 
+                                                    <TarefaCard
+                                                        key={t.id}
+                                                        tarefa={t}
                                                         onUpdate={fetchData}
                                                         onEdit={handleEditTarefa}
                                                     />
@@ -424,10 +424,10 @@ export function Registros() {
             </div>
 
             {/* MODAIS */}
-            <AnotacaoModal active={notaModalOpen} closeModal={() => setNotaModalOpen(false)} onUpdate={fetchData} editingData={editingNota} gruposDisponiveis={grupos}/>
-            <TarefaModal active={tarefaModalOpen} closeModal={() => setTarefaModalOpen(false)} onUpdate={fetchData} editingData={editingTarefa}/>
-            <GrupoModal active={grupoModalOpen} closeModal={() => setGrupoModalOpen(false)} onUpdate={fetchData} editingData={editingGrupo}/>
-            <ViewAnotacaoModal active={viewModalOpen} closeModal={() => setViewModalOpen(false)} nota={viewingNota} onEdit={handleEditNota}/>
+            <AnotacaoModal active={notaModalOpen} closeModal={() => setNotaModalOpen(false)} onUpdate={fetchData} editingData={editingNota} gruposDisponiveis={grupos} />
+            <TarefaModal active={tarefaModalOpen} closeModal={() => setTarefaModalOpen(false)} onUpdate={fetchData} editingData={editingTarefa} />
+            <GrupoModal active={grupoModalOpen} closeModal={() => setGrupoModalOpen(false)} onUpdate={fetchData} editingData={editingGrupo} existingGroups={grupos}/>
+            <ViewAnotacaoModal active={viewModalOpen} closeModal={() => setViewModalOpen(false)} nota={viewingNota} onEdit={handleEditNota} />
         </div>
     );
 }

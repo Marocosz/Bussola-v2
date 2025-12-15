@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func, case
+from sqlalchemy.exc import IntegrityError
+from fastapi import HTTPException, status
 from app.models.registros import GrupoAnotacao, Anotacao, Link, Tarefa, Subtarefa
 from datetime import datetime
 
@@ -11,10 +13,17 @@ class RegistrosService:
 
     def create_grupo(self, db: Session, grupo_data):
         db_grupo = GrupoAnotacao(nome=grupo_data.nome, cor=grupo_data.cor)
-        db.add(db_grupo)
-        db.commit()
-        db.refresh(db_grupo)
-        return db_grupo
+        try:
+            db.add(db_grupo)
+            db.commit()
+            db.refresh(db_grupo)
+            return db_grupo
+        except IntegrityError:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Já existe um grupo com o nome '{grupo_data.nome}'."
+            )
 
     def update_grupo(self, db: Session, grupo_id: int, grupo_data):
         grupo = db.query(GrupoAnotacao).filter(GrupoAnotacao.id == grupo_id).first()
