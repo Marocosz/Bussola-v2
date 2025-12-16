@@ -147,15 +147,30 @@ export const deleteCategoria = async (id: number) => {
 
 export interface PanoramaData {
     kpis: {
+        // Finanças
         receita_mes: number;
         despesa_mes: number;
         balanco_mes: number;
+        
+        // Agenda
         compromissos_realizados: number;
         compromissos_pendentes: number;
         compromissos_perdidos: number;
+        proximo_compromisso?: { titulo: string; data: string; cor: string };
+        
+        // Registros
+        total_anotacoes: number;
+        tarefas_pendentes: {
+            critica: number;
+            alta: number;
+            media: number;
+            baixa: number;
+        };
+        tarefas_concluidas: number;
+        
+        // Cofre
         chaves_ativas: number;
         chaves_expiradas: number;
-        proximo_compromisso?: { titulo: string; data_hora: string };
     };
     gastos_por_categoria: { labels: string[]; data: number[]; colors: string[] };
     evolucao_mensal_receita: number[];
@@ -165,13 +180,32 @@ export interface PanoramaData {
     categorias_para_filtro: Categoria[];
 }
 
+// Dados Principais (KPIs e Gráficos)
 export const getPanoramaData = async (): Promise<PanoramaData> => {
     const response = await api.get('/panorama/');
     return response.data;
 };
 
+// Histórico de Categoria (Gráfico Dinâmico)
 export const getCategoryHistory = async (categoryId: number) => {
     const response = await api.get(`/panorama/history/${categoryId}`);
+    return response.data;
+};
+
+// --- NOVAS FUNÇÕES PARA OS MODAIS (Lazy Loading) ---
+
+export const getProvisoesData = async () => {
+    const response = await api.get('/panorama/provisoes');
+    return response.data;
+};
+
+export const getRoteiroData = async () => {
+    const response = await api.get('/panorama/roteiro');
+    return response.data;
+};
+
+export const getRegistrosResumoData = async () => {
+    const response = await api.get('/panorama/registros');
     return response.data;
 };
 

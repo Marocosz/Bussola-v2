@@ -1,145 +1,816 @@
-/* Layout Principal */
-.page-header-actions {
+/* src/pages/Panorama/styles.css */
+.panorama-scope.main-container {
+    padding-bottom: 5rem;
+    min-height: 100vh;
+    /* Remove padding top padrão se houver, a Hero cuida disso */
+    padding-top: 0 !important;
+}
+
+/* ============================ */
+/* 1. HERO SECTION (Padronizada)*/
+/* ============================ */
+.panorama-scope .internal-hero {
+    position: relative;
+    text-align: center;
+    /* Aumentado o padding vertical para o padrão das outras páginas */
+    padding: 5rem 2rem 6rem 2rem;
+    overflow: hidden;
+    background: transparent;
+    border-radius: 0 0 20px 20px;
+    /* Espaço abaixo da hero */
+}
+
+.panorama-scope .hero-bg-effect {
+    position: absolute;
+    top: -50%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 200%;
+    background: radial-gradient(ellipse at center, rgba(74, 109, 255, 0.15) 0%, rgba(168, 85, 247, 0.05) 40%, transparent 70%);
+    z-index: 0;
+    pointer-events: none;
+}
+
+.panorama-scope .internal-hero h1 {
+    font-size: 3rem;
+    /* Aumentado o tamanho da fonte */
+    font-weight: 700;
+    margin-bottom: 1rem;
+    background: linear-gradient(90deg, #fff 0%, var(--cor-azul-primario) 50%, #fff 100%);
+    background-size: 200% auto;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    animation: shine 5s linear infinite;
+    position: relative;
+    z-index: 1;
+}
+
+.panorama-scope .internal-hero p {
+    color: var(--cor-texto-secundario);
+    font-size: 1.2rem;
+    /* Ligeiramente aumentado */
+    position: relative;
+    z-index: 1;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+@keyframes shine {
+    to {
+        background-position: 200% center;
+    }
+}
+
+/* Wrapper Principal (Margens Reduzidas) */
+.panorama-content-wrapper {
+    /* Padding lateral reduzido pela metade (de 2rem para 1rem ou menos em telas grandes) */
+    padding: 0 1rem;
+    max-width: 1600px;
+    /* Aumentado o max-width para preencher mais */
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+    /* Aumentado o espaçamento entre seções */
+}
+
+/* Em telas maiores, permite uma margem um pouco maior, mas ainda menor que antes */
+@media (min-width: 1400px) {
+    .panorama-content-wrapper {
+        padding: 0 2rem;
+    }
+}
+
+/* ============================ */
+/* 2. KPI PANEL HORIZONTAL      */
+/* ============================ */
+.panel-section {
+    background: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+.panel-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--cor-borda);
+    
+    /* ALTERAÇÃO: Margens negativas para encostar nas bordas laterais e topo */
+    margin: -1.5rem -1.5rem 0 -1.5rem;
+    
+    /* Padding interno para compensar e manter o visual */
+    padding: 1.5rem; 
 }
 
-.page-header-actions h1 {
-    font-size: 2rem;
+.panel-header h2 {
+    font-size: 1.4rem;
+    color: var(--cor-texto-principal);
     font-weight: 600;
+    margin: 0;
 }
 
-/* Grid de 3 Colunas (KPI | Graficos | Graficos) */
-.panorama-grid {
-    display: grid;
-    grid-template-columns: 2fr 5fr 5fr;
-    gap: 2rem;
+.period-selector {
+    display: flex;
+    background: var(--cor-fundo);
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid var(--cor-borda);
 }
 
-/* ============================================= */
-/* Coluna KPI (Esquerda)                         */
-/* ============================================= */
-.kpi-column {
+.period-selector button {
+    background: transparent;
+    border: none;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    color: var(--cor-texto-secundario);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.period-selector button.active {
+    background: var(--cor-azul-primario);
+    color: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Grid Interno dos KPIs */
+.kpi-grid-horizontal {
+    display: flex;
+    align-items: stretch;
+    overflow-x: hidden;
+    flex-wrap: nowrap;
+    
+    /* ALTERAÇÃO: Margens negativas para encostar nas laterais e fundo */
+    margin: 0 -1.5rem -1.5rem -1.5rem;
+    width: calc(100% + 3rem); /* Compensa a largura extra */
+    
+    gap: 0; /* Zerado pois o espaçamento será via padding dos grupos */
+}
+
+/* Grupos de KPIs */
+.kpi-group {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
-    background-color: var(--cor-card-principal);
-    padding: 1.5rem;
-    border-radius: 12px;
-    border: 1px solid var(--cor-borda);
-    height: fit-content;
+    gap: 1rem;
+    flex: 1;
+    min-width: 0;
+    
+    /* ALTERAÇÃO: Padding interno cria o espaço visual (Top/Bottom 1.5rem, Lados 1rem) */
+    padding: 1.5rem 1rem;
 }
 
-.kpi-card {
+/* Ajustes para o primeiro e último grupo encostarem no padding visual correto */
+.kpi-group:first-child {
+    padding-left: 1.5rem;
+}
+.kpi-group:last-child {
+    padding-right: 1.5rem;
+}
+
+/* Ajuste de Largura das Colunas */
+.kpi-group.wide-group {
+    flex: 1.1; 
+}
+
+.kpi-group.cofre-group {
+    flex: 0.4; 
+}
+
+.group-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: var(--cor-texto-secundario);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* Linhas de KPIs (Horizontal) */
+.kpi-row {
     display: flex;
-    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    height: 100%;
+}
+
+.kpi-row.finance-row {
     gap: 1rem;
 }
 
-.kpi-icon {
+/* Colunas de KPIs (Vertical - para o Cofre) */
+.kpi-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    height: 100%;
+}
+
+/* LINHA DIVISÓRIA */
+.divider-vertical {
+    display: block;
+    width: 1px;
+    background: var(--cor-borda);
+    align-self: stretch;
+    margin: 0; /* Sem margem para tocar o topo e o fundo */
     flex-shrink: 0;
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
+}
+
+/* KPI Card Compacto */
+.kpi-card-new {
+    flex: 1;
+    min-width: 140px;
+    background: var(--cor-fundo);
+    border: 1px solid var(--cor-borda);
+    border-radius: 12px;
+    padding: 0.75rem; 
+    display: flex;
+    align-items: flex-start; 
+    gap: 0.8rem;
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.kpi-column .kpi-card-new {
+    flex: 1;
+}
+
+.kpi-card-new:hover {
+    transform: translateY(-3px);
+    border-color: var(--cor-azul-primario);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.kpi-icon-wrapper {
+    width: 22px;
+    height: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.2rem;
+    flex-shrink: 0;
+    background-color: transparent !important; 
+    border-radius: 0;
 }
 
-.kpi-info {
+.kpi-content {
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    flex: 1;
+    align-self: center; 
 }
 
-.kpi-label {
+.kpi-value-text {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--cor-texto-principal);
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.kpi-label-text {
+    font-size: 0.8rem;
+    color: var(--cor-texto-secundario);
+    margin-top: 2px;
+}
+
+/* Mini Stats de Tarefas */
+.mini-stats-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: var(--cor-fundo);
+    border: 1px solid var(--cor-borda);
+    border-radius: 12px;
+    padding: 0.75rem; 
+    flex: 1.2;
+    min-width: 160px;
+}
+
+.mini-stat-title {
+    font-size: 0.75rem;
+    color: var(--cor-texto-secundario);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+}
+
+.mini-stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.prio-tag {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-align: center;
+    border-radius: 6px;
+    padding: 4px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.prio-tag small {
+    font-weight: 500;
+    font-size: 0.7rem;
+    opacity: 0.9;
+}
+
+.prio-tag.critica { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+.prio-tag.alta { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.prio-tag.media { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.prio-tag.baixa { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+
+/* ============================ */
+/* 3. PAINEL DE BOTÕES DE AÇÃO  */
+/* ============================ */
+.action-buttons-panel {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    /* Força 3 colunas iguais */
+    gap: 2rem;
+}
+
+.action-card-btn {
+    background: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    padding: 1.75rem;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+}
+
+.action-card-btn:hover {
+    border-color: var(--cor-azul-primario);
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    background: var(--cor-fundo-hover);
+}
+
+.action-card-btn .icon-box {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    flex-shrink: 0;
+}
+
+.icon-box.prov {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.icon-box.rot {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.icon-box.reg {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+
+.action-card-btn .text-box {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.action-card-btn h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.2rem;
+    color: var(--cor-texto-principal);
+    font-weight: 600;
+}
+
+.action-card-btn span {
     font-size: 0.9rem;
     color: var(--cor-texto-secundario);
 }
 
-.kpi-value {
+.action-card-btn .arrow {
+    margin-left: auto;
+    color: var(--cor-borda);
+    transition: transform 0.2s, color 0.2s;
     font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--cor-texto-principal);
 }
 
-.kpi-divider {
-    border: none;
-    border-top: 1px solid var(--cor-borda);
-    margin: 0.5rem 0;
-}
-
-/* Próximo Evento */
-.next-event-card {
-    background-color: var(--cor-fundo);
-    padding: 1rem;
-    border-radius: 8px;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    border: 1px solid var(--cor-borda);
-}
-
-.next-event-card span {
-    color: var(--cor-texto-secundario);
-    font-size: 0.8rem;
-}
-
-.next-event-card strong {
-    color: var(--cor-texto-principal);
-    font-weight: 600;
-}
-
-.next-event-card small {
+.action-card-btn:hover .arrow {
     color: var(--cor-azul-primario);
-    font-size: 0.8rem;
+    transform: translateX(5px);
 }
 
-/* ============================================= */
-/* Colunas de Gráficos                           */
-/* ============================================= */
-.charts-column {
-    display: flex;
-    flex-direction: column;
+/* ============================ */
+/* 4. GRÁFICOS                  */
+/* ============================ */
+.charts-grid-layout {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    /* Primeira coluna um pouco mais larga */
     gap: 2rem;
+    margin-bottom: 2rem;
 }
 
-.chart-card {
-    background-color: var(--cor-card-principal);
-    padding: 1.5rem;
-    border-radius: 12px;
+.chart-wrapper {
+    background: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
+    border-radius: 16px;
+    padding: 1.75rem;
     display: flex;
     flex-direction: column;
-    height: 100%; /* Para preencher espaço */
 }
 
-.chart-card h3 {
-    text-align: center;
+.chart-wrapper.full-width {
+    grid-column: 1 / -1;
+}
+
+.chart-header {
     margin-bottom: 1.5rem;
-    font-weight: 500;
-    font-size: 1.1rem;
-    color: var(--cor-texto-principal);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.chart-container {
+.chart-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: var(--cor-texto-principal);
+    font-weight: 600;
+}
+
+.chart-select {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--cor-borda);
+    background: var(--cor-fundo);
+    color: var(--cor-texto-principal);
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.chart-body {
     position: relative;
-    height: 300px; /* Altura fixa para o canvas */
+    height: 300px;
+    /* Altura padrão aumentada */
     width: 100%;
 }
 
-/* ============================================= */
-/* Responsividade                                */
-/* ============================================= */
+/* ============================ */
+/* Responsividade (Ajustada)    */
+/* ============================ */
 @media (max-width: 1200px) {
-    .panorama-grid {
-        grid-template-columns: 1fr; /* Empilha tudo em 1 coluna */
+
+    /* Em telas médias, o painel de KPI vira um grid de 2x2 */
+    .kpi-grid-horizontal {
+        flex-wrap: wrap;
+        gap: 2rem 1.5rem;
+        /* Row gap, Column gap */
     }
-    
-    .chart-container {
-        height: 250px;
+
+    .kpi-group,
+    .kpi-group.wide-group,
+    .kpi-group.cofre-group {
+        flex: 1 1 calc(50% - 1.5rem);
+        /* 50% de largura menos o gap */
+        min-width: auto;
+    }
+
+    .divider-vertical {
+        display: none;
+    }
+
+    /* Esconde divisórias verticais */
+
+    /* Botões de ação viram 1 por linha ou 2 dependendo do espaço */
+    .action-buttons-panel {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+}
+
+@media (max-width: 992px) {
+    .charts-grid-layout {
+        grid-template-columns: 1fr;
+        /* Gráficos empilhados */
+    }
+}
+
+@media (max-width: 768px) {
+    .internal-hero h1 {
+        font-size: 2.2rem;
+    }
+
+    .panorama-content-wrapper {
+        padding: 0 1rem;
+    }
+
+    .panel-section {
+        padding: 1.5rem;
+    }
+
+    /* KPIs empilhados em 1 coluna */
+    .kpi-group,
+    .kpi-group.wide-group,
+    .kpi-group.cofre-group {
+        flex: 1 1 100%;
+    }
+
+    .kpi-row {
+        flex-wrap: wrap;
+    }
+
+    .kpi-card-new {
+        min-width: 100%;
+    }
+
+    .mini-stats-column {
+        min-width: 100%;
+    }
+
+    /* Botões de ação empilhados */
+    .action-buttons-panel {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================ */
+/* 5. MODAIS, OVERLAY E TABELAS */
+/* ============================ */
+/* OVERLAY FIXO (Fundo Escuro que centraliza o modal) */
+.panorama-scope .modal-overlay {
+    position: fixed;
+    inset: 0;
+    /* Top, Right, Bottom, Left = 0 */
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 99999;
+    /* Garante que fique acima de tudo */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeInOverlay 0.2s ease-out;
+}
+
+/* CAIXA DO MODAL */
+.panorama-scope .modal-content {
+    background: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    border-radius: 16px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    animation: scaleInModal 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+}
+
+/* Tamanho específico para Modais de Tabela */
+.large-table-modal {
+    width: 90%;
+    max-width: 900px;
+    height: 80vh;
+    max-height: 800px;
+}
+
+/* HEADER DO MODAL */
+.panorama-scope .modal-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--cor-borda);
+    background: var(--cor-card-secundario);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.panorama-scope .modal-header h2 {
+    font-size: 1.25rem;
+    margin: 0;
+    color: var(--cor-texto-principal);
+    font-weight: 600;
+}
+
+.panorama-scope .close-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 1.5rem;
+    color: var(--cor-texto-secundario);
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.panorama-scope .close-btn:hover {
+    color: var(--cor-texto-principal);
+}
+
+/* CORPO DO MODAL (TABELA) */
+.table-body {
+    padding: 0;
+    flex: 1;
+    overflow: hidden;
+    /* Importante para o scroll ser interno */
+    display: flex;
+    flex-direction: column;
+    background: var(--cor-fundo);
+}
+
+/* BARRA DE FILTROS (Dentro do Body) */
+.table-filter-bar {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--cor-borda);
+    display: flex;
+    gap: 10px;
+    background: var(--cor-card-principal);
+    flex-shrink: 0;
+}
+
+.filter-pill {
+    background: transparent;
+    border: 1px solid var(--cor-borda);
+    padding: 6px 16px;
+    border-radius: 20px;
+    color: var(--cor-texto-secundario);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.filter-pill:hover {
+    background: var(--cor-fundo-hover);
+    color: var(--cor-texto-principal);
+}
+
+.filter-pill.active {
+    background: var(--cor-azul-primario);
+    color: white;
+    border-color: var(--cor-azul-primario);
+    box-shadow: 0 2px 8px rgba(74, 109, 255, 0.3);
+}
+
+/* ESTILIZAÇÃO DA TABELA */
+.panorama-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+
+.panorama-table thead {
+    flex-shrink: 0;
+}
+
+.panorama-table thead tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.panorama-table thead th {
+    background: var(--cor-card-secundario);
+    color: var(--cor-texto-secundario);
+    padding: 1rem 1.5rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--cor-borda);
+}
+
+.panorama-table tbody {
+    display: block;
+    flex: 1;
+    overflow-y: auto;
+    /* Scroll apenas no corpo da tabela */
+    width: 100%;
+}
+
+/* Scrollbar fina para a tabela */
+.panorama-table tbody::-webkit-scrollbar {
+    width: 6px;
+}
+
+.panorama-table tbody::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.panorama-table tbody::-webkit-scrollbar-thumb {
+    background-color: var(--cor-borda);
+    border-radius: 3px;
+}
+
+.panorama-table tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+    border-bottom: 1px solid var(--cor-borda);
+    transition: background 0.2s;
+}
+
+.panorama-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.panorama-table tbody tr:hover {
+    background-color: var(--cor-fundo-hover);
+}
+
+.panorama-table tbody td {
+    padding: 1rem 1.5rem;
+    color: var(--cor-texto-principal);
+    vertical-align: middle;
+}
+
+.empty-cell {
+    text-align: center;
+    padding: 3rem !important;
+    color: var(--cor-texto-secundario);
+    font-style: italic;
+}
+
+/* FOOTER DO MODAL */
+.panorama-scope .modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--cor-borda);
+    display: flex;
+    justify-content: flex-end;
+    background: var(--cor-card-secundario);
+    flex-shrink: 0;
+    border-radius: 0 0 16px 16px;
+}
+
+.panorama-scope .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--cor-borda);
+    color: var(--cor-texto-secundario);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.panorama-scope .btn-secondary:hover {
+    background: var(--cor-fundo-hover);
+    color: var(--cor-texto-principal);
+    border-color: var(--cor-texto-secundario);
+}
+
+/* Loading State */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--cor-azul-primario);
+    font-size: 1.2rem;
+    gap: 10px;
+}
+
+/* ANIMAÇÕES */
+@keyframes fadeInOverlay {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes scaleInModal {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
     }
 }
