@@ -2,127 +2,143 @@ import random
 from datetime import datetime, timedelta
 from faker import Faker
 from sqlalchemy.orm import Session
+from sqlalchemy import inspect
 
 # Imports do App
 from app.db.session import SessionLocal
 
-# Models
+# Tenta importar o User (Baseado no seu deps.py, ele está em app.models.user)
+try:
+    from app.models.user import User
+except ImportError:
+    User = None
+    print("⚠️ Modelo User não encontrado. Dados serão gerados sem vínculo.")
+
+# Models de Dados
 from app.models.financas import Categoria, Transacao
 from app.models.registros import GrupoAnotacao, Anotacao, Link, Tarefa, Subtarefa
 from app.models.agenda import Compromisso
 from app.models.cofre import Segredo
 
-# Inicializa Faker (em Português)
+# Inicializa Faker
 fake = Faker('pt_BR')
 db = SessionLocal()
 
-def create_registros():
-    print("📝 Populando Caderno & Tarefas (Volume Alto)...")
+def get_target_user_id():
+    """Retorna o ID do primeiro usuário encontrado (criado pelo create_user.py)."""
+    if User:
+        try:
+            user = db.query(User).first()
+            if user:
+                print(f"👤 Dados serão vinculados ao usuário: {user.email} (ID: {user.id})")
+                return user.id
+        except Exception as e:
+            print(f"⚠️ Aviso ao buscar usuário: {e}")
+    return None
+
+def create_instance(model_class, data, user_id=None):
+    """
+    Cria uma instância do model apenas se os campos existirem.
+    Verifica se a tabela tem 'user_id' antes de tentar atribuir.
+    """
+    # Verifica colunas existentes na tabela
+    mapper = inspect(model_class)
+    columns = [c.key for c in mapper.attrs]
     
-    # 1. Grupos
+    # Se user_id foi passado e o modelo aceita, adiciona
+    if user_id and 'user_id' in columns:
+        data['user_id'] = user_id
+        
+    # Remove campos do dicionário 'data' que não existem no modelo (segurança extra)
+    clean_data = {k: v for k, v in data.items() if k in columns}
+    
+    return model_class(**clean_data)
+
+def create_registros(user_id=None):
+    print("📝 Populando Caderno & Tarefas...")
+    
     grupos_nomes = [
         ("Pessoal", "#3b82f6"), ("Trabalho", "#ef4444"), 
-        ("Estudos", "#10b981"), ("Ideias", "#f59e0b"), ("Projetos", "#8b5cf6"),
-        ("Viagens", "#06b6d4"), ("Saúde", "#ec4899")
+        ("Estudos", "#10b981"), ("Ideias", "#f59e0b"), 
+        ("Projetos", "#8b5cf6"), ("Saúde", "#ec4899")
     ]
+    
     grupos_objs = []
+    
+    # 1. Grupos
     for nome, cor in grupos_nomes:
-        grupo = db.query(GrupoAnotacao).filter(GrupoAnotacao.nome == nome).first()
+        # Tenta buscar existente
+        query = db.query(GrupoAnotacao).filter(GrupoAnotacao.nome == nome)
+        # Se o modelo tiver user_id, filtra por ele
+        if user_id and hasattr(GrupoAnotacao, 'user_id'):
+            query = query.filter(GrupoAnotacao.user_id == user_id)
+            
+        grupo = query.first()
+        
         if not grupo:
-            grupo = GrupoAnotacao(nome=nome, cor=cor)
+            grupo = create_instance(GrupoAnotacao, {"nome": nome, "cor": cor}, user_id)
             db.add(grupo)
             grupos_objs.append(grupo)
         else:
             grupos_objs.append(grupo)
     db.commit()
     
-    # 2. Anotações (Gera 200 notas espalhadas no último ano)
-    print("   ... Gerando 200 anotações")
-    for _ in range(200):
+    # 2. Anotações
+    print("   ... Gerando 100 anotações")
+    for _ in range(100):
         grupo = random.choice(grupos_objs)
-        # Gera HTML simples simulando o Quill
-        html_content = f"""
-        <p>{fake.paragraph(nb_sentences=5)}</p>
-        <ul>
-            <li>{fake.sentence()}</li>
-            <li>{fake.sentence()}</li>
-            <li>{fake.sentence()}</li>
-            <li>{fake.sentence()}</li>
-        </ul>
-        <p><strong>Obs:</strong> {fake.sentence()}</p>
-        <p>{fake.text()}</p>
-        """
+        html = f"<p>{fake.paragraph()}</p><ul><li>{fake.sentence()}</li></ul>"
         
-        nota = Anotacao(
-            titulo=fake.sentence(nb_words=random.randint(2, 6)).replace(".", ""),
-            conteudo=html_content,
-            fixado=random.choice([True] + [False]*9), # 10% chance de fixar
-            data_criacao=fake.date_time_between(start_date='-1y', end_date='now'),
-            grupo_id=grupo.id
-        )
+        nota_data = {
+            "titulo": fake.sentence(nb_words=4).replace(".", ""),
+            "conteudo": html,
+            "fixado": random.choice([True] + [False]*9),
+            "data_criacao": fake.date_time_between(start_date='-1y', end_date='now'),
+            "grupo_id": grupo.id
+        }
+        
+        nota = create_instance(Anotacao, nota_data, user_id)
         db.add(nota)
-        db.flush()
+        db.flush() # Gera ID
 
-        # Adiciona Links aleatórios em algumas notas
-        if random.random() < 0.4:
-            for _ in range(random.randint(1, 3)):
-                db.add(Link(url=fake.url(), anotacao_id=nota.id))
-    
-    # 3. Tarefas (Gera 150 tarefas: Passadas e Futuras)
-    print("   ... Gerando 150 tarefas")
-    for _ in range(150):
-        # Distribuição de status
-        status = random.choices(["Pendente", "Em andamento", "Concluído"], weights=[40, 20, 40], k=1)[0]
-        prioridade = random.choices(["Baixa", "Média", "Alta", "Crítica"], weights=[30, 40, 20, 10], k=1)[0]
+        # Links (Opcional)
+        if random.random() < 0.3:
+            db.add(Link(url=fake.url(), anotacao_id=nota.id))
+            
+    # 3. Tarefas
+    print("   ... Gerando 80 tarefas")
+    for _ in range(80):
+        status = random.choice(["Pendente", "Em andamento", "Concluído"])
+        prioridade = random.choice(["Baixa", "Média", "Alta", "Crítica"])
         
-        data_base = fake.date_time_between(start_date='-1y', end_date='+6M')
+        dt_base = fake.date_time_between(start_date='-6M', end_date='+2M')
+        dt_concl = dt_base if status == "Concluído" else None
         
-        data_conclusao = None
-        if status == "Concluído":
-            # Se concluído, data base é passado, e conclusão é um pouco depois
-            data_criacao = data_base
-            data_conclusao = data_criacao + timedelta(days=random.randint(0, 10))
-            if data_conclusao > datetime.now(): data_conclusao = datetime.now() # Ajuste lógico
-        else:
-            data_criacao = data_base
-            data_conclusao = None
-
-        # Prazo (Opcional)
-        prazo = None
-        if random.random() < 0.6:
-            prazo = data_criacao + timedelta(days=random.randint(1, 30))
-
-        tarefa = Tarefa(
-            titulo=f"{random.choice(['Fazer', 'Comprar', 'Ligar para', 'Enviar', 'Revisar'])} {fake.bs()}",
-            descricao=fake.text(max_nb_chars=150),
-            status=status,
-            fixado=random.choice([True] + [False]*15),
-            prioridade=prioridade,
-            prazo=prazo,
-            data_criacao=data_criacao,
-            data_conclusao=data_conclusao
-        )
+        tarefa_data = {
+            "titulo": f"{random.choice(['Ligar', 'Comprar', 'Verificar'])} {fake.word()}",
+            "descricao": fake.sentence(),
+            "status": status,
+            "prioridade": prioridade,
+            "fixado": random.choice([True, False, False]),
+            "data_criacao": dt_base,
+            "data_conclusao": dt_concl
+        }
+        
+        tarefa = create_instance(Tarefa, tarefa_data, user_id)
         db.add(tarefa)
         db.flush()
-
+        
         # Subtarefas
         if random.random() < 0.5:
-            for _ in range(random.randint(1, 5)):
-                sub_concluido = True if status == "Concluído" else random.choice([True, False])
-                db.add(Subtarefa(
-                    titulo=fake.sentence(nb_words=4).replace(".", ""),
-                    concluido=sub_concluido,
-                    tarefa_id=tarefa.id
-                ))
-            
-    db.commit()
-    print("   ✅ Registros massivos criados.")
+            db.add(Subtarefa(titulo=fake.sentence(nb_words=3), concluido=random.choice([True, False]), tarefa_id=tarefa.id))
 
-def create_financas():
-    print("💰 Populando Finanças (Histórico de 1 ano)...")
+    db.commit()
+    print("   ✅ Registros concluídos.")
+
+def create_financas(user_id=None):
+    print("💰 Populando Finanças...")
     
-    # 1. Categorias
-    cats_data = [
+    cats_info = [
         ("Salário", "receita", "fa-money-bill", "#10b981"),
         ("Freelance", "receita", "fa-laptop", "#3b82f6"),
         ("Investimentos", "receita", "fa-chart-line", "#8b5cf6"),
@@ -130,175 +146,124 @@ def create_financas():
         ("Moradia", "despesa", "fa-house", "#f97316"),
         ("Transporte", "despesa", "fa-car", "#eab308"),
         ("Lazer", "despesa", "fa-gamepad", "#8b5cf6"),
-        ("Saúde", "despesa", "fa-heart-pulse", "#ec4899"),
         ("Educação", "despesa", "fa-graduation-cap", "#6366f1"),
-        ("Assinaturas", "despesa", "fa-ticket", "#64748b"),
-        ("Compras", "despesa", "fa-bag-shopping", "#f43f5e"),
+        ("Saúde", "despesa", "fa-heart-pulse", "#ec4899"),
     ]
     
     cats_objs = []
-    for nome, tipo, icone, cor in cats_data:
-        cat = db.query(Categoria).filter(Categoria.nome == nome).first()
+    for nome, tipo, icone, cor in cats_info:
+        # Busca Categoria (com ou sem user_id)
+        query = db.query(Categoria).filter(Categoria.nome == nome)
+        if user_id and hasattr(Categoria, 'user_id'):
+            query = query.filter(Categoria.user_id == user_id)
+        
+        cat = query.first()
         if not cat:
-            cat = Categoria(nome=nome, tipo=tipo, icone=icone, cor=cor, meta_limite=random.uniform(500, 3000))
+            cat = create_instance(Categoria, {
+                "nome": nome, "tipo": tipo, "icone": icone, "cor": cor, 
+                "meta_limite": random.uniform(500, 3000)
+            }, user_id)
             db.add(cat)
             cats_objs.append(cat)
         else:
             cats_objs.append(cat)
     db.commit()
     
-    cats_despesa = db.query(Categoria).filter(Categoria.tipo == 'despesa').all()
-    cats_receita = db.query(Categoria).filter(Categoria.tipo == 'receita').all()
-
-    # 2. Transações (Gera 2.000 transações para preencher bem os gráficos)
-    print("   ... Gerando 2.000 transações financeiras")
+    cats_receita = [c for c in cats_objs if c.tipo == 'receita']
+    cats_despesa = [c for c in cats_objs if c.tipo == 'despesa']
     
-    for _ in range(2000):
-        # 25% Receita, 75% Despesa
-        eh_receita = random.random() < 0.25 
+    print("   ... Gerando 1.000 transações")
+    for _ in range(1000):
+        eh_receita = random.random() < 0.25
         categoria = random.choice(cats_receita) if eh_receita else random.choice(cats_despesa)
         
-        # Datas: 1 ano para trás, 6 meses para frente (previsão)
-        data_t = fake.date_time_between(start_date='-1y', end_date='+6M')
+        dt = fake.date_time_between(start_date='-1y', end_date='+6M')
+        status = "Efetivada" if dt < datetime.now() else "Pendente"
         
-        # Valores
-        if eh_receita:
-            valor = random.uniform(2000, 15000) if "Salário" in categoria.nome else random.uniform(200, 3000)
-        else:
-            if "Moradia" in categoria.nome:
-                valor = random.uniform(800, 2500)
-            elif "Alimentação" in categoria.nome:
-                valor = random.uniform(20, 300)
-            else:
-                valor = random.uniform(15, 1000)
-
-        # Status: Passado = Efetivada, Futuro = Pendente
-        status = "Efetivada" if data_t < datetime.now() else "Pendente"
+        valor = random.uniform(2000, 10000) if eh_receita else random.uniform(20, 1500)
         
-        # Parcelamento (10% das despesas)
-        tipo_rec = 'pontual'
-        if not eh_receita and random.random() < 0.10:
-            tipo_rec = 'parcelada'
+        trans_data = {
+            "descricao": fake.sentence(nb_words=3).replace(".", ""),
+            "valor": valor,
+            "data": dt,
+            "categoria_id": categoria.id,
+            "tipo_recorrencia": "pontual",
+            "status": status
+        }
         
-        if tipo_rec == 'parcelada':
-            total_parc = random.randint(2, 12)
-            valor_parcela = valor / total_parc
-            
-            # Cria as N parcelas
-            for p in range(1, total_parc + 1):
-                data_p = data_t + timedelta(days=30 * (p-1))
-                status_p = "Efetivada" if data_p < datetime.now() else "Pendente"
-                
-                # Se passou de 1 ano no futuro, para (opcional, mas bom pra não sujar mt)
-                if data_p > datetime.now() + timedelta(days=365):
-                    break
-
-                t = Transacao(
-                    descricao=f"Compra {fake.word()} ({p}/{total_parc})",
-                    valor=valor_parcela,
-                    data=data_p,
-                    categoria_id=categoria.id,
-                    tipo_recorrencia='parcelada',
-                    status=status_p,
-                    parcela_atual=p,
-                    total_parcelas=total_parc
-                )
-                db.add(t)
-        else:
-            # Transação Normal ou Recorrente (Assinaturas)
-            if "Assinaturas" in categoria.nome or "Moradia" in categoria.nome:
-                tipo_rec = 'recorrente' if random.random() < 0.5 else 'pontual'
-
-            t = Transacao(
-                descricao=fake.sentence(nb_words=3).replace(".", ""),
-                valor=valor,
-                data=data_t,
-                categoria_id=categoria.id,
-                tipo_recorrencia=tipo_rec,
-                status=status
-            )
-            db.add(t)
-            
+        t = create_instance(Transacao, trans_data, user_id)
+        db.add(t)
+        
     db.commit()
-    print("   ✅ Finanças populadas com histórico.")
+    print("   ✅ Finanças concluídas.")
 
-def create_agenda():
-    print("📅 Populando Agenda (300 compromissos)...")
+def create_agenda(user_id=None):
+    print("📅 Populando Agenda...")
     
-    locais = ["Escritório", "Zoom", "Google Meet", "Casa", "Consultório", "Faculdade", "Shopping", "Cliente"]
-    tipos = ["Reunião", "Consulta", "Aula", "Treino", "Almoço", "Call", "Viagem", "Aniversário"]
+    locais = ["Zoom", "Escritório", "Casa", "Rua", "Consultório"]
+    tipos = ["Reunião", "Consulta", "Almoço", "Treino", "Call"]
     
-    # Gera 300 compromissos (-1 ano a +1 ano)
-    for _ in range(300):
-        data_evt = fake.date_time_between(start_date='-1y', end_date='+1y')
+    for _ in range(150):
+        dt = fake.date_time_between(start_date='-6M', end_date='+6M')
         
-        if data_evt < datetime.now():
-            status = random.choices(['Realizado', 'Perdido', 'Cancelado'], weights=[80, 15, 5], k=1)[0]
+        # Status lógico
+        if dt < datetime.now():
+            status = random.choice(['Realizado', 'Perdido'])
         else:
             status = 'Pendente'
             
-        evt = Compromisso(
-            titulo=f"{random.choice(tipos)}: {fake.bs()}",
-            descricao=fake.sentence(),
-            local=random.choice(locais),
-            data_hora=data_evt,
-            lembrete=random.choice([True, False]),
-            status=status,
-            cor=fake.color() # Se o modelo tiver cor
-        )
+        agenda_data = {
+            "titulo": f"{random.choice(tipos)}: {fake.first_name()}",
+            "descricao": fake.sentence(),
+            "local": random.choice(locais),
+            "data_hora": dt,
+            "lembrete": random.choice([True, False]),
+            "status": status
+            # REMOVIDO CAMPO 'COR' PARA EVITAR ERRO
+        }
+        
+        evt = create_instance(Compromisso, agenda_data, user_id)
         db.add(evt)
-    
-    db.commit()
-    print("   ✅ Agenda populada.")
-
-def create_cofre():
-    print("🔒 Populando Cofre...")
-    
-    # Serviços Fixos
-    servicos_fixos = [
-        ("Netflix", "Entretenimento"), ("Spotify", "Música"), 
-        ("AWS Console", "Trabalho"), ("Gmail Principal", "Pessoal"), 
-        ("Instagram", "Social"), ("Nubank", "Financeiro"),
-        ("Steam", "Jogos"), ("ChatGPT", "IA")
-    ]
-    
-    for nome, categoria in servicos_fixos:
-        segredo = Segredo(
-            titulo=f"Acesso {nome}",
-            servico=categoria,
-            usuario_login=fake.email(),
-            senha_encriptada=f"ENC_{fake.password(length=12)}", 
-            notas=fake.sentence(),
-            data_expiracao=fake.future_date() if random.random() < 0.3 else None
-        )
-        db.add(segredo)
-
-    # Serviços Aleatórios para volume
-    for _ in range(40):
-        domain = fake.domain_name()
-        segredo = Segredo(
-            titulo=f"Conta {domain}",
-            servico="Outros",
-            usuario_login=fake.user_name(),
-            senha_encriptada=f"ENC_{fake.password(length=16)}",
-            notas="Gerado automaticamente",
-            data_expiracao=fake.date_between(start_date='-6M', end_date='+2y') if random.random() < 0.5 else None
-        )
-        db.add(segredo)
         
     db.commit()
-    print("   ✅ Cofre populado.")
+    print("   ✅ Agenda concluída.")
+
+def create_cofre(user_id=None):
+    print("🔒 Populando Cofre...")
+    
+    servicos = ["Netflix", "Spotify", "Amazon", "Gov.br", "Gmail"]
+    
+    for servico in servicos:
+        cofre_data = {
+            "titulo": servico,
+            "servico": "Entretenimento" if servico != "Gov.br" else "Pessoal",
+            "usuario_login": fake.email(),
+            "senha_encriptada": "ENC_TESTE_123",
+            "notas": fake.sentence(),
+            "data_expiracao": fake.future_date()
+        }
+        
+        seg = create_instance(Segredo, cofre_data, user_id)
+        db.add(seg)
+        
+    db.commit()
+    print("   ✅ Cofre concluído.")
 
 def main():
-    print("🚀 Iniciando População MASSIVA do Banco de Dados...")
+    print("🚀 Iniciando script de população (Modo Seguro)...")
     try:
-        create_registros()
-        create_financas()
-        create_agenda()
-        create_cofre()
-        print("\n✨ Processo finalizado com sucesso! (Muitos dados gerados)")
+        # Busca usuário para vincular
+        uid = get_target_user_id()
+        
+        create_registros(uid)
+        create_financas(uid)
+        create_agenda(uid)
+        create_cofre(uid)
+        
+        print("\n✨ Banco de dados populado com sucesso!")
+        
     except Exception as e:
-        print(f"\n❌ Erro ao popular banco: {e}")
+        print(f"\n❌ Erro crítico: {e}")
         db.rollback()
     finally:
         db.close()

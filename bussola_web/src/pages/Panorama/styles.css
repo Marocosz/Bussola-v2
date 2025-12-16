@@ -1,23 +1,19 @@
-/* src/pages/Panorama/styles.css */
 .panorama-scope.main-container {
     padding-bottom: 5rem;
     min-height: 100vh;
-    /* Remove padding top padrão se houver, a Hero cuida disso */
     padding-top: 0 !important;
 }
 
 /* ============================ */
-/* 1. HERO SECTION (Padronizada)*/
+/* 1. HERO SECTION              */
 /* ============================ */
 .panorama-scope .internal-hero {
     position: relative;
     text-align: center;
-    /* Aumentado o padding vertical para o padrão das outras páginas */
     padding: 5rem 2rem 6rem 2rem;
     overflow: hidden;
     background: transparent;
     border-radius: 0 0 20px 20px;
-    /* Espaço abaixo da hero */
 }
 
 .panorama-scope .hero-bg-effect {
@@ -34,7 +30,6 @@
 
 .panorama-scope .internal-hero h1 {
     font-size: 3rem;
-    /* Aumentado o tamanho da fonte */
     font-weight: 700;
     margin-bottom: 1rem;
     background: linear-gradient(90deg, #fff 0%, var(--cor-azul-primario) 50%, #fff 100%);
@@ -51,7 +46,6 @@
 .panorama-scope .internal-hero p {
     color: var(--cor-texto-secundario);
     font-size: 1.2rem;
-    /* Ligeiramente aumentado */
     position: relative;
     z-index: 1;
     max-width: 600px;
@@ -64,20 +58,16 @@
     }
 }
 
-/* Wrapper Principal (Margens Reduzidas) */
+/* Wrapper Principal */
 .panorama-content-wrapper {
-    /* Padding lateral reduzido pela metade (de 2rem para 1rem ou menos em telas grandes) */
     padding: 0 1rem;
     max-width: 1600px;
-    /* Aumentado o max-width para preencher mais */
     margin: 0 auto;
     display: flex;
     flex-direction: column;
     gap: 2.5rem;
-    /* Aumentado o espaçamento entre seções */
 }
 
-/* Em telas maiores, permite uma margem um pouco maior, mas ainda menor que antes */
 @media (min-width: 1400px) {
     .panorama-content-wrapper {
         padding: 0 2rem;
@@ -92,7 +82,7 @@
     border: 1px solid var(--cor-borda);
     border-radius: 16px;
     padding: 1.5rem;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
     overflow: hidden;
 }
 
@@ -101,12 +91,9 @@
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid var(--cor-borda);
-    
-    /* ALTERAÇÃO: Margens negativas para encostar nas bordas laterais e topo */
     margin: -1.5rem -1.5rem 0 -1.5rem;
-    
-    /* Padding interno para compensar e manter o visual */
-    padding: 1.5rem; 
+    padding: 1.5rem;
+    margin-bottom: 0;
 }
 
 .panel-header h2 {
@@ -142,47 +129,40 @@
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-/* Grid Interno dos KPIs */
+/* --- GRID PRINCIPAL --- */
 .kpi-grid-horizontal {
     display: flex;
     align-items: stretch;
     overflow-x: hidden;
     flex-wrap: nowrap;
-    
-    /* ALTERAÇÃO: Margens negativas para encostar nas laterais e fundo */
     margin: 0 -1.5rem -1.5rem -1.5rem;
-    width: calc(100% + 3rem); /* Compensa a largura extra */
-    
-    gap: 0; /* Zerado pois o espaçamento será via padding dos grupos */
+    width: calc(100% + 3rem);
+    gap: 0;
 }
 
-/* Grupos de KPIs */
 .kpi-group {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.75rem;
     flex: 1;
     min-width: 0;
-    
-    /* ALTERAÇÃO: Padding interno cria o espaço visual (Top/Bottom 1.5rem, Lados 1rem) */
     padding: 1.5rem 1rem;
 }
 
-/* Ajustes para o primeiro e último grupo encostarem no padding visual correto */
 .kpi-group:first-child {
     padding-left: 1.5rem;
 }
+
 .kpi-group:last-child {
     padding-right: 1.5rem;
 }
 
-/* Ajuste de Largura das Colunas */
 .kpi-group.wide-group {
-    flex: 1.1; 
+    flex: 1.1;
 }
 
 .kpi-group.cofre-group {
-    flex: 0.4; 
+    flex: 0.4;
 }
 
 .group-label {
@@ -193,70 +173,72 @@
     letter-spacing: 0.5px;
 }
 
-/* Linhas de KPIs (Horizontal) */
-.kpi-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    height: 100%;
-}
-
-.kpi-row.finance-row {
-    gap: 1rem;
-}
-
-/* Colunas de KPIs (Vertical - para o Cofre) */
-.kpi-column {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    height: 100%;
-}
-
-/* LINHA DIVISÓRIA */
 .divider-vertical {
     display: block;
     width: 1px;
     background: var(--cor-borda);
     align-self: stretch;
-    margin: 0; /* Sem margem para tocar o topo e o fundo */
+    margin: 0;
     flex-shrink: 0;
 }
 
-/* KPI Card Compacto */
-.kpi-card-new {
-    flex: 1;
-    min-width: 140px;
-    background: var(--cor-fundo);
-    border: 1px solid var(--cor-borda);
-    border-radius: 12px;
-    padding: 0.75rem; 
+/* --- LAYOUTS INTERNOS (ROWS) --- */
+.kpi-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    height: 100%;
+}
+
+.kpi-row> :last-child:nth-child(odd) {
+    grid-column: span 2;
+}
+
+.kpi-row.finance-row {
+    gap: 0.75rem;
+}
+
+.kpi-column {
     display: flex;
-    align-items: flex-start; 
-    gap: 0.8rem;
-    transition: transform 0.2s, border-color 0.2s;
+    flex-direction: column;
+    gap: 0.75rem;
+    height: 100%;
 }
 
 .kpi-column .kpi-card-new {
     flex: 1;
 }
 
+/* --- ESTILO DO CARD --- */
+.kpi-card-new {
+    background: var(--cor-fundo);
+    border: 1px solid var(--cor-borda);
+    border-radius: 12px;
+    padding: 0.75rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8rem;
+    transition: transform 0.2s, border-color 0.2s;
+    min-width: 0;
+    position: relative;
+}
+
 .kpi-card-new:hover {
-    transform: translateY(-3px);
+    transform: translateY(-2px);
     border-color: var(--cor-azul-primario);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .kpi-icon-wrapper {
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
+    border-radius: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.2rem;
     flex-shrink: 0;
-    background-color: transparent !important; 
-    border-radius: 0;
+    background-color: transparent !important;
 }
 
 .kpi-content {
@@ -264,7 +246,7 @@
     flex-direction: column;
     overflow: hidden;
     flex: 1;
-    align-self: center; 
+    align-self: center;
 }
 
 .kpi-value-text {
@@ -281,9 +263,12 @@
     font-size: 0.8rem;
     color: var(--cor-texto-secundario);
     margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* Mini Stats de Tarefas */
+/* --- TAREFAS PENDENTES --- */
 .mini-stats-column {
     display: flex;
     flex-direction: column;
@@ -291,16 +276,14 @@
     background: var(--cor-fundo);
     border: 1px solid var(--cor-borda);
     border-radius: 12px;
-    padding: 0.75rem; 
-    flex: 1.2;
-    min-width: 160px;
+    padding: 0.75rem;
+    grid-column: span 2;
 }
 
 .mini-stat-title {
     font-size: 0.75rem;
     color: var(--cor-texto-secundario);
     font-weight: 700;
-    margin-bottom: 0.5rem;
     text-transform: uppercase;
 }
 
@@ -308,6 +291,7 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.5rem;
+    height: 100%;
 }
 
 .prio-tag {
@@ -327,10 +311,25 @@
     opacity: 0.9;
 }
 
-.prio-tag.critica { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
-.prio-tag.alta { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
-.prio-tag.media { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
-.prio-tag.baixa { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+.prio-tag.critica {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.prio-tag.alta {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+.prio-tag.media {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+}
+
+.prio-tag.baixa {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
 
 /* ============================ */
 /* 3. PAINEL DE BOTÕES DE AÇÃO  */
@@ -338,7 +337,6 @@
 .action-buttons-panel {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    /* Força 3 colunas iguais */
     gap: 2rem;
 }
 
@@ -426,7 +424,6 @@
 .charts-grid-layout {
     display: grid;
     grid-template-columns: 1.2fr 0.8fr;
-    /* Primeira coluna um pouco mais larga */
     gap: 2rem;
     margin-bottom: 2rem;
 }
@@ -471,37 +468,36 @@
 .chart-body {
     position: relative;
     height: 300px;
-    /* Altura padrão aumentada */
     width: 100%;
 }
 
-/* ============================ */
-/* Responsividade (Ajustada)    */
-/* ============================ */
+/* Responsividade */
 @media (max-width: 1200px) {
-
-    /* Em telas médias, o painel de KPI vira um grid de 2x2 */
     .kpi-grid-horizontal {
         flex-wrap: wrap;
-        gap: 2rem 1.5rem;
-        /* Row gap, Column gap */
+        gap: 0;
+        margin: 0;
+        width: 100%;
     }
 
-    .kpi-group,
-    .kpi-group.wide-group,
-    .kpi-group.cofre-group {
-        flex: 1 1 calc(50% - 1.5rem);
-        /* 50% de largura menos o gap */
-        min-width: auto;
+    .panel-header {
+        margin: 0 0 1.5rem 0;
+    }
+
+    .kpi-group {
+        padding: 1rem 0;
+        border-bottom: 1px solid var(--cor-borda);
+        flex: 1 1 100%;
+    }
+
+    .kpi-group:last-child {
+        border-bottom: none;
     }
 
     .divider-vertical {
         display: none;
     }
 
-    /* Esconde divisórias verticais */
-
-    /* Botões de ação viram 1 por linha ou 2 dependendo do espaço */
     .action-buttons-panel {
         grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     }
@@ -510,7 +506,6 @@
 @media (max-width: 992px) {
     .charts-grid-layout {
         grid-template-columns: 1fr;
-        /* Gráficos empilhados */
     }
 }
 
@@ -527,13 +522,6 @@
         padding: 1.5rem;
     }
 
-    /* KPIs empilhados em 1 coluna */
-    .kpi-group,
-    .kpi-group.wide-group,
-    .kpi-group.cofre-group {
-        flex: 1 1 100%;
-    }
-
     .kpi-row {
         flex-wrap: wrap;
     }
@@ -546,7 +534,6 @@
         min-width: 100%;
     }
 
-    /* Botões de ação empilhados */
     .action-buttons-panel {
         grid-template-columns: 1fr;
     }
@@ -555,22 +542,20 @@
 /* ============================ */
 /* 5. MODAIS, OVERLAY E TABELAS */
 /* ============================ */
-/* OVERLAY FIXO (Fundo Escuro que centraliza o modal) */
+/* OVERLAY FIXO */
 .panorama-scope .modal-overlay {
     position: fixed;
     inset: 0;
-    /* Top, Right, Bottom, Left = 0 */
-    background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(4px);
+    background-color: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(5px);
     z-index: 99999;
-    /* Garante que fique acima de tudo */
     display: flex;
     align-items: center;
     justify-content: center;
     animation: fadeInOverlay 0.2s ease-out;
 }
 
-/* CAIXA DO MODAL */
+/* CAIXA DO MODAL - ESTILO PADRÃO */
 .panorama-scope .modal-content {
     background: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
@@ -583,17 +568,30 @@
     overflow: hidden;
 }
 
-/* Tamanho específico para Modais de Tabela */
-.large-table-modal {
-    width: 90%;
-    max-width: 900px;
-    height: 80vh;
-    max-height: 800px;
+/* TAMANHO ESPECÍFICO AUMENTADO (80%) */
+.panorama-scope .modal-content.large-table-modal {
+    width: 80%;
+    height: 90vh;
+    max-width: none;
+    max-height: none;
+}
+
+@media (max-width: 1200px) {
+    .panorama-scope .modal-content.large-table-modal {
+        width: 85%;
+    }
+}
+
+@media (max-width: 768px) {
+    .panorama-scope .modal-content.large-table-modal {
+        width: 95%;
+        height: 95vh;
+    }
 }
 
 /* HEADER DO MODAL */
 .panorama-scope .modal-header {
-    padding: 1.25rem 1.5rem;
+    padding: 1.5rem 2rem;
     border-bottom: 1px solid var(--cor-borda);
     background: var(--cor-card-secundario);
     display: flex;
@@ -603,7 +601,7 @@
 }
 
 .panorama-scope .modal-header h2 {
-    font-size: 1.25rem;
+    font-size: 1.4rem;
     margin: 0;
     color: var(--cor-texto-principal);
     font-weight: 600;
@@ -613,7 +611,7 @@
     background: none;
     border: none;
     padding: 0;
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     color: var(--cor-texto-secundario);
     cursor: pointer;
     line-height: 1;
@@ -629,27 +627,58 @@
     padding: 0;
     flex: 1;
     overflow: hidden;
-    /* Importante para o scroll ser interno */
     display: flex;
     flex-direction: column;
     background: var(--cor-fundo);
+    /* AQUI ESTAVA O PROBLEMA: Faltava gap: 0 para evitar qualquer espaço do flexbox */
+    gap: 0 !important; 
 }
 
-/* BARRA DE FILTROS (Dentro do Body) */
+/* ============================ */
+/* BARRA DE FILTROS E ORDENAÇÃO */
+/* ============================ */
 .table-filter-bar {
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--cor-borda);
+    padding: 1.2rem 2rem 1.2rem 2rem;
+    /* Reduzido padding inferior para 0.5rem */
+
+    /* ALTERAÇÃO IMPORTANTE: Fundo igual ao do Header da Tabela */
+    background: var(--cor-card-secundario);
+
+    /* Arredondamento apenas superior */
+    border-radius: 16px 16px 0 0;
+
     display: flex;
-    gap: 10px;
-    background: var(--cor-card-principal);
+    justify-content: space-between;
+    align-items: center;
     flex-shrink: 0;
+    gap: 1rem;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--cor-borda);
+}
+
+.filter-group {
+    display: flex;
+    gap: 8px;
+}
+
+.sort-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sort-group label {
+    font-size: 0.85rem;
+    color: var(--cor-texto-secundario);
+    font-weight: 500;
 }
 
 .filter-pill {
-    background: transparent;
+    background: var(--cor-card-principal);
+    /* Contraste no header escuro */
     border: 1px solid var(--cor-borda);
     padding: 6px 16px;
-    border-radius: 20px;
+    border-radius: 8px;
     color: var(--cor-texto-secundario);
     cursor: pointer;
     font-size: 0.85rem;
@@ -660,28 +689,57 @@
 .filter-pill:hover {
     background: var(--cor-fundo-hover);
     color: var(--cor-texto-principal);
+    border-color: var(--cor-texto-secundario);
 }
 
 .filter-pill.active {
-    background: var(--cor-azul-primario);
-    color: white;
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--cor-azul-primario);
     border-color: var(--cor-azul-primario);
-    box-shadow: 0 2px 8px rgba(74, 109, 255, 0.3);
+    font-weight: 600;
 }
 
-/* ESTILIZAÇÃO DA TABELA */
+/* SELECT DE ORDENAÇÃO */
+.sort-select {
+    background: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    color: var(--cor-texto-principal);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.sort-select:focus {
+    border-color: var(--cor-azul-primario);
+}
+
+/* ============================ */
+/* ESTILIZAÇÃO DA TABELA        */
+/* ============================ */
 .panorama-table {
     width: 100%;
+    margin-top: 0;
     border-collapse: collapse;
-    font-size: 0.9rem;
+    border-spacing: 0;
+    font-size: 0.95rem;
     display: flex;
     flex-direction: column;
     flex: 1;
     overflow: hidden;
+    min-height: 0;
+    /* Fundo do container da tabela volta ao normal */
+    background: var(--cor-card-principal);
 }
 
 .panorama-table thead {
     flex-shrink: 0;
+    padding-top: 6px;
+    padding-right: 6px;
+    /* Fundo igual ao do filtro para continuidade */
+    background: var(--cor-card-secundario);
 }
 
 .panorama-table thead tr {
@@ -693,43 +751,60 @@
 .panorama-table thead th {
     background: var(--cor-card-secundario);
     color: var(--cor-texto-secundario);
-    padding: 1rem 1.5rem;
+    padding: 0.5rem 2rem 1rem 2rem;
+    /* Menos padding superior */
     text-align: left;
     font-weight: 600;
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+
+    /* Borda apenas embaixo */
     border-bottom: 1px solid var(--cor-borda);
+    border-top: none;
 }
 
 .panorama-table tbody {
     display: block;
     flex: 1;
     overflow-y: auto;
-    /* Scroll apenas no corpo da tabela */
     width: 100%;
+    background: var(--cor-card-principal);
 }
 
-/* Scrollbar fina para a tabela */
+/* --- SCROLLBAR CUSTOMIZADO --- */
 .panorama-table tbody::-webkit-scrollbar {
     width: 6px;
 }
 
 .panorama-table tbody::-webkit-scrollbar-track {
     background: transparent;
+    margin: 4px 0;
 }
 
 .panorama-table tbody::-webkit-scrollbar-thumb {
-    background-color: var(--cor-borda);
-    border-radius: 3px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    transition: background-color 0.2s;
 }
 
+.panorama-table tbody::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Firefox Scrollbar */
+.panorama-table tbody {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+}
+
+/* Linhas da Tabela */
 .panorama-table tbody tr {
     display: table;
     width: 100%;
     table-layout: fixed;
     border-bottom: 1px solid var(--cor-borda);
-    transition: background 0.2s;
+    transition: background 0.1s;
 }
 
 .panorama-table tbody tr:last-child {
@@ -741,46 +816,65 @@
 }
 
 .panorama-table tbody td {
-    padding: 1rem 1.5rem;
+    padding: 1.2rem 2rem;
     color: var(--cor-texto-principal);
     vertical-align: middle;
 }
 
 .empty-cell {
     text-align: center;
-    padding: 3rem !important;
+    padding: 4rem !important;
     color: var(--cor-texto-secundario);
     font-style: italic;
+    font-size: 1rem;
+}
+
+/* Estilos Específicos de Células */
+.badge-cat {
+    padding: 4px 10px;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-block;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.text-center {
+    text-align: center;
+}
+
+.due-date {
+    color: #e67e22;
+    font-weight: 500;
 }
 
 /* FOOTER DO MODAL */
 .panorama-scope .modal-footer {
-    padding: 1rem 1.5rem;
+    padding: 1.5rem 2rem;
     border-top: 1px solid var(--cor-borda);
     display: flex;
     justify-content: flex-end;
     background: var(--cor-card-secundario);
     flex-shrink: 0;
-    border-radius: 0 0 16px 16px;
 }
 
 .panorama-scope .btn-secondary {
-    background: transparent;
+    background: var(--cor-fundo);
     border: 1px solid var(--cor-borda);
-    color: var(--cor-texto-secundario);
-    padding: 8px 16px;
+    color: var(--cor-texto-principal);
+    padding: 10px 24px;
     border-radius: 8px;
     cursor: pointer;
+    font-weight: 500;
     transition: all 0.2s;
 }
 
 .panorama-scope .btn-secondary:hover {
     background: var(--cor-fundo-hover);
-    color: var(--cor-texto-principal);
     border-color: var(--cor-texto-secundario);
 }
 
-/* Loading State */
 .loading-state {
     display: flex;
     flex-direction: column;
@@ -789,10 +883,9 @@
     height: 100%;
     color: var(--cor-azul-primario);
     font-size: 1.2rem;
-    gap: 10px;
+    gap: 15px;
 }
 
-/* ANIMAÇÕES */
 @keyframes fadeInOverlay {
     from {
         opacity: 0;
@@ -806,7 +899,7 @@
 @keyframes scaleInModal {
     from {
         opacity: 0;
-        transform: scale(0.95) translateY(10px);
+        transform: scale(0.98) translateY(15px);
     }
 
     to {

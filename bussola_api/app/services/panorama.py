@@ -167,7 +167,6 @@ class PanoramaService:
         rosca_data = [g[2] for g in gastos_cat]
 
         # Evolução Mensal (Sempre mostra os últimos 6 meses fixos para contexto histórico)
-        # Manter fixo é melhor para UX, pois mostra a tendência independente do filtro de soma.
         evolucao_labels, evol_rec, evol_desp = [], [], []
         for i in range(5, -1, -1):
             mes_alvo = today - relativedelta(months=i)
@@ -204,7 +203,7 @@ class PanoramaService:
         }
 
     # ==========================================
-    # NOVOS MÉTODOS PARA OS MODAIS (Mantidos)
+    # NOVOS MÉTODOS PARA OS MODAIS (Alterados)
     # ==========================================
 
     def get_provisoes_data(self, db: Session):
@@ -236,20 +235,18 @@ class PanoramaService:
         return resultado
 
     def get_roteiro_data(self, db: Session):
-        """ Retorna compromissos futuros. """
-        today = datetime.now()
+        """ Retorna TODOS os compromissos (Passado e Futuro) para filtragem no front. """
         compromissos = db.query(Compromisso).filter(
-            Compromisso.data_hora >= today,
             Compromisso.status != 'Cancelado'
-        ).order_by(Compromisso.data_hora.asc()).all()
+        ).all()
 
         res = []
         for c in compromissos:
             res.append({
                 "id": c.id,
                 "titulo": c.titulo,
-                "data_inicio": c.data_hora, 
-                "data_fim": c.data_hora, 
+                "data_inicio": c.data_hora,
+                "data_fim": c.data_hora,
                 "tipo": "Compromisso",
                 "cor": getattr(c, 'cor', '#ccc'),
                 "status": c.status
@@ -257,17 +254,13 @@ class PanoramaService:
         return res
 
     def get_registros_resumo_data(self, db: Session):
-        """ Retorna resumo de tarefas e anotações. """
+        """ Retorna TODAS as tarefas e últimas anotações para o modal. """
+        # Notas: Mantivemos limit 10 pois o foco do modal agora é TAREFAS
         notas = db.query(Anotacao).join(GrupoAnotacao, isouter=True).order_by(Anotacao.data_criacao.desc()).limit(10).all()
         
-        ordenacao_prio = case(
-            (Tarefa.prioridade == 'Crítica', 1),
-            (Tarefa.prioridade == 'Alta', 2),
-            (Tarefa.prioridade == 'Média', 3),
-            (Tarefa.prioridade == 'Baixa', 4),
-            else_=5
-        )
-        tarefas = db.query(Tarefa).filter(Tarefa.status != 'Concluído').order_by(ordenacao_prio.asc()).limit(15).all()
+        # Tarefas: RETORNA TUDO (Sem filtros de status e sem limite)
+        # O Frontend filtra se é Pendente/Concluído/Prioridade
+        tarefas = db.query(Tarefa).all()
         
         res = []
         for t in tarefas:
