@@ -426,7 +426,13 @@ export function Registros() {
             {/* MODAIS */}
             <AnotacaoModal active={notaModalOpen} closeModal={() => setNotaModalOpen(false)} onUpdate={fetchData} editingData={editingNota} gruposDisponiveis={grupos} />
             <TarefaModal active={tarefaModalOpen} closeModal={() => setTarefaModalOpen(false)} onUpdate={fetchData} editingData={editingTarefa} />
-            <GrupoModal active={grupoModalOpen} closeModal={() => setGrupoModalOpen(false)} onUpdate={fetchData} editingData={editingGrupo} existingGroups={grupos}/>
+            <GrupoModal 
+                active={grupoModalOpen} 
+                closeModal={() => setGrupoModalOpen(false)} 
+                onUpdate={fetchData} 
+                editingData={editingGrupo} 
+                existingGroups={grupos}
+            />
             <ViewAnotacaoModal active={viewModalOpen} closeModal={() => setViewModalOpen(false)} nota={viewingNota} onEdit={handleEditNota} />
         </div>
     );

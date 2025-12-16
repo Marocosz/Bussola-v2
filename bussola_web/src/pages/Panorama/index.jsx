@@ -32,7 +32,8 @@ export function Panorama() {
         async function loadData() {
             setLoading(true);
             try {
-                const result = await getPanoramaData(); 
+                // CORREÇÃO AQUI: Passando o estado 'periodo' para a API
+                const result = await getPanoramaData(periodo); 
                 setData(result);
                 
                 if (result.categorias_para_filtro.length > 0) {

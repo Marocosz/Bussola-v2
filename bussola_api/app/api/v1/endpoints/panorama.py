@@ -9,13 +9,15 @@ router = APIRouter()
 
 @router.get("/", response_model=PanoramaResponse)
 def get_panorama(
+    period: str = "Mensal", # <--- Parâmetro adicionado
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):
     """
     Retorna KPIs consolidados, gráficos e dados gerais do Dashboard.
+    Aceita 'period': 'Mensal' | 'Trimestral' | 'Semestral'
     """
-    return panorama_service.get_dashboard_data(db)
+    return panorama_service.get_dashboard_data(db, period=period)
 
 # --- ENDPOINTS PARA OS MODAIS (Lazy Loading) ---
 

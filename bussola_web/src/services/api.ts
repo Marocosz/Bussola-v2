@@ -180,9 +180,10 @@ export interface PanoramaData {
     categorias_para_filtro: Categoria[];
 }
 
-// Dados Principais (KPIs e Gráficos)
-export const getPanoramaData = async (): Promise<PanoramaData> => {
-    const response = await api.get('/panorama/');
+// Dados Principais (KPIs e Gráficos) - ALTERADO AQUI
+export const getPanoramaData = async (period: string = 'Mensal'): Promise<PanoramaData> => {
+    // Passa o periodo na query string
+    const response = await api.get(`/panorama/?period=${period}`);
     return response.data;
 };
 
@@ -210,7 +211,7 @@ export const getRegistrosResumoData = async () => {
 };
 
 // ==========================================================
-// 5. MÓDULO REGISTROS (ANOTAÇÕES E TAREFAS) - ATUALIZADO
+// 5. MÓDULO REGISTROS (ANOTAÇÕES E TAREFAS)
 // ==========================================================
 
 export interface GrupoAnotacao {
