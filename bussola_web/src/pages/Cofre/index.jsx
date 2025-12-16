@@ -17,6 +17,7 @@ export function Cofre() {
             setSegredos(data);
         } catch(err) {
             console.error(err);
+            addToast({type:'error', title:'Erro', description:'Falha ao carregar segredos.'});
         } finally {
             setLoading(false);
         }
@@ -53,58 +54,92 @@ export function Cofre() {
     // Formatação de data
     const fmtDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR') : 'Não expira';
 
-    if (loading) return <div className="loading-screen">Carregando Cofre...</div>;
+    // Componente de Loading interno (Skeleton simples)
+    const LoadingState = () => (
+        <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--cor-texto-secundario)' }}>
+            <i className="fa-solid fa-circle-notch fa-spin" style={{ fontSize: '2rem', marginBottom: '15px', color: 'var(--cor-azul-primario)' }}></i>
+            <p>Decifrando cofre...</p>
+        </div>
+    );
 
     return (
-        <div className="container" style={{paddingTop: '100px'}}>
-            <div className="page-header-actions">
-                <h1>Meu Cofre</h1>
-                <button className="btn-primary" onClick={handleNew}>
-                    <i className="fa-solid fa-plus"></i> Guardar Segredo
-                </button>
+        <div className="container main-container cofre-scope">
+            
+            {/* 1. HERO SECTION */}
+            <div className="internal-hero">
+                <div className="hero-bg-effect"></div>
+                <div className="internal-hero-content">
+                    <h1>Meu Cofre</h1>
+                    <p>Gerencie suas senhas, tokens e informações sensíveis com segurança.</p>
+                </div>
             </div>
 
-            <div className="table-container">
-                <table className="data-table">
-                    <thead>
-                        <tr>
-                            <th>Título</th>
-                            <th>Serviço</th>
-                            <th className="column-notas">Notas</th>
-                            <th>Data de Expiração</th>
-                            <th style={{width: '150px'}}>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {segredos.length > 0 ? (
-                            segredos.map(segredo => (
-                                <tr key={segredo.id}>
-                                    <td>{segredo.titulo}</td>
-                                    <td>{segredo.servico || '-'}</td>
-                                    <td className="column-notas">{segredo.notas || '-'}</td>
-                                    <td>{fmtDate(segredo.data_expiracao)}</td>
-                                    <td>
-                                        <div className="action-buttons">
-                                            <button className="btn-action-icon btn-copy-secret" onClick={() => handleCopy(segredo.id)} title="Copiar">
-                                                <i className="fa-regular fa-copy"></i>
-                                            </button>
-                                            <button className="btn-action-icon btn-edit-segredo" onClick={() => handleEdit(segredo)} title="Editar">
-                                                <i className="fa-solid fa-pencil"></i>
-                                            </button>
-                                            <button className="btn-action-icon btn-delete" onClick={() => handleDelete(segredo.id)} title="Excluir">
-                                                <i className="fa-solid fa-trash-can"></i>
-                                            </button>
-                                        </div>
-                                    </td>
+            <div className="cofre-content-wrapper">
+                
+                {/* Header da Tabela (Título + Botão) */}
+                <div className="section-header-flex">
+                    <h2>Lista de Segredos</h2>
+                    <button className="btn-primary" onClick={handleNew}>
+                        <i className="fa-solid fa-plus"></i> Guardar Segredo
+                    </button>
+                </div>
+
+                {/* Container da Tabela */}
+                <div className="table-container">
+                    {loading ? (
+                        <LoadingState />
+                    ) : (
+                        <table className="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Título</th>
+                                    <th>Serviço</th>
+                                    <th className="column-notas">Notas</th>
+                                    <th>Data de Expiração</th>
+                                    <th style={{width: '150px', textAlign: 'right'}}>Ações</th>
                                 </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan="5" style={{textAlign: 'center', padding: '2rem'}}>Nenhum segredo guardado.</td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+                            </thead>
+                            <tbody>
+                                {segredos.length > 0 ? (
+                                    segredos.map(segredo => (
+                                        <tr key={segredo.id}>
+                                            <td style={{fontWeight: '500'}}>{segredo.titulo}</td>
+                                            <td>
+                                                {segredo.servico ? (
+                                                    <span className="service-tag">{segredo.servico}</span>
+                                                ) : '-'}
+                                            </td>
+                                            <td className="column-notas">{segredo.notas || '-'}</td>
+                                            <td style={{ color: segredo.data_expiracao ? 'var(--cor-laranja-aviso)' : 'inherit' }}>
+                                                {fmtDate(segredo.data_expiracao)}
+                                            </td>
+                                            <td>
+                                                <div className="action-buttons" style={{justifyContent: 'flex-end'}}>
+                                                    <button className="btn-action-icon btn-copy-secret" onClick={() => handleCopy(segredo.id)} title="Copiar Chave">
+                                                        <i className="fa-regular fa-copy"></i>
+                                                    </button>
+                                                    <button className="btn-action-icon btn-edit-segredo" onClick={() => handleEdit(segredo)} title="Editar">
+                                                        <i className="fa-solid fa-pencil"></i>
+                                                    </button>
+                                                    <button className="btn-action-icon btn-delete" onClick={() => handleDelete(segredo.id)} title="Excluir">
+                                                        <i className="fa-solid fa-trash-can"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="5" className="empty-state-cell">
+                                            <i className="fa-solid fa-shield-cat" style={{fontSize: '2rem', marginBottom: '1rem', opacity: 0.5}}></i>
+                                            <p>Nenhum segredo guardado no momento.</p>
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
             </div>
 
             <SegredoModal 

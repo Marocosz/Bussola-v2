@@ -44,9 +44,10 @@ export function Registros() {
         localStorage.setItem('@Bussola:registros_accordions', JSON.stringify(openGroups));
     }, [openGroups]);
 
-
-    const fetchData = async () => {
-        setLoading(true);
+    // --- CORREÇÃO AQUI: Parâmetro 'silent' ---
+    // Se silent for true, não exibe o spinner de loading (atualização transparente)
+    const fetchData = async (silent = false) => {
+        if (!silent) setLoading(true);
         try {
             const result = await getRegistrosDashboard();
             setData(result);
@@ -55,11 +56,13 @@ export function Registros() {
             console.error("Erro dashboard:", err);
             setError("Não foi possível carregar os registros.");
         } finally {
+            // Garante que o loading saia, mas se era silent, nem chegou a entrar visualmente
             setLoading(false);
         }
     };
 
-    useEffect(() => { fetchData(); }, []);
+    // No load inicial, queremos o loading visual (silent = false)
+    useEffect(() => { fetchData(false); }, []);
 
     // --- PROCESSAMENTO DE DADOS (ANOTAÇÕES) ---
     const processDataByGroup = () => {
@@ -155,7 +158,8 @@ export function Registros() {
             if (deleteGrupo) {
                 await deleteGrupo(grupoId);
                 if (filtroGrupo !== 'Todos') setFiltroGrupo('Todos');
-                fetchData();
+                // CORREÇÃO: Atualização silenciosa ao deletar
+                fetchData(true);
             }
         } catch (error) {
             console.error(error);
@@ -174,7 +178,7 @@ export function Registros() {
     if (error) return (
         <div className="container" style={{ paddingTop: '100px', textAlign: 'center', color: 'var(--cor-vermelho-delete)' }}>
             <p>{error}</p>
-            <button className="btn-secondary" onClick={fetchData}>Tentar Novamente</button>
+            <button className="btn-secondary" onClick={() => fetchData(false)}>Tentar Novamente</button>
         </div>
     );
 
@@ -275,7 +279,8 @@ export function Registros() {
                                                             <AnotacaoCard
                                                                 key={n.id}
                                                                 anotacao={n}
-                                                                onUpdate={fetchData}
+                                                                // CORREÇÃO: Atualização silenciosa
+                                                                onUpdate={() => fetchData(true)}
                                                                 onEdit={handleEditNota}
                                                                 onView={handleViewNota}
                                                             />
@@ -313,7 +318,8 @@ export function Registros() {
                                                                 <AnotacaoCard
                                                                     key={n.id}
                                                                     anotacao={n}
-                                                                    onUpdate={fetchData}
+                                                                    // CORREÇÃO: Atualização silenciosa
+                                                                    onUpdate={() => fetchData(true)}
                                                                     onEdit={handleEditNota}
                                                                     onView={handleViewNota}
                                                                 />
@@ -399,7 +405,8 @@ export function Registros() {
                                         <TarefaCard
                                             key={t.id}
                                             tarefa={t}
-                                            onUpdate={fetchData}
+                                            // CORREÇÃO: Atualização silenciosa
+                                            onUpdate={() => fetchData(true)}
                                             onEdit={handleEditTarefa}
                                         />
                                     ))}
@@ -423,7 +430,8 @@ export function Registros() {
                                                             <TarefaCard
                                                                 key={t.id}
                                                                 tarefa={t}
-                                                                onUpdate={fetchData}
+                                                                // CORREÇÃO: Atualização silenciosa
+                                                                onUpdate={() => fetchData(true)}
                                                                 onEdit={handleEditTarefa}
                                                             />
                                                         ))}
@@ -439,13 +447,13 @@ export function Registros() {
                 </div>
             </div>
 
-            {/* MODAIS */}
-            <AnotacaoModal active={notaModalOpen} closeModal={() => setNotaModalOpen(false)} onUpdate={fetchData} editingData={editingNota} gruposDisponiveis={grupos} />
-            <TarefaModal active={tarefaModalOpen} closeModal={() => setTarefaModalOpen(false)} onUpdate={fetchData} editingData={editingTarefa} />
+            {/* MODAIS: O onUpdate dos modais geralmente também pode ser silencioso (true) para não piscar a tela ao fechar */}
+            <AnotacaoModal active={notaModalOpen} closeModal={() => setNotaModalOpen(false)} onUpdate={() => fetchData(true)} editingData={editingNota} gruposDisponiveis={grupos} />
+            <TarefaModal active={tarefaModalOpen} closeModal={() => setTarefaModalOpen(false)} onUpdate={() => fetchData(true)} editingData={editingTarefa} />
             <GrupoModal 
                 active={grupoModalOpen} 
                 closeModal={() => setGrupoModalOpen(false)} 
-                onUpdate={fetchData} 
+                onUpdate={() => fetchData(true)} 
                 editingData={editingGrupo} 
                 existingGroups={grupos}
             />
