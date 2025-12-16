@@ -94,10 +94,10 @@ export function ProvisoesModal({ onClose }) {
                 <div className="sort-group">
                     <label>Ordenar por:</label>
                     <select className="sort-select" value={ordenacao} onChange={(e) => setOrdenacao(e.target.value)}>
-                        <option value="data_asc">Data (Antiga → Nova)</option>
-                        <option value="data_desc">Data (Nova → Antiga)</option>
-                        <option value="valor_asc">Valor (Menor → Maior)</option>
-                        <option value="valor_desc">Valor (Maior → Menor)</option>
+                        <option value="data_asc">Data Antiga</option>
+                        <option value="data_desc">Data Nova</option>
+                        <option value="valor_asc">Valor Menor</option>
+                        <option value="valor_desc">Valor Maior</option>
                     </select>
                 </div>
             </div>
@@ -190,8 +190,8 @@ export function RoteiroModal({ onClose }) {
                 <div className="sort-group">
                     <label>Ordenar por:</label>
                     <select className="sort-select" value={ordenacao} onChange={(e) => setOrdenacao(e.target.value)}>
-                        <option value="data_asc">Data (Antiga → Nova)</option>
-                        <option value="data_desc">Data (Nova → Antiga)</option>
+                        <option value="data_asc">Data Antiga</option>
+                        <option value="data_desc">Data Nova</option>
                     </select>
                 </div>
             </div>

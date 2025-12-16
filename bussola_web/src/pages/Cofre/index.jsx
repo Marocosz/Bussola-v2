@@ -70,7 +70,7 @@ export function Cofre() {
                 <div className="hero-bg-effect"></div>
                 <div className="internal-hero-content">
                     <h1>Meu Cofre</h1>
-                    <p>Gerencie suas senhas, tokens e informações sensíveis com segurança.</p>
+                    <p>Gerencie seus tokens e informações sensíveis com segurança.</p>
                 </div>
             </div>
 
