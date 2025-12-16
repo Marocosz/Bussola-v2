@@ -7,7 +7,6 @@ import { useToast } from '../../context/ToastContext';
 import './styles.css';
 
 export function Financas() {
-    // Inicializa com null
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const { addToast } = useToast();
@@ -147,14 +146,19 @@ export function Financas() {
         setEditingData(null);
     };
 
-    if (loading) return <div className="loading-screen">Carregando Finanças...</div>;
-    if (!data) return <div className="loading-screen">Erro ao carregar dados.</div>;
+    // Calculamos chaves apenas se data existe, senão array vazio
+    const pontuaisKeys = data ? getSortedKeys(data.transacoes_pontuais, orderPontual) : [];
+    const recorrentesKeys = data ? getSortedKeys(data.transacoes_recorrentes, orderRecorrente) : [];
 
-    const pontuaisKeys = getSortedKeys(data.transacoes_pontuais, orderPontual);
-    const recorrentesKeys = getSortedKeys(data.transacoes_recorrentes, orderRecorrente);
+    // Componente de Loading interno
+    const LoadingState = () => (
+        <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--cor-texto-secundario)', gridColumn: '1/-1' }}>
+            <i className="fa-solid fa-circle-notch fa-spin" style={{ fontSize: '1.5rem', marginBottom: '10px', color: 'var(--cor-azul-primario)' }}></i>
+            <p style={{ fontSize: '0.9rem' }}>Carregando dados financeiros...</p>
+        </div>
+    );
 
     return (
-        // AQUI: Adicionei a classe "financas-scope" para isolar o CSS
         <div className="container main-container financas-scope">
             <div className="internal-hero">
                 <div className="hero-bg-effect"></div>
@@ -170,12 +174,12 @@ export function Financas() {
                 <div className="agenda-column">
                     <div className="column-header-flex">
                         <h2>Transações Pontuais</h2>
-
                         <div className="header-actions-group">
                             <button
                                 className="btn-filter-sort"
                                 onClick={() => setOrderPontual(prev => prev === 'desc' ? 'asc' : 'desc')}
                                 title={orderPontual === 'desc' ? "Mais antigos primeiro" : "Mais recentes primeiro"}
+                                disabled={loading}
                             >
                                 <i className={`fa-solid fa-arrow-${orderPontual === 'desc' ? 'down-wide-short' : 'up-wide-short'}`}></i>
                             </button>
@@ -186,43 +190,46 @@ export function Financas() {
                         </div>
                     </div>
 
-                    {pontuaisKeys.length > 0 ? (
-                        pontuaisKeys.map((mes) => (
-                            <div className="month-group" key={mes}>
-                                <h3
-                                    className={`month-header ${openMonths[`pontual-${mes}`] ? 'active' : ''}`}
-                                    onClick={() => toggleAccordion(`pontual-${mes}`)}
-                                >
-                                    <span>{mes}</span>
-                                    {/* NOVO: Agrupador para alinhar o contador à direita junto com a seta */}
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <span style={{ fontSize: '0.75rem', fontWeight: '400', opacity: 0.6 }}>
-                                            {(data.transacoes_pontuais[mes] || []).length} Transacão(s)
-                                        </span>
-                                        <i className={`fa-solid fa-chevron-down ${openMonths[`pontual-${mes}`] ? 'rotate' : ''}`}></i>
-                                    </div>
-                                </h3>
+                    {loading ? (
+                        <LoadingState />
+                    ) : (
+                        pontuaisKeys.length > 0 ? (
+                            pontuaisKeys.map((mes) => (
+                                <div className="month-group" key={mes}>
+                                    <h3
+                                        className={`month-header ${openMonths[`pontual-${mes}`] ? 'active' : ''}`}
+                                        onClick={() => toggleAccordion(`pontual-${mes}`)}
+                                    >
+                                        <span>{mes}</span>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <span style={{ fontSize: '0.75rem', fontWeight: '400', opacity: 0.6 }}>
+                                                {(data.transacoes_pontuais[mes] || []).length} Transacão(s)
+                                            </span>
+                                            <i className={`fa-solid fa-chevron-down ${openMonths[`pontual-${mes}`] ? 'rotate' : ''}`}></i>
+                                        </div>
+                                    </h3>
 
-                                <div className={`accordion-wrapper ${openMonths[`pontual-${mes}`] ? 'open' : ''}`}>
-                                    <div className="accordion-inner">
-                                        <div className="month-content">
-                                            <div className="transacoes-grid">
-                                                {(data.transacoes_pontuais[mes] || []).map(t => (
-                                                    <TransactionCard
-                                                        key={t.id}
-                                                        transacao={t}
-                                                        onUpdate={fetchData}
-                                                        onEdit={handleEditTransaction}
-                                                    />
-                                                ))}
+                                    <div className={`accordion-wrapper ${openMonths[`pontual-${mes}`] ? 'open' : ''}`}>
+                                        <div className="accordion-inner">
+                                            <div className="month-content">
+                                                <div className="transacoes-grid">
+                                                    {(data.transacoes_pontuais[mes] || []).map(t => (
+                                                        <TransactionCard
+                                                            key={t.id}
+                                                            transacao={t}
+                                                            onUpdate={fetchData}
+                                                            onEdit={handleEditTransaction}
+                                                        />
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))
-                    ) : (
-                        <p className="empty-list-msg">Nenhuma transação pontual.</p>
+                            ))
+                        ) : (
+                            <p className="empty-list-msg">Nenhuma transação pontual.</p>
+                        )
                     )}
                 </div>
 
@@ -230,12 +237,12 @@ export function Financas() {
                 <div className="agenda-column">
                     <div className="column-header-flex">
                         <h2>Recorrentes e Parceladas</h2>
-
                         <div className="header-actions-group">
                             <button
                                 className="btn-filter-sort"
                                 onClick={() => setOrderRecorrente(prev => prev === 'desc' ? 'asc' : 'desc')}
                                 title={orderRecorrente === 'desc' ? "Mais antigos primeiro" : "Mais recentes primeiro"}
+                                disabled={loading}
                             >
                                 <i className={`fa-solid fa-arrow-${orderRecorrente === 'desc' ? 'down-wide-short' : 'up-wide-short'}`}></i>
                             </button>
@@ -257,46 +264,50 @@ export function Financas() {
                         </div>
                     </div>
 
-                    {recorrentesKeys.length > 0 ? (
-                        recorrentesKeys.map((mes) => (
-                            <div className="month-group" key={mes}>
-                                <h3
-                                    className={`month-header ${openMonths[`recorrente-${mes}`] ? 'active' : ''}`}
-                                    onClick={() => toggleAccordion(`recorrente-${mes}`)}
-                                >
-                                    <span>{mes}</span>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <span style={{ fontSize: '0.75rem', fontWeight: '400', opacity: 0.6 }}>
-                                            {(data.transacoes_recorrentes[mes] || []).length} Transacão(s)
-                                        </span>
-                                        <i className={`fa-solid fa-chevron-down ${openMonths[`recorrente-${mes}`] ? 'rotate' : ''}`}></i>
-                                    </div>
-                                </h3>
+                    {loading ? (
+                        <LoadingState />
+                    ) : (
+                        recorrentesKeys.length > 0 ? (
+                            recorrentesKeys.map((mes) => (
+                                <div className="month-group" key={mes}>
+                                    <h3
+                                        className={`month-header ${openMonths[`recorrente-${mes}`] ? 'active' : ''}`}
+                                        onClick={() => toggleAccordion(`recorrente-${mes}`)}
+                                    >
+                                        <span>{mes}</span>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <span style={{ fontSize: '0.75rem', fontWeight: '400', opacity: 0.6 }}>
+                                                {(data.transacoes_recorrentes[mes] || []).length} Transacão(s)
+                                            </span>
+                                            <i className={`fa-solid fa-chevron-down ${openMonths[`recorrente-${mes}`] ? 'rotate' : ''}`}></i>
+                                        </div>
+                                    </h3>
 
-                                <div className={`accordion-wrapper ${openMonths[`recorrente-${mes}`] ? 'open' : ''}`}>
-                                    <div className="accordion-inner">
-                                        <div className="month-content">
-                                            <div className="transacoes-grid">
-                                                {(data.transacoes_recorrentes[mes] || []).map(t => (
-                                                    <TransactionCard
-                                                        key={t.id}
-                                                        transacao={t}
-                                                        onUpdate={fetchData}
-                                                        onEdit={handleEditTransaction}
-                                                    />
-                                                ))}
+                                    <div className={`accordion-wrapper ${openMonths[`recorrente-${mes}`] ? 'open' : ''}`}>
+                                        <div className="accordion-inner">
+                                            <div className="month-content">
+                                                <div className="transacoes-grid">
+                                                    {(data.transacoes_recorrentes[mes] || []).map(t => (
+                                                        <TransactionCard
+                                                            key={t.id}
+                                                            transacao={t}
+                                                            onUpdate={fetchData}
+                                                            onEdit={handleEditTransaction}
+                                                        />
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))
-                    ) : (
-                        <p className="empty-list-msg">Nenhuma transação recorrente.</p>
+                            ))
+                        ) : (
+                            <p className="empty-list-msg">Nenhuma transação recorrente.</p>
+                        )
                     )}
                 </div>
 
-                {/* --- COLUNA 3: CATEGORIAS (ID adicionado para CSS especifico) --- */}
+                {/* --- COLUNA 3: CATEGORIAS --- */}
                 <div className="agenda-column" id="category-column">
                     <div className="column-header-flex">
                         <h2>Resumo</h2>
@@ -305,31 +316,37 @@ export function Financas() {
                         </button>
                     </div>
 
-                    <h4>Despesas do Mês</h4>
-                    <div className="category-grid">
-                        {(data.categorias_despesa || []).map(cat => (
-                            <CategoryCard
-                                key={cat.id}
-                                categoria={cat}
-                                onEdit={handleEditCategory}
-                                onDelete={handleDeleteCategory}
-                            />
-                        ))}
-                        {(!data.categorias_despesa || data.categorias_despesa.length === 0) && <p className="empty-list-msg">Sem despesas.</p>}
-                    </div>
+                    {loading ? (
+                        <LoadingState />
+                    ) : (
+                        <>
+                            <h4>Despesas do Mês</h4>
+                            <div className="category-grid">
+                                {(data.categorias_despesa || []).map(cat => (
+                                    <CategoryCard
+                                        key={cat.id}
+                                        categoria={cat}
+                                        onEdit={handleEditCategory}
+                                        onDelete={handleDeleteCategory}
+                                    />
+                                ))}
+                                {(!data.categorias_despesa || data.categorias_despesa.length === 0) && <p className="empty-list-msg">Sem despesas.</p>}
+                            </div>
 
-                    <h4 style={{ marginTop: '1.5rem' }}>Receitas do Mês</h4>
-                    <div className="category-grid">
-                        {(data.categorias_receita || []).map(cat => (
-                            <CategoryCard
-                                key={cat.id}
-                                categoria={cat}
-                                onEdit={handleEditCategory}
-                                onDelete={handleDeleteCategory}
-                            />
-                        ))}
-                        {(!data.categorias_receita || data.categorias_receita.length === 0) && <p className="empty-list-msg">Sem receitas.</p>}
-                    </div>
+                            <h4 style={{ marginTop: '1.5rem' }}>Receitas do Mês</h4>
+                            <div className="category-grid">
+                                {(data.categorias_receita || []).map(cat => (
+                                    <CategoryCard
+                                        key={cat.id}
+                                        categoria={cat}
+                                        onEdit={handleEditCategory}
+                                        onDelete={handleDeleteCategory}
+                                    />
+                                ))}
+                                {(!data.categorias_receita || data.categorias_receita.length === 0) && <p className="empty-list-msg">Sem receitas.</p>}
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
 

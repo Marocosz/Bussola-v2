@@ -12,8 +12,6 @@ export function Agenda() {
     
     const [tooltip, setTooltip] = useState({ visible: false, x: 0, y: 0, compromissos: [] });
 
-    // --- MUDANÇA 1: Inicialização com LocalStorage ---
-    // Tenta ler o estado salvo. Se não existir, inicia vazio {}.
     const [openMonths, setOpenMonths] = useState(() => {
         const savedState = localStorage.getItem('@Bussola:agenda_accordions');
         if (savedState) {
@@ -26,7 +24,6 @@ export function Agenda() {
         return {};
     });
 
-    // --- MUDANÇA 2: Salvar no LocalStorage sempre que mudar ---
     useEffect(() => {
         localStorage.setItem('@Bussola:agenda_accordions', JSON.stringify(openMonths));
     }, [openMonths]);
@@ -36,13 +33,9 @@ export function Agenda() {
             const result = await getAgendaDashboard();
             setData(result);
             
-            // Lógica inteligente: Só abre o primeiro mês automaticamente se
-            // o usuário NUNCA mexeu no accordion (estado vazio).
-            // Se ele já abriu/fechou algo (estado salvo), respeitamos a escolha dele.
             if (result.compromissos_por_mes && Object.keys(result.compromissos_por_mes).length > 0) {
                 const firstMonth = Object.keys(result.compromissos_por_mes)[0];
                 setOpenMonths(prev => {
-                    // Se não tem chaves (primeiro acesso), abre o primeiro mês
                     if (Object.keys(prev).length === 0) return { [firstMonth]: true };
                     return prev;
                 });
@@ -73,7 +66,13 @@ export function Agenda() {
 
     const handleDayLeave = () => setTooltip({ ...tooltip, visible: false });
 
-    if (loading) return <div className="loading-screen">Carregando Agenda...</div>;
+    // Componente simples de Loading interno
+    const LoadingState = () => (
+        <div className="loading-state-internal" style={{ padding: '2rem', textAlign: 'center', color: 'var(--cor-texto-secundario)' }}>
+            <i className="fa-solid fa-circle-notch fa-spin" style={{ fontSize: '1.5rem', marginBottom: '10px', color: 'var(--cor-azul-primario)' }}></i>
+            <p style={{ fontSize: '0.9rem' }}>Carregando agenda...</p>
+        </div>
+    );
 
     return (
         <div className="container main-container">
@@ -95,30 +94,35 @@ export function Agenda() {
                         </button>
                     </div>
 
-                    {Object.keys(data.compromissos_por_mes).length > 0 ? (
-                        Object.entries(data.compromissos_por_mes).map(([mes, comps]) => (
-                            <div className="month-group" key={mes}>
-                                <h3 className={`month-header ${openMonths[mes] ? 'active' : ''}`} onClick={() => toggleAccordion(mes)}>
-                                    <span>{mes}</span>
-                                    <i className={`fa-solid fa-chevron-down ${openMonths[mes] ? 'rotate' : ''}`}></i>
-                                </h3>
-                                
-                                {/* A classe 'open' controla a animação CSS (height) */}
-                                <div className={`accordion-wrapper ${openMonths[mes] ? 'open' : ''}`}>
-                                    <div className="accordion-inner">
-                                        <div className="month-content">
-                                            <div className="compromissos-grid">
-                                                {comps.map(comp => (
-                                                    <CompromissoCard key={comp.id} comp={comp} onUpdate={fetchData} onEdit={handleEdit} />
-                                                ))}
+                    {loading ? (
+                        <LoadingState />
+                    ) : (
+                        <>
+                            {data && Object.keys(data.compromissos_por_mes).length > 0 ? (
+                                Object.entries(data.compromissos_por_mes).map(([mes, comps]) => (
+                                    <div className="month-group" key={mes}>
+                                        <h3 className={`month-header ${openMonths[mes] ? 'active' : ''}`} onClick={() => toggleAccordion(mes)}>
+                                            <span>{mes}</span>
+                                            <i className={`fa-solid fa-chevron-down ${openMonths[mes] ? 'rotate' : ''}`}></i>
+                                        </h3>
+                                        
+                                        <div className={`accordion-wrapper ${openMonths[mes] ? 'open' : ''}`}>
+                                            <div className="accordion-inner">
+                                                <div className="month-content">
+                                                    <div className="compromissos-grid">
+                                                        {comps.map(comp => (
+                                                            <CompromissoCard key={comp.id} comp={comp} onUpdate={fetchData} onEdit={handleEdit} />
+                                                        ))}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                        ))
-                    ) : (
-                        <p className="empty-list-msg">Nenhum compromisso agendado.</p>
+                                ))
+                            ) : (
+                                <p className="empty-list-msg">Nenhum compromisso agendado.</p>
+                            )}
+                        </>
                     )}
                 </div>
 
@@ -128,36 +132,39 @@ export function Agenda() {
                         <h2>Calendário</h2>
                     </div>
 
-                    <div className="dias-grid">
-                        {data.calendar_days.map((item, idx) => {
-                            if (item.type === 'month_divider') {
+                    {loading ? (
+                        <LoadingState />
+                    ) : (
+                        <div className="dias-grid">
+                            {data && data.calendar_days.map((item, idx) => {
+                                if (item.type === 'month_divider') {
+                                    return (
+                                        <div className="month-divider" key={idx}>
+                                            <h2>{item.month_name} {item.year}</h2>
+                                        </div>
+                                    );
+                                }
+
+                                let cardClasses = 'dia-card';
+                                if (item.is_today) cardClasses += ' today';
+                                if (item.is_padding) cardClasses += ' dia-padding';
+                                if (!item.is_padding && item.compromissos?.length > 0) cardClasses += ' has-compromissos';
+
                                 return (
-                                    <div className="month-divider" key={idx}>
-                                        <h2>{item.month_name} {item.year}</h2>
+                                    <div
+                                        className={cardClasses}
+                                        key={idx}
+                                        onMouseEnter={(e) => !item.is_padding && handleDayHover(e, item.compromissos)}
+                                        onMouseLeave={handleDayLeave}
+                                    >
+                                        <span className="dia-numero">{item.day_number}</span>
+                                        <span className="dia-semana">{item.weekday_short}</span>
+                                        <div className={`compromisso-indicator ${item.compromissos?.length > 0 && !item.is_padding ? '' : 'no-event'}`}></div>
                                     </div>
                                 );
-                            }
-
-                            // Determina classes dinamicamente
-                            let cardClasses = 'dia-card';
-                            if (item.is_today) cardClasses += ' today';
-                            if (item.is_padding) cardClasses += ' dia-padding';
-                            if (!item.is_padding && item.compromissos?.length > 0) cardClasses += ' has-compromissos';
-
-                            return (
-                                <div
-                                    className={cardClasses}
-                                    key={idx}
-                                    onMouseEnter={(e) => !item.is_padding && handleDayHover(e, item.compromissos)}
-                                    onMouseLeave={handleDayLeave}
-                                >
-                                    <span className="dia-numero">{item.day_number}</span>
-                                    <span className="dia-semana">{item.weekday_short}</span>
-                                    <div className={`compromisso-indicator ${item.compromissos?.length > 0 && !item.is_padding ? '' : 'no-event'}`}></div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                            })}
+                        </div>
+                    )}
                 </div>
             </div>
 

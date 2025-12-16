@@ -82,7 +82,7 @@ export function Registros() {
         return grouped;
     };
 
-    const groupedNotes = processDataByGroup();
+    const groupedNotes = data ? processDataByGroup() : {};
     const fixadas = data?.anotacoes_fixadas || [];
 
     const fixadasFiltered = filtroGrupo === 'Todos'
@@ -163,9 +163,11 @@ export function Registros() {
         }
     };
 
-    if (loading && !data) return (
-        <div className="container" style={{ paddingTop: '100px', textAlign: 'center' }}>
-            <i className="fa-solid fa-circle-notch fa-spin" style={{ fontSize: '2rem', color: 'var(--cor-azul-primario)' }}></i>
+    // Loading interno simples
+    const LoadingState = () => (
+        <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--cor-texto-secundario)' }}>
+            <i className="fa-solid fa-circle-notch fa-spin" style={{ fontSize: '1.5rem', marginBottom: '10px', color: 'var(--cor-azul-primario)' }}></i>
+            <p style={{ fontSize: '0.9rem' }}>Carregando registros...</p>
         </div>
     );
 
@@ -176,7 +178,8 @@ export function Registros() {
         </div>
     );
 
-    if (!data) return null;
+    // Se estiver carregando mas sem dados, ainda retorna o layout abaixo (não bloqueia com return null)
+    if (!data && !loading) return null;
 
     return (
         <div className="container main-container registros-scope">
@@ -201,6 +204,7 @@ export function Registros() {
                                 <button
                                     className={`dropdown-trigger-btn ${filtroGrupo !== 'Todos' ? 'active' : ''}`}
                                     onClick={() => setDropdownOpen(!dropdownOpen)}
+                                    disabled={loading}
                                 >
                                     <span>{filtroGrupo === 'Todos' ? 'Todos os Grupos' : filtroGrupo}</span>
                                     <i className="fa-solid fa-chevron-down"></i>
@@ -247,82 +251,88 @@ export function Registros() {
                     </div>
 
                     <div className="column-scroll-content">
-                        {fixadasFiltered.length > 0 && (
-                            <div className="group-accordion">
-                                <h3 className={`accordion-header pinned-header ${openGroups['fixados'] ? 'active' : ''}`} onClick={() => toggleAccordion('fixados')}>
-                                    <div className="header-title-wrapper">
-                                        <span><i className="fa-solid fa-thumbtack"></i> Fixados</span>
-                                    </div>
-                                    <div className="header-meta">
-                                        <span className="count-text">{fixadasFiltered.length} {fixadasFiltered.length === 1 ? 'nota' : 'notas'}</span>
-                                        <i className={`fa-solid fa-chevron-down ${openGroups['fixados'] ? 'rotate' : ''}`}></i>
-                                    </div>
-                                </h3>
-
-                                <div className={`accordion-wrapper ${openGroups['fixados'] ? 'open' : ''}`}>
-                                    <div className="accordion-inner">
-                                        <div className="accordion-content-padding">
-                                            <div className="notes-grid">
-                                                {fixadasFiltered.map(n => (
-                                                    <AnotacaoCard
-                                                        key={n.id}
-                                                        anotacao={n}
-                                                        onUpdate={fetchData}
-                                                        onEdit={handleEditNota}
-                                                        onView={handleViewNota}
-                                                    />
-                                                ))}
+                        {loading ? (
+                            <LoadingState />
+                        ) : (
+                            <>
+                                {fixadasFiltered.length > 0 && (
+                                    <div className="group-accordion">
+                                        <h3 className={`accordion-header pinned-header ${openGroups['fixados'] ? 'active' : ''}`} onClick={() => toggleAccordion('fixados')}>
+                                            <div className="header-title-wrapper">
+                                                <span><i className="fa-solid fa-thumbtack"></i> Fixados</span>
                                             </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                                            <div className="header-meta">
+                                                <span className="count-text">{fixadasFiltered.length} {fixadasFiltered.length === 1 ? 'nota' : 'notas'}</span>
+                                                <i className={`fa-solid fa-chevron-down ${openGroups['fixados'] ? 'rotate' : ''}`}></i>
+                                            </div>
+                                        </h3>
 
-                        {Object.entries(groupedNotes).map(([grupoNome, notas]) => {
-                            const isOpen = !!openGroups[grupoNome];
-                            const grpObj = grupos.find(g => g.nome === grupoNome);
-                            const grpColor = grpObj ? grpObj.cor : '#999';
-
-                            return (
-                                <div className="group-accordion" key={grupoNome}>
-                                    <h3 className={`accordion-header ${isOpen ? 'active' : ''}`} onClick={() => toggleAccordion(grupoNome)}>
-                                        <div className="header-title-wrapper">
-                                            <span className="grp-dot" style={{ backgroundColor: grpColor }}></span>
-                                            <span>{grupoNome}</span>
-                                        </div>
-                                        <div className="header-meta">
-                                            <span className="count-text">{notas.length} {notas.length === 1 ? 'nota' : 'notas'}</span>
-                                            <i className={`fa-solid fa-chevron-down ${isOpen ? 'rotate' : ''}`}></i>
-                                        </div>
-                                    </h3>
-
-                                    <div className={`accordion-wrapper ${isOpen ? 'open' : ''}`}>
-                                        <div className="accordion-inner">
-                                            <div className="accordion-content-padding">
-                                                <div className="notes-grid">
-                                                    {notas.map(n => (
-                                                        <AnotacaoCard
-                                                            key={n.id}
-                                                            anotacao={n}
-                                                            onUpdate={fetchData}
-                                                            onEdit={handleEditNota}
-                                                            onView={handleViewNota}
-                                                        />
-                                                    ))}
+                                        <div className={`accordion-wrapper ${openGroups['fixados'] ? 'open' : ''}`}>
+                                            <div className="accordion-inner">
+                                                <div className="accordion-content-padding">
+                                                    <div className="notes-grid">
+                                                        {fixadasFiltered.map(n => (
+                                                            <AnotacaoCard
+                                                                key={n.id}
+                                                                anotacao={n}
+                                                                onUpdate={fetchData}
+                                                                onEdit={handleEditNota}
+                                                                onView={handleViewNota}
+                                                            />
+                                                        ))}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            );
-                        })}
+                                )}
 
-                        {fixadasFiltered.length === 0 && Object.keys(groupedNotes).length === 0 && (
-                            <div className="empty-state">
-                                <i className="fa-regular fa-folder-open"></i>
-                                <p>Nenhuma anotação neste grupo.</p>
-                            </div>
+                                {Object.entries(groupedNotes).map(([grupoNome, notas]) => {
+                                    const isOpen = !!openGroups[grupoNome];
+                                    const grpObj = grupos.find(g => g.nome === grupoNome);
+                                    const grpColor = grpObj ? grpObj.cor : '#999';
+
+                                    return (
+                                        <div className="group-accordion" key={grupoNome}>
+                                            <h3 className={`accordion-header ${isOpen ? 'active' : ''}`} onClick={() => toggleAccordion(grupoNome)}>
+                                                <div className="header-title-wrapper">
+                                                    <span className="grp-dot" style={{ backgroundColor: grpColor }}></span>
+                                                    <span>{grupoNome}</span>
+                                                </div>
+                                                <div className="header-meta">
+                                                    <span className="count-text">{notas.length} {notas.length === 1 ? 'nota' : 'notas'}</span>
+                                                    <i className={`fa-solid fa-chevron-down ${isOpen ? 'rotate' : ''}`}></i>
+                                                </div>
+                                            </h3>
+
+                                            <div className={`accordion-wrapper ${isOpen ? 'open' : ''}`}>
+                                                <div className="accordion-inner">
+                                                    <div className="accordion-content-padding">
+                                                        <div className="notes-grid">
+                                                            {notas.map(n => (
+                                                                <AnotacaoCard
+                                                                    key={n.id}
+                                                                    anotacao={n}
+                                                                    onUpdate={fetchData}
+                                                                    onEdit={handleEditNota}
+                                                                    onView={handleViewNota}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+
+                                {fixadasFiltered.length === 0 && Object.keys(groupedNotes).length === 0 && (
+                                    <div className="empty-state">
+                                        <i className="fa-regular fa-folder-open"></i>
+                                        <p>Nenhuma anotação neste grupo.</p>
+                                    </div>
+                                )}
+                            </>
                         )}
                     </div>
                 </div>
@@ -339,6 +349,7 @@ export function Registros() {
                                     className={`dropdown-trigger-btn ${filtroPrioridade !== 'Todas' ? 'active' : ''}`}
                                     onClick={() => setPrioDropdownOpen(!prioDropdownOpen)}
                                     style={{ minWidth: '140px' }}
+                                    disabled={loading}
                                 >
                                     <span>{filtroPrioridade === 'Todas' ? 'Todas' : filtroPrioridade}</span>
                                     <i className="fa-solid fa-chevron-down"></i>
@@ -372,52 +383,57 @@ export function Registros() {
                     </div>
 
                     <div className="column-scroll-content">
-                        <div className="tarefas-list">
-                            {tarefasPendentes.length === 0 && tarefasConcluidas.length === 0 && (
-                                <div className="empty-state">
-                                    <i className="fa-solid fa-check-double"></i>
-                                    <p>Nenhuma tarefa pendente.</p>
-                                </div>
-                            )}
+                        {loading ? (
+                            <LoadingState />
+                        ) : (
+                            <>
+                                <div className="tarefas-list">
+                                    {tarefasPendentes.length === 0 && tarefasConcluidas.length === 0 && (
+                                        <div className="empty-state">
+                                            <i className="fa-solid fa-check-double"></i>
+                                            <p>Nenhuma tarefa pendente.</p>
+                                        </div>
+                                    )}
 
-                            {tarefasPendentes.map(t => (
-                                <TarefaCard
-                                    key={t.id}
-                                    tarefa={t}
-                                    onUpdate={fetchData}
-                                    onEdit={handleEditTarefa}
-                                />
-                            ))}
-                        </div>
-
-                        {/* --- ACCORDION CONCLUÍDAS CORRIGIDO (Com Animação CSS) --- */}
-                        {tarefasConcluidasRaw.length > 0 && (
-                            <div className="concluidas-section">
-                                <div
-                                    className={`concluidas-header-accordion ${showConcluidas ? 'active' : ''}`}
-                                    onClick={() => setShowConcluidas(!showConcluidas)}
-                                >
-                                    <span>Concluídas ({tarefasConcluidas.length})</span>
-                                    <i className={`fa-solid fa-chevron-down ${showConcluidas ? 'rotate' : ''}`}></i>
+                                    {tarefasPendentes.map(t => (
+                                        <TarefaCard
+                                            key={t.id}
+                                            tarefa={t}
+                                            onUpdate={fetchData}
+                                            onEdit={handleEditTarefa}
+                                        />
+                                    ))}
                                 </div>
 
-                                <div className={`accordion-wrapper ${showConcluidas ? 'open' : ''}`}>
-                                    <div className="accordion-inner">
-                                        <div className="concluidas-content-wrapper" style={{ paddingTop: '10px' }}>
-                                            <div className="tarefas-list completed">
-                                                {tarefasConcluidas.map(t => (
-                                                    <TarefaCard
-                                                        key={t.id}
-                                                        tarefa={t}
-                                                        onUpdate={fetchData}
-                                                        onEdit={handleEditTarefa}
-                                                    />
-                                                ))}
+                                {tarefasConcluidasRaw.length > 0 && (
+                                    <div className="concluidas-section">
+                                        <div
+                                            className={`concluidas-header-accordion ${showConcluidas ? 'active' : ''}`}
+                                            onClick={() => setShowConcluidas(!showConcluidas)}
+                                        >
+                                            <span>Concluídas ({tarefasConcluidas.length})</span>
+                                            <i className={`fa-solid fa-chevron-down ${showConcluidas ? 'rotate' : ''}`}></i>
+                                        </div>
+
+                                        <div className={`accordion-wrapper ${showConcluidas ? 'open' : ''}`}>
+                                            <div className="accordion-inner">
+                                                <div className="concluidas-content-wrapper" style={{ paddingTop: '10px' }}>
+                                                    <div className="tarefas-list completed">
+                                                        {tarefasConcluidas.map(t => (
+                                                            <TarefaCard
+                                                                key={t.id}
+                                                                tarefa={t}
+                                                                onUpdate={fetchData}
+                                                                onEdit={handleEditTarefa}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
+                                )}
+                            </>
                         )}
                     </div>
                 </div>
