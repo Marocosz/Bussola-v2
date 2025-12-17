@@ -6,6 +6,7 @@ from app import schemas, models
 from app.api import deps
 from app.services.ritmo import RitmoService
 from app.schemas import ritmo as ritmo_schema
+from app.models import RitmoPlanoTreino
 
 router = APIRouter()
 
@@ -13,21 +14,27 @@ router = APIRouter()
 # 1. BIO DADOS (Corpo & Metas)
 # ==========================================================
 
-@router.get("/bio/latest", response_model=ritmo_schema.BioResponse)
-def get_latest_bio(
-    db: Session = Depends(deps.get_db),
-    current_user: models.User = Depends(deps.get_current_user),
-) -> Any:
+@staticmethod
+def get_volume_semanal(db: Session, user_id: int):
     """
-    Retorna os dados corporais e metas mais recentes do usuário.
+    Calcula a soma de séries por grupo muscular do plano ATIVO.
     """
-    bio = RitmoService.get_latest_bio(db, current_user.id)
-    if not bio:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
-            detail="Nenhum dado corporal registrado ainda."
-        )
-    return bio
+    plano = db.query(RitmoPlanoTreino).filter(
+        RitmoPlanoTreino.user_id == user_id, 
+        RitmoPlanoTreino.ativo == True
+    ).first()
+
+    if not plano:
+        return {}
+
+    volume = {}
+    for dia in plano.dias:
+        for ex in dia.exercicios:
+            grupo = ex.grupo_muscular or "Outros"
+            # Soma as séries do exercício ao grupo correspondente
+            volume[grupo] = volume.get(grupo, 0) + (ex.series or 0)
+        
+    return volume
 
 @router.post("/bio", response_model=ritmo_schema.BioResponse)
 def create_bio(

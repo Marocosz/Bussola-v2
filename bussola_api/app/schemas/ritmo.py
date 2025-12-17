@@ -64,7 +64,7 @@ class DiaTreinoBase(BaseModel):
     ordem: int
 
 class DiaTreinoCreate(DiaTreinoBase):
-    # Permite criar o dia já com exercicios dentro (opcional)
+    # CORREÇÃO: Permitir receber exercícios na criação
     exercicios: Optional[List[ExercicioItemCreate]] = []
 
 class DiaTreinoResponse(DiaTreinoBase):
@@ -81,7 +81,8 @@ class PlanoTreinoBase(BaseModel):
     ativo: bool = False
 
 class PlanoTreinoCreate(PlanoTreinoBase):
-    pass
+    # CORREÇÃO CRÍTICA: O Schema precisa aceitar a lista de dias para o Service ler
+    dias: Optional[List[DiaTreinoCreate]] = []
 
 class PlanoTreinoResponse(PlanoTreinoBase):
     id: int
@@ -122,6 +123,7 @@ class RefeicaoBase(BaseModel):
     ordem: int
 
 class RefeicaoCreate(RefeicaoBase):
+    # CORREÇÃO: Permitir receber alimentos na criação
     alimentos: Optional[List[AlimentoItemCreate]] = []
 
 class RefeicaoResponse(RefeicaoBase):
@@ -132,6 +134,9 @@ class RefeicaoResponse(RefeicaoBase):
     # Campo computado simples para facilitar o front (opcional)
     @property
     def total_calorias_refeicao(self) -> float:
+        # Verifica se alimentos existe para evitar erro
+        if not self.alimentos:
+            return 0.0
         return sum(a.calorias for a in self.alimentos)
 
     class Config:
@@ -143,7 +148,8 @@ class DietaConfigBase(BaseModel):
     ativo: bool = False
 
 class DietaConfigCreate(DietaConfigBase):
-    pass
+    # CORREÇÃO CRÍTICA: O Schema precisa aceitar a lista de refeições
+    refeicoes: Optional[List[RefeicaoCreate]] = []
 
 class DietaConfigResponse(DietaConfigBase):
     id: int

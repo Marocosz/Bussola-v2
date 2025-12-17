@@ -297,3 +297,25 @@ class RitmoService:
         for d in ativas:
             d.ativo = False
         db.commit()
+        
+    @staticmethod
+    def get_volume_semanal(db: Session, user_id: int):
+        """
+        Calcula a soma de séries por grupo muscular do plano ATIVO.
+        """
+        plano = db.query(RitmoPlanoTreino).filter(
+            RitmoPlanoTreino.user_id == user_id, 
+            RitmoPlanoTreino.ativo == True
+        ).first()
+
+        if not plano:
+            return {}
+
+        volume = {}
+        for dia in plano.dias:
+            for ex in dia.exercicios:
+                grupo = ex.grupo_muscular or "Outros"
+                # Soma as séries do exercício ao grupo correspondente
+                volume[grupo] = volume.get(grupo, 0) + (ex.series or 0)
+        
+        return volume
