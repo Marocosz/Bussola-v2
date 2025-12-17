@@ -442,4 +442,149 @@ export const deleteCompromisso = async (id: number) => {
     return response.data;
 };
 
+// ==========================================================
+// 8. MÓDULO RITMO (FITNESS & SAÚDE)
+// ==========================================================
+
+// --- TIPAGEM ---
+
+export interface BioData {
+    id?: number;
+    peso: number;
+    altura: number;
+    idade: number;
+    genero: string;
+    nivel_atividade: string;
+    objetivo: string;
+    bf_estimado?: number;
+    tmb?: number;
+    gasto_calorico_total?: number;
+    meta_proteina?: number;
+    meta_carbo?: number;
+    meta_gordura?: number;
+    meta_agua?: number;
+}
+
+export interface ExercicioItem {
+    id?: number;
+    nome_exercicio: string;
+    api_id?: number;
+    grupo_muscular?: string;
+    series: number;
+    repeticoes_min: number;
+    repeticoes_max: number;
+    carga_prevista?: number;
+    descanso_segundos?: number;
+    observacao?: string;
+}
+
+export interface DiaTreino {
+    id?: number;
+    nome: string;
+    ordem: number;
+    exercicios: ExercicioItem[];
+}
+
+export interface PlanoTreino {
+    id?: number;
+    nome: string;
+    descricao?: string;
+    ativo?: boolean;
+    dias: DiaTreino[];
+}
+
+export interface AlimentoItem {
+    id?: number;
+    nome: string;
+    quantidade: number;
+    unidade: string;
+    calorias: number;
+    proteina: number;
+    carbo: number;
+    gordura: number;
+}
+
+export interface Refeicao {
+    id?: number;
+    nome: string;
+    horario?: string;
+    ordem: number;
+    alimentos: AlimentoItem[];
+    total_calorias_refeicao?: number;
+}
+
+export interface DietaConfig {
+    id?: number;
+    nome: string;
+    ativo?: boolean;
+    calorias_calculadas?: number;
+    refeicoes: Refeicao[];
+}
+
+// --- BIO (DADOS CORPORAIS) ---
+
+export const getBioData = async (): Promise<BioData> => {
+    const response = await api.get('/ritmo/bio/latest');
+    return response.data;
+};
+
+export const createBioData = async (data: BioData) => {
+    const response = await api.post('/ritmo/bio', data);
+    return response.data;
+};
+
+// --- TREINOS (PLANOS & EXERCÍCIOS) ---
+
+export const getPlanosTreino = async (): Promise<PlanoTreino[]> => {
+    const response = await api.get('/ritmo/treinos');
+    return response.data;
+};
+
+export const getPlanoAtivo = async (): Promise<PlanoTreino> => {
+    const response = await api.get('/ritmo/treinos/ativo');
+    return response.data;
+};
+
+export const createPlanoTreino = async (planoCompleto: PlanoTreino) => {
+    const response = await api.post('/ritmo/treinos', planoCompleto);
+    return response.data;
+};
+
+export const ativarPlanoTreino = async (id: number) => {
+    const response = await api.patch(`/ritmo/treinos/${id}/ativar`);
+    return response.data;
+};
+
+export const deletePlanoTreino = async (id: number) => {
+    const response = await api.delete(`/ritmo/treinos/${id}`);
+    return response.data;
+};
+
+// --- NUTRIÇÃO (DIETAS & REFEIÇÕES) ---
+
+export const getDietas = async (): Promise<DietaConfig[]> => {
+    const response = await api.get('/ritmo/nutricao');
+    return response.data;
+};
+
+export const getDietaAtiva = async (): Promise<DietaConfig> => {
+    const response = await api.get('/ritmo/nutricao/ativo');
+    return response.data;
+};
+
+export const createDieta = async (dietaCompleta: DietaConfig) => {
+    const response = await api.post('/ritmo/nutricao', dietaCompleta);
+    return response.data;
+};
+
+export const ativarDieta = async (id: number) => {
+    const response = await api.patch(`/ritmo/nutricao/${id}/ativar`);
+    return response.data;
+};
+
+export const deleteDieta = async (id: number) => {
+    const response = await api.delete(`/ritmo/nutricao/${id}`);
+    return response.data;
+};
+
 export default api;

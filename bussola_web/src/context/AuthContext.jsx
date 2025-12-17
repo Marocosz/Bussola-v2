@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
 import api from '../services/api';
 
 export const AuthContext = createContext();
@@ -66,3 +66,8 @@ export const AuthProvider = ({ children }) => {
         </AuthContext.Provider>
     );
 };
+
+// === ADIÇÃO NECESSÁRIA PARA O ROUTES.JSX FUNCIONAR ===
+export function useAuth() {
+    return useContext(AuthContext);
+}

@@ -8,10 +8,11 @@ import './assets/styles/global.css'
 // Ícones de Clima (Home)
 import 'weather-icons/css/weather-icons.css';
 
-// --- ADICIONE ESTA LINHA (Ícones Gerais) ---
+// Ícones Gerais (Font Awesome)
 import '@fortawesome/fontawesome-free/css/all.min.css';
-// -------------------------------------------
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-    <App />
+    <React.StrictMode>
+        <App />
+    </React.StrictMode>,
 )

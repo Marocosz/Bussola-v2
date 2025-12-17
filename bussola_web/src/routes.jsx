@@ -1,27 +1,25 @@
-import React, { useContext } from 'react';
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { AuthContext } from './context/AuthContext';
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
+import { ConfirmDialogProvider } from './context/ConfirmDialogContext';
 
-import { Navbar } from './components/Navbar'; 
+import { Navbar } from './components/Navbar';
 import { Login } from './pages/Login';
 import { Home } from './pages/Home';
 import { Financas } from './pages/Financas';
-import { Panorama } from './pages/Panorama';
-import { Registros } from './pages/Registros';
-import { Cofre } from './pages/Cofre';
 import { Agenda } from './pages/Agenda';
+import { Registros } from './pages/Registros';
+import { Panorama } from './pages/Panorama';
+import { Cofre } from './pages/Cofre';
+import { Ritmo } from './pages/Ritmo'; // <--- Importação da nova página
 
-// ... (imports)
-
-const PrivateLayout = () => {
-    const { authenticated, loading } = useContext(AuthContext);
+// --- DEFINIÇÃO DO COMPONENTE DE ROTA PRIVADA ---
+function PrivateRoute({ children }) {
+    const { authenticated, loading } = useAuth();
 
     if (loading) {
-        return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: '#fff' }}>
-                Carregando sistema...
-            </div>
-        );
+        return <div className="loading-screen">Carregando...</div>;
     }
 
     if (!authenticated) {
@@ -29,31 +27,40 @@ const PrivateLayout = () => {
     }
 
     return (
-        <>
+        <div className="app-layout">
             <Navbar />
-            <div style={{ width: '100%' }}> 
-                <Outlet />
+            <div className="app-content">
+                {children}
             </div>
-        </>
+        </div>
     );
-};
+}
+// -----------------------------------------------
 
 export function AppRoutes() {
     return (
-        <Routes>
-            <Route path="/login" element={<Login />} />
-
-            <Route element={<PrivateLayout />}>
-                <Route path="/home" element={<Home />} />
-                <Route path="/financas" element={<Financas />} />
-                <Route path="/panorama" element={<Panorama />} />
-                <Route path="/registros" element={<Registros />} />
-                <Route path="/agenda" element={<Agenda />} />
-                <Route path="/cofre" element={<Cofre />} />
-                
-            </Route>
-
-            <Route path="*" element={<Navigate to="/home" />} />
-        </Routes>
+        <BrowserRouter>
+            <AuthProvider>
+                <ToastProvider>
+                    <ConfirmDialogProvider>
+                        <Routes>
+                            <Route path="/login" element={<Login />} />
+                            
+                            <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
+                            <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
+                            <Route path="/panorama" element={<PrivateRoute><Panorama /></PrivateRoute>} />
+                            <Route path="/financas" element={<PrivateRoute><Financas /></PrivateRoute>} />
+                            <Route path="/agenda" element={<PrivateRoute><Agenda /></PrivateRoute>} />
+                            <Route path="/registros" element={<PrivateRoute><Registros /></PrivateRoute>} />
+                            
+                            {/* Rota do Ritmo */}
+                            <Route path="/ritmo" element={<PrivateRoute><Ritmo /></PrivateRoute>} />
+                            
+                            <Route path="/cofre" element={<PrivateRoute><Cofre /></PrivateRoute>} />
+                        </Routes>
+                    </ConfirmDialogProvider>
+                </ToastProvider>
+            </AuthProvider>
+        </BrowserRouter>
     );
 }

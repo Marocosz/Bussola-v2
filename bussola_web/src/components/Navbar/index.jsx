@@ -48,6 +48,9 @@ export function Navbar() {
                             <li><Link to="/financas">Provisões</Link></li>
                             <li><Link to="/agenda">Roteiro</Link></li>
                             <li><Link to="/registros">Registros</Link></li>
+                            {/* --- NOVO LINK: RITMO --- */}
+                            <li><Link to="/ritmo">Ritmo</Link></li>
+                            
                             <li><Link to="/cofre">Cofre</Link></li>
                             <li>
                                 {/* Botão de Sair chama o logout do contexto */}
