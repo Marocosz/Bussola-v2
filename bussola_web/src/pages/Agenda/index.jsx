@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { getAgendaDashboard } from '../../services/api';
 import { CompromissoCard } from './components/CompromissoCard';
 import { AgendaModal } from './components/AgendaModal';
-import { useToast } from '../../context/ToastContext'; // <--- Import Novo
+import { useToast } from '../../context/ToastContext';
+import { useConfirm } from '../../context/ConfirmDialogContext'; // <--- Import Adicionado
 import './styles.css';
 
 export function Agenda() {
@@ -11,7 +12,9 @@ export function Agenda() {
     const [modalOpen, setModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     
-    const { addToast } = useToast(); // <--- Hook Novo
+    // Hooks de Contexto
+    const { addToast } = useToast();
+    const dialogConfirm = useConfirm(); // <--- Hook Inicializado (Pronto para uso)
     
     const [tooltip, setTooltip] = useState({ visible: false, x: 0, y: 0, compromissos: [] });
 
@@ -45,7 +48,6 @@ export function Agenda() {
             }
         } catch (err) {
             console.error(err);
-            // Toast de erro adicionado
             addToast({ type: 'error', title: 'Erro', description: 'Não foi possível carregar a agenda.' });
         } finally {
             setLoading(false);

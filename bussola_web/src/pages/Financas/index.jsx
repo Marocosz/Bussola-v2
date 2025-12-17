@@ -4,14 +4,16 @@ import { TransactionCard } from './components/TransactionCard';
 import { CategoryCard } from './components/CategoryCard';
 import { FinancasModals } from './components/FinancasModals';
 import { useToast } from '../../context/ToastContext';
-import { useConfirm } from '../../context/ConfirmDialogContext'; // <--- Import Novo
+import { useConfirm } from '../../context/ConfirmDialogContext';
 import './styles.css';
 
 export function Financas() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    
+    // Hooks de Contexto
     const { addToast } = useToast();
-    const confirm = useConfirm(); // <--- Hook Novo
+    const dialogConfirm = useConfirm(); // Renomeado para evitar conflito com window.confirm
 
     // Controle de UI - Accordions
     const [openMonths, setOpenMonths] = useState(() => {
@@ -90,7 +92,7 @@ export function Financas() {
             }
         } catch (error) {
             console.error(error);
-            addToast({ type: 'error', title: 'Erro', description: 'Falha ao carregar dados.' });
+            addToast({ type: 'error', title: 'Erro', description: 'Falha ao carregar dados financeiros.' });
         } finally {
             setLoading(false);
         }
@@ -132,16 +134,16 @@ export function Financas() {
     };
 
     const handleDeleteCategory = async (id) => {
-        // --- SUBSTITUIÇÃO DO CONFIRM NATIVO ---
-        const isConfirmed = await confirm({
+        // --- SUBSTITUIÇÃO DO CONFIRM NATIVO PELO DIALOG CUSTOMIZADO ---
+        const isConfirmed = await dialogConfirm({
             title: 'Excluir Categoria?',
-            description: 'Todas as transações vinculadas a ela serão movidas para "Indefinida". Deseja continuar?',
-            confirmLabel: 'Excluir',
+            description: 'Todas as transações vinculadas a esta categoria serão movidas para "Indefinida". Esta ação não pode ser desfeita.',
+            confirmLabel: 'Sim, excluir',
             variant: 'danger'
         });
 
         if (!isConfirmed) return;
-        // --------------------------------------
+        // --------------------------------------------------------------
 
         try {
             await deleteCategoria(id);
