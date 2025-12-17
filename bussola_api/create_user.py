@@ -1,5 +1,7 @@
 import os
 from dotenv import load_dotenv
+from app.db.session import SessionLocal
+from app.db.base import Base
 
 # Carrega o ambiente
 load_dotenv()

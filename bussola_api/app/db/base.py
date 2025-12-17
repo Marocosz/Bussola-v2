@@ -7,3 +7,14 @@ from app.models.financas import Categoria, Transacao
 from app.models.registros import Anotacao, Link
 from app.models.cofre import Segredo
 from app.models.agenda import Compromisso
+
+# --- NOVO: Módulo Ritmo ---
+from app.models.ritmo import (
+    RitmoBio, 
+    RitmoPlanoTreino, 
+    RitmoDiaTreino, 
+    RitmoExercicioItem, 
+    RitmoDietaConfig, 
+    RitmoRefeicao, 
+    RitmoAlimentoItem
+)

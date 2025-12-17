@@ -1,8 +1,8 @@
-"""Reset tables
+"""Add Ritmo Module
 
-Revision ID: 8122f27655a4
+Revision ID: 220a3a0dea0a
 Revises: 
-Create Date: 2025-12-16 11:58:24.928729
+Create Date: 2025-12-17 10:54:19.210640
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '8122f27655a4'
+revision: str = '220a3a0dea0a'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -104,6 +104,48 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_historico_gasto_mensal_data_referencia'), 'historico_gasto_mensal', ['data_referencia'], unique=False)
+    op.create_table('ritmo_bio',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('peso', sa.Float(), nullable=True),
+    sa.Column('altura', sa.Float(), nullable=True),
+    sa.Column('idade', sa.Integer(), nullable=True),
+    sa.Column('genero', sa.String(), nullable=True),
+    sa.Column('bf_estimado', sa.Float(), nullable=True),
+    sa.Column('nivel_atividade', sa.String(), nullable=True),
+    sa.Column('objetivo', sa.String(), nullable=True),
+    sa.Column('tmb', sa.Float(), nullable=True),
+    sa.Column('gasto_calorico_total', sa.Float(), nullable=True),
+    sa.Column('meta_proteina', sa.Float(), nullable=True),
+    sa.Column('meta_carbo', sa.Float(), nullable=True),
+    sa.Column('meta_gordura', sa.Float(), nullable=True),
+    sa.Column('meta_agua', sa.Float(), nullable=True),
+    sa.Column('data_registro', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_ritmo_bio_id'), 'ritmo_bio', ['id'], unique=False)
+    op.create_table('ritmo_dieta_config',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('nome', sa.String(), nullable=True),
+    sa.Column('ativo', sa.Boolean(), nullable=True),
+    sa.Column('calorias_calculadas', sa.Float(), nullable=True),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_ritmo_dieta_config_id'), 'ritmo_dieta_config', ['id'], unique=False)
+    op.create_table('ritmo_plano_treino',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('nome', sa.String(), nullable=True),
+    sa.Column('descricao', sa.String(), nullable=True),
+    sa.Column('ativo', sa.Boolean(), nullable=True),
+    sa.Column('data_criacao', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_ritmo_plano_treino_id'), 'ritmo_plano_treino', ['id'], unique=False)
     op.create_table('subtarefa',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('titulo', sa.String(length=200), nullable=False),
@@ -139,18 +181,81 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_link_id'), 'link', ['id'], unique=False)
+    op.create_table('ritmo_dia_treino',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('plano_id', sa.Integer(), nullable=True),
+    sa.Column('nome', sa.String(), nullable=True),
+    sa.Column('ordem', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['plano_id'], ['ritmo_plano_treino.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_ritmo_dia_treino_id'), 'ritmo_dia_treino', ['id'], unique=False)
+    op.create_table('ritmo_refeicao',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('dieta_id', sa.Integer(), nullable=True),
+    sa.Column('nome', sa.String(), nullable=True),
+    sa.Column('horario', sa.String(), nullable=True),
+    sa.Column('ordem', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['dieta_id'], ['ritmo_dieta_config.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_ritmo_refeicao_id'), 'ritmo_refeicao', ['id'], unique=False)
+    op.create_table('ritmo_alimento_item',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('refeicao_id', sa.Integer(), nullable=True),
+    sa.Column('nome', sa.String(), nullable=True),
+    sa.Column('quantidade', sa.Float(), nullable=True),
+    sa.Column('unidade', sa.String(), nullable=True),
+    sa.Column('calorias', sa.Float(), nullable=True),
+    sa.Column('proteina', sa.Float(), nullable=True),
+    sa.Column('carbo', sa.Float(), nullable=True),
+    sa.Column('gordura', sa.Float(), nullable=True),
+    sa.ForeignKeyConstraint(['refeicao_id'], ['ritmo_refeicao.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_ritmo_alimento_item_id'), 'ritmo_alimento_item', ['id'], unique=False)
+    op.create_table('ritmo_exercicio_item',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('dia_treino_id', sa.Integer(), nullable=True),
+    sa.Column('nome_exercicio', sa.String(), nullable=True),
+    sa.Column('api_id', sa.Integer(), nullable=True),
+    sa.Column('grupo_muscular', sa.String(), nullable=True),
+    sa.Column('series', sa.Integer(), nullable=True),
+    sa.Column('repeticoes_min', sa.Integer(), nullable=True),
+    sa.Column('repeticoes_max', sa.Integer(), nullable=True),
+    sa.Column('carga_prevista', sa.Float(), nullable=True),
+    sa.Column('descanso_segundos', sa.Integer(), nullable=True),
+    sa.Column('observacao', sa.String(), nullable=True),
+    sa.ForeignKeyConstraint(['dia_treino_id'], ['ritmo_dia_treino.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_ritmo_exercicio_item_id'), 'ritmo_exercicio_item', ['id'], unique=False)
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_index(op.f('ix_ritmo_exercicio_item_id'), table_name='ritmo_exercicio_item')
+    op.drop_table('ritmo_exercicio_item')
+    op.drop_index(op.f('ix_ritmo_alimento_item_id'), table_name='ritmo_alimento_item')
+    op.drop_table('ritmo_alimento_item')
+    op.drop_index(op.f('ix_ritmo_refeicao_id'), table_name='ritmo_refeicao')
+    op.drop_table('ritmo_refeicao')
+    op.drop_index(op.f('ix_ritmo_dia_treino_id'), table_name='ritmo_dia_treino')
+    op.drop_table('ritmo_dia_treino')
     op.drop_index(op.f('ix_link_id'), table_name='link')
     op.drop_table('link')
     op.drop_index(op.f('ix_transacao_id_grupo_recorrencia'), table_name='transacao')
     op.drop_table('transacao')
     op.drop_index(op.f('ix_subtarefa_id'), table_name='subtarefa')
     op.drop_table('subtarefa')
+    op.drop_index(op.f('ix_ritmo_plano_treino_id'), table_name='ritmo_plano_treino')
+    op.drop_table('ritmo_plano_treino')
+    op.drop_index(op.f('ix_ritmo_dieta_config_id'), table_name='ritmo_dieta_config')
+    op.drop_table('ritmo_dieta_config')
+    op.drop_index(op.f('ix_ritmo_bio_id'), table_name='ritmo_bio')
+    op.drop_table('ritmo_bio')
     op.drop_index(op.f('ix_historico_gasto_mensal_data_referencia'), table_name='historico_gasto_mensal')
     op.drop_table('historico_gasto_mensal')
     op.drop_index(op.f('ix_anotacao_id'), table_name='anotacao')

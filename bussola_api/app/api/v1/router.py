@@ -8,6 +8,7 @@ from app.api.v1.endpoints.panorama import router as panorama_router
 from app.api.v1.endpoints.registros import router as registros_router
 from app.api.v1.endpoints.cofre import router as cofre_router
 from app.api.v1.endpoints.agenda import router as agenda_router
+from app.api.v1.endpoints.ritmo import router as ritmo_router
 
 api_router = APIRouter()
 
@@ -31,3 +32,6 @@ api_router.include_router(cofre_router, prefix="/cofre", tags=["cofre"])
 
 # Agenda
 api_router.include_router(agenda_router, prefix="/agenda", tags=["agenda"])
+
+# Ritmo
+api_router.include_router(ritmo_router, prefix="/ritmo", tags=["ritmo"])
