@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { updateTarefaStatus, deleteTarefa, toggleSubtarefa, addSubtarefa } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
-import { useConfirm } from '../../../context/ConfirmDialogContext'; // <--- Import Novo
+import { useConfirm } from '../../../context/ConfirmDialogContext';
 
 // --- COMPONENTE RECURSIVO (Item de Subtarefa) ---
 const SubtaskItem = ({ sub, tarefaId, onToggle, onUpdate, level = 0 }) => {
@@ -97,19 +97,30 @@ const SubtaskItem = ({ sub, tarefaId, onToggle, onUpdate, level = 0 }) => {
 // --- CARD PRINCIPAL DA TAREFA ---
 export function TarefaCard({ tarefa, onUpdate, onEdit }) {
     const { addToast } = useToast();
-    const confirm = useConfirm(); // <--- Hook Novo
+    const confirm = useConfirm(); 
     const isConcluido = tarefa.status === 'Concluído';
 
     const handleCheck = async () => {
         const novoStatus = isConcluido ? 'Pendente' : 'Concluído';
         try {
             await updateTarefaStatus(tarefa.id, novoStatus);
+            
+            // --- ADICIONEI OS TOASTS AQUI ---
+            if (novoStatus === 'Concluído') {
+                addToast({ type: 'success', title: 'Concluído!', description: 'Tarefa marcada como feita.' });
+            } else {
+                addToast({ type: 'info', title: 'Reaberta', description: 'Tarefa voltou para pendentes.' });
+            }
+            // --------------------------------
+
             onUpdate();
-        } catch (error) { console.error(error); }
+        } catch (error) { 
+            console.error(error);
+            addToast({ type: 'error', title: 'Erro', description: 'Não foi possível atualizar a tarefa.' });
+        }
     };
 
     const handleDelete = async () => {
-        // --- SUBSTITUIÇÃO DO CONFIRM NATIVO ---
         const isConfirmed = await confirm({
             title: 'Excluir Tarefa?',
             description: 'Deseja excluir esta tarefa e todas as suas sub-etapas?',
@@ -118,7 +129,6 @@ export function TarefaCard({ tarefa, onUpdate, onEdit }) {
         });
 
         if(!isConfirmed) return;
-        // --------------------------------------
 
         try {
             await deleteTarefa(tarefa.id);
@@ -186,7 +196,6 @@ export function TarefaCard({ tarefa, onUpdate, onEdit }) {
                     {tarefa.descricao && <p className="tarefa-desc">{tarefa.descricao}</p>}
                 </div>
 
-                {/* BOTÕES PADRONIZADOS COM ANOTAÇÃO */}
                 <div className="tarefa-actions">
                     <button className="btn-action-icon btn-edit" onClick={() => onEdit(tarefa)} title="Editar">
                         <i className="fa-solid fa-pen-to-square"></i>
@@ -197,7 +206,6 @@ export function TarefaCard({ tarefa, onUpdate, onEdit }) {
                 </div>
             </div>
 
-            {/* Subtarefas e Barra de Progresso Melhorada */}
             {progressData.total > 0 && (
                 <div className="subtarefas-container">
                     <div className="progresso-header">

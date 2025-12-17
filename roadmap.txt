@@ -1,0 +1,81 @@
+========================================================================
+BÚSSOLA HUB 2.0 - ROADMAP DE EVOLUÇÃO E FUNCIONALIDADES
+========================================================================
+Data: 17/12/2025
+Objetivo: Transformar o sistema em um "Life OS" (Sistema Operacional da Vida).
+
+------------------------------------------------------------------------
+1. NOVOS MÓDULOS (EXPANSÃO FUNCIONAL)
+------------------------------------------------------------------------
+
+[MÓDULO 05] FITNESS (Antigo "Vigor/Fit")
+Foco: Gestão de Treino, Dieta e Saúde Física.
+------------------------------------------------------------------------
+Funcionalidades Principais:
+- Diário de Treino (Log): Registrar exercícios, séries, reps e carga.
+- Progressão de Carga: Gráfico de linha mostrando a evolução em exercícios-chave (Ex: Supino, Agachamento).
+- Calculadora de Macros: Definição de meta (Cutting/Bulking) e contagem diária (Proteína/Carbo/Gordura).
+- Integração com Agenda: Marcar dias de treino como "Realizados" no calendário.
+
+APIs Recomendadas (Gratuitas):
+- Nutrição (Industrializados): OpenFoodFacts API (para ler códigos de barras e produtos de mercado).
+- Nutrição (Naturais/Brasil): Tabela TACO (Importar o dataset da Unicamp para o Banco de Dados - Offline).
+- Exercícios (Imagens/Dados): Wger API (Open Source) ou ExerciseDB (via RapidAPI - cuidado com limites).
+
+[MÓDULO 06] RITMO (Antigo "Hábitos/Rituais")
+Foco: Constância, Disciplina e Construção de Rotina.
+------------------------------------------------------------------------
+Funcionalidades Principais:
+- Grid de Hábitos: Checkboxes diários (Ex: Ler 10 pág, Beber 3L água, Meditar).
+- Visualização Heatmap: Gráfico estilo GitHub (quadradinhos verdes) mostrando a consistência anual.
+- Sistema de Ofensiva (Streaks): Contador de dias consecutivos sem falhar.
+- Recompensas: (Opcional) Vincular completude de hábitos a desbloqueios no módulo Financeiro.
+
+------------------------------------------------------------------------
+2. OUTRAS SUGESTÕES DE MÓDULOS (BACKLOG FUTURO)
+------------------------------------------------------------------------
+
+[MÓDULO 07] BIBLIOTECA (Estudos)
+- Estante Virtual: Livros (Lendo/Lidos), Cursos e Artigos.
+- Barra de Progresso: % de conclusão de cada material.
+- Fichamento: Editor de texto para resumos vinculados ao livro/curso.
+
+[MÓDULO 08] INVENTÁRIO (Patrimônio)
+- Meus Bens: Cadastro de eletrônicos e bens de valor com data de compra.
+- Alerta de Garantia: Aviso automático 30 dias antes de vencer a garantia.
+- Depreciação: Cálculo do valor atual vs. valor pago.
+- API Útil: Tabela FIPE (via BrasilAPI) para carros/motos.
+
+------------------------------------------------------------------------
+3. MELHORIAS TÉCNICAS E SISTÊMICAS (O CÉREBRO)
+------------------------------------------------------------------------
+
+INTELIGÊNCIA ARTIFICIAL (IA & AGENTES)
+- Chatbot Financeiro (RAG): Perguntar "Quanto gastei com Uber?" e o bot converter em SQL.
+- Classificador Automático: Ao lançar "Padaria", o sistema categoriza como "Alimentação".
+- Briefing Matinal: Resumo gerado por IA na Home ("Hoje vencem 2 contas e você tem treino de pernas").
+- APIs: Google Gemini API (Tier Gratuito) ou OpenAI.
+
+AUTOMAÇÃO & INTEGRAÇÕES
+- Bot de WhatsApp: Enviar áudio/texto para registrar gastos rápidos ("Gastei 50 no posto").
+- Conciliação Bancária: Importação de arquivos OFX (Extrato bancário).
+- Notificações Reais: Email ou Push avisando vencimentos do Cofre ou Contas.
+
+SEGURANÇA (ENTERPRISE)
+- 2FA (Dois Fatores): Exigir código (Google Authenticator) para abrir o Cofre.
+- Audit Log: Histórico de quem alterou o quê e quando.
+- API Útil: Have I Been Pwned (Verificar se senhas vazaram na dark web).
+
+ENGAJAMENTO & MOBILE
+- Gamificação: Níveis de usuário baseados na disciplina (Ritmo + Fitness).
+- PWA (Progressive Web App): Transformar o site em "app" instalável no celular.
+
+------------------------------------------------------------------------
+4. RESUMO DO ECOSSISTEMA DE APIS SUGERIDAS (PACK BRASIL)
+------------------------------------------------------------------------
+1. BrasilAPI: Para buscar CEPs e Feriados Nacionais (Agenda).
+2. Brapi.dev: Para cotações de Ações/FIIs (Finanças/Investimentos).
+3. AwesomeAPI: Cotação de Moedas (Dólar/Euro) em tempo real.
+4. Tabela TACO + OpenFoodFacts: Base de dados nutricional.
+5. Wger / ExerciseDB: Base de dados de exercícios físicos.
+6. Google Gemini: Motor de inteligência para textos e classificações.
