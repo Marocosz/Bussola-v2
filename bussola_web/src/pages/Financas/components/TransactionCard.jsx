@@ -1,10 +1,12 @@
 import React from 'react';
 import { toggleStatusTransacao, deleteTransacao } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
+import { useConfirm } from '../../../context/ConfirmDialogContext'; // <--- Import Novo
 
 // Adicionei a prop onEdit aqui
 export function TransactionCard({ transacao, onUpdate, onEdit }) {
     const { addToast } = useToast();
+    const confirm = useConfirm(); // <--- Hook Novo
 
     const handleToggleStatus = async () => {
         try {
@@ -16,7 +18,17 @@ export function TransactionCard({ transacao, onUpdate, onEdit }) {
     };
 
     const handleDelete = async () => {
-        if (!confirm('Tem certeza que deseja excluir esta transação?')) return;
+        // --- SUBSTITUIÇÃO DO CONFIRM NATIVO ---
+        const isConfirmed = await confirm({
+            title: 'Excluir Transação?',
+            description: 'Tem certeza que deseja excluir esta transação? Essa ação não pode ser desfeita.',
+            confirmLabel: 'Excluir',
+            variant: 'danger'
+        });
+
+        if (!isConfirmed) return;
+        // --------------------------------------
+
         try {
             await deleteTransacao(transacao.id);
             addToast({ type: 'success', title: 'Excluído', description: 'Transação removida.' });

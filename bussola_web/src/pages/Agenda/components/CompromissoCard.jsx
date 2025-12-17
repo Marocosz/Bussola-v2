@@ -1,9 +1,11 @@
 import React from 'react';
 import { toggleCompromissoStatus, deleteCompromisso } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
+import { useConfirm } from '../../../context/ConfirmDialogContext'; // <--- Import Novo
 
 export function CompromissoCard({ comp, onUpdate, onEdit }) {
     const { addToast } = useToast();
+    const confirm = useConfirm(); // <--- Hook Novo
 
     const handleToggle = async () => {
         await toggleCompromissoStatus(comp.id);
@@ -11,7 +13,17 @@ export function CompromissoCard({ comp, onUpdate, onEdit }) {
     };
 
     const handleDelete = async () => {
-        if(!confirm('Excluir este compromisso?')) return;
+        // --- SUBSTITUIÇÃO DO CONFIRM NATIVO ---
+        const isConfirmed = await confirm({
+            title: 'Excluir Compromisso?',
+            description: 'Você tem certeza que deseja remover este compromisso da sua agenda?',
+            confirmLabel: 'Excluir',
+            variant: 'danger'
+        });
+
+        if(!isConfirmed) return;
+        // --------------------------------------
+
         await deleteCompromisso(comp.id);
         addToast({type:'success', title:'Excluído', description:'Compromisso removido.'});
         onUpdate();

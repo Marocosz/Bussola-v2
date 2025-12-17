@@ -1,14 +1,26 @@
 import React from 'react';
 import { deleteAnotacao, toggleFixarAnotacao } from '../../../services/api';
+import { useConfirm } from '../../../context/ConfirmDialogContext'; // <--- Import Novo
 
 export function AnotacaoCard({ anotacao, onUpdate, onEdit, onView }) {
+    const confirm = useConfirm(); // <--- Hook Novo
     
     const handleDelete = async (e) => {
         e.stopPropagation();
-        if (window.confirm("Excluir esta anotação?")) {
+        
+        // --- SUBSTITUIÇÃO DO CONFIRM NATIVO ---
+        const isConfirmed = await confirm({
+            title: 'Excluir Anotação?',
+            description: 'Esta anotação será permanentemente removida.',
+            confirmLabel: 'Excluir',
+            variant: 'danger'
+        });
+
+        if (isConfirmed) {
             await deleteAnotacao(anotacao.id);
             onUpdate();
         }
+        // --------------------------------------
     };
 
     const handlePin = async (e) => {

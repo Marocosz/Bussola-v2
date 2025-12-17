@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { updateTarefaStatus, deleteTarefa, toggleSubtarefa, addSubtarefa } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
+import { useConfirm } from '../../../context/ConfirmDialogContext'; // <--- Import Novo
 
 // --- COMPONENTE RECURSIVO (Item de Subtarefa) ---
 const SubtaskItem = ({ sub, tarefaId, onToggle, onUpdate, level = 0 }) => {
@@ -96,6 +97,7 @@ const SubtaskItem = ({ sub, tarefaId, onToggle, onUpdate, level = 0 }) => {
 // --- CARD PRINCIPAL DA TAREFA ---
 export function TarefaCard({ tarefa, onUpdate, onEdit }) {
     const { addToast } = useToast();
+    const confirm = useConfirm(); // <--- Hook Novo
     const isConcluido = tarefa.status === 'Concluído';
 
     const handleCheck = async () => {
@@ -107,7 +109,17 @@ export function TarefaCard({ tarefa, onUpdate, onEdit }) {
     };
 
     const handleDelete = async () => {
-        if(!window.confirm('Excluir tarefa?')) return;
+        // --- SUBSTITUIÇÃO DO CONFIRM NATIVO ---
+        const isConfirmed = await confirm({
+            title: 'Excluir Tarefa?',
+            description: 'Deseja excluir esta tarefa e todas as suas sub-etapas?',
+            confirmLabel: 'Excluir',
+            variant: 'danger'
+        });
+
+        if(!isConfirmed) return;
+        // --------------------------------------
+
         try {
             await deleteTarefa(tarefa.id);
             addToast({type:'success', title:'Excluído', description:'Tarefa removida.'});
