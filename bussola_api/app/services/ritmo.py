@@ -55,22 +55,17 @@ class RitmoService:
             gasto_total_alvo += 300  # Superávit leve
 
         # 4. Cálculo de Macros (Estratégia Padrão)
-        # Proteína: 2g/kg (Base sólida para hipertrofia/manutenção)
-        # Gordura: 1g/kg (Saúde hormonal)
-        # Carbo: O que sobrar das calorias
-        
         meta_proteina = bio_in.peso * 2.0
         meta_gordura = bio_in.peso * 1.0
         
         calorias_prot_gord = (meta_proteina * 4) + (meta_gordura * 9)
         calorias_restantes = gasto_total_alvo - calorias_prot_gord
         
-        # Evitar carboidrato negativo se o déficit for muito agressivo
         if calorias_restantes < 0: calorias_restantes = 0
         meta_carbo = calorias_restantes / 4
 
-        # 5. Meta de Água (35ml a 50ml por kg)
-        meta_agua = bio_in.peso * 0.045 # 45ml/kg média atleta
+        # 5. Meta de Água (45ml por kg)
+        meta_agua = bio_in.peso * 0.045 
 
         # Criação do Objeto
         db_obj = RitmoBio(
@@ -82,7 +77,6 @@ class RitmoService:
             bf_estimado=bio_in.bf_estimado,
             nivel_atividade=bio_in.nivel_atividade,
             objetivo=bio_in.objetivo,
-            # Calculados
             tmb=round(tmb, 2),
             gasto_calorico_total=round(gasto_total_alvo, 2),
             meta_proteina=round(meta_proteina, 1),
@@ -113,14 +107,9 @@ class RitmoService:
 
     @staticmethod
     def create_plano_completo(db: Session, user_id: int, plano_in: PlanoTreinoCreate):
-        """
-        Cria a árvore completa: Plano -> Dias -> Exercícios
-        """
-        # Se este plano for ativo, desativa os anteriores
         if plano_in.ativo:
             RitmoService._desativar_outros_planos(db, user_id)
 
-        # 1. Cria o Plano
         db_plano = RitmoPlanoTreino(
             user_id=user_id,
             nome=plano_in.nome,
@@ -131,7 +120,6 @@ class RitmoService:
         db.commit()
         db.refresh(db_plano)
 
-        # 2. Cria os Dias e Exercícios (Iteração aninhada)
         for dia_in in plano_in.dias:
             db_dia = RitmoDiaTreino(
                 plano_id=db_plano.id,
@@ -157,16 +145,14 @@ class RitmoService:
                 )
                 db.add(db_ex)
             
-            db.commit() # Commit dos exercícios deste dia
+            db.commit()
 
         db.refresh(db_plano)
         return db_plano
 
     @staticmethod
     def toggle_plano_ativo(db: Session, user_id: int, plano_id: int):
-        """Ativa um plano e desativa todos os outros"""
         RitmoService._desativar_outros_planos(db, user_id)
-        
         plano = db.query(RitmoPlanoTreino).filter(RitmoPlanoTreino.id == plano_id, RitmoPlanoTreino.user_id == user_id).first()
         if plano:
             plano.ativo = True
@@ -185,7 +171,6 @@ class RitmoService:
 
     @staticmethod
     def _desativar_outros_planos(db: Session, user_id: int):
-        """Helper interno para garantir unicidade de ativo"""
         planos_ativos = db.query(RitmoPlanoTreino).filter(
             RitmoPlanoTreino.user_id == user_id, 
             RitmoPlanoTreino.ativo == True
@@ -211,27 +196,20 @@ class RitmoService:
 
     @staticmethod
     def create_dieta_completa(db: Session, user_id: int, dieta_in: DietaConfigCreate):
-        """
-        Cria a árvore completa: Dieta -> Refeições -> Alimentos
-        E calcula o total calórico automaticamente.
-        """
         if dieta_in.ativo:
             RitmoService._desativar_outras_dietas(db, user_id)
 
-        # 1. Cria a Dieta (Header)
         db_dieta = RitmoDietaConfig(
             user_id=user_id,
             nome=dieta_in.nome,
             ativo=dieta_in.ativo,
-            calorias_calculadas=0 # Será atualizado no final
+            calorias_calculadas=0
         )
         db.add(db_dieta)
         db.commit()
         db.refresh(db_dieta)
 
         total_calorias = 0
-
-        # 2. Cria Refeições e Alimentos
         for ref_in in dieta_in.refeicoes:
             db_ref = RitmoRefeicao(
                 dieta_id=db_dieta.id,
@@ -244,7 +222,6 @@ class RitmoService:
             db.refresh(db_ref)
 
             for ali_in in ref_in.alimentos:
-                # Cria alimento
                 db_ali = RitmoAlimentoItem(
                     refeicao_id=db_ref.id,
                     nome=ali_in.nome,
@@ -256,17 +233,13 @@ class RitmoService:
                     gordura=ali_in.gordura
                 )
                 db.add(db_ali)
-                
-                # Soma calorias
                 total_calorias += ali_in.calorias
             
             db.commit()
 
-        # 3. Atualiza o total da dieta
         db_dieta.calorias_calculadas = total_calorias
         db.commit()
         db.refresh(db_dieta)
-        
         return db_dieta
 
     @staticmethod
@@ -300,9 +273,7 @@ class RitmoService:
         
     @staticmethod
     def get_volume_semanal(db: Session, user_id: int):
-        """
-        Calcula a soma de séries por grupo muscular do plano ATIVO.
-        """
+        """Calcula a soma de séries por grupo muscular do plano ATIVO."""
         plano = db.query(RitmoPlanoTreino).filter(
             RitmoPlanoTreino.user_id == user_id, 
             RitmoPlanoTreino.ativo == True
@@ -315,7 +286,5 @@ class RitmoService:
         for dia in plano.dias:
             for ex in dia.exercicios:
                 grupo = ex.grupo_muscular or "Outros"
-                # Soma as séries do exercício ao grupo correspondente
                 volume[grupo] = volume.get(grupo, 0) + (ex.series or 0)
-        
         return volume

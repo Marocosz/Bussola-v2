@@ -6,16 +6,10 @@ export function TreinoModal({ onClose, onSuccess }) {
     const { addToast } = useToast();
     const [loading, setLoading] = useState(false);
 
-    // Estado do Plano
     const [nomePlano, setNomePlano] = useState('');
     const [descricao, setDescricao] = useState('');
-    
-    // Estado dos Dias (Array dinâmico)
-    const [dias, setDias] = useState([
-        { nome: 'Treino A', exercicios: [] }
-    ]);
+    const [dias, setDias] = useState([{ nome: 'Treino A', exercicios: [] }]);
 
-    // --- Gerenciamento de Dias ---
     const addDia = () => {
         setDias([...dias, { nome: `Treino ${String.fromCharCode(65 + dias.length)}`, exercicios: [] }]);
     };
@@ -32,7 +26,6 @@ export function TreinoModal({ onClose, onSuccess }) {
         setDias(newDias);
     };
 
-    // --- Gerenciamento de Exercícios ---
     const addExercicio = (diaIndex) => {
         const newDias = [...dias];
         newDias[diaIndex].exercicios.push({
@@ -40,7 +33,8 @@ export function TreinoModal({ onClose, onSuccess }) {
             series: 3,
             repeticoes_min: 8,
             repeticoes_max: 12,
-            carga_prevista: ''
+            carga_prevista: '',
+            grupo_muscular: 'Outros'
         });
         setDias(newDias);
     };
@@ -57,37 +51,32 @@ export function TreinoModal({ onClose, onSuccess }) {
         setDias(newDias);
     };
 
-    // --- Envio ---
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             setLoading(true);
-
-            // Monta payload
             const payload = {
                 nome: nomePlano,
                 descricao: descricao,
-                ativo: true, // Já cria ativado
+                ativo: true,
                 dias: dias.map((dia, idx) => ({
                     nome: dia.nome,
                     ordem: idx,
                     exercicios: dia.exercicios.map(ex => ({
                         ...ex,
-                        series: parseInt(ex.series),
-                        repeticoes_min: parseInt(ex.repeticoes_min),
-                        repeticoes_max: parseInt(ex.repeticoes_max),
+                        series: parseInt(ex.series) || 0,
+                        repeticoes_min: parseInt(ex.repeticoes_min) || 0,
+                        repeticoes_max: parseInt(ex.repeticoes_max) || 0,
                         carga_prevista: ex.carga_prevista ? parseFloat(ex.carga_prevista) : null
                     }))
                 }))
             };
 
             await createPlanoTreino(payload);
-            addToast({ type: 'success', title: 'Plano Criado!', description: 'Seu novo treino já está ativo.' });
+            addToast({ type: 'success', title: 'Plano Criado!', description: 'Treino ativado com sucesso.' });
             onSuccess();
             onClose();
-
         } catch (error) {
-            console.error(error);
             addToast({ type: 'error', title: 'Erro', description: 'Falha ao criar plano de treino.' });
         } finally {
             setLoading(false);
@@ -95,84 +84,101 @@ export function TreinoModal({ onClose, onSuccess }) {
     };
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-content" style={{maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto'}}>
+        <div className="ritmo-scope modal-overlay">
+            <div className="modal-content" style={{maxWidth: '850px', width: '95%'}}>
                 <div className="modal-header">
-                    <h2>Novo Plano de Treino</h2>
-                    <button className="close-btn" onClick={onClose}>&times;</button>
+                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', width:'100%'}}>
+                        <h2 style={{margin:0, fontSize:'1.2rem'}}>Configurar Novo Treino</h2>
+                        <button className="close-btn" onClick={onClose} style={{background:'none', border:'none', color:'var(--cor-texto-secundario)', cursor:'pointer', fontSize:'1.5rem'}}>&times;</button>
+                    </div>
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label>Nome do Plano</label>
-                        <input type="text" value={nomePlano} onChange={e => setNomePlano(e.target.value)} placeholder="Ex: Hipertrofia 2025" required />
-                    </div>
-                    <div className="form-group">
-                        <label>Descrição (Opcional)</label>
-                        <input type="text" value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Foco em força base..." />
-                    </div>
-
-                    <hr className="modal-divider" />
-
-                    <div className="days-container">
-                        {dias.map((dia, dIndex) => (
-                            <div key={dIndex} className="day-block" style={{marginBottom: '20px', background: 'rgba(255,255,255,0.02)', padding: '15px', borderRadius: '8px', border: '1px solid var(--border-color)'}}>
-                                <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '10px'}}>
-                                    <input 
-                                        type="text" 
-                                        value={dia.nome} 
-                                        onChange={(e) => handleDiaChange(dIndex, e.target.value)}
-                                        style={{fontWeight: 'bold', color: 'var(--primary-color)'}}
-                                    />
-                                    {dias.length > 1 && (
-                                        <button type="button" className="btn-icon-small" onClick={() => removeDia(dIndex)} style={{color: '#ff4444'}}>
-                                            <i className="fa-solid fa-trash"></i>
-                                        </button>
-                                    )}
-                                </div>
-
-                                {/* Lista de Exercícios */}
-                                {dia.exercicios.map((ex, eIndex) => (
-                                    <div key={eIndex} style={{display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 30px', gap: '8px', alignItems: 'end', marginBottom: '8px'}}>
-                                        <div className="form-group-compact">
-                                            <label style={{fontSize:'0.7rem'}}>Exercício</label>
-                                            <input type="text" placeholder="Nome" value={ex.nome_exercicio} onChange={(e) => handleExercicioChange(dIndex, eIndex, 'nome_exercicio', e.target.value)} required />
-                                        </div>
-                                        <div className="form-group-compact">
-                                            <label style={{fontSize:'0.7rem'}}>Séries</label>
-                                            <input type="number" value={ex.series} onChange={(e) => handleExercicioChange(dIndex, eIndex, 'series', e.target.value)} />
-                                        </div>
-                                        <div className="form-group-compact">
-                                            <label style={{fontSize:'0.7rem'}}>Reps Min</label>
-                                            <input type="number" value={ex.repeticoes_min} onChange={(e) => handleExercicioChange(dIndex, eIndex, 'repeticoes_min', e.target.value)} />
-                                        </div>
-                                        <div className="form-group-compact">
-                                            <label style={{fontSize:'0.7rem'}}>Reps Max</label>
-                                            <input type="number" value={ex.repeticoes_max} onChange={(e) => handleExercicioChange(dIndex, eIndex, 'repeticoes_max', e.target.value)} />
-                                        </div>
-                                        <div className="form-group-compact">
-                                            <label style={{fontSize:'0.7rem'}}>Kg (Meta)</label>
-                                            <input type="number" value={ex.carga_prevista} onChange={(e) => handleExercicioChange(dIndex, eIndex, 'carga_prevista', e.target.value)} />
-                                        </div>
-                                        <button type="button" onClick={() => removeExercicio(dIndex, eIndex)} style={{background:'none', border:'none', color:'#666', cursor:'pointer', marginBottom:'10px'}}>
-                                            <i className="fa-solid fa-times"></i>
-                                        </button>
-                                    </div>
-                                ))}
-
-                                <button type="button" className="btn-secondary-small" onClick={() => addExercicio(dIndex)} style={{marginTop: '5px', fontSize: '0.8rem'}}>
-                                    + Adicionar Exercício
-                                </button>
+                    <div className="modal-body">
+                        <div className="form-row grid-60-40" style={{display:'grid', gridTemplateColumns:'60fr 40fr', gap:'1rem', marginBottom:'1.5rem'}}>
+                            <div className="form-group">
+                                <label>Nome do Plano</label>
+                                <input className="form-input" type="text" value={nomePlano} onChange={e => setNomePlano(e.target.value)} placeholder="Ex: Push Pull Legs" required />
                             </div>
-                        ))}
+                            <div className="form-group">
+                                <label>Foco / Descrição</label>
+                                <input className="form-input" type="text" value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Opcional" />
+                            </div>
+                        </div>
+
+                        <div className="days-container">
+                            {dias.map((dia, dIndex) => (
+                                <div key={dIndex} className="day-block" style={{marginBottom: '1.5rem', background: 'var(--cor-card-secundario)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--cor-borda)'}}>
+                                    <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '1rem'}}>
+                                        <input 
+                                            className="form-input"
+                                            style={{fontWeight: 'bold', color: 'var(--cor-azul-primario)', background:'transparent', border:'none', fontSize:'1rem', width:'auto'}}
+                                            type="text" 
+                                            value={dia.nome} 
+                                            onChange={(e) => handleDiaChange(dIndex, e.target.value)}
+                                        />
+                                        {dias.length > 1 && (
+                                            <button type="button" onClick={() => removeDia(dIndex)} style={{background:'none', border:'none', color:'var(--cor-vermelho-delete)', cursor:'pointer'}}>
+                                                <i className="fa-solid fa-trash-can"></i>
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {dia.exercicios.map((ex, eIndex) => (
+                                        <div key={eIndex} style={{display: 'grid', gridTemplateColumns: '1.5fr 1fr 0.6fr 0.6fr 0.6fr 0.8fr 30px', gap: '8px', alignItems: 'end', marginBottom: '8px'}}>
+                                            <div className="form-group">
+                                                <label style={{fontSize:'0.6rem'}}>Exercício</label>
+                                                <input className="form-input" style={{height:'35px', padding:'0 5px'}} type="text" value={ex.nome_exercicio} onChange={(e) => handleExercicioChange(dIndex, eIndex, 'nome_exercicio', e.target.value)} required />
+                                            </div>
+                                            <div className="form-group">
+                                                <label style={{fontSize:'0.6rem'}}>Grupo</label>
+                                                <select className="form-input" style={{height:'35px', padding:'0 5px'}} value={ex.grupo_muscular} onChange={(e) => handleExercicioChange(dIndex, eIndex, 'grupo_muscular', e.target.value)}>
+                                                    <option value="Peito">Peito</option>
+                                                    <option value="Costas">Costas</option>
+                                                    <option value="Pernas">Pernas</option>
+                                                    <option value="Ombros">Ombros</option>
+                                                    <option value="Bíceps">Bíceps</option>
+                                                    <option value="Tríceps">Tríceps</option>
+                                                    <option value="Abdominais">Abs</option>
+                                                    <option value="Outros">Outros</option>
+                                                </select>
+                                            </div>
+                                            <div className="form-group">
+                                                <label style={{fontSize:'0.6rem'}}>Sets</label>
+                                                <input className="form-input" style={{height:'35px', padding:'0 5px'}} type="number" value={ex.series} onChange={(e) => handleExercicioChange(dIndex, eIndex, 'series', e.target.value)} />
+                                            </div>
+                                            <div className="form-group">
+                                                <label style={{fontSize:'0.6rem'}}>Min</label>
+                                                <input className="form-input" style={{height:'35px', padding:'0 5px'}} type="number" value={ex.repeticoes_min} onChange={(e) => handleExercicioChange(dIndex, eIndex, 'repeticoes_min', e.target.value)} />
+                                            </div>
+                                            <div className="form-group">
+                                                <label style={{fontSize:'0.6rem'}}>Max</label>
+                                                <input className="form-input" style={{height:'35px', padding:'0 5px'}} type="number" value={ex.repeticoes_max} onChange={(e) => handleExercicioChange(dIndex, eIndex, 'repeticoes_max', e.target.value)} />
+                                            </div>
+                                            <div className="form-group">
+                                                <label style={{fontSize:'0.6rem'}}>Kg</label>
+                                                <input className="form-input" style={{height:'35px', padding:'0 5px'}} type="number" value={ex.carga_prevista} onChange={(e) => handleExercicioChange(dIndex, eIndex, 'carga_prevista', e.target.value)} />
+                                            </div>
+                                            <button type="button" onClick={() => removeExercicio(dIndex, eIndex)} style={{background:'none', border:'none', color:'var(--cor-texto-secundario)', cursor:'pointer', paddingBottom:'10px'}}>
+                                                <i className="fa-solid fa-xmark"></i>
+                                            </button>
+                                        </div>
+                                    ))}
+
+                                    <button type="button" onClick={() => addExercicio(dIndex)} style={{marginTop: '10px', fontSize: '0.75rem', background:'transparent', border:'1px dashed var(--cor-borda)', color:'var(--cor-texto-secundario)', padding:'4px 12px', borderRadius:'6px', cursor:'pointer'}}>
+                                        + Add Exercício
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+
+                        <button type="button" className="btn-secondary" onClick={addDia} style={{width: '100%', padding:'10px', borderRadius:'10px', border:'1px solid var(--cor-borda)', background:'var(--cor-card-secundario)', cursor:'pointer', color:'var(--cor-texto-principal)'}}>
+                            <i className="fa-solid fa-calendar-plus"></i> Adicionar Dia de Treino
+                        </button>
                     </div>
 
-                    <button type="button" className="btn-secondary" onClick={addDia} style={{width: '100%', marginBottom: '20px'}}>
-                        + Adicionar Dia de Treino
-                    </button>
-
-                    <div className="modal-actions">
-                        <button type="button" className="btn-secondary" onClick={onClose}>Cancelar</button>
+                    <div className="modal-footer">
+                        <button type="button" onClick={onClose} style={{background:'transparent', border:'1px solid var(--cor-borda)', color:'var(--cor-texto-secundario)', padding:'8px 16px', borderRadius:'8px', cursor:'pointer'}}>Cancelar</button>
                         <button type="submit" className="btn-primary" disabled={loading}>
                             {loading ? 'Salvando...' : 'Criar Plano'}
                         </button>
