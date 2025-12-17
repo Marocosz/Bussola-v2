@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getHomeData } from '../../services/api';
+import { useToast } from '../../context/ToastContext'; // <--- Import Novo
 import './styles.css';
 
 // Importação das Imagens (Vite)
@@ -19,6 +20,7 @@ export function Home() {
         tech_news: []
     });
     const [loading, setLoading] = useState(true);
+    const { addToast } = useToast(); // <--- Hook Novo
 
     // Efeito: Relógio (Tic-tac a cada segundo)
     useEffect(() => {
@@ -36,6 +38,8 @@ export function Home() {
                 setDashboardData(data);
             } catch (error) {
                 console.error("Erro ao carregar dados da Home:", error);
+                // Toast discreto para erro
+                addToast({ type: 'warning', title: 'Atenção', description: 'Alguns dados do dashboard podem estar desatualizados.' });
             } finally {
                 setLoading(false);
             }
@@ -51,7 +55,6 @@ export function Home() {
     const formatDate = (date) => {
         const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
         const formatted = date.toLocaleDateString('pt-BR', options);
-        // Capitaliza a primeira letra (ex: "segunda-feira" -> "Segunda-feira")
         return formatted.charAt(0).toUpperCase() + formatted.slice(1);
     };
 
@@ -110,7 +113,7 @@ export function Home() {
                 {/* Linha 1: Finanças e Agenda */}
                 <div className="feature-row">
                     <div className="feature-image-showcase">
-                        {/* Lógica de Tema: Baseada na classe .light-theme no body (gerida externamente) */}
+                        {/* Lógica de Tema */}
                         <img src={walletAmico} alt="Análise de Finanças e Agenda" className="theme-image image-light-mode" />
                         <img src={walletAmicoDark} alt="Análise de Finanças e Agenda" className="theme-image image-dark-mode" />
                     </div>

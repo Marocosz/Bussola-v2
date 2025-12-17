@@ -6,12 +6,18 @@ import { AnotacaoModal } from './components/AnotacaoModal';
 import { TarefaModal } from './components/TarefaModal';
 import { GrupoModal } from './components/GrupoModal';
 import { ViewAnotacaoModal } from './components/ViewAnotacaoModal';
+import { useToast } from '../../context/ToastContext';
+import { useConfirm } from '../../context/ConfirmDialogContext';
 import './styles.css';
 
 export function Registros() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    // Hooks de Contexto
+    const { addToast } = useToast();
+    const dialogConfirm = useConfirm(); // Renomeado para evitar conflito com window.confirm
 
     // UI State - Modais
     const [notaModalOpen, setNotaModalOpen] = useState(false);
@@ -44,8 +50,7 @@ export function Registros() {
         localStorage.setItem('@Bussola:registros_accordions', JSON.stringify(openGroups));
     }, [openGroups]);
 
-    // --- CORREÇÃO AQUI: Parâmetro 'silent' ---
-    // Se silent for true, não exibe o spinner de loading (atualização transparente)
+    // Carregamento de dados (com suporte a Silent Update)
     const fetchData = async (silent = false) => {
         if (!silent) setLoading(true);
         try {
@@ -55,13 +60,12 @@ export function Registros() {
         } catch (err) {
             console.error("Erro dashboard:", err);
             setError("Não foi possível carregar os registros.");
+            addToast({ type: 'error', title: 'Erro', description: 'Falha ao sincronizar dados.' });
         } finally {
-            // Garante que o loading saia, mas se era silent, nem chegou a entrar visualmente
             setLoading(false);
         }
     };
 
-    // No load inicial, queremos o loading visual (silent = false)
     useEffect(() => { fetchData(false); }, []);
 
     // --- PROCESSAMENTO DE DADOS (ANOTAÇÕES) ---
@@ -98,7 +102,6 @@ export function Registros() {
     const tarefasPendentesRaw = data?.tarefas_pendentes || [];
     const tarefasConcluidasRaw = data?.tarefas_concluidas || [];
 
-    // Filtro de Prioridade
     const filterByPrio = (list) => {
         if (filtroPrioridade === 'Todas') return list;
         return list.filter(t => t.prioridade === filtroPrioridade);
@@ -107,7 +110,6 @@ export function Registros() {
     const tarefasPendentes = filterByPrio(tarefasPendentesRaw);
     const tarefasConcluidas = filterByPrio(tarefasConcluidasRaw);
 
-    // Prioridades para o Dropdown
     const prioridades = [
         { label: 'Crítica', color: '#ef4444' },
         { label: 'Alta', color: '#f59e0b' },
@@ -152,22 +154,45 @@ export function Registros() {
     };
 
     const handleDeleteGrupo = async (grupoId, e) => {
+        // Importante: Parar a propagação para não fechar o dropdown antes da hora
         e.stopPropagation();
-        if (!window.confirm("Tem certeza? As anotações deste grupo serão movidas para 'Indefinido'.")) return;
+        
+        // 1. Chama o Dialog Customizado
+        const isConfirmed = await dialogConfirm({
+            title: 'Excluir Grupo?',
+            description: 'Todas as anotações deste grupo serão movidas para "Indefinido". Esta ação não pode ser desfeita.',
+            confirmLabel: 'Sim, excluir',
+            variant: 'danger'
+        });
+
+        if (!isConfirmed) return;
+
         try {
-            if (deleteGrupo) {
-                await deleteGrupo(grupoId);
-                if (filtroGrupo !== 'Todos') setFiltroGrupo('Todos');
-                // CORREÇÃO: Atualização silenciosa ao deletar
-                fetchData(true);
-            }
+            await deleteGrupo(grupoId);
+            
+            // 2. Toast de Sucesso
+            addToast({ 
+                type: 'success', 
+                title: 'Grupo excluído', 
+                description: 'O grupo foi removido com sucesso.' 
+            });
+
+            // 3. Resetar filtro se necessário
+            if (filtroGrupo !== 'Todos') setFiltroGrupo('Todos');
+            
+            // 4. Atualizar lista (silenciosamente)
+            fetchData(true); 
         } catch (error) {
             console.error(error);
-            alert("Erro ao excluir grupo.");
+            // Toast de Erro
+            addToast({ 
+                type: 'error', 
+                title: 'Erro', 
+                description: 'Não foi possível excluir o grupo.' 
+            });
         }
     };
 
-    // Loading interno simples
     const LoadingState = () => (
         <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--cor-texto-secundario)' }}>
             <i className="fa-solid fa-circle-notch fa-spin" style={{ fontSize: '1.5rem', marginBottom: '10px', color: 'var(--cor-azul-primario)' }}></i>
@@ -182,7 +207,6 @@ export function Registros() {
         </div>
     );
 
-    // Se estiver carregando mas sem dados, ainda retorna o layout abaixo (não bloqueia com return null)
     if (!data && !loading) return null;
 
     return (
@@ -279,7 +303,6 @@ export function Registros() {
                                                             <AnotacaoCard
                                                                 key={n.id}
                                                                 anotacao={n}
-                                                                // CORREÇÃO: Atualização silenciosa
                                                                 onUpdate={() => fetchData(true)}
                                                                 onEdit={handleEditNota}
                                                                 onView={handleViewNota}
@@ -318,7 +341,6 @@ export function Registros() {
                                                                 <AnotacaoCard
                                                                     key={n.id}
                                                                     anotacao={n}
-                                                                    // CORREÇÃO: Atualização silenciosa
                                                                     onUpdate={() => fetchData(true)}
                                                                     onEdit={handleEditNota}
                                                                     onView={handleViewNota}
@@ -405,7 +427,6 @@ export function Registros() {
                                         <TarefaCard
                                             key={t.id}
                                             tarefa={t}
-                                            // CORREÇÃO: Atualização silenciosa
                                             onUpdate={() => fetchData(true)}
                                             onEdit={handleEditTarefa}
                                         />
@@ -430,7 +451,6 @@ export function Registros() {
                                                             <TarefaCard
                                                                 key={t.id}
                                                                 tarefa={t}
-                                                                // CORREÇÃO: Atualização silenciosa
                                                                 onUpdate={() => fetchData(true)}
                                                                 onEdit={handleEditTarefa}
                                                             />
@@ -447,7 +467,7 @@ export function Registros() {
                 </div>
             </div>
 
-            {/* MODAIS: O onUpdate dos modais geralmente também pode ser silencioso (true) para não piscar a tela ao fechar */}
+            {/* MODAIS */}
             <AnotacaoModal active={notaModalOpen} closeModal={() => setNotaModalOpen(false)} onUpdate={() => fetchData(true)} editingData={editingNota} gruposDisponiveis={grupos} />
             <TarefaModal active={tarefaModalOpen} closeModal={() => setTarefaModalOpen(false)} onUpdate={() => fetchData(true)} editingData={editingTarefa} />
             <GrupoModal 

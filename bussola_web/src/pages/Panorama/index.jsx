@@ -1,8 +1,8 @@
-// src/pages/Panorama/index.jsx
 import React, { useEffect, useState } from 'react';
 import { getPanoramaData, getCategoryHistory } from '../../services/api';
 import { KpiCard } from './components/KpiCard';
 import { ProvisoesModal, RoteiroModal, RegistrosModal } from './components/PanoramaModals';
+import { useToast } from '../../context/ToastContext'; // <--- Import Novo
 import './styles.css';
 
 import {
@@ -30,12 +30,16 @@ export function Panorama() {
     const [modalRoteiroOpen, setModalRoteiroOpen] = useState(false);
     const [modalRegistrosOpen, setModalRegistrosOpen] = useState(false);
 
+    const { addToast } = useToast(); // <--- Hook Novo
+
     const fetchCategoryHistory = async (id, currentPeriod) => {
         try {
             const history = await getCategoryHistory(id, currentPeriod);
             setDynamicChartData(history);
         } catch (error) { 
-            console.error("Erro ao buscar histórico da categoria:", error); 
+            console.error("Erro ao buscar histórico da categoria:", error);
+            // Toast de erro
+            addToast({ type: 'warning', title: 'Erro', description: 'Não foi possível carregar o histórico da categoria.' });
         }
     };
 
@@ -58,6 +62,7 @@ export function Panorama() {
                 }
             } catch (error) {
                 console.error("Erro", error);
+                addToast({ type: 'error', title: 'Erro', description: 'Falha ao carregar o Panorama.' });
             } finally {
                 setLoading(false);
             }
@@ -93,10 +98,9 @@ export function Panorama() {
     const fmt = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
     // ==========================================
-    // CÁLCULOS DE BI (Business Intelligence)
+    // CÁLCULOS DE BI
     // ==========================================
 
-    // 1. Taxa de Poupança (Savings Rate)
     const receitaTotal = kpis.receita_mes || 0;
     const despesaTotal = kpis.despesa_mes || 0;
     const poupanca = receitaTotal - despesaTotal;
@@ -105,7 +109,6 @@ export function Panorama() {
     const corPoupanca = poupanca >= 0 ? '#10b981' : '#ef4444'; 
     const restoPoupanca = 100 - taxaPoupancaVisual;
 
-    // 2. Índice de Execução (Produtividade)
     const tarefasPendentesTotal = 
         kpis.tarefas_pendentes.critica + 
         kpis.tarefas_pendentes.alta + 
@@ -115,7 +118,6 @@ export function Panorama() {
     const totalTarefas = tarefasPendentesTotal + tarefasConcluidas;
     const taxaExecucao = totalTarefas > 0 ? (tarefasConcluidas / totalTarefas) * 100 : 0;
 
-    // 3. Saldo Acumulado para Gráfico Misto
     let acumuladoAtual = 0;
     const saldoAcumuladoData = data.evolucao_mensal_receita.map((receita, index) => {
         const despesa = data.evolucao_mensal_despesa[index] || 0;
@@ -124,28 +126,17 @@ export function Panorama() {
         return acumuladoAtual;
     });
 
-    // --- NOVOS CÁLCULOS (IDEIAS 1 e 3) ---
-
-    // 4. Projeção de Fim de Mês (Forecasting)
     const today = new Date();
     const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-    const currentDay = Math.max(1, today.getDate()); // Evita divisão por zero
+    const currentDay = Math.max(1, today.getDate());
     
-    // Média de gasto por dia até agora
     const mediaGastoDiario = despesaTotal / currentDay;
-    // Quanto será no final do mês se continuar assim
     const despesaProjetada = mediaGastoDiario * daysInMonth;
-    // O status da projeção (Se vai estourar a receita ou não)
     const statusProjecao = despesaProjetada > receitaTotal ? 'danger' : 'safe';
 
-    // 5. Detector de Padrões (Simulação de Dias da Semana)
-    // Nota: Como o backend ainda não manda dados por dia da semana, simulamos uma distribuição
-    // baseada no total de despesas para criar o visual do "Heatmap".
-    // Futuramente, substitua 'distribution' pelos dados reais do backend.
     const weekLabels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-    const weekDistribution = [0.12, 0.11, 0.14, 0.13, 0.25, 0.15, 0.10]; // Ex: Sexta gasta mais
+    const weekDistribution = [0.12, 0.11, 0.14, 0.13, 0.25, 0.15, 0.10]; 
     const weeklySpendData = weekDistribution.map(pct => despesaTotal * pct);
-
 
     // ==========================================
     // CONFIGURAÇÃO DOS GRÁFICOS
@@ -198,7 +189,6 @@ export function Panorama() {
         datasets: [{ data: data.gastos_por_categoria.data, backgroundColor: data.gastos_por_categoria.colors, borderWidth: 0, hoverOffset: 4 }],
     };
 
-    // NOVO: Configuração do Gráfico de Projeção (Horizontal Bar)
     const projecaoData = {
         labels: ['Gasto Atual', 'Projeção (Fim Mês)'],
         datasets: [{
@@ -210,17 +200,15 @@ export function Panorama() {
         }]
     };
 
-    // NOVO: Configuração do Gráfico de Padrões (Heatmap/Semanal)
     const weeklyPatternData = {
         labels: weekLabels,
         datasets: [{
             label: 'Gasto Médio (Est.)',
             data: weeklySpendData,
             backgroundColor: (ctx) => {
-                // Deixa a barra maior com cor mais forte
                 const value = ctx.raw;
                 const max = Math.max(...weeklySpendData);
-                const opacity = 0.3 + (value / max) * 0.7; // Opacidade dinâmica
+                const opacity = 0.3 + (value / max) * 0.7; 
                 return `rgba(245, 158, 11, ${opacity})`;
             },
             borderRadius: 4,
@@ -344,9 +332,7 @@ export function Panorama() {
                         </div>
                     </div>
 
-                    {/* --- NOVOS GRÁFICOS INSERIDOS NA GRID --- */}
-
-                    {/* C. PROJEÇÃO DE FIM DE MÊS (FORECASTING) - NOVO */}
+                    {/* C. PROJEÇÃO DE FIM DE MÊS (FORECASTING) */}
                     <div className="chart-wrapper" style={{ gridColumn: 'span 6' }}>
                         <div className="chart-header">
                             <h3>Forecasting (Projeção)</h3>
@@ -358,7 +344,7 @@ export function Panorama() {
                             <Bar 
                                 data={projecaoData} 
                                 options={{ 
-                                    indexAxis: 'y', // Barra Horizontal
+                                    indexAxis: 'y', 
                                     maintainAspectRatio: false,
                                     plugins: { legend: { display: false } },
                                     scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' } } }
@@ -367,7 +353,7 @@ export function Panorama() {
                         </div>
                     </div>
 
-                    {/* D. PADRÕES DE GASTO (HEATMAP SEMANAL) - NOVO */}
+                    {/* D. PADRÕES DE GASTO (HEATMAP SEMANAL) */}
                     <div className="chart-wrapper" style={{ gridColumn: 'span 6' }}>
                         <div className="chart-header">
                             <h3>Padrão Semanal de Gastos</h3>

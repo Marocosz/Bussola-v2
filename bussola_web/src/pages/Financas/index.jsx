@@ -4,12 +4,14 @@ import { TransactionCard } from './components/TransactionCard';
 import { CategoryCard } from './components/CategoryCard';
 import { FinancasModals } from './components/FinancasModals';
 import { useToast } from '../../context/ToastContext';
+import { useConfirm } from '../../context/ConfirmDialogContext'; // <--- Import Novo
 import './styles.css';
 
 export function Financas() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const { addToast } = useToast();
+    const confirm = useConfirm(); // <--- Hook Novo
 
     // Controle de UI - Accordions
     const [openMonths, setOpenMonths] = useState(() => {
@@ -130,7 +132,17 @@ export function Financas() {
     };
 
     const handleDeleteCategory = async (id) => {
-        if (!confirm('Ao excluir esta categoria, todas as transações vinculadas a ela serão movidas para "Indefinida". Deseja continuar?')) return;
+        // --- SUBSTITUIÇÃO DO CONFIRM NATIVO ---
+        const isConfirmed = await confirm({
+            title: 'Excluir Categoria?',
+            description: 'Todas as transações vinculadas a ela serão movidas para "Indefinida". Deseja continuar?',
+            confirmLabel: 'Excluir',
+            variant: 'danger'
+        });
+
+        if (!isConfirmed) return;
+        // --------------------------------------
+
         try {
             await deleteCategoria(id);
             addToast({ type: 'success', title: 'Sucesso', description: 'Categoria removida e transações migradas.' });

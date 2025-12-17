@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getSegredos, getSegredoValor, deleteSegredo } from '../../services/api';
 import { SegredoModal } from './components/SegredoModal';
 import { useToast } from '../../context/ToastContext';
+import { useConfirm } from '../../context/ConfirmDialogContext'; // <--- O IMPORT TEM QUE ESTAR AQUI
 import './styles.css';
 
 export function Cofre() {
@@ -9,7 +10,10 @@ export function Cofre() {
     const [loading, setLoading] = useState(true);
     const [modalOpen, setModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
+    
+    // Hooks do Contexto
     const { addToast } = useToast();
+    const dialogConfirm = useConfirm(); // Mudei o nome da variável para garantir que não confunda com o nativo
 
     const fetchData = async () => {
         try {
@@ -38,7 +42,25 @@ export function Cofre() {
     };
 
     const handleDelete = async (id) => {
-        if(!confirm('Excluir este segredo?')) return;
+        console.log("Tentando abrir dialog customizado..."); // <--- OLHE NO CONSOLE (F12)
+
+        // Usando a nossa função customizada (dialogConfirm)
+        const isConfirmed = await dialogConfirm({
+            title: 'Excluir Segredo?',
+            description: 'Esta ação removerá permanentemente a chave. Deseja continuar?',
+            confirmLabel: 'Sim, Excluir',
+            cancelLabel: 'Cancelar',
+            variant: 'danger'
+        });
+
+        // Se o usuário clicar em Cancelar ou fechar, isConfirmed será false
+        if (!isConfirmed) {
+            console.log("Cancelado pelo usuário.");
+            return;
+        }
+
+        console.log("Confirmado! Deletando...");
+
         try {
             await deleteSegredo(id);
             addToast({type:'success', title:'Excluído', description:'Segredo removido.'});
@@ -51,10 +73,8 @@ export function Cofre() {
     const handleNew = () => { setEditingItem(null); setModalOpen(true); };
     const handleEdit = (item) => { setEditingItem(item); setModalOpen(true); };
 
-    // Formatação de data
     const fmtDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR') : 'Não expira';
 
-    // Componente de Loading interno (Skeleton simples)
     const LoadingState = () => (
         <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--cor-texto-secundario)' }}>
             <i className="fa-solid fa-circle-notch fa-spin" style={{ fontSize: '2rem', marginBottom: '15px', color: 'var(--cor-azul-primario)' }}></i>
@@ -64,8 +84,6 @@ export function Cofre() {
 
     return (
         <div className="container main-container cofre-scope">
-            
-            {/* 1. HERO SECTION */}
             <div className="internal-hero">
                 <div className="hero-bg-effect"></div>
                 <div className="internal-hero-content">
@@ -75,8 +93,6 @@ export function Cofre() {
             </div>
 
             <div className="cofre-content-wrapper">
-                
-                {/* Header da Tabela (Título + Botão) */}
                 <div className="section-header-flex">
                     <h2>Lista de Segredos</h2>
                     <button className="btn-primary" onClick={handleNew}>
@@ -84,7 +100,6 @@ export function Cofre() {
                     </button>
                 </div>
 
-                {/* Container da Tabela */}
                 <div className="table-container">
                     {loading ? (
                         <LoadingState />
@@ -105,9 +120,7 @@ export function Cofre() {
                                         <tr key={segredo.id}>
                                             <td style={{fontWeight: '500'}}>{segredo.titulo}</td>
                                             <td>
-                                                {segredo.servico ? (
-                                                    <span className="service-tag">{segredo.servico}</span>
-                                                ) : '-'}
+                                                {segredo.servico ? <span className="service-tag">{segredo.servico}</span> : '-'}
                                             </td>
                                             <td className="column-notas">{segredo.notas || '-'}</td>
                                             <td style={{ color: segredo.data_expiracao ? 'var(--cor-laranja-aviso)' : 'inherit' }}>

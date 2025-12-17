@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useRef } from 'react';
-import './ConfirmDialogStyles.css'; // Vamos criar abaixo
 
 const ConfirmDialogContext = createContext();
 
