@@ -303,8 +303,8 @@ export function RegistrosModal({ onClose }) {
                 <div className="sort-group">
                     <label>Ordenar por:</label>
                     <select className="sort-select" value={ordenacao} onChange={(e) => setOrdenacao(e.target.value)}>
-                        <option value="data_desc">Data (Mais Nova)</option>
-                        <option value="data_asc">Data (Mais Antiga)</option>
+                        <option value="data_desc">Data Nova</option>
+                        <option value="data_asc">Data Antiga</option>
                     </select>
                 </div>
             </div>

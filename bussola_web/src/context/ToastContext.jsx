@@ -1,69 +1,60 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import '../components/Toast/styles.css';
 
 const ToastContext = createContext();
 
-export const ToastProvider = ({ children }) => {
-    const [messages, setMessages] = useState([]);
+export function ToastProvider({ children }) {
+    const [toasts, setToasts] = useState([]);
 
-    const addToast = useCallback(({ type, title, description }) => {
-        const id = Math.random().toString(36).substr(2, 9); // ID único
+    const addToast = useCallback(({ type, title, description, duration = 4000 }) => {
+        const id = Math.random().toString(36).substr(2, 9);
+        const newToast = { id, type, title, description };
 
-        const toast = {
-            id,
-            type, // 'success', 'error', 'info'
-            title,
-            description,
-        };
+        setToasts((prev) => [...prev, newToast]);
 
-        setMessages((state) => [...state, toast]);
-
-        // Remove automaticamente após 4 segundos
+        // Auto remove após a duração definida
         setTimeout(() => {
             removeToast(id);
-        }, 4000);
+        }, duration);
     }, []);
 
     const removeToast = useCallback((id) => {
-        // Primeiro adiciona a classe de fade-out (opcional, requer lógica extra de componente)
-        // Aqui vamos simplificar removendo do array
-        setMessages((state) => state.filter((message) => message.id !== id));
+        setToasts((prev) => prev.filter((toast) => toast.id !== id));
     }, []);
 
     return (
         <ToastContext.Provider value={{ addToast, removeToast }}>
             {children}
             
-            {/* Renderiza o container de toasts aqui mesmo, globalmente */}
+            {/* Container Global de Toasts */}
             <div className="toast-container">
-                {messages.map((message) => (
+                {toasts.map((toast) => (
                     <div 
-                        key={message.id} 
-                        className={`toast-message toast-${message.type}`}
+                        key={toast.id} 
+                        className={`toast-notification toast-${toast.type}`}
+                        onClick={() => removeToast(toast.id)}
                     >
-                        {/* Ícones baseados no tipo */}
-                        {message.type === 'success' && <i className="fa-solid fa-circle-check" style={{color: 'var(--cor-verde-sucesso)'}}></i>}
-                        {message.type === 'error' && <i className="fa-solid fa-circle-exclamation" style={{color: 'var(--cor-vermelho-delete)'}}></i>}
-                        {message.type === 'info' && <i className="fa-solid fa-circle-info" style={{color: 'var(--cor-azul-primario)'}}></i>}
-
-                        <div className="toast-content">
-                            <strong>{message.title}</strong>
-                            {message.description && <p>{message.description}</p>}
+                        <div className="toast-icon">
+                            {toast.type === 'success' && <i className="fa-solid fa-circle-check"></i>}
+                            {toast.type === 'error' && <i className="fa-solid fa-circle-xmark"></i>}
+                            {toast.type === 'info' && <i className="fa-solid fa-circle-info"></i>}
+                            {toast.type === 'warning' && <i className="fa-solid fa-triangle-exclamation"></i>}
                         </div>
-
-                        <button 
-                            className="toast-close-btn" 
-                            type="button" 
-                            onClick={() => removeToast(message.id)}
-                        >
+                        <div className="toast-content">
+                            <strong>{toast.title}</strong>
+                            {toast.description && <p>{toast.description}</p>}
+                        </div>
+                        <button className="toast-close" type="button">
                             <i className="fa-solid fa-xmark"></i>
                         </button>
+                        
+                        {/* Barra de progresso visual do tempo */}
+                        <div className="toast-progress" style={{animationDuration: '4s'}}></div>
                     </div>
                 ))}
             </div>
         </ToastContext.Provider>
     );
-};
+}
 
 export function useToast() {
     const context = useContext(ToastContext);
