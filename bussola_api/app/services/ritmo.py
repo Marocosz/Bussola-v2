@@ -253,6 +253,66 @@ class RitmoService:
             db.commit()
             db.refresh(dieta)
         return dieta
+    
+    @staticmethod
+    def update_dieta_completa(db: Session, user_id: int, dieta_id: int, dieta_in: DietaConfigCreate):
+        """Atualiza uma dieta existente: limpa as refeições antigas e reconstrói."""
+        # 1. Localiza a dieta original
+        db_dieta = db.query(RitmoDietaConfig).filter(
+            RitmoDietaConfig.id == dieta_id, 
+            RitmoDietaConfig.user_id == user_id
+        ).first()
+        
+        if not db_dieta:
+            return None
+
+        # 2. Se a edição ativar a dieta, desativa as outras do usuário
+        if dieta_in.ativo:
+            RitmoService._desativar_outras_dietas(db, user_id)
+
+        # 3. Atualiza campos básicos
+        db_dieta.nome = dieta_in.nome
+        db_dieta.ativo = dieta_in.ativo
+
+        # 4. Limpeza das refeições e alimentos antigos
+        # Deletamos as refeições (os alimentos devem cair no cascade delete do banco/model)
+        db.query(RitmoRefeicao).filter(RitmoRefeicao.dieta_id == db_dieta.id).delete()
+        db.commit()
+
+        # 5. Reconstrução da estrutura (mesma lógica do create)
+        total_calorias = 0
+        for ref_in in dieta_in.refeicoes:
+            db_ref = RitmoRefeicao(
+                dieta_id=db_dieta.id,
+                nome=ref_in.nome,
+                horario=ref_in.horario,
+                ordem=ref_in.ordem
+            )
+            db.add(db_ref)
+            db.commit()
+            db.refresh(db_ref)
+
+            for ali_in in ref_in.alimentos:
+                db_ali = RitmoAlimentoItem(
+                    refeicao_id=db_ref.id,
+                    nome=ali_in.nome,
+                    quantidade=ali_in.quantidade,
+                    unidade=ali_in.unidade,
+                    calorias=ali_in.calorias,
+                    proteina=ali_in.proteina,
+                    carbo=ali_in.carbo,
+                    gordura=ali_in.gordura
+                )
+                db.add(db_ali)
+                total_calorias += ali_in.calorias
+            
+            db.commit()
+
+        # 6. Atualiza o total de calorias final e salva
+        db_dieta.calorias_calculadas = total_calorias
+        db.commit()
+        db.refresh(db_dieta)
+        return db_dieta
 
     @staticmethod
     def delete_dieta(db: Session, user_id: int, dieta_id: int):

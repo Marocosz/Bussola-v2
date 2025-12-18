@@ -510,6 +510,12 @@ export const createDieta = async (dietaCompleta: DietaConfig) => {
     return response.data;
 };
 
+
+export const updateDieta = async (id: number, dietaCompleta: DietaConfig) => {
+    const response = await api.put(`/ritmo/nutricao/${id}`, dietaCompleta);
+    return response.data;
+};
+
 export const ativarDieta = async (id: number) => {
     const response = await api.patch(`/ritmo/nutricao/${id}/ativar`);
     return response.data;

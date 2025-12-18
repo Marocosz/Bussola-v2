@@ -161,3 +161,18 @@ def get_local_foods(q: str = ""):
 async def get_external_exercises(q: str = ""):
     if len(q) < 3: return []
     return await ExternalRitmoService.search_exercises(q)
+
+
+@router.put("/nutricao/{dieta_id}", response_model=ritmo_schema.DietaConfigResponse)
+def update_dieta(
+    dieta_id: int,
+    *,
+    db: Session = Depends(deps.get_db),
+    dieta_in: ritmo_schema.DietaConfigCreate, # Usando o mesmo schema de criação
+    current_user: models.User = Depends(deps.get_current_user),
+) -> Any:
+    """Atualiza uma dieta existente (remove refeições antigas e recria com as novas)."""
+    dieta = RitmoService.update_dieta_completa(db, current_user.id, dieta_id, dieta_in)
+    if not dieta:
+        raise HTTPException(status_code=404, detail="Dieta não encontrada.")
+    return dieta

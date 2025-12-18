@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { createDieta, searchLocalFoods } from '../../../services/api'; 
+import { createDieta, updateDieta, searchLocalFoods } from '../../../services/api'; 
 import { useToast } from '../../../context/ToastContext';
 
-export function DietaModal({ onClose, onSuccess }) {
+export function DietaModal({ onClose, onSuccess, initialData }) {
     const { addToast } = useToast();
     const [loading, setLoading] = useState(false);
     const [nomeDieta, setNomeDieta] = useState('');
@@ -15,6 +15,26 @@ export function DietaModal({ onClose, onSuccess }) {
     const [searchResults, setSearchResults] = useState([]);
     const [searching, setSearching] = useState(false);
     const [activeSearch, setActiveSearch] = useState(null); // { rIndex, aIndex }
+
+    // Efeito para carregar dados caso seja EDIÇÃO
+    useEffect(() => {
+        if (initialData) {
+            setNomeDieta(initialData.nome);
+            
+            // Reconstruímos as bases de 100g para que o recálculo automático funcione ao editar a quantidade
+            const refeicoesEdit = initialData.refeicoes.map(ref => ({
+                ...ref,
+                alimentos: ref.alimentos.map(ali => ({
+                    ...ali,
+                    base_kcal: (ali.calorias / ali.quantidade) * 100,
+                    base_prot: (ali.proteina / ali.quantidade) * 100,
+                    base_carb: (ali.carbo / ali.quantidade) * 100,
+                    base_gord: (ali.gordura / ali.quantidade) * 100,
+                }))
+            }));
+            setRefeicoes(refeicoesEdit);
+        }
+    }, [initialData]);
 
     // Lógica de Busca com Debounce
     useEffect(() => {
@@ -54,12 +74,10 @@ export function DietaModal({ onClose, onSuccess }) {
         newRef[rIndex].alimentos[aIndex] = {
             ...newRef[rIndex].alimentos[aIndex],
             nome: food.nome,
-            // Guardamos os valores de 100g para cálculos futuros
             base_kcal: food.calorias_100g,
             base_prot: food.proteina_100g,
             base_carb: food.carbo_100g,
             base_gord: food.gordura_100g,
-            // Define valores iniciais para 100g já arredondados
             quantidade: defaultQtd,
             calorias: arredondar(food.calorias_100g),
             proteina: arredondar(food.proteina_100g),
@@ -71,12 +89,10 @@ export function DietaModal({ onClose, onSuccess }) {
         setActiveSearch(null);
     };
 
-    // Nova função para lidar com a configuração manual/personalizada
     const handleSelectCustom = (rIndex, aIndex) => {
         const newRef = [...refeicoes];
         newRef[rIndex].alimentos[aIndex] = {
             ...newRef[rIndex].alimentos[aIndex],
-            // Mantém o nome digitado mas zera as bases para permitir edição manual
             base_kcal: 0,
             base_prot: 0,
             base_carb: 0,
@@ -94,7 +110,7 @@ export function DietaModal({ onClose, onSuccess }) {
     const addRefeicao = () => {
         setRefeicoes([...refeicoes, { 
             nome: `Refeição ${refeicoes.length + 1}`, 
-            horario: '00:00', 
+            horario: '08:00', 
             alimentos: [] 
         }]);
     };
@@ -141,7 +157,6 @@ export function DietaModal({ onClose, onSuccess }) {
         
         alimento[field] = value;
 
-        // Se mudar a quantidade, recalcula os macros baseados no alimento selecionado com arredondamento
         if (field === 'quantidade') {
             const qtd = parseFloat(value) || 0;
             alimento.calorias = calcularMacro(alimento.base_kcal, qtd);
@@ -164,7 +179,7 @@ export function DietaModal({ onClose, onSuccess }) {
             setLoading(true);
             const payload = {
                 nome: nomeDieta,
-                ativo: true,
+                ativo: initialData ? initialData.ativo : true,
                 refeicoes: refeicoes.map((ref, idx) => ({
                     nome: ref.nome,
                     horario: ref.horario,
@@ -180,12 +195,23 @@ export function DietaModal({ onClose, onSuccess }) {
                     }))
                 }))
             };
-            await createDieta(payload);
-            addToast({ type: 'success', title: 'Dieta Criada!', description: 'Seu plano nutricional foi ativado.' });
+
+            // VERIFICAÇÃO SE É EDIÇÃO OU CRIAÇÃO
+            if (initialData && initialData.id) {
+                await updateDieta(initialData.id, payload);
+            } else {
+                await createDieta(payload);
+            }
+
+            addToast({ 
+                type: 'success', 
+                title: initialData ? 'Dieta Atualizada!' : 'Dieta Criada!', 
+                description: 'Seu plano nutricional foi sincronizado.' 
+            });
             onSuccess();
             onClose();
         } catch (error) {
-            addToast({ type: 'error', title: 'Erro', description: 'Falha ao criar plano de dieta.' });
+            addToast({ type: 'error', title: 'Erro', description: 'Falha ao salvar plano de dieta.' });
         } finally {
             setLoading(false);
         }
@@ -196,7 +222,9 @@ export function DietaModal({ onClose, onSuccess }) {
             <div className="modal-content" style={{ maxWidth: '900px', width: '95%' }}>
                 <div className="modal-header">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                        <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Configurar Nova Dieta</h2>
+                        <h2 style={{ margin: 0, fontSize: '1.2rem' }}>
+                            {initialData ? `Editar: ${initialData.nome}` : 'Configurar Nova Dieta'}
+                        </h2>
                         <button className="close-btn" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--cor-texto-secundario)', cursor: 'pointer', fontSize: '1.5rem' }}>&times;</button>
                     </div>
                 </div>
@@ -211,16 +239,33 @@ export function DietaModal({ onClose, onSuccess }) {
                         <div className="refeicoes-container">
                             {refeicoes.map((ref, rIndex) => (
                                 <div key={rIndex} className="day-block" style={{ marginBottom: '1.5rem', background: 'var(--cor-card-secundario)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--cor-borda)' }}>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 40px', gap: '10px', marginBottom: '1rem' }}>
-                                        <input className="form-input" style={{ fontWeight: 'bold', color: 'var(--cor-azul-primario)', background: 'transparent', border: 'none', fontSize: '1rem' }} type="text" value={ref.nome} onChange={(e) => handleRefeicaoChange(rIndex, 'nome', e.target.value)} placeholder="Nome da Refeição" />
-                                        <input className="form-input" type="time" value={ref.horario} onChange={(e) => handleRefeicaoChange(rIndex, 'horario', e.target.value)} />
-                                        {refeicoes.length > 1 && (
-                                            <button type="button" onClick={() => removeRefeicao(rIndex)} style={{ background: 'none', border: 'none', color: 'var(--cor-vermelho-delete)', cursor: 'pointer' }}><i className="fa-solid fa-trash-can"></i></button>
-                                        )}
+                                    
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '15px', marginBottom: '1.2rem' }}>
+                                        <input 
+                                            className="form-input" 
+                                            style={{ fontWeight: 'bold', color: 'var(--cor-azul-primario)', background: 'transparent', border: 'none', fontSize: '1.1rem', flex: 1, padding: 0 }} 
+                                            type="text" 
+                                            value={ref.nome} 
+                                            onChange={(e) => handleRefeicaoChange(rIndex, 'nome', e.target.value)} 
+                                            placeholder="Nome da Refeição" 
+                                        />
+                                        
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                            <input 
+                                                className="form-input" 
+                                                type="time" 
+                                                value={ref.horario} 
+                                                onChange={(e) => handleRefeicaoChange(rIndex, 'horario', e.target.value)} 
+                                            />
+                                            {refeicoes.length > 1 && (
+                                                <button type="button" onClick={() => removeRefeicao(rIndex)} style={{ background: 'none', border: 'none', color: 'var(--cor-vermelho-delete)', cursor: 'pointer', fontSize: '1.1rem' }}>
+                                                    <i className="fa-solid fa-trash-can"></i>
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {ref.alimentos.map((ali, aIndex) => {
-                                        // Definimos se o item está travado (Se tiver valores base > 0, veio da TACO)
                                         const isLocked = ali.base_kcal > 0 || ali.base_prot > 0 || ali.base_carb > 0 || ali.base_gord > 0;
 
                                         return (
@@ -229,21 +274,14 @@ export function DietaModal({ onClose, onSuccess }) {
                                                     <label style={{ fontSize: '0.6rem' }}>Alimento</label>
                                                     <input className="form-input" style={{ height: '32px', fontSize: '0.85rem' }} type="text" value={ali.nome} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'nome', e.target.value)} required autoComplete="off" />
                                                     
-                                                    {/* Dropdown de Sugestões TACO */}
                                                     {activeSearch?.rIndex === rIndex && activeSearch?.aIndex === aIndex && (searchQuery.length >= 2) && (
                                                         <div className="search-results-dropdown" style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--cor-card-principal)', border: '1px solid var(--cor-borda)', zIndex: 10, borderRadius: '8px', maxHeight: '200px', overflowY: 'auto', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}>
                                                             
-                                                            {/* OPÇÃO DE ITEM PERSONALIZADO (SEMPRE NO TOPO) */}
-                                                            <div 
-                                                                onClick={() => handleSelectCustom(rIndex, aIndex)}
-                                                                className="search-item-hover custom-option"
-                                                                style={{ padding: '10px 12px', cursor: 'pointer', borderBottom: '2px solid var(--cor-borda)', fontSize: '0.8rem', background: 'rgba(74, 109, 255, 0.05)' }}
-                                                            >
+                                                            <div onClick={() => handleSelectCustom(rIndex, aIndex)} className="search-item-hover custom-option" style={{ padding: '10px 12px', cursor: 'pointer', borderBottom: '2px solid var(--cor-borda)', fontSize: '0.8rem', background: 'rgba(74, 109, 255, 0.05)' }}>
                                                                 <div style={{ fontWeight: '700', color: 'var(--cor-azul-primario)' }}>
                                                                     <i className="fa-solid fa-pen-to-square" style={{marginRight: '6px'}}></i> 
                                                                     Usar "{searchQuery}" como item personalizado
                                                                 </div>
-                                                                <div style={{fontSize: '0.7rem', color: 'var(--cor-texto-secundario)', marginTop: '2px'}}>Configuração manual de macros</div>
                                                             </div>
 
                                                             {searching && (
@@ -252,19 +290,8 @@ export function DietaModal({ onClose, onSuccess }) {
                                                                 </div>
                                                             )}
 
-                                                            {!searching && searchResults.length === 0 && searchQuery.length >= 2 && (
-                                                                <div style={{ padding: '12px', fontSize: '0.8rem', color: 'var(--cor-texto-secundario)', textAlign: 'center' }}>
-                                                                    Nenhum alimento encontrado na TACO.
-                                                                </div>
-                                                            )}
-
                                                             {!searching && searchResults.map((food, fIdx) => (
-                                                                <div 
-                                                                    key={fIdx} 
-                                                                    onClick={() => handleSelectFood(food, rIndex, aIndex)} 
-                                                                    className="search-item-hover"
-                                                                    style={{ padding: '10px 12px', cursor: 'pointer', borderBottom: '1px solid var(--cor-borda)', fontSize: '0.8rem', transition: 'background 0.2s' }}
-                                                                >
+                                                                <div key={fIdx} onClick={() => handleSelectFood(food, rIndex, aIndex)} className="search-item-hover" style={{ padding: '10px 12px', cursor: 'pointer', borderBottom: '1px solid var(--cor-borda)', fontSize: '0.8rem', transition: 'background 0.2s' }}>
                                                                     <div style={{ fontWeight: '600' }}>{food.nome}</div>
                                                                     <div style={{ fontSize: '0.7rem', color: 'var(--cor-texto-secundario)', marginTop: '4px', display: 'flex', gap: '8px' }}>
                                                                         <span><strong>{arredondar(food.calorias_100g)}</strong> kcal</span>
@@ -283,62 +310,14 @@ export function DietaModal({ onClose, onSuccess }) {
                                                 </div>
                                                 <div className="form-group">
                                                     <label style={{ fontSize: '0.6rem' }}>Un</label>
-                                                    <select 
-                                                        className="form-input" 
-                                                        style={{ height: '32px', fontSize: '0.85rem', padding: '0 5px', opacity: isLocked ? 0.7 : 1 }} 
-                                                        value={ali.unidade} 
-                                                        onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'unidade', e.target.value)}
-                                                        disabled={isLocked}
-                                                    >
-                                                        <option value="g">g</option>
-                                                        <option value="ml">ml</option>
-                                                        <option value="un">un</option>
+                                                    <select className="form-input" style={{ height: '32px', fontSize: '0.85rem', padding: '0 5px', opacity: isLocked ? 0.7 : 1 }} value={ali.unidade} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'unidade', e.target.value)} disabled={isLocked}>
+                                                        <option value="g">g</option><option value="ml">ml</option><option value="un">un</option>
                                                     </select>
                                                 </div>
-                                                <div className="form-group">
-                                                    <label style={{ fontSize: '0.6rem', color: 'var(--cor-azul-primario)' }}>Kcal</label>
-                                                    <input 
-                                                        className="form-input" 
-                                                        style={{ height: '32px', fontSize: '0.85rem', opacity: isLocked ? 0.7 : 1 }} 
-                                                        type="number" 
-                                                        value={arredondar(ali.calorias)} 
-                                                        onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'calorias', e.target.value)} 
-                                                        readOnly={isLocked}
-                                                    />
-                                                </div>
-                                                <div className="form-group">
-                                                    <label style={{ fontSize: '0.6rem' }}>P (g)</label>
-                                                    <input 
-                                                        className="form-input" 
-                                                        style={{ height: '32px', fontSize: '0.85rem', opacity: isLocked ? 0.7 : 1 }} 
-                                                        type="number" 
-                                                        value={arredondar(ali.proteina)} 
-                                                        onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'proteina', e.target.value)} 
-                                                        readOnly={isLocked}
-                                                    />
-                                                </div>
-                                                <div className="form-group">
-                                                    <label style={{ fontSize: '0.6rem' }}>C (g)</label>
-                                                    <input 
-                                                        className="form-input" 
-                                                        style={{ height: '32px', fontSize: '0.85rem', opacity: isLocked ? 0.7 : 1 }} 
-                                                        type="number" 
-                                                        value={arredondar(ali.carbo)} 
-                                                        onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'carbo', e.target.value)} 
-                                                        readOnly={isLocked}
-                                                    />
-                                                </div>
-                                                <div className="form-group">
-                                                    <label style={{ fontSize: '0.6rem' }}>G (g)</label>
-                                                    <input 
-                                                        className="form-input" 
-                                                        style={{ height: '32px', fontSize: '0.85rem', opacity: isLocked ? 0.7 : 1 }} 
-                                                        type="number" 
-                                                        value={arredondar(ali.gordura)} 
-                                                        onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'gordura', e.target.value)} 
-                                                        readOnly={isLocked}
-                                                    />
-                                                </div>
+                                                <div className="form-group"><label style={{ fontSize: '0.6rem', color: 'var(--cor-azul-primario)' }}>Kcal</label><input className="form-input" style={{ height: '32px', fontSize: '0.85rem', opacity: isLocked ? 0.7 : 1 }} type="number" value={arredondar(ali.calorias)} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'calorias', e.target.value)} readOnly={isLocked}/></div>
+                                                <div className="form-group"><label style={{ fontSize: '0.6rem' }}>P (g)</label><input className="form-input" style={{ height: '32px', fontSize: '0.85rem', opacity: isLocked ? 0.7 : 1 }} type="number" value={arredondar(ali.proteina)} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'proteina', e.target.value)} readOnly={isLocked}/></div>
+                                                <div className="form-group"><label style={{ fontSize: '0.6rem' }}>C (g)</label><input className="form-input" style={{ height: '32px', fontSize: '0.85rem', opacity: isLocked ? 0.7 : 1 }} type="number" value={arredondar(ali.carbo)} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'carbo', e.target.value)} readOnly={isLocked}/></div>
+                                                <div className="form-group"><label style={{ fontSize: '0.6rem' }}>G (g)</label><input className="form-input" style={{ height: '32px', fontSize: '0.85rem', opacity: isLocked ? 0.7 : 1 }} type="number" value={arredondar(ali.gordura)} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'gordura', e.target.value)} readOnly={isLocked}/></div>
                                                 <button type="button" onClick={() => removeAlimento(rIndex, aIndex)} style={{ background: 'none', border: 'none', color: 'var(--cor-texto-secundario)', cursor: 'pointer', paddingBottom: '8px' }}><i className="fa-solid fa-xmark"></i></button>
                                             </div>
                                         );
@@ -354,19 +333,13 @@ export function DietaModal({ onClose, onSuccess }) {
 
                     <div className="modal-footer">
                         <button type="button" onClick={onClose} style={{ background: 'transparent', border: '1px solid var(--cor-borda)', color: 'var(--cor-texto-secundario)', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}>Cancelar</button>
-                        <button type="submit" className="btn-primary" disabled={loading}>{loading ? 'Salvando...' : 'Criar Plano de Dieta'}</button>
+                        <button type="submit" className="btn-primary" disabled={loading}>
+                            {loading ? 'Salvando...' : (initialData ? 'Salvar Alterações' : 'Criar Plano de Dieta')}
+                        </button>
                     </div>
                 </form>
             </div>
-            {/* Adicionando estilo local para o hover do item de busca */}
-            <style>{`
-                .search-item-hover:hover {
-                    background-color: var(--cor-fundo-hover) !important;
-                }
-                .custom-option:hover {
-                    background-color: rgba(74, 109, 255, 0.15) !important;
-                }
-            `}</style>
+            <style>{`.search-item-hover:hover { background-color: var(--cor-fundo-hover) !important; } .custom-option:hover { background-color: rgba(74, 109, 255, 0.15) !important; }`}</style>
         </div>
     );
 }

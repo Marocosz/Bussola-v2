@@ -2,14 +2,12 @@
 /* 1. ESTRUTURA GERAL E LAYOUT (SCOPED)          */
 /* ============================================= */
 
-/* 1. Ajuste o Container Pai */
 .ritmo-scope.main-container {
     padding-bottom: 5rem;
     min-height: 100vh;
     padding-top: 0 !important;
 }
 
-/* 2. Crie o Wrapper (A chave do alinhamento igual ao Panorama) */
 .ritmo-scope .ritmo-content-wrapper {
     padding: 0 1rem;
     max-width: 1600px;
@@ -19,7 +17,6 @@
     gap: 2.5rem;
 }
 
-/* 3. Ajuste de respiro para telas grandes */
 @media (min-width: 1400px) {
     .ritmo-scope .ritmo-content-wrapper {
         padding: 0 2rem;
@@ -85,7 +82,7 @@
 }
 
 /* ============================================= */
-/* 3. BIO-INDICADORES (GRID REESTRUTURADO)       */
+/* 3. BIO-INDICADORES (GRID & MACROS)            */
 /* ============================================= */
 
 .ritmo-scope .bio-grid-layout {
@@ -96,7 +93,6 @@
     align-items: stretch;
 }
 
-/* Quadrado de Volume (Lado Esquerdo) */
 .ritmo-scope .volume-summary-box.full-height {
     background: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
@@ -135,7 +131,6 @@
     color: var(--cor-azul-primario);
 }
 
-/* Coluna Direita (Perfil Superior + Macros Inferior) */
 .ritmo-scope .bio-right-column {
     display: flex;
     flex-direction: column;
@@ -143,7 +138,6 @@
     justify-content: space-between;
 }
 
-/* Card de Perfil */
 .ritmo-scope .profile-info-card {
     background: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
@@ -208,7 +202,6 @@
     font-weight: 400;
 }
 
-/* Seção de Macros Clean */
 .ritmo-scope .macros-clean-container {
     padding: 0 0.5rem;
     background: transparent;
@@ -244,7 +237,7 @@
 }
 
 /* ============================================= */
-/* 4. CABEÇALHO DE ABAS (ESTILO SELECTOR PANORAMA) */
+/* 4. CABEÇALHO DE ABAS & AÇÕES                  */
 /* ============================================= */
 
 .ritmo-scope .plans-header-container {
@@ -283,25 +276,115 @@
     letter-spacing: 0.5px;
 }
 
-.ritmo-scope .tab-btn-pill:hover {
-    color: var(--cor-texto-principal);
-    background: var(--cor-fundo-hover);
-}
-
 .ritmo-scope .tab-btn-pill.active {
     background: var(--cor-azul-primario);
     color: white;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.ritmo-scope .header-actions-group .btn-primary {
+/* ============================================= */
+/* 5. SELEÇÃO DE PLANOS (BIBLIOTECA)             */
+/* ============================================= */
+
+.ritmo-scope .diet-selection-section {
+    margin-bottom: 2rem;
+    padding: 0.5rem 0;
+    /* Removido fundo e bordas */
+}
+
+.ritmo-scope .section-subtitle {
+    margin: 0 0 1rem 0;
     font-size: 0.85rem;
-    padding: 8px 16px;
-    background-color: var(--cor-azul-primario);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--cor-texto-secundario);
+    font-weight: 600;
+}
+
+.ritmo-scope .plans-horizontal-selector {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 5px 2px 15px 2px;
+}
+
+.ritmo-scope .plans-horizontal-selector::-webkit-scrollbar {
+    height: 4px;
+}
+
+.ritmo-scope .plans-horizontal-selector::-webkit-scrollbar-thumb {
+    background: var(--cor-borda);
+    border-radius: 10px;
+}
+
+.ritmo-scope .plan-mini-card {
+    min-width: 220px;
+    background: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    gap: 10px;
+}
+
+.ritmo-scope .plan-mini-card.active {
+    border-color: var(--cor-azul-primario);
+    box-shadow: 0 0 15px rgba(74, 109, 255, 0.1);
+}
+
+.ritmo-scope .plan-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.ritmo-scope .plan-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--cor-texto-principal);
+}
+
+.ritmo-scope .plan-cal {
+    font-size: 0.75rem;
+    color: var(--cor-texto-secundario);
+}
+
+.ritmo-scope .plan-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.ritmo-scope .plan-actions button {
+    background: var(--cor-card-secundario);
+    border: 1px solid var(--cor-borda);
+    color: var(--cor-texto-secundario);
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ritmo-scope .plan-actions button:hover {
+    color: var(--cor-azul-primario);
+    border-color: var(--cor-azul-primario);
+    background: rgba(74, 109, 255, 0.05);
+}
+
+.ritmo-scope .plan-actions .btn-del:hover {
+    color: var(--cor-vermelho-delete);
+    border-color: var(--cor-vermelho-delete);
+    background: rgba(239, 68, 68, 0.05);
 }
 
 /* ============================================= */
-/* 5. CARDS DE CONTEÚDO                          */
+/* 6. CONTEÚDO: TREINOS                          */
 /* ============================================= */
 
 .ritmo-scope .treino-grid {
@@ -316,10 +399,6 @@
     border-radius: 16px;
     overflow: hidden;
     transition: transform 0.2s;
-}
-
-.ritmo-scope .dia-card:hover {
-    transform: translateY(-4px);
 }
 
 .ritmo-scope .dia-header {
@@ -365,50 +444,138 @@
     font-size: 0.8rem;
 }
 
-.ritmo-scope .refeicao-card {
+/* ============================================= */
+/* 7. CONTEÚDO: NUTRIÇÃO (DESIGN PRO)            */
+/* ============================================= */
+
+.ritmo-scope .dieta-grid-custom {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+    gap: 1.5rem;
+}
+
+.ritmo-scope .refeicao-card-pro {
     background: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
     border-radius: 16px;
-    margin-bottom: 1.5rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    min-height: 100%;
 }
 
-.ritmo-scope .refeicao-header {
-    padding: 1.25rem;
+.ritmo-scope .refeicao-pro-header {
+    padding: 1rem 1.2rem;
     background: var(--cor-card-secundario);
-    border-bottom: 1px solid var(--cor-borda);
     display: flex;
     justify-content: space-between;
-}
-
-.ritmo-scope .ref-cal {
-    color: var(--cor-azul-primario);
-    font-weight: 700;
-}
-
-.ritmo-scope .alimento-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 1rem 1.25rem;
+    align-items: center;
     border-bottom: 1px solid var(--cor-borda);
 }
 
-.ritmo-scope .alimento-macros {
+.ritmo-scope .ref-title-group {
     display: flex;
+    align-items: center;
     gap: 12px;
-    font-size: 0.8rem;
-    color: var(--cor-texto-secundario);
 }
 
-.ritmo-scope .empty-state {
-    text-align: center;
-    padding: 5rem;
-    border: 2px dashed var(--cor-borda);
-    border-radius: 20px;
+.ritmo-scope .ref-time {
+    background: var(--cor-azul-primario);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.ritmo-scope .ref-name {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--cor-texto-principal);
+}
+
+.ritmo-scope .ref-total-badge {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--cor-azul-primario);
+}
+
+.ritmo-scope .alimentos-table-wrapper {
+    padding: 0.5rem 0;
+    overflow-x: auto;
+    flex: 1;
+}
+
+.ritmo-scope .alimentos-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 400px;
+}
+
+.ritmo-scope .alimentos-table th {
+    text-align: left;
+    font-size: 0.65rem;
+    text-transform: uppercase;
     color: var(--cor-texto-secundario);
+    padding: 8px 1.2rem;
+    border-bottom: 1px solid var(--cor-borda);
+}
+
+.ritmo-scope .alimentos-table td {
+    padding: 10px 1.2rem;
+    font-size: 0.85rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.ritmo-scope .alim-name-td {
+    color: var(--cor-texto-principal);
+    font-weight: 500;
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ritmo-scope .alim-sub {
+    color: var(--cor-texto-secundario);
+    font-size: 0.75rem;
+}
+
+.ritmo-scope .refeicao-pro-footer {
+    padding: 1rem 1.2rem;
+    background: rgba(255, 255, 255, 0.01);
+    border-top: 1px solid var(--cor-borda);
+    display: flex;
+    justify-content: flex-end;
+    margin-top: auto;
+}
+
+.ritmo-scope .macro-summary-pill {
+    display: flex;
+    gap: 15px;
+    background: var(--cor-card-secundario);
+    padding: 6px 15px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: 1px solid var(--cor-borda);
+}
+
+.ritmo-scope .m-p {
+    color: #4ade80;
+}
+
+.ritmo-scope .m-c {
+    color: #facc15;
+}
+
+.ritmo-scope .m-g {
+    color: #f87171;
 }
 
 /* ============================================= */
-/* 6. MODAIS E FORMULÁRIOS (SCROLL FIX AQUI)     */
+/* 8. MODAIS E FORMULÁRIOS                       */
 /* ============================================= */
 
 .ritmo-scope .modal-overlay {
@@ -423,14 +590,12 @@
     justify-content: center;
     align-items: center;
     z-index: 2000;
-    animation: fadeIn 0.2s ease-out;
 }
 
 .ritmo-scope .modal-content {
     background: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
     border-radius: 16px;
-    padding: 0;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
     max-height: 90vh;
     display: flex;
@@ -438,19 +603,11 @@
     overflow: hidden;
 }
 
-/* ESSENCIAL: Permite que o formulário cresça e o body role */
-.ritmo-scope .modal-content form {
+.ritmo-scope form {
     display: flex;
     flex-direction: column;
     flex: 1;
     overflow: hidden;
-}
-
-.ritmo-scope .modal-header {
-    padding: 1.25rem 1.5rem;
-    background: var(--cor-card-secundario);
-    border-bottom: 1px solid var(--cor-borda);
-    flex-shrink: 0;
 }
 
 .ritmo-scope .modal-body {
@@ -459,7 +616,6 @@
     flex: 1;
 }
 
-/* Customização da scrollbar interna do modal */
 .ritmo-scope .modal-body::-webkit-scrollbar {
     width: 6px;
 }
@@ -469,16 +625,6 @@
     border-radius: 10px;
 }
 
-.ritmo-scope .modal-footer {
-    padding: 1.25rem 1.5rem;
-    background: var(--cor-fundo);
-    border-top: 1px solid var(--cor-borda);
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-    flex-shrink: 0;
-}
-
 .ritmo-scope .form-input {
     width: 100%;
     padding: 0.8rem;
@@ -486,17 +632,57 @@
     border-radius: 8px;
     background-color: var(--cor-fundo);
     color: var(--cor-texto-principal);
-    font-size: 0.95rem;
     transition: border-color 0.2s;
 }
 
-.ritmo-scope .form-input:focus {
-    outline: none;
-    border-color: var(--cor-azul-primario);
+.ritmo-scope .form-input[type="time"] {
+    width: 140px;
+    padding: 6px 10px;
+    background-color: var(--cor-card-secundario);
+    border: 1px solid var(--cor-borda);
+    color: var(--cor-texto-principal);
+    font-family: inherit;
+    cursor: pointer;
+    text-align: center;
+    color-scheme: dark;
+    border-radius: 8px;
+}
+
+.ritmo-scope .form-input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+    padding: 2px;
+    transition: transform 0.2s;
+}
+
+.ritmo-scope .form-input[type="time"]::-webkit-calendar-picker-indicator:hover {
+    transform: scale(1.1);
 }
 
 /* ============================================= */
-/* 7. RESPONSIVIDADE                             */
+/* 9. ESTADOS VAZIOS & LOADING                   */
+/* ============================================= */
+
+.ritmo-scope .empty-state {
+    text-align: center;
+    padding: 5rem;
+    border: 2px dashed var(--cor-borda);
+    border-radius: 20px;
+    color: var(--cor-texto-secundario);
+}
+
+.ritmo-scope .loading-screen {
+    height: 60vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    color: var(--cor-azul-primario);
+}
+
+/* ============================================= */
+/* 10. RESPONSIVIDADE                            */
 /* ============================================= */
 
 @media (max-width: 1024px) {
@@ -504,9 +690,8 @@
         grid-template-columns: 1fr;
     }
 
-    .ritmo-scope .profile-info-card {
-        flex-direction: column;
-        gap: 1.5rem;
+    .ritmo-scope .dieta-grid-custom {
+        grid-template-columns: 1fr;
     }
 }
 
