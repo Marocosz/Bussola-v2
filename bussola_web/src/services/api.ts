@@ -587,4 +587,15 @@ export const deleteDieta = async (id: number) => {
     return response.data;
 };
 
+// --- INTEGRAÇÕES EXTERNAS ---
+export const searchExternalExercises = async (query: string) => {
+    const response = await api.get(`/ritmo/external/exercises?q=${query}`);
+    return response.data;
+};
+
+export const searchExternalFoods = async (query: string) => {
+    const response = await api.get(`/ritmo/external/foods?q=${query}`);
+    return response.data;
+};
+
 export default api;

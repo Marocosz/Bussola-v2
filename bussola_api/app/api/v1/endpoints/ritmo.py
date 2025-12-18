@@ -7,6 +7,7 @@ from app import schemas, models
 from app.api import deps
 from app.services.ritmo import RitmoService
 from app.schemas import ritmo as ritmo_schema
+from app.services.externalRitmo import ExternalRitmoService
 
 router = APIRouter()
 
@@ -146,3 +147,13 @@ def delete_dieta(
     if not success:
         raise HTTPException(status_code=404, detail="Dieta não encontrada.")
     return {"msg": "Dieta excluída com sucesso"}
+
+@router.get("/external/exercises")
+async def get_external_exercises(q: str = ""):
+    if len(q) < 3: return []
+    return await ExternalRitmoService.search_exercises(q)
+
+@router.get("/external/foods")
+async def get_external_foods(q: str = ""):
+    if len(q) < 3: return []
+    return await ExternalRitmoService.search_foods(q)
