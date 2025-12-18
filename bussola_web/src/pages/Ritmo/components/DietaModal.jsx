@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { createDieta, searchExternalFoods } from '../../../services/api'; 
+import { createDieta, searchLocalFoods } from '../../../services/api'; 
 import { useToast } from '../../../context/ToastContext';
 
 export function DietaModal({ onClose, onSuccess }) {
@@ -10,38 +10,81 @@ export function DietaModal({ onClose, onSuccess }) {
         { nome: 'Café da Manhã', horario: '08:00', alimentos: [] }
     ]);
 
-    // Estados para busca externa
+    // Estados para busca TACO
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
+    const [searching, setSearching] = useState(false);
     const [activeSearch, setActiveSearch] = useState(null); // { rIndex, aIndex }
 
     // Lógica de Busca com Debounce
     useEffect(() => {
         const delayDebounceFn = setTimeout(async () => {
-            if (searchQuery.length >= 3) {
+            if (searchQuery.length >= 2) { 
+                setSearching(true);
                 try {
-                    const data = await searchExternalFoods(searchQuery);
+                    const data = await searchLocalFoods(searchQuery);
                     setSearchResults(data);
                 } catch (error) {
-                    console.error("Erro na busca de alimentos");
+                    console.error("Erro na busca de alimentos TACO");
+                } finally {
+                    setSearching(false);
                 }
             } else {
                 setSearchResults([]);
+                setSearching(false);
             }
-        }, 500);
+        }, 400);
 
         return () => clearTimeout(delayDebounceFn);
     }, [searchQuery]);
 
+    // Função para arredondar valores (remove casas decimais)
+    const arredondar = (valor) => Math.round(valor || 0);
+
+    // Função para calcular macros baseada na quantidade (Regra de 3) com arredondamento
+    const calcularMacro = (valorBase100, qtd) => {
+        if (!valorBase100) return 0;
+        return arredondar((valorBase100 / 100) * qtd);
+    };
+
     const handleSelectFood = (food, rIndex, aIndex) => {
         const newRef = [...refeicoes];
+        const defaultQtd = 100;
+
         newRef[rIndex].alimentos[aIndex] = {
             ...newRef[rIndex].alimentos[aIndex],
             nome: food.nome,
-            calorias: food.calorias,
-            proteina: food.proteina,
-            carbo: food.carbo,
-            gordura: food.gordura
+            // Guardamos os valores de 100g para cálculos futuros
+            base_kcal: food.calorias_100g,
+            base_prot: food.proteina_100g,
+            base_carb: food.carbo_100g,
+            base_gord: food.gordura_100g,
+            // Define valores iniciais para 100g já arredondados
+            quantidade: defaultQtd,
+            calorias: arredondar(food.calorias_100g),
+            proteina: arredondar(food.proteina_100g),
+            carbo: arredondar(food.carbo_100g),
+            gordura: arredondar(food.gordura_100g)
+        };
+        setRefeicoes(newRef);
+        setSearchResults([]);
+        setActiveSearch(null);
+    };
+
+    // Nova função para lidar com a configuração manual/personalizada
+    const handleSelectCustom = (rIndex, aIndex) => {
+        const newRef = [...refeicoes];
+        newRef[rIndex].alimentos[aIndex] = {
+            ...newRef[rIndex].alimentos[aIndex],
+            // Mantém o nome digitado mas zera as bases para permitir edição manual
+            base_kcal: 0,
+            base_prot: 0,
+            base_carb: 0,
+            base_gord: 0,
+            calorias: 0,
+            proteina: 0,
+            carbo: 0,
+            gordura: 0
         };
         setRefeicoes(newRef);
         setSearchResults([]);
@@ -77,7 +120,11 @@ export function DietaModal({ onClose, onSuccess }) {
             calorias: 0,
             proteina: 0,
             carbo: 0,
-            gordura: 0
+            gordura: 0,
+            base_kcal: 0,
+            base_prot: 0,
+            base_carb: 0,
+            base_gord: 0
         });
         setRefeicoes(newRef);
     };
@@ -90,7 +137,19 @@ export function DietaModal({ onClose, onSuccess }) {
 
     const handleAlimentoChange = (refIndex, aliIndex, field, value) => {
         const newRef = [...refeicoes];
-        newRef[refIndex].alimentos[aliIndex][field] = value;
+        const alimento = newRef[refIndex].alimentos[aliIndex];
+        
+        alimento[field] = value;
+
+        // Se mudar a quantidade, recalcula os macros baseados no alimento selecionado com arredondamento
+        if (field === 'quantidade') {
+            const qtd = parseFloat(value) || 0;
+            alimento.calorias = calcularMacro(alimento.base_kcal, qtd);
+            alimento.proteina = calcularMacro(alimento.base_prot, qtd);
+            alimento.carbo = calcularMacro(alimento.base_carb, qtd);
+            alimento.gordura = calcularMacro(alimento.base_gord, qtd);
+        }
+
         setRefeicoes(newRef);
 
         if (field === 'nome') {
@@ -114,10 +173,10 @@ export function DietaModal({ onClose, onSuccess }) {
                         nome: ali.nome,
                         quantidade: parseFloat(ali.quantidade),
                         unidade: ali.unidade,
-                        calorias: parseFloat(ali.calorias),
-                        proteina: parseFloat(ali.proteina),
-                        carbo: parseFloat(ali.carbo),
-                        gordura: parseFloat(ali.gordura)
+                        calorias: arredondar(ali.calorias),
+                        proteina: arredondar(ali.proteina),
+                        carbo: arredondar(ali.carbo),
+                        gordura: arredondar(ali.gordura)
                     }))
                 }))
             };
@@ -160,54 +219,130 @@ export function DietaModal({ onClose, onSuccess }) {
                                         )}
                                     </div>
 
-                                    {ref.alimentos.map((ali, aIndex) => (
-                                        <div key={aIndex} style={{ display: 'grid', gridTemplateColumns: '2fr 0.8fr 0.6fr 0.7fr 0.7fr 0.7fr 0.7fr 30px', gap: '8px', alignItems: 'end', marginBottom: '8px', position: 'relative' }}>
-                                            <div className="form-group">
-                                                <label style={{ fontSize: '0.6rem' }}>Alimento</label>
-                                                <input className="form-input" style={{ height: '32px', fontSize: '0.85rem' }} type="text" value={ali.nome} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'nome', e.target.value)} required autoComplete="off" />
-                                                
-                                                {/* Dropdown de Sugestões API */}
-                                                {activeSearch?.rIndex === rIndex && activeSearch?.aIndex === aIndex && searchResults.length > 0 && (
-                                                    <div className="search-results-dropdown" style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--cor-card-principal)', border: '1px solid var(--cor-borda)', zIndex: 10, borderRadius: '8px', maxHeight: '200px', overflowY: 'auto', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}>
-                                                        {searchResults.map((food, fIdx) => (
-                                                            <div key={fIdx} onClick={() => handleSelectFood(food, rIndex, aIndex)} style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid var(--cor-borda)', fontSize: '0.8rem' }}>
-                                                                <strong>{food.nome}</strong> <small style={{ color: 'var(--cor-texto-secundario)' }}>({food.marca})</small>
+                                    {ref.alimentos.map((ali, aIndex) => {
+                                        // Definimos se o item está travado (Se tiver valores base > 0, veio da TACO)
+                                        const isLocked = ali.base_kcal > 0 || ali.base_prot > 0 || ali.base_carb > 0 || ali.base_gord > 0;
+
+                                        return (
+                                            <div key={aIndex} style={{ display: 'grid', gridTemplateColumns: '2fr 0.8fr 0.6fr 0.7fr 0.7fr 0.7fr 0.7fr 30px', gap: '8px', alignItems: 'end', marginBottom: '8px', position: 'relative' }}>
+                                                <div className="form-group">
+                                                    <label style={{ fontSize: '0.6rem' }}>Alimento</label>
+                                                    <input className="form-input" style={{ height: '32px', fontSize: '0.85rem' }} type="text" value={ali.nome} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'nome', e.target.value)} required autoComplete="off" />
+                                                    
+                                                    {/* Dropdown de Sugestões TACO */}
+                                                    {activeSearch?.rIndex === rIndex && activeSearch?.aIndex === aIndex && (searchQuery.length >= 2) && (
+                                                        <div className="search-results-dropdown" style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--cor-card-principal)', border: '1px solid var(--cor-borda)', zIndex: 10, borderRadius: '8px', maxHeight: '200px', overflowY: 'auto', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}>
+                                                            
+                                                            {/* OPÇÃO DE ITEM PERSONALIZADO (SEMPRE NO TOPO) */}
+                                                            <div 
+                                                                onClick={() => handleSelectCustom(rIndex, aIndex)}
+                                                                className="search-item-hover custom-option"
+                                                                style={{ padding: '10px 12px', cursor: 'pointer', borderBottom: '2px solid var(--cor-borda)', fontSize: '0.8rem', background: 'rgba(74, 109, 255, 0.05)' }}
+                                                            >
+                                                                <div style={{ fontWeight: '700', color: 'var(--cor-azul-primario)' }}>
+                                                                    <i className="fa-solid fa-pen-to-square" style={{marginRight: '6px'}}></i> 
+                                                                    Usar "{searchQuery}" como item personalizado
+                                                                </div>
+                                                                <div style={{fontSize: '0.7rem', color: 'var(--cor-texto-secundario)', marginTop: '2px'}}>Configuração manual de macros</div>
                                                             </div>
-                                                        ))}
-                                                    </div>
-                                                )}
+
+                                                            {searching && (
+                                                                <div style={{ padding: '15px', textAlign: 'center', color: 'var(--cor-azul-primario)' }}>
+                                                                    <i className="fa-solid fa-circle-notch fa-spin"></i>
+                                                                </div>
+                                                            )}
+
+                                                            {!searching && searchResults.length === 0 && searchQuery.length >= 2 && (
+                                                                <div style={{ padding: '12px', fontSize: '0.8rem', color: 'var(--cor-texto-secundario)', textAlign: 'center' }}>
+                                                                    Nenhum alimento encontrado na TACO.
+                                                                </div>
+                                                            )}
+
+                                                            {!searching && searchResults.map((food, fIdx) => (
+                                                                <div 
+                                                                    key={fIdx} 
+                                                                    onClick={() => handleSelectFood(food, rIndex, aIndex)} 
+                                                                    className="search-item-hover"
+                                                                    style={{ padding: '10px 12px', cursor: 'pointer', borderBottom: '1px solid var(--cor-borda)', fontSize: '0.8rem', transition: 'background 0.2s' }}
+                                                                >
+                                                                    <div style={{ fontWeight: '600' }}>{food.nome}</div>
+                                                                    <div style={{ fontSize: '0.7rem', color: 'var(--cor-texto-secundario)', marginTop: '4px', display: 'flex', gap: '8px' }}>
+                                                                        <span><strong>{arredondar(food.calorias_100g)}</strong> kcal</span>
+                                                                        <span>P: {arredondar(food.proteina_100g)}g</span>
+                                                                        <span>C: {arredondar(food.carbo_100g)}g</span>
+                                                                        <span>G: {arredondar(food.gordura_100g)}g</span>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="form-group">
+                                                    <label style={{ fontSize: '0.6rem' }}>Qtd</label>
+                                                    <input className="form-input" style={{ height: '32px', fontSize: '0.85rem' }} type="number" value={ali.quantidade} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'quantidade', e.target.value)} />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label style={{ fontSize: '0.6rem' }}>Un</label>
+                                                    <select 
+                                                        className="form-input" 
+                                                        style={{ height: '32px', fontSize: '0.85rem', padding: '0 5px', opacity: isLocked ? 0.7 : 1 }} 
+                                                        value={ali.unidade} 
+                                                        onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'unidade', e.target.value)}
+                                                        disabled={isLocked}
+                                                    >
+                                                        <option value="g">g</option>
+                                                        <option value="ml">ml</option>
+                                                        <option value="un">un</option>
+                                                    </select>
+                                                </div>
+                                                <div className="form-group">
+                                                    <label style={{ fontSize: '0.6rem', color: 'var(--cor-azul-primario)' }}>Kcal</label>
+                                                    <input 
+                                                        className="form-input" 
+                                                        style={{ height: '32px', fontSize: '0.85rem', opacity: isLocked ? 0.7 : 1 }} 
+                                                        type="number" 
+                                                        value={arredondar(ali.calorias)} 
+                                                        onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'calorias', e.target.value)} 
+                                                        readOnly={isLocked}
+                                                    />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label style={{ fontSize: '0.6rem' }}>P (g)</label>
+                                                    <input 
+                                                        className="form-input" 
+                                                        style={{ height: '32px', fontSize: '0.85rem', opacity: isLocked ? 0.7 : 1 }} 
+                                                        type="number" 
+                                                        value={arredondar(ali.proteina)} 
+                                                        onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'proteina', e.target.value)} 
+                                                        readOnly={isLocked}
+                                                    />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label style={{ fontSize: '0.6rem' }}>C (g)</label>
+                                                    <input 
+                                                        className="form-input" 
+                                                        style={{ height: '32px', fontSize: '0.85rem', opacity: isLocked ? 0.7 : 1 }} 
+                                                        type="number" 
+                                                        value={arredondar(ali.carbo)} 
+                                                        onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'carbo', e.target.value)} 
+                                                        readOnly={isLocked}
+                                                    />
+                                                </div>
+                                                <div className="form-group">
+                                                    <label style={{ fontSize: '0.6rem' }}>G (g)</label>
+                                                    <input 
+                                                        className="form-input" 
+                                                        style={{ height: '32px', fontSize: '0.85rem', opacity: isLocked ? 0.7 : 1 }} 
+                                                        type="number" 
+                                                        value={arredondar(ali.gordura)} 
+                                                        onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'gordura', e.target.value)} 
+                                                        readOnly={isLocked}
+                                                    />
+                                                </div>
+                                                <button type="button" onClick={() => removeAlimento(rIndex, aIndex)} style={{ background: 'none', border: 'none', color: 'var(--cor-texto-secundario)', cursor: 'pointer', paddingBottom: '8px' }}><i className="fa-solid fa-xmark"></i></button>
                                             </div>
-                                            <div className="form-group">
-                                                <label style={{ fontSize: '0.6rem' }}>Qtd</label>
-                                                <input className="form-input" style={{ height: '32px', fontSize: '0.85rem' }} type="number" value={ali.quantidade} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'quantidade', e.target.value)} />
-                                            </div>
-                                            <div className="form-group">
-                                                <label style={{ fontSize: '0.6rem' }}>Un</label>
-                                                <select className="form-input" style={{ height: '32px', fontSize: '0.85rem', padding: '0 5px' }} value={ali.unidade} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'unidade', e.target.value)}>
-                                                    <option value="g">g</option>
-                                                    <option value="ml">ml</option>
-                                                    <option value="un">un</option>
-                                                </select>
-                                            </div>
-                                            <div className="form-group">
-                                                <label style={{ fontSize: '0.6rem', color: 'var(--cor-azul-primario)' }}>Kcal</label>
-                                                <input className="form-input" style={{ height: '32px', fontSize: '0.85rem' }} type="number" value={ali.calorias} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'calorias', e.target.value)} />
-                                            </div>
-                                            <div className="form-group">
-                                                <label style={{ fontSize: '0.6rem' }}>P (g)</label>
-                                                <input className="form-input" style={{ height: '32px', fontSize: '0.85rem' }} type="number" value={ali.proteina} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'proteina', e.target.value)} />
-                                            </div>
-                                            <div className="form-group">
-                                                <label style={{ fontSize: '0.6rem' }}>C (g)</label>
-                                                <input className="form-input" style={{ height: '32px', fontSize: '0.85rem' }} type="number" value={ali.carbo} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'carbo', e.target.value)} />
-                                            </div>
-                                            <div className="form-group">
-                                                <label style={{ fontSize: '0.6rem' }}>G (g)</label>
-                                                <input className="form-input" style={{ height: '32px', fontSize: '0.85rem' }} type="number" value={ali.gordura} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'gordura', e.target.value)} />
-                                            </div>
-                                            <button type="button" onClick={() => removeAlimento(rIndex, aIndex)} style={{ background: 'none', border: 'none', color: 'var(--cor-texto-secundario)', cursor: 'pointer', paddingBottom: '8px' }}><i className="fa-solid fa-xmark"></i></button>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
 
                                     <button type="button" onClick={() => addAlimento(rIndex)} style={{ marginTop: '10px', fontSize: '0.7rem', background: 'transparent', border: '1px dashed var(--cor-borda)', color: 'var(--cor-texto-secundario)', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer' }}>+ Adicionar Alimento</button>
                                 </div>
@@ -223,6 +358,15 @@ export function DietaModal({ onClose, onSuccess }) {
                     </div>
                 </form>
             </div>
+            {/* Adicionando estilo local para o hover do item de busca */}
+            <style>{`
+                .search-item-hover:hover {
+                    background-color: var(--cor-fundo-hover) !important;
+                }
+                .custom-option:hover {
+                    background-color: rgba(74, 109, 255, 0.15) !important;
+                }
+            `}</style>
         </div>
     );
 }

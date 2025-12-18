@@ -1,28 +1,22 @@
 import axios from 'axios';
 
 // ==========================================================
-// 1. CONFIGURAÇÃO BASE
+// 1. CONFIGURAÇÃO BASE & INTERCEPTORES
 // ==========================================================
 const api = axios.create({
     baseURL: 'http://127.0.0.1:8000/api/v1',
 });
 
-// Interceptor de REQUISIÇÃO: Injeta o token na ida
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('@Bussola:token');
-    
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
-    
     return config;
 });
 
-// Interceptor de RESPOSTA (Logout Automático)
 api.interceptors.response.use(
-    (response) => {
-        return response;
-    },
+    (response) => response,
     (error) => {
         if (error.response && (error.response.status === 401 || error.response.status === 403)) {
             console.warn("Sessão inválida ou expirada. Redirecionando para login...");
@@ -37,7 +31,6 @@ api.interceptors.response.use(
 // ==========================================================
 // 2. MÓDULO HOME
 // ==========================================================
-
 export interface WeatherData {
     temperature: number;
     description: string;
@@ -64,7 +57,6 @@ export const getHomeData = async (): Promise<HomeData> => {
 // ==========================================================
 // 3. MÓDULO FINANÇAS
 // ==========================================================
-
 export interface Categoria {
     id: number;
     nome: string;
@@ -109,7 +101,6 @@ export const createTransacao = async (data: any) => {
     return response.data;
 };
 
-// --- NOVO: Função para atualizar transação (PUT) ---
 export const updateTransacao = async (id: number, data: any) => {
     const response = await api.put(`/financas/transacoes/${id}`, data);
     return response.data;
@@ -130,7 +121,6 @@ export const createCategoria = async (data: any) => {
     return response.data;
 };
 
-// --- NOVO: Função para atualizar categoria (PUT) ---
 export const updateCategoria = async (id: number, data: any) => {
     const response = await api.put(`/financas/categorias/${id}`, data);
     return response.data;
@@ -144,31 +134,18 @@ export const deleteCategoria = async (id: number) => {
 // ==========================================================
 // 4. MÓDULO PANORAMA
 // ==========================================================
-
 export interface PanoramaData {
     kpis: {
-        // Finanças
         receita_mes: number;
         despesa_mes: number;
         balanco_mes: number;
-        
-        // Agenda
         compromissos_realizados: number;
         compromissos_pendentes: number;
         compromissos_perdidos: number;
         proximo_compromisso?: { titulo: string; data: string; cor: string };
-        
-        // Registros
         total_anotacoes: number;
-        tarefas_pendentes: {
-            critica: number;
-            alta: number;
-            media: number;
-            baixa: number;
-        };
+        tarefas_pendentes: { critica: number; alta: number; media: number; baixa: number; };
         tarefas_concluidas: number;
-        
-        // Cofre
         chaves_ativas: number;
         chaves_expiradas: number;
     };
@@ -180,20 +157,15 @@ export interface PanoramaData {
     categorias_para_filtro: Categoria[];
 }
 
-// Dados Principais (KPIs e Gráficos) - ALTERADO AQUI
 export const getPanoramaData = async (period: string = 'Mensal'): Promise<PanoramaData> => {
-    // Passa o periodo na query string
     const response = await api.get(`/panorama/?period=${period}`);
     return response.data;
 };
 
-// Histórico de Categoria (Gráfico Dinâmico)
 export const getCategoryHistory = async (categoryId: number) => {
     const response = await api.get(`/panorama/history/${categoryId}`);
     return response.data;
 };
-
-// --- NOVAS FUNÇÕES PARA OS MODAIS (Lazy Loading) ---
 
 export const getProvisoesData = async () => {
     const response = await api.get('/panorama/provisoes');
@@ -213,19 +185,13 @@ export const getRegistrosResumoData = async () => {
 // ==========================================================
 // 5. MÓDULO REGISTROS (ANOTAÇÕES E TAREFAS)
 // ==========================================================
-
-export interface GrupoAnotacao {
-    id: number;
-    nome: string;
-    cor: string;
-}
-
+export interface GrupoAnotacao { id: number; nome: string; cor: string; }
 export interface LinkItem { id: number; url: string; }
 
 export interface Anotacao {
     id: number;
     titulo: string;
-    conteudo: string; // HTML
+    conteudo: string;
     fixado: boolean;
     data_criacao: string;
     grupo: GrupoAnotacao;
@@ -237,7 +203,7 @@ export interface Subtarefa {
     titulo: string;
     concluido: boolean;
     parent_id?: number | null;
-    subtarefas?: Subtarefa[]; // Aninhamento
+    subtarefas?: Subtarefa[];
 }
 
 export interface Tarefa {
@@ -246,10 +212,8 @@ export interface Tarefa {
     descricao: string;
     status: 'Pendente' | 'Em andamento' | 'Concluído';
     fixado: boolean;
-    // --- NOVOS CAMPOS ---
     prioridade?: 'Baixa' | 'Média' | 'Alta' | 'Crítica';
-    prazo?: string; // Data ISO ou null
-    // --------------------
+    prazo?: string;
     data_criacao: string;
     data_conclusao?: string;
     subtarefas: Subtarefa[];
@@ -263,19 +227,16 @@ export interface RegistrosDashboard {
     grupos_disponiveis: GrupoAnotacao[];
 }
 
-// --- DASHBOARD ---
 export const getRegistrosDashboard = async (): Promise<RegistrosDashboard> => {
     const response = await api.get('/registros/');
     return response.data;
 };
 
-// --- GRUPOS ---
 export const createGrupo = async (data: { nome: string; cor?: string }) => {
     const response = await api.post('/registros/grupos', data);
     return response.data;
 };
 
-// --- NOVO: Funções para Editar e Excluir Grupos ---
 export const updateGrupo = async (id: number, data: { nome: string; cor?: string }) => {
     const response = await api.put(`/registros/grupos/${id}`, data);
     return response.data;
@@ -286,7 +247,6 @@ export const deleteGrupo = async (id: number) => {
     return response.data;
 };
 
-// --- ANOTAÇÕES ---
 export const createAnotacao = async (data: any) => {
     const response = await api.post('/registros/anotacoes', data);
     return response.data;
@@ -307,20 +267,17 @@ export const toggleFixarAnotacao = async (id: number) => {
     return response.data;
 };
 
-// --- TAREFAS ---
 export const createTarefa = async (data: any) => {
     const response = await api.post('/registros/tarefas', data);
     return response.data;
 };
 
-// --- NOVO: Função para atualizar tarefa completa (PUT) ---
 export const updateTarefa = async (id: number, data: any) => {
     const response = await api.put(`/registros/tarefas/${id}`, data);
     return response.data;
 };
 
 export const updateTarefaStatus = async (id: number, status: string) => {
-    // Backend espera body: { "status": "Concluído" }
     const response = await api.patch(`/registros/tarefas/${id}/status`, { status });
     return response.data;
 };
@@ -330,9 +287,7 @@ export const deleteTarefa = async (id: number) => {
     return response.data;
 };
 
-// --- SUBTAREFAS ---
 export const addSubtarefa = async (tarefaId: number, titulo: string, parentId?: number) => {
-    // Agora envia parent_id se existir
     const response = await api.post(`/registros/tarefas/${tarefaId}/subtarefas`, { 
         titulo, 
         parent_id: parentId || null 
@@ -345,22 +300,18 @@ export const toggleSubtarefa = async (subId: number) => {
     return response.data;
 };
 
-
 // ==========================================================
 // 6. MÓDULO COFRE
 // ==========================================================
-
 export interface Segredo {
     id: number;
     titulo: string;
     servico: string;
     notas: string;
-    data_expiracao: string; // String ISO
+    data_expiracao: string;
 }
 
-export interface SegredoValue {
-    valor: string;
-}
+export interface SegredoValue { valor: string; }
 
 export const getSegredos = async (): Promise<Segredo[]> => {
     const response = await api.get('/cofre/');
@@ -388,15 +339,14 @@ export const getSegredoValor = async (id: number): Promise<SegredoValue> => {
 };
 
 // ==========================================================
-// 7. MÓDULO AGENDA (Roteiro)
+// 7. MÓDULO AGENDA
 // ==========================================================
-
 export interface Compromisso {
     id: number;
     titulo: string;
     descricao: string;
     local: string;
-    data_hora: string; // ISO
+    data_hora: string;
     lembrete: boolean;
     status: 'Pendente' | 'Realizado' | 'Perdido';
 }
@@ -446,8 +396,7 @@ export const deleteCompromisso = async (id: number) => {
 // 8. MÓDULO RITMO (FITNESS & SAÚDE)
 // ==========================================================
 
-// --- TIPAGEM ---
-
+// --- BIO ---
 export interface BioData {
     id?: number;
     peso: number;
@@ -465,6 +414,17 @@ export interface BioData {
     meta_agua?: number;
 }
 
+export const getBioData = async (): Promise<any> => {
+    const response = await api.get('/ritmo/bio/latest');
+    return response.data;
+};
+
+export const createBioData = async (data: BioData) => {
+    const response = await api.post('/ritmo/bio', data);
+    return response.data;
+};
+
+// --- TREINOS ---
 export interface ExercicioItem {
     id?: number;
     nome_exercicio: string;
@@ -478,21 +438,35 @@ export interface ExercicioItem {
     observacao?: string;
 }
 
-export interface DiaTreino {
-    id?: number;
-    nome: string;
-    ordem: number;
-    exercicios: ExercicioItem[];
-}
+export interface DiaTreino { id?: number; nome: string; ordem: number; exercicios: ExercicioItem[]; }
+export interface PlanoTreino { id?: number; nome: string; descricao?: string; ativo?: boolean; dias: DiaTreino[]; }
 
-export interface PlanoTreino {
-    id?: number;
-    nome: string;
-    descricao?: string;
-    ativo?: boolean;
-    dias: DiaTreino[];
-}
+export const getPlanosTreino = async (): Promise<PlanoTreino[]> => {
+    const response = await api.get('/ritmo/treinos');
+    return response.data;
+};
 
+export const getPlanoAtivo = async (): Promise<PlanoTreino> => {
+    const response = await api.get('/ritmo/treinos/ativo');
+    return response.data;
+};
+
+export const createPlanoTreino = async (planoCompleto: PlanoTreino) => {
+    const response = await api.post('/ritmo/treinos', planoCompleto);
+    return response.data;
+};
+
+export const ativarPlanoTreino = async (id: number) => {
+    const response = await api.patch(`/ritmo/treinos/${id}/ativar`);
+    return response.data;
+};
+
+export const deletePlanoTreino = async (id: number) => {
+    const response = await api.delete(`/ritmo/treinos/${id}`);
+    return response.data;
+};
+
+// --- NUTRIÇÃO ---
 export interface AlimentoItem {
     id?: number;
     nome: string;
@@ -521,47 +495,6 @@ export interface DietaConfig {
     refeicoes: Refeicao[];
 }
 
-// --- BIO (DADOS CORPORAIS) ---
-
-export const getBioData = async (): Promise<BioData> => {
-    const response = await api.get('/ritmo/bio/latest');
-    return response.data;
-};
-
-export const createBioData = async (data: BioData) => {
-    const response = await api.post('/ritmo/bio', data);
-    return response.data;
-};
-
-// --- TREINOS (PLANOS & EXERCÍCIOS) ---
-
-export const getPlanosTreino = async (): Promise<PlanoTreino[]> => {
-    const response = await api.get('/ritmo/treinos');
-    return response.data;
-};
-
-export const getPlanoAtivo = async (): Promise<PlanoTreino> => {
-    const response = await api.get('/ritmo/treinos/ativo');
-    return response.data;
-};
-
-export const createPlanoTreino = async (planoCompleto: PlanoTreino) => {
-    const response = await api.post('/ritmo/treinos', planoCompleto);
-    return response.data;
-};
-
-export const ativarPlanoTreino = async (id: number) => {
-    const response = await api.patch(`/ritmo/treinos/${id}/ativar`);
-    return response.data;
-};
-
-export const deletePlanoTreino = async (id: number) => {
-    const response = await api.delete(`/ritmo/treinos/${id}`);
-    return response.data;
-};
-
-// --- NUTRIÇÃO (DIETAS & REFEIÇÕES) ---
-
 export const getDietas = async (): Promise<DietaConfig[]> => {
     const response = await api.get('/ritmo/nutricao');
     return response.data;
@@ -587,14 +520,16 @@ export const deleteDieta = async (id: number) => {
     return response.data;
 };
 
-// --- INTEGRAÇÕES EXTERNAS ---
-export const searchExternalExercises = async (query: string) => {
-    const response = await api.get(`/ritmo/external/exercises?q=${query}`);
+// --- BUSCAS E INTEGRAÇÕES ---
+
+/** Busca local na tabela TACO (Backend carrega taco.json) */
+export const searchLocalFoods = async (query: string) => {
+    const response = await api.get(`/ritmo/local/foods?q=${query}`);
     return response.data;
 };
 
-export const searchExternalFoods = async (query: string) => {
-    const response = await api.get(`/ritmo/external/foods?q=${query}`);
+export const searchExternalExercises = async (query: string) => {
+    const response = await api.get(`/ritmo/external/exercises?q=${query}`);
     return response.data;
 };
 

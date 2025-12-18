@@ -148,12 +148,16 @@ def delete_dieta(
         raise HTTPException(status_code=404, detail="Dieta não encontrada.")
     return {"msg": "Dieta excluída com sucesso"}
 
+# --- NOVA ROTA DE BUSCA LOCAL (TACO) ---
+@router.get("/local/foods")
+def get_local_foods(q: str = ""):
+    """Busca alimentos na tabela TACO local."""
+    if len(q) < 2:
+        return []
+    return RitmoService.search_taco_foods(q)
+
+# --- INTEGRAÇÕES EXTERNAS ---
 @router.get("/external/exercises")
 async def get_external_exercises(q: str = ""):
     if len(q) < 3: return []
     return await ExternalRitmoService.search_exercises(q)
-
-@router.get("/external/foods")
-async def get_external_foods(q: str = ""):
-    if len(q) < 3: return []
-    return await ExternalRitmoService.search_foods(q)

@@ -8,6 +8,8 @@ from app.schemas.ritmo import (
     BioCreate, PlanoTreinoCreate, DietaConfigCreate
 )
 from datetime import datetime
+import json
+import os
 
 class RitmoService:
     
@@ -288,3 +290,52 @@ class RitmoService:
                 grupo = ex.grupo_muscular or "Outros"
                 volume[grupo] = volume.get(grupo, 0) + (ex.series or 0)
         return volume
+
+    @staticmethod
+    def search_taco_foods(query: str):
+        """Busca alimentos no arquivo taco.json com diagnóstico aprimorado."""
+        # Tenta descobrir o caminho base (bussola_api) de forma mais segura
+        # __file__ é app/services/ritmo.py
+        current_dir = os.path.dirname(os.path.abspath(__file__)) # app/services
+        api_root = os.path.abspath(os.path.join(current_dir, "..", "..")) # bussola_api
+        file_path = os.path.join(api_root, "data", "taco.json")
+        
+        print(f"--- DEBUG TACO SEARCH ---")
+        print(f"Query recebida: '{query}'")
+        print(f"Caminho do arquivo: {file_path}")
+        
+        if not os.path.exists(file_path):
+            print(f"ERRO: Arquivo taco.json NÃO encontrado no caminho especificado!")
+            return []
+            
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                taco_data = json.load(f)
+                print(f"Sucesso: JSON carregado com {len(taco_data)} itens.")
+        except Exception as e:
+            print(f"ERRO CRÍTICO ao abrir/ler o JSON: {str(e)}")
+            return []
+
+        query_norm = query.lower()
+        results = []
+        
+        for item in taco_data:
+            nome_alimento = item.get("nome", "")
+            if query_norm in nome_alimento.lower():
+                comp = item.get("composicao", {})
+                energia = comp.get("energia", {})
+                
+                results.append({
+                    "nome": nome_alimento,
+                    "calorias_100g": energia.get("kcal") or 0,
+                    "proteina_100g": comp.get("proteina") or 0,
+                    "carbo_100g": comp.get("carboidrato") or 0,
+                    "gordura_100g": comp.get("lipideos") or 0,
+                })
+                
+            if len(results) >= 20:
+                break
+        
+        print(f"Resultados encontrados: {len(results)}")
+        print(f"--------------------------")
+        return results
