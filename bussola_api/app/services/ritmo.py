@@ -153,6 +153,58 @@ class RitmoService:
         return db_plano
 
     @staticmethod
+    def update_plano_completo(db: Session, user_id: int, plano_id: int, plano_in: PlanoTreinoCreate):
+        """Atualiza um plano de treino existente: limpa a estrutura antiga e reconstrói."""
+        db_plano = db.query(RitmoPlanoTreino).filter(
+            RitmoPlanoTreino.id == plano_id, 
+            RitmoPlanoTreino.user_id == user_id
+        ).first()
+        
+        if not db_plano:
+            return None
+
+        if plano_in.ativo:
+            RitmoService._desativar_outros_planos(db, user_id)
+
+        db_plano.nome = plano_in.nome
+        db_plano.descricao = plano_in.descricao
+        db_plano.ativo = plano_in.ativo
+
+        # Limpeza: Deletamos os dias (Exercícios caem no cascade delete configurado no Model)
+        db.query(RitmoDiaTreino).filter(RitmoDiaTreino.plano_id == db_plano.id).delete()
+        db.commit()
+
+        # Reconstrução
+        for dia_in in plano_in.dias:
+            db_dia = RitmoDiaTreino(
+                plano_id=db_plano.id,
+                nome=dia_in.nome,
+                ordem=dia_in.ordem
+            )
+            db.add(db_dia)
+            db.commit()
+            db.refresh(db_dia)
+
+            for ex_in in dia_in.exercicios:
+                db_ex = RitmoExercicioItem(
+                    dia_treino_id=db_dia.id,
+                    nome_exercicio=ex_in.nome_exercicio,
+                    api_id=ex_in.api_id,
+                    grupo_muscular=ex_in.grupo_muscular,
+                    series=ex_in.series,
+                    repeticoes_min=ex_in.repeticoes_min,
+                    repeticoes_max=ex_in.repeticoes_max,
+                    carga_prevista=ex_in.carga_prevista,
+                    descanso_segundos=ex_in.descanso_segundos,
+                    observacao=ex_in.observacao
+                )
+                db.add(db_ex)
+            db.commit()
+
+        db.refresh(db_plano)
+        return db_plano
+
+    @staticmethod
     def toggle_plano_ativo(db: Session, user_id: int, plano_id: int):
         RitmoService._desativar_outros_planos(db, user_id)
         plano = db.query(RitmoPlanoTreino).filter(RitmoPlanoTreino.id == plano_id, RitmoPlanoTreino.user_id == user_id).first()

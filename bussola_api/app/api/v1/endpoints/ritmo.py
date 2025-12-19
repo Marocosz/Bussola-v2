@@ -7,7 +7,6 @@ from app import schemas, models
 from app.api import deps
 from app.services.ritmo import RitmoService
 from app.schemas import ritmo as ritmo_schema
-from app.services.externalRitmo import ExternalRitmoService
 
 router = APIRouter()
 
@@ -71,6 +70,20 @@ def create_plano_treino(
     current_user: models.User = Depends(deps.get_current_user),
 ) -> Any:
     plano = RitmoService.create_plano_completo(db, current_user.id, plano_in)
+    return plano
+
+@router.put("/treinos/{plano_id}", response_model=ritmo_schema.PlanoTreinoResponse)
+def update_plano_treino(
+    plano_id: int,
+    *,
+    db: Session = Depends(deps.get_db),
+    plano_in: ritmo_schema.PlanoTreinoCreate,
+    current_user: models.User = Depends(deps.get_current_user),
+) -> Any:
+    """Atualiza um plano de treino existente."""
+    plano = RitmoService.update_plano_completo(db, current_user.id, plano_id, plano_in)
+    if not plano:
+        raise HTTPException(status_code=404, detail="Plano não encontrado.")
     return plano
 
 @router.patch("/treinos/{plano_id}/ativar", response_model=ritmo_schema.PlanoTreinoResponse)
@@ -155,12 +168,6 @@ def get_local_foods(q: str = ""):
     if len(q) < 2:
         return []
     return RitmoService.search_taco_foods(q)
-
-# --- INTEGRAÇÕES EXTERNAS ---
-@router.get("/external/exercises")
-async def get_external_exercises(q: str = ""):
-    if len(q) < 3: return []
-    return await ExternalRitmoService.search_exercises(q)
 
 
 @router.put("/nutricao/{dieta_id}", response_model=ritmo_schema.DietaConfigResponse)
