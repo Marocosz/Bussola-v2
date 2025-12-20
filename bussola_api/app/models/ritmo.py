@@ -51,7 +51,7 @@ class RitmoPlanoTreino(Base):
     user_id = Column(Integer, ForeignKey('user.id'))
     
     nome = Column(String) # Ex: "Hipertrofia ABC - 2025"
-    descricao = Column(String, nullable=True)
+    # REMOVIDO: descricao
     ativo = Column(Boolean, default=False) 
     data_criacao = Column(DateTime, default=datetime.utcnow)
 
@@ -89,7 +89,7 @@ class RitmoExercicioItem(Base):
     series = Column(Integer)
     repeticoes_min = Column(Integer)
     repeticoes_max = Column(Integer)
-    carga_prevista = Column(Float, nullable=True) # kg
+    # REMOVIDO: carga_prevista (Kg)
     descanso_segundos = Column(Integer, nullable=True)
     observacao = Column(String, nullable=True)
 
@@ -121,7 +121,7 @@ class RitmoRefeicao(Base):
     dieta_id = Column(Integer, ForeignKey('ritmo_dieta_config.id'))
     
     nome = Column(String) # "Café da Manhã"
-    horario = Column(String, nullable=True) # "08:00"
+    # REMOVIDO: horario
     ordem = Column(Integer, default=0)
 
     dieta = relationship("RitmoDietaConfig", back_populates="refeicoes")

@@ -6,24 +6,25 @@ export function DietaModal({ onClose, onSuccess, initialData }) {
     const { addToast } = useToast();
     const [loading, setLoading] = useState(false);
     const [nomeDieta, setNomeDieta] = useState('');
+    // REMOVIDO: horario do estado inicial
     const [refeicoes, setRefeicoes] = useState([
-        { nome: 'Café da Manhã', horario: '08:00', alimentos: [] }
+        { nome: 'Café da Manhã', alimentos: [] }
     ]);
 
     // Estados para busca TACO
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [searching, setSearching] = useState(false);
-    const [activeSearch, setActiveSearch] = useState(null); // { rIndex, aIndex }
+    const [activeSearch, setActiveSearch] = useState(null); 
 
     // Efeito para carregar dados caso seja EDIÇÃO
     useEffect(() => {
         if (initialData) {
             setNomeDieta(initialData.nome);
             
-            // Reconstruímos as bases de 100g para que o recálculo automático funcione ao editar a quantidade
             const refeicoesEdit = initialData.refeicoes.map(ref => ({
                 ...ref,
+                // REMOVIDO: horario
                 alimentos: ref.alimentos.map(ali => ({
                     ...ali,
                     base_kcal: (ali.calorias / ali.quantidade) * 100,
@@ -58,10 +59,8 @@ export function DietaModal({ onClose, onSuccess, initialData }) {
         return () => clearTimeout(delayDebounceFn);
     }, [searchQuery]);
 
-    // Função para arredondar valores (remove casas decimais)
     const arredondar = (valor) => Math.round(valor || 0);
 
-    // Função para calcular macros baseada na quantidade (Regra de 3) com arredondamento
     const calcularMacro = (valorBase100, qtd) => {
         if (!valorBase100) return 0;
         return arredondar((valorBase100 / 100) * qtd);
@@ -108,9 +107,9 @@ export function DietaModal({ onClose, onSuccess, initialData }) {
     };
 
     const addRefeicao = () => {
+        // REMOVIDO: horario do novo objeto
         setRefeicoes([...refeicoes, { 
             nome: `Refeição ${refeicoes.length + 1}`, 
-            horario: '08:00', 
             alimentos: [] 
         }]);
     };
@@ -182,7 +181,7 @@ export function DietaModal({ onClose, onSuccess, initialData }) {
                 ativo: initialData ? initialData.ativo : true,
                 refeicoes: refeicoes.map((ref, idx) => ({
                     nome: ref.nome,
-                    horario: ref.horario,
+                    // REMOVIDO: horario do payload
                     ordem: idx,
                     alimentos: ref.alimentos.map(ali => ({
                         nome: ali.nome,
@@ -196,7 +195,6 @@ export function DietaModal({ onClose, onSuccess, initialData }) {
                 }))
             };
 
-            // VERIFICAÇÃO SE É EDIÇÃO OU CRIAÇÃO
             if (initialData && initialData.id) {
                 await updateDieta(initialData.id, payload);
             } else {
@@ -251,12 +249,7 @@ export function DietaModal({ onClose, onSuccess, initialData }) {
                                         />
                                         
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                            <input 
-                                                className="form-input" 
-                                                type="time" 
-                                                value={ref.horario} 
-                                                onChange={(e) => handleRefeicaoChange(rIndex, 'horario', e.target.value)} 
-                                            />
+                                            {/* REMOVIDO: Input type="time" */}
                                             {refeicoes.length > 1 && (
                                                 <button type="button" onClick={() => removeRefeicao(rIndex)} style={{ background: 'none', border: 'none', color: 'var(--cor-vermelho-delete)', cursor: 'pointer', fontSize: '1.1rem' }}>
                                                     <i className="fa-solid fa-trash-can"></i>

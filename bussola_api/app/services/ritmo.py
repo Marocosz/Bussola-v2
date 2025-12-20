@@ -115,14 +115,13 @@ class RitmoService:
         db_plano = RitmoPlanoTreino(
             user_id=user_id,
             nome=plano_in.nome,
-            descricao=plano_in.descricao,
+            # REMOVIDO: descricao
             ativo=plano_in.ativo
         )
         db.add(db_plano)
         db.commit()
         db.refresh(db_plano)
 
-        # Usa o helper para adicionar os dias/exercícios
         RitmoService._adicionar_dias_plano(db, db_plano.id, plano_in.dias)
 
         db.refresh(db_plano)
@@ -143,18 +142,15 @@ class RitmoService:
             RitmoService._desativar_outros_planos(db, user_id)
 
         db_plano.nome = plano_in.nome
-        db_plano.descricao = plano_in.descricao
+        # REMOVIDO: descricao
         db_plano.ativo = plano_in.ativo
 
-        # CORREÇÃO CRÍTICA: Deletar via sessão para garantir o cascade correto
-        # Usamos list() para criar uma cópia da lista e evitar erro de iteração
+        # Deletar via sessão para garantir o cascade correto
         for dia in list(db_plano.dias):
             db.delete(dia)
         
-        # Flush garante que o banco processe os deletes antes de tentar inserir novos com mesmos IDs (se fosse o caso)
         db.flush()
 
-        # Reconstrução usando o helper
         RitmoService._adicionar_dias_plano(db, db_plano.id, plano_in.dias)
 
         db.commit()
@@ -183,7 +179,7 @@ class RitmoService:
                     series=ex_in.series,
                     repeticoes_min=ex_in.repeticoes_min,
                     repeticoes_max=ex_in.repeticoes_max,
-                    carga_prevista=ex_in.carga_prevista,
+                    # REMOVIDO: carga_prevista
                     descanso_segundos=ex_in.descanso_segundos,
                     observacao=ex_in.observacao
                 )
@@ -250,7 +246,6 @@ class RitmoService:
         db.commit()
         db.refresh(db_dieta)
 
-        # Usa o helper para calcular calorias e adicionar itens
         total_calorias = RitmoService._adicionar_refeicoes_dieta(db, db_dieta.id, dieta_in.refeicoes)
 
         db_dieta.calorias_calculadas = total_calorias
@@ -275,13 +270,11 @@ class RitmoService:
         db_dieta.nome = dieta_in.nome
         db_dieta.ativo = dieta_in.ativo
 
-        # CORREÇÃO CRÍTICA: Deletar via sessão para garantir o cascade correto
         for ref in list(db_dieta.refeicoes):
             db.delete(ref)
         
         db.flush()
 
-        # Reconstrução usando o helper
         total_calorias = RitmoService._adicionar_refeicoes_dieta(db, db_dieta.id, dieta_in.refeicoes)
 
         db_dieta.calorias_calculadas = total_calorias
@@ -297,7 +290,7 @@ class RitmoService:
             db_ref = RitmoRefeicao(
                 dieta_id=dieta_id,
                 nome=ref_in.nome,
-                horario=ref_in.horario,
+                # REMOVIDO: horario
                 ordem=ref_in.ordem
             )
             db.add(db_ref)

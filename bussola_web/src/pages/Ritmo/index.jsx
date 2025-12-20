@@ -343,7 +343,6 @@ export function Ritmo() {
                                         <div key={dia.id} className="refeicao-card-pro">
                                             <div className="refeicao-pro-header">
                                                 <div className="ref-title-group">
-                                                    <span className="ref-time">{dia.exercicios.length}</span>
                                                     <span className="ref-name">{dia.nome}</span>
                                                 </div>
                                                 <div className="ref-total-badge">
@@ -352,13 +351,13 @@ export function Ritmo() {
                                             </div>
 
                                             <div className="alimentos-table-wrapper">
-                                                <table className="alimentos-table">
+                                                {/* CLASSE "treino-table" ADICIONADA PARA ISOLAR O ESTILO FIXO */}
+                                                <table className="alimentos-table treino-table">
                                                     <thead>
                                                         <tr>
                                                             <th>Exercício</th>
-                                                            <th className="text-right">Sets</th>
-                                                            <th className="text-right">Rep.</th>
-                                                            <th className="text-right">Carga</th>
+                                                            <th className="text-center">Sets</th>
+                                                            <th className="text-center">Rep.</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -368,11 +367,8 @@ export function Ritmo() {
                                                                     {ex.nome_exercicio}
                                                                     <div className="alim-sub" style={{ fontSize: '0.65rem' }}>{ex.grupo_muscular}</div>
                                                                 </td>
-                                                                <td className="text-right weight-700">{ex.series}</td>
-                                                                <td className="text-right alim-sub">{ex.repeticoes_min}-{ex.repeticoes_max}</td>
-                                                                <td className="text-right">
-                                                                    {ex.carga_prevista ? <span className="carga-badge-small">{ex.carga_prevista}kg</span> : '--'}
-                                                                </td>
+                                                                <td className="text-center weight-700">{ex.series}</td>
+                                                                <td className="text-center alim-sub">{ex.repeticoes_min}-{ex.repeticoes_max}</td>
                                                             </tr>
                                                         ))}
                                                     </tbody>
@@ -421,7 +417,6 @@ export function Ritmo() {
                                             <div key={ref.id} className="refeicao-card-pro">
                                                 <div className="refeicao-pro-header">
                                                     <div className="ref-title-group">
-                                                        <span className="ref-time">{ref.horario}</span>
                                                         <span className="ref-name">{ref.nome}</span>
                                                     </div>
                                                     <div className="ref-total-badge">
@@ -430,6 +425,7 @@ export function Ritmo() {
                                                 </div>
 
                                                 <div className="alimentos-table-wrapper">
+                                                    {/* TABELA PADRÃO DE DIETA (Sem classe treino-table) */}
                                                     <table className="alimentos-table">
                                                         <thead>
                                                             <tr>

@@ -24,7 +24,7 @@ export function TreinoModal({ onClose, onSuccess, initialData }) {
     const { addToast } = useToast();
     const [loading, setLoading] = useState(false);
     const [nomePlano, setNomePlano] = useState('');
-    const [descricao, setDescricao] = useState('');
+    // REMOVIDO: const [descricao, setDescricao] = useState('');
     const [dias, setDias] = useState([{ nome: 'Treino A', exercicios: [] }]);
 
     // Estados para busca externa
@@ -32,11 +32,11 @@ export function TreinoModal({ onClose, onSuccess, initialData }) {
     const [searchResults, setSearchResults] = useState([]);
     const [activeSearch, setActiveSearch] = useState(null);
 
-    // Efeito para carregar dados (Deep Copy para evitar duplicação)
+    // Efeito para carregar dados (Deep Copy)
     useEffect(() => {
         if (initialData) {
             setNomePlano(initialData.nome);
-            setDescricao(initialData.descricao || '');
+            // REMOVIDO: setDescricao(initialData.descricao || '');
             if (initialData.dias && initialData.dias.length > 0) {
                 setDias(JSON.parse(JSON.stringify(initialData.dias)));
             } else {
@@ -44,7 +44,6 @@ export function TreinoModal({ onClose, onSuccess, initialData }) {
             }
         } else {
             setNomePlano('');
-            setDescricao('');
             setDias([{ nome: 'Treino A', exercicios: [] }]);
         }
     }, [initialData]);
@@ -107,7 +106,7 @@ export function TreinoModal({ onClose, onSuccess, initialData }) {
                         series: 3,
                         repeticoes_min: 8,
                         repeticoes_max: 12,
-                        carga_prevista: '',
+                        // REMOVIDO: carga_prevista
                         grupo_muscular: 'Outros'
                     }
                 ]
@@ -149,7 +148,7 @@ export function TreinoModal({ onClose, onSuccess, initialData }) {
             setLoading(true);
             const payload = {
                 nome: nomePlano,
-                descricao: descricao,
+                // REMOVIDO: descricao
                 ativo: initialData ? initialData.ativo : true,
                 dias: dias.map((dia, idx) => ({
                     nome: dia.nome,
@@ -161,7 +160,7 @@ export function TreinoModal({ onClose, onSuccess, initialData }) {
                         series: parseInt(ex.series) || 0,
                         repeticoes_min: parseInt(ex.repeticoes_min) || 0,
                         repeticoes_max: parseInt(ex.repeticoes_max) || 0,
-                        carga_prevista: ex.carga_prevista ? parseFloat(ex.carga_prevista) : null,
+                        // REMOVIDO: carga_prevista
                         descanso_segundos: ex.descanso_segundos,
                         observacao: ex.observacao
                     }))
@@ -203,15 +202,10 @@ export function TreinoModal({ onClose, onSuccess, initialData }) {
 
                 <form onSubmit={handleSubmit}>
                     <div className="modal-body">
-                        <div className="form-row grid-60-40" style={{ display: 'grid', gridTemplateColumns: '60fr 40fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                            <div className="form-group">
-                                <label>Nome do Plano</label>
-                                <input className="form-input" type="text" value={nomePlano} onChange={e => setNomePlano(e.target.value)} placeholder="Ex: Push Pull Legs" required />
-                            </div>
-                            <div className="form-group">
-                                <label>Foco / Descrição</label>
-                                <input className="form-input" type="text" value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Opcional" />
-                            </div>
+                        {/* Simplificado para apenas o Nome */}
+                        <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                            <label>Nome do Plano</label>
+                            <input className="form-input" type="text" value={nomePlano} onChange={e => setNomePlano(e.target.value)} placeholder="Ex: Push Pull Legs" required />
                         </div>
 
                         <div className="days-container">
@@ -225,7 +219,7 @@ export function TreinoModal({ onClose, onSuccess, initialData }) {
                                     </div>
 
                                     {dia.exercicios.map((ex, eIndex) => (
-                                        <div key={eIndex} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 0.6fr 0.6fr 0.6fr 0.8fr 30px', gap: '8px', alignItems: 'end', marginBottom: '8px', position: 'relative' }}>
+                                        <div key={eIndex} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 0.6fr 0.6fr 0.6fr 30px', gap: '8px', alignItems: 'end', marginBottom: '8px', position: 'relative' }}>
                                             <div className="form-group">
                                                 <label style={{ fontSize: '0.6rem' }}>Exercício</label>
                                                 <input className="form-input" style={{ height: '35px', padding: '0 5px' }} type="text" value={ex.nome_exercicio} onChange={(e) => handleExercicioChange(dIndex, eIndex, 'nome_exercicio', e.target.value)} required autoComplete="off" />
@@ -241,7 +235,6 @@ export function TreinoModal({ onClose, onSuccess, initialData }) {
                                                 )}
                                             </div>
                                             
-                                            {/* DROPDOWN DINÂMICO DE GRUPOS MUSCULARES */}
                                             <div className="form-group">
                                                 <label style={{ fontSize: '0.6rem' }}>Grupo</label>
                                                 <select 
@@ -270,10 +263,7 @@ export function TreinoModal({ onClose, onSuccess, initialData }) {
                                                 <label style={{ fontSize: '0.6rem' }}>Max</label>
                                                 <input className="form-input" style={{ height: '35px', padding: '0 5px' }} type="number" value={ex.repeticoes_max} onChange={(e) => handleExercicioChange(dIndex, eIndex, 'repeticoes_max', e.target.value)} />
                                             </div>
-                                            <div className="form-group">
-                                                <label style={{ fontSize: '0.6rem' }}>Kg</label>
-                                                <input className="form-input" style={{ height: '35px', padding: '0 5px' }} type="number" value={ex.carga_prevista} onChange={(e) => handleExercicioChange(dIndex, eIndex, 'carga_prevista', e.target.value)} />
-                                            </div>
+                                            {/* REMOVIDO: Input de Carga (Kg) */}
                                             <button type="button" onClick={() => removeExercicio(dIndex, eIndex)} style={{ background: 'none', border: 'none', color: 'var(--cor-texto-secundario)', cursor: 'pointer', paddingBottom: '10px' }}><i className="fa-solid fa-xmark"></i></button>
                                         </div>
                                     ))}

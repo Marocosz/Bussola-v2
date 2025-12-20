@@ -322,6 +322,7 @@
     border: 1px solid var(--cor-borda);    /* A borda fina e simples */
     border-radius: 16px;                   /* Arredondamento para combinar com o resto */
     padding: 1.2rem;                       /* Espaço interno para o conteúdo não colar na borda */
+    background: var(--cor-card-principal); /* (Opcional) Fundo do card, caso queira destacar */
 }
 
 .ritmo-scope .section-subtitle {
@@ -477,7 +478,7 @@
 }
 
 /* ============================================= */
-/* 7. CONTEÚDO: NUTRIÇÃO (DESIGN PRO)            */
+/* 7. CONTEÚDO: NUTRIÇÃO E TREINO (TABELAS)      */
 /* ============================================= */
 
 .ritmo-scope .dieta-grid-custom {
@@ -512,15 +513,6 @@
     gap: 12px;
 }
 
-.ritmo-scope .ref-time {
-    background: var(--cor-azul-primario);
-    color: white;
-    font-size: 0.7rem;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 4px;
-}
-
 .ritmo-scope .ref-name {
     font-weight: 700;
     font-size: 1rem;
@@ -533,6 +525,8 @@
     color: var(--cor-azul-primario);
 }
 
+/* --- TABELA GERAL --- */
+
 .ritmo-scope .alimentos-table-wrapper {
     padding: 0.5rem 0;
     overflow-x: auto;
@@ -542,36 +536,65 @@
 .ritmo-scope .alimentos-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 400px;
+    min-width: 100%;
+    /* REMOVIDO: table-layout: fixed global. Isso causava o bug na dieta. */
 }
 
+/* Cabeçalho da Tabela */
 .ritmo-scope .alimentos-table th {
-    text-align: left;
     font-size: 0.65rem;
     text-transform: uppercase;
     color: var(--cor-texto-secundario);
-    padding: 8px 1.2rem;
-    border-bottom: 1px solid var(--cor-borda);
-}
-
-.ritmo-scope .alimentos-table td {
     padding: 10px 1.2rem;
-    font-size: 0.85rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--cor-borda);
+    text-align: left; 
 }
 
+/* Células do Corpo */
+.ritmo-scope .alimentos-table td {
+    padding: 12px 1.2rem;
+    font-size: 0.9rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    vertical-align: middle;
+}
+
+/* --- UTILITÁRIOS DE ALINHAMENTO --- */
+.ritmo-scope .text-right { text-align: right !important; }
+.ritmo-scope .text-center { text-align: center !important; }
+.ritmo-scope .text-left { text-align: left !important; }
+
+/* --- ESTILO ESPECÍFICO PARA TREINO (3 COLUNAS FIXAS) --- */
+/* Só aplica a largura fixa na tabela de treino */
+.ritmo-scope .treino-table {
+    table-layout: fixed;
+}
+
+.ritmo-scope .treino-table th:nth-child(1),
+.ritmo-scope .treino-table td:nth-child(1) {
+    width: 60%; /* Nome do Exercício */
+}
+
+.ritmo-scope .treino-table th:nth-child(2),
+.ritmo-scope .treino-table td:nth-child(2),
+.ritmo-scope .treino-table th:nth-child(3),
+.ritmo-scope .treino-table td:nth-child(3) {
+    width: 20%; /* Sets e Reps */
+}
+
+/* Estilização do Texto das Células */
 .ritmo-scope .alim-name-td {
     color: var(--cor-texto-principal);
-    font-weight: 500;
-    max-width: 150px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-weight: 600;
+    line-height: 1.2;
+    display: flex;
+    flex-direction: column;
 }
 
 .ritmo-scope .alim-sub {
     color: var(--cor-texto-secundario);
     font-size: 0.75rem;
+    font-weight: 400;
+    margin-top: 2px;
 }
 
 .ritmo-scope .refeicao-pro-footer {
@@ -594,17 +617,11 @@
     border: 1px solid var(--cor-borda);
 }
 
-.ritmo-scope .m-p {
-    color: #4ade80;
-}
+.ritmo-scope .m-p { color: #4ade80; }
+.ritmo-scope .m-c { color: #facc15; }
+.ritmo-scope .m-g { color: #f87171; }
 
-.ritmo-scope .m-c {
-    color: #facc15;
-}
-
-.ritmo-scope .m-g {
-    color: #f87171;
-}
+.ritmo-scope .weight-700 { font-weight: 700; }
 
 /* ============================================= */
 /* 8. MODAIS E FORMULÁRIOS                       */

@@ -20,7 +20,6 @@ class BioCreate(BioBase):
 
 class BioResponse(BioBase):
     id: int
-    # Campos calculados pelo backend:
     tmb: float
     gasto_calorico_total: float
     meta_proteina: float
@@ -45,7 +44,7 @@ class ExercicioItemBase(BaseModel):
     series: int
     repeticoes_min: int
     repeticoes_max: int
-    carga_prevista: Optional[float] = None
+    # REMOVIDO: carga_prevista
     descanso_segundos: Optional[int] = None
     observacao: Optional[str] = None
 
@@ -64,7 +63,6 @@ class DiaTreinoBase(BaseModel):
     ordem: int
 
 class DiaTreinoCreate(DiaTreinoBase):
-    # CORREÇÃO: Permitir receber exercícios na criação
     exercicios: Optional[List[ExercicioItemCreate]] = []
 
 class DiaTreinoResponse(DiaTreinoBase):
@@ -77,17 +75,15 @@ class DiaTreinoResponse(DiaTreinoBase):
 # --- Plano de Treino (Nível 1 - Topo) ---
 class PlanoTreinoBase(BaseModel):
     nome: str
-    descricao: Optional[str] = None
+    # REMOVIDO: descricao
     ativo: bool = False
 
 class PlanoTreinoCreate(PlanoTreinoBase):
-    # CORREÇÃO CRÍTICA: O Schema precisa aceitar a lista de dias para o Service ler
     dias: Optional[List[DiaTreinoCreate]] = []
 
 class PlanoTreinoResponse(PlanoTreinoBase):
     id: int
     data_criacao: datetime
-    # Retorna o plano completo com Dias e Exercícios aninhados
     dias: List[DiaTreinoResponse] = [] 
     class Config:
         from_attributes = True
@@ -119,11 +115,10 @@ class AlimentoItemResponse(AlimentoItemBase):
 # --- Refeição (Nível 2) ---
 class RefeicaoBase(BaseModel):
     nome: str
-    horario: Optional[str] = None
+    # REMOVIDO: horario
     ordem: int
 
 class RefeicaoCreate(RefeicaoBase):
-    # CORREÇÃO: Permitir receber alimentos na criação
     alimentos: Optional[List[AlimentoItemCreate]] = []
 
 class RefeicaoResponse(RefeicaoBase):
@@ -131,10 +126,8 @@ class RefeicaoResponse(RefeicaoBase):
     dieta_id: int
     alimentos: List[AlimentoItemResponse] = []
     
-    # Campo computado simples para facilitar o front (opcional)
     @property
     def total_calorias_refeicao(self) -> float:
-        # Verifica se alimentos existe para evitar erro
         if not self.alimentos:
             return 0.0
         return sum(a.calorias for a in self.alimentos)
@@ -148,7 +141,6 @@ class DietaConfigBase(BaseModel):
     ativo: bool = False
 
 class DietaConfigCreate(DietaConfigBase):
-    # CORREÇÃO CRÍTICA: O Schema precisa aceitar a lista de refeições
     refeicoes: Optional[List[RefeicaoCreate]] = []
 
 class DietaConfigResponse(DietaConfigBase):
