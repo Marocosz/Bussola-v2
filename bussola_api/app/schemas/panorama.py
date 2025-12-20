@@ -74,3 +74,8 @@ class PanoramaResponse(BaseModel):
     evolucao_labels: List[str]
     gasto_semanal: ChartData
     categorias_para_filtro: List[CategoriaResponse]
+    
+    # NOVOS CAMPOS ADICIONADOS:
+    provisoes: List[ProvisaoItem] = []
+    roteiro: List[RoteiroItem] = []
+    registros: List[RegistroItem] = []

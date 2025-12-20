@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createTransacao, createCategoria, updateTransacao, updateCategoria } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
+import { CustomSelect } from '../../../components/CustomSelect'; // Importação do Componente
 
 export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardData, editingData }) {
     const { addToast } = useToast();
@@ -8,12 +9,11 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
     // Estado do formulário
     const [formData, setFormData] = useState({});
     
-    // Controles de UI (Pickers e Selects)
+    // Controles de UI (Apenas para ícones e cores, já que o Select agora é autônomo)
     const [showIconPicker, setShowIconPicker] = useState(false);
     const [showColorPicker, setShowColorPicker] = useState(false);
-    const [activeDropdown, setActiveDropdown] = useState(null);
 
-    // Refs para clique fora
+    // Refs para clique fora (Pickers)
     const iconWrapperRef = useRef(null);
     const colorWrapperRef = useRef(null);
 
@@ -39,7 +39,6 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
 
         setShowIconPicker(false);
         setShowColorPicker(false);
-        setActiveDropdown(null);
 
     }, [activeModal, editingData]);
 
@@ -51,18 +50,12 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
             if (showColorPicker && colorWrapperRef.current && !colorWrapperRef.current.contains(event.target)) {
                 setShowColorPicker(false);
             }
-            if (activeDropdown) {
-                const clickedInsideSelect = event.target.closest('.custom-select-trigger') || event.target.closest('.custom-select-options');
-                if (!clickedInsideSelect) {
-                    setActiveDropdown(null);
-                }
-            }
         }
         document.addEventListener("mousedown", handleClickOutside);
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
-    }, [showIconPicker, showColorPicker, activeDropdown]);
+    }, [showIconPicker, showColorPicker]);
 
     if (!activeModal) return null;
 
@@ -74,11 +67,6 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
 
     const handleTypeChange = (tipo) => {
         setFormData(prev => ({ ...prev, tipo: tipo }));
-    };
-
-    const handleCustomSelectChange = (name, value) => {
-        setFormData(prev => ({ ...prev, [name]: value }));
-        setActiveDropdown(null); 
     };
 
     const handleSubmit = async (e) => {
@@ -116,40 +104,6 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
         }
     };
 
-    const renderCustomSelect = (name, label, options, placeholder = "Selecione...") => {
-        const isOpen = activeDropdown === name;
-        const selectedValue = formData[name]; 
-        const selectedLabel = options.find(opt => opt.value == selectedValue)?.label || placeholder;
-
-        return (
-            <div className="form-group" style={{ position: 'relative', zIndex: isOpen ? 100 : 1 }}>
-                <label>{label}</label>
-                <div 
-                    className={`custom-select-trigger ${isOpen ? 'open' : ''}`} 
-                    onClick={() => setActiveDropdown(isOpen ? null : name)}
-                >
-                    <span style={{ color: selectedValue ? 'var(--cor-texto-principal)' : 'var(--cor-texto-secundario)' }}>
-                        {selectedLabel}
-                    </span>
-                    <i className="fa-solid fa-chevron-down arrow-icon"></i>
-                </div>
-                {isOpen && (
-                    <div className="custom-select-options">
-                        {options.map(opt => (
-                            <div 
-                                key={opt.value} 
-                                className={`custom-option ${selectedValue === opt.value ? 'selected' : ''}`}
-                                onClick={() => handleCustomSelectChange(name, opt.value)}
-                            >
-                                {opt.label}
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-        );
-    };
-
     // PROTEÇÃO TOTAL: Se dashboardData for undefined, usa arrays vazios
     const safeData = dashboardData || {};
     const safeDespesas = safeData.categorias_despesa || [];
@@ -157,7 +111,6 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
     const safeIcones = safeData.icones_disponiveis || [];
     const safeCores = safeData.cores_disponiveis || [];
 
-    // --- CORREÇÃO AQUI: Verifica se o nome já tem parênteses ---
     const categoryOptions = [
         ...safeDespesas.map(c => ({ 
             value: c.id, 
@@ -265,7 +218,16 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                         <label>Data</label>
                                         <input type="date" name="data" value={formData.data || ''} className="form-input" required onChange={handleChange} />
                                     </div>
-                                    {renderCustomSelect('categoria_id', 'Categoria', categoryOptions)}
+                                    <div className="form-group">
+                                        <CustomSelect 
+                                            label="Categoria"
+                                            name="categoria_id"
+                                            value={formData.categoria_id}
+                                            options={categoryOptions}
+                                            onChange={handleChange}
+                                            placeholder="Selecione..."
+                                        />
+                                    </div>
                                 </div>
                             </>
                         )}
@@ -300,7 +262,16 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                             disabled={!!editingData} 
                                         />
                                     </div>
-                                    {renderCustomSelect('categoria_id', 'Categoria', categoryOptions)}
+                                    <div className="form-group">
+                                        <CustomSelect 
+                                            label="Categoria"
+                                            name="categoria_id"
+                                            value={formData.categoria_id}
+                                            options={categoryOptions}
+                                            onChange={handleChange}
+                                            placeholder="Selecione..."
+                                        />
+                                    </div>
                                 </div>
                             </>
                         )}
@@ -322,8 +293,26 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                         <label>{editingData ? 'Data' : 'Data Início'}</label>
                                         <input type="date" name="data" value={formData.data || ''} className="form-input" required onChange={handleChange} />
                                     </div>
-                                    {renderCustomSelect('frequencia', 'Frequência', frequencyOptions)}
-                                    {renderCustomSelect('categoria_id', 'Categoria', categoryOptions)}
+                                    <div className="form-group">
+                                        <CustomSelect 
+                                            label="Frequência"
+                                            name="frequencia"
+                                            value={formData.frequencia}
+                                            options={frequencyOptions}
+                                            onChange={handleChange}
+                                            placeholder="Selecione..."
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <CustomSelect 
+                                            label="Categoria"
+                                            name="categoria_id"
+                                            value={formData.categoria_id}
+                                            options={categoryOptions}
+                                            onChange={handleChange}
+                                            placeholder="Selecione..."
+                                        />
+                                    </div>
                                 </div>
                             </>
                         )}

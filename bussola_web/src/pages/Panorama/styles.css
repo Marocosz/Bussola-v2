@@ -644,9 +644,6 @@
     /* ALTERAÇÃO IMPORTANTE: Fundo igual ao do Header da Tabela */
     background: var(--cor-card-secundario);
 
-    /* Arredondamento apenas superior */
-    border-radius: 16px 16px 0 0;
-
     display: flex;
     justify-content: space-between;
     align-items: center;

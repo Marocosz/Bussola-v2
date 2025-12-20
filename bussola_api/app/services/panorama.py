@@ -220,7 +220,8 @@ class PanoramaService:
             if hasattr(t, 'recorrente') and t.recorrente:
                 tipo = "Recorrente"
             elif hasattr(t, 'parcela_atual') and t.parcela_atual:
-                tipo = f"Parcela {t.parcela_atual}/{t.parcela_total}"
+                # CORREÇÃO AQUI: Mudado de t.parcela_total para t.total_parcelas
+                tipo = f"Parcela {t.parcela_atual}/{t.total_parcelas}"
             
             resultado.append({
                 "id": t.id,

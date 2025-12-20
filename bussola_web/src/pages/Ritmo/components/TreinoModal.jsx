@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { createPlanoTreino, updatePlanoTreino, searchExternalExercises } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
+import { CustomSelect } from '../../../components/CustomSelect';
 
 // =========================================================
-// LISTA DE GRUPOS MUSCULARES (ADICIONE OU REMOVA AQUI)
+// LISTA DE GRUPOS MUSCULARES
 // =========================================================
 const GRUPOS_MUSCULARES = [
     "Peito",
@@ -24,8 +25,10 @@ export function TreinoModal({ onClose, onSuccess, initialData }) {
     const { addToast } = useToast();
     const [loading, setLoading] = useState(false);
     const [nomePlano, setNomePlano] = useState('');
-    // REMOVIDO: const [descricao, setDescricao] = useState('');
     const [dias, setDias] = useState([{ nome: 'Treino A', exercicios: [] }]);
+
+    // Preparar opções para o Select
+    const groupOptions = GRUPOS_MUSCULARES.map(g => ({ value: g, label: g }));
 
     // Estados para busca externa
     const [searchQuery, setSearchQuery] = useState('');
@@ -36,7 +39,6 @@ export function TreinoModal({ onClose, onSuccess, initialData }) {
     useEffect(() => {
         if (initialData) {
             setNomePlano(initialData.nome);
-            // REMOVIDO: setDescricao(initialData.descricao || '');
             if (initialData.dias && initialData.dias.length > 0) {
                 setDias(JSON.parse(JSON.stringify(initialData.dias)));
             } else {
@@ -106,7 +108,6 @@ export function TreinoModal({ onClose, onSuccess, initialData }) {
                         series: 3,
                         repeticoes_min: 8,
                         repeticoes_max: 12,
-                        // REMOVIDO: carga_prevista
                         grupo_muscular: 'Outros'
                     }
                 ]
@@ -148,7 +149,6 @@ export function TreinoModal({ onClose, onSuccess, initialData }) {
             setLoading(true);
             const payload = {
                 nome: nomePlano,
-                // REMOVIDO: descricao
                 ativo: initialData ? initialData.ativo : true,
                 dias: dias.map((dia, idx) => ({
                     nome: dia.nome,
@@ -160,7 +160,6 @@ export function TreinoModal({ onClose, onSuccess, initialData }) {
                         series: parseInt(ex.series) || 0,
                         repeticoes_min: parseInt(ex.repeticoes_min) || 0,
                         repeticoes_max: parseInt(ex.repeticoes_max) || 0,
-                        // REMOVIDO: carga_prevista
                         descanso_segundos: ex.descanso_segundos,
                         observacao: ex.observacao
                     }))
@@ -202,7 +201,6 @@ export function TreinoModal({ onClose, onSuccess, initialData }) {
 
                 <form onSubmit={handleSubmit}>
                     <div className="modal-body">
-                        {/* Simplificado para apenas o Nome */}
                         <div className="form-group" style={{ marginBottom: '1.5rem' }}>
                             <label>Nome do Plano</label>
                             <input className="form-input" type="text" value={nomePlano} onChange={e => setNomePlano(e.target.value)} placeholder="Ex: Push Pull Legs" required />
@@ -236,19 +234,14 @@ export function TreinoModal({ onClose, onSuccess, initialData }) {
                                             </div>
                                             
                                             <div className="form-group">
-                                                <label style={{ fontSize: '0.6rem' }}>Grupo</label>
-                                                <select 
-                                                    className="form-input" 
-                                                    style={{ height: '35px', padding: '0 5px' }} 
-                                                    value={ex.grupo_muscular} 
+                                                <CustomSelect 
+                                                    label="Grupo"
+                                                    name="grupo_muscular"
+                                                    value={ex.grupo_muscular}
+                                                    options={groupOptions}
                                                     onChange={(e) => handleExercicioChange(dIndex, eIndex, 'grupo_muscular', e.target.value)}
-                                                >
-                                                    {GRUPOS_MUSCULARES.map(grupo => (
-                                                        <option key={grupo} value={grupo}>
-                                                            {grupo}
-                                                        </option>
-                                                    ))}
-                                                </select>
+                                                    placeholder="Selecione..."
+                                                />
                                             </div>
 
                                             <div className="form-group">
@@ -263,7 +256,6 @@ export function TreinoModal({ onClose, onSuccess, initialData }) {
                                                 <label style={{ fontSize: '0.6rem' }}>Max</label>
                                                 <input className="form-input" style={{ height: '35px', padding: '0 5px' }} type="number" value={ex.repeticoes_max} onChange={(e) => handleExercicioChange(dIndex, eIndex, 'repeticoes_max', e.target.value)} />
                                             </div>
-                                            {/* REMOVIDO: Input de Carga (Kg) */}
                                             <button type="button" onClick={() => removeExercicio(dIndex, eIndex)} style={{ background: 'none', border: 'none', color: 'var(--cor-texto-secundario)', cursor: 'pointer', paddingBottom: '10px' }}><i className="fa-solid fa-xmark"></i></button>
                                         </div>
                                     ))}

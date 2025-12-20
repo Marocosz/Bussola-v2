@@ -1,0 +1,100 @@
+/* Container */
+.custom-select-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.custom-select-label {
+    font-size: 0.7rem; /* Ajustado para bater com seu estilo de treino */
+    font-weight: 500;
+    color: var(--cor-texto-secundario);
+    margin: 0;
+}
+
+/* O botão que abre (Trigger) */
+.custom-select-trigger {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: 35px; /* Altura padrão ajustada */
+    padding: 0 0.8rem;
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    background-color: var(--cor-fundo);
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: var(--cor-texto-principal);
+    transition: all 0.2s;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+.custom-select-trigger:hover {
+    border-color: var(--cor-texto-secundario);
+}
+
+.custom-select-trigger.open {
+    border-color: var(--cor-azul-primario);
+    box-shadow: 0 0 0 3px rgba(74, 109, 255, 0.1);
+}
+
+/* Ícone da seta */
+.arrow-icon {
+    font-size: 0.8rem;
+    color: var(--cor-texto-secundario);
+    transition: transform 0.2s;
+}
+
+.custom-select-trigger.open .arrow-icon {
+    transform: rotate(180deg);
+}
+
+/* Lista de Opções (Dropdown) */
+.custom-select-options {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    right: 0;
+    background-color: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 5px;
+    animation: fadeInSelect 0.1s ease-out;
+}
+
+@keyframes fadeInSelect {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Item individual */
+.custom-option {
+    padding: 10px;
+    font-size: 0.9rem;
+    color: var(--cor-texto-principal);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.custom-option:hover,
+.custom-option.selected {
+    background-color: var(--cor-azul-primario);
+    color: white;
+}
+
+/* Scrollbar bonita */
+.custom-select-options::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-select-options::-webkit-scrollbar-thumb {
+    background-color: var(--cor-borda);
+    border-radius: 3px;
+}

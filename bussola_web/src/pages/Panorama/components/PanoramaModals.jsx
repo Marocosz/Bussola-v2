@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { getProvisoesData, getRoteiroData, getRegistrosResumoData } from '../../../services/api';
+import { CustomSelect } from '../../../components/CustomSelect'; 
 
 // --- MODAL GENÉRICO ---
 const BaseModal = ({ title, onClose, children, loading }) => {
-    
-    // Efeito para travar/destravar o scroll do body
     useEffect(() => {
-        // Ao montar (abrir): Trava o scroll
         document.body.style.overflow = 'hidden';
-        
-        // Ao desmontar (fechar): Restaura o scroll
         return () => {
             document.body.style.overflow = 'unset';
         };
@@ -40,19 +36,30 @@ export function ProvisoesModal({ onClose }) {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     
-    // Estados de Controle
     const [filtro, setFiltro] = useState('Todos'); 
     const [ordenacao, setOrdenacao] = useState('data_asc'); 
 
     useEffect(() => {
-        getProvisoesData().then(setData).finally(() => setLoading(false));
+        getProvisoesData()
+            .then(res => setData(res || [])) // Garante que é array
+            .finally(() => setLoading(false));
     }, []);
 
-    // Lógica de Processamento
+    const sortOptions = [
+        { value: 'data_asc', label: 'Data Antiga' },
+        { value: 'data_desc', label: 'Data Nova' },
+        { value: 'valor_asc', label: 'Valor Menor' },
+        { value: 'valor_desc', label: 'Valor Maior' }
+    ];
+
     const processData = () => {
+        // PROTEÇÃO: Garante que data é array antes de filtrar
+        if (!Array.isArray(data)) return [];
+
         let result = data.filter(item => {
             if (filtro === 'Todos') return true;
-            const tipoLower = item.tipo_recorrencia.toLowerCase();
+            // PROTEÇÃO: Usa fallback para string vazia se vier nulo
+            const tipoLower = (item.tipo_recorrencia || '').toLowerCase();
             const filtroLower = filtro.toLowerCase();
             if (filtro === 'Parcelada') return tipoLower.includes('parcela');
             return tipoLower.includes(filtroLower);
@@ -61,8 +68,8 @@ export function ProvisoesModal({ onClose }) {
         result.sort((a, b) => {
             const dateA = new Date(a.data_vencimento);
             const dateB = new Date(b.data_vencimento);
-            const valA = a.valor;
-            const valB = b.valor;
+            const valA = a.valor || 0;
+            const valB = b.valor || 0;
 
             switch (ordenacao) {
                 case 'data_asc': return dateA - dateB;
@@ -77,9 +84,13 @@ export function ProvisoesModal({ onClose }) {
     };
 
     const filteredData = processData();
-    const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
-    const fmtDate = (d) => new Date(d).toLocaleDateString('pt-BR');
-    const isPontual = (tipo) => tipo.toLowerCase().includes('pontual');
+    const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
+    const fmtDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR') : '-';
+    // PROTEÇÃO: Verifica nulo antes de toLowerCase
+    const isPontual = (tipo) => (tipo || '').toLowerCase().includes('pontual');
+
+    // Handler para o CustomSelect
+    const handleSortChange = (e) => setOrdenacao(e.target.value);
 
     return (
         <BaseModal title="Provisões e Contas Futuras" onClose={onClose} loading={loading}>
@@ -91,14 +102,18 @@ export function ProvisoesModal({ onClose }) {
                     <button className={`filter-pill ${filtro==='Parcelada'?'active':''}`} onClick={()=>setFiltro('Parcelada')}>Parceladas</button>
                 </div>
 
-                <div className="sort-group">
-                    <label>Ordenar por:</label>
-                    <select className="sort-select" value={ordenacao} onChange={(e) => setOrdenacao(e.target.value)}>
-                        <option value="data_asc">Data Antiga</option>
-                        <option value="data_desc">Data Nova</option>
-                        <option value="valor_asc">Valor Menor</option>
-                        <option value="valor_desc">Valor Maior</option>
-                    </select>
+                {/* ALTERAÇÃO AQUI: Flexbox para alinhar label e select lado a lado */}
+                <div className="sort-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '0.9rem', color: '#9ca3af', whiteSpace: 'nowrap' }}>Ordenar por:</span>
+                    <div style={{ minWidth: '160px' }}>
+                        <CustomSelect 
+                            name="sort"
+                            value={ordenacao}
+                            options={sortOptions}
+                            onChange={handleSortChange}
+                            // label removido para não empilhar
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -122,7 +137,11 @@ export function ProvisoesModal({ onClose }) {
                                 {isPontual(item.tipo_recorrencia) ? '-' : <span className="due-date">{fmtDate(item.data_vencimento)}</span>}
                             </td>
                             <td style={{width: '30%'}}>{item.descricao}</td>
-                            <td style={{width: '15%'}}><span className="badge-cat" style={{backgroundColor: item.categoria_cor}}>{item.categoria_nome}</span></td>
+                            <td style={{width: '15%'}}>
+                                <span className="badge-cat" style={{backgroundColor: item.categoria_cor || '#ccc'}}>
+                                    {item.categoria_nome || 'Geral'}
+                                </span>
+                            </td>
                             <td style={{width: '15%'}}>{item.tipo_recorrencia}</td>
                             <td style={{width: '10%', fontWeight:'bold', color: '#e74c3c'}}>{fmt(item.valor)}</td>
                         </tr>
@@ -138,29 +157,31 @@ export function RoteiroModal({ onClose }) {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     
-    // Filtros e Ordenação
-    const [filtro, setFiltro] = useState('Todos'); // Todos, Pendente, Realizado, Perdido
-    const [ordenacao, setOrdenacao] = useState('data_asc'); // data_asc, data_desc
+    const [filtro, setFiltro] = useState('Todos'); 
+    const [ordenacao, setOrdenacao] = useState('data_asc');
 
     useEffect(() => {
-        getRoteiroData().then(setData).finally(() => setLoading(false));
+        getRoteiroData().then(res => setData(res || [])).finally(() => setLoading(false));
     }, []);
 
-    // Lógica de Processamento
+    const sortOptions = [
+        { value: 'data_asc', label: 'Data Antiga' },
+        { value: 'data_desc', label: 'Data Nova' }
+    ];
+
     const processData = () => {
-        // 1. Filtrar
+        if (!Array.isArray(data)) return [];
         let result = data.filter(item => {
             if (filtro === 'Todos') return true;
             return item.status === filtro;
         });
 
-        // 2. Ordenar por DATA DO COMPROMISSO (data_inicio)
         result.sort((a, b) => {
             const dateA = new Date(a.data_inicio);
             const dateB = new Date(b.data_inicio);
 
-            if (ordenacao === 'data_asc') return dateA - dateB; // Antiga -> Nova
-            if (ordenacao === 'data_desc') return dateB - dateA; // Nova -> Antiga
+            if (ordenacao === 'data_asc') return dateA - dateB; 
+            if (ordenacao === 'data_desc') return dateB - dateA;
             return 0;
         });
 
@@ -168,7 +189,7 @@ export function RoteiroModal({ onClose }) {
     };
 
     const filteredData = processData();
-    const fmtDateFull = (d) => new Date(d).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+    const fmtDateFull = (d) => d ? new Date(d).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '-';
 
     const getStatusColor = (status) => {
         if(status === 'Realizado') return '#10b981';
@@ -187,12 +208,18 @@ export function RoteiroModal({ onClose }) {
                     <button className={`filter-pill ${filtro==='Perdido'?'active':''}`} onClick={()=>setFiltro('Perdido')}>Perdidos</button>
                 </div>
 
-                <div className="sort-group">
-                    <label>Ordenar por:</label>
-                    <select className="sort-select" value={ordenacao} onChange={(e) => setOrdenacao(e.target.value)}>
-                        <option value="data_asc">Data Antiga</option>
-                        <option value="data_desc">Data Nova</option>
-                    </select>
+                {/* ALTERAÇÃO AQUI: Flexbox para alinhar label e select lado a lado */}
+                <div className="sort-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '0.9rem', color: '#9ca3af', whiteSpace: 'nowrap' }}>Ordenar por:</span>
+                    <div style={{ minWidth: '160px' }}>
+                        <CustomSelect 
+                            name="sort"
+                            value={ordenacao}
+                            options={sortOptions}
+                            onChange={(e) => setOrdenacao(e.target.value)}
+                            // label removido
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -211,7 +238,7 @@ export function RoteiroModal({ onClose }) {
                             <td style={{width: '25%'}}>{fmtDateFull(item.data_inicio)}</td>
                             <td style={{width: '55%'}}>
                                 <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
-                                    <div style={{width:10, height:10, borderRadius:'50%', backgroundColor: item.cor}}></div>
+                                    <div style={{width:10, height:10, borderRadius:'50%', backgroundColor: item.cor || '#ccc'}}></div>
                                     {item.titulo}
                                 </div>
                             </td>
@@ -240,35 +267,35 @@ export function RegistrosModal({ onClose }) {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     
-    // Estados de Controle
-    const [filtroPrio, setFiltroPrio] = useState('Todas'); // Todas, Crítica, Alta, Média, Baixa
-    const [ordenacao, setOrdenacao] = useState('data_desc'); // data_desc (Nova), data_asc (Antiga)
+    const [filtroPrio, setFiltroPrio] = useState('Todas');
+    const [ordenacao, setOrdenacao] = useState('data_desc');
 
     useEffect(() => {
         getRegistrosResumoData().then(result => {
-            // Filtra APENAS Tarefas assim que os dados chegam
+            if (!Array.isArray(result)) { setData([]); return; }
             const apenasTarefas = result.filter(item => item.tipo === 'Tarefa');
             setData(apenasTarefas);
         }).finally(() => setLoading(false));
     }, []);
 
-    // Lógica de Processamento
+    const sortOptions = [
+        { value: 'data_desc', label: 'Data Nova' },
+        { value: 'data_asc', label: 'Data Antiga' }
+    ];
+
     const processData = () => {
-        // 1. Filtrar por Prioridade
+        if (!Array.isArray(data)) return [];
         let result = data.filter(item => {
             if (filtroPrio === 'Todas') return true;
             return item.grupo_ou_prioridade === filtroPrio;
         });
 
-        // 2. Ordenar por Data de Criação (Fallback para Entrega se o back mandar)
         result.sort((a, b) => {
-            // Nota: Se o backend enviar 'prazo' ou 'data_conclusao', altere aqui.
-            // Por enquanto usamos data_criacao para garantir ordenação funcional.
             const dateA = new Date(a.data_criacao);
             const dateB = new Date(b.data_criacao);
 
-            if (ordenacao === 'data_asc') return dateA - dateB;  // Antiga -> Nova
-            if (ordenacao === 'data_desc') return dateB - dateA; // Nova -> Antiga
+            if (ordenacao === 'data_asc') return dateA - dateB;
+            if (ordenacao === 'data_desc') return dateB - dateA; 
             return 0;
         });
 
@@ -276,9 +303,8 @@ export function RegistrosModal({ onClose }) {
     };
 
     const filteredData = processData();
-    const fmtDate = (d) => new Date(d).toLocaleDateString('pt-BR');
+    const fmtDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR') : '-';
 
-    // Helper para mapear classes CSS de prioridade
     const getPrioClass = (prio) => {
         switch(prio) {
             case 'Crítica': return 'critica';
@@ -300,12 +326,18 @@ export function RegistrosModal({ onClose }) {
                     <button className={`filter-pill ${filtroPrio==='Baixa'?'active':''}`} onClick={()=>setFiltroPrio('Baixa')}>Baixa</button>
                 </div>
 
-                <div className="sort-group">
-                    <label>Ordenar por:</label>
-                    <select className="sort-select" value={ordenacao} onChange={(e) => setOrdenacao(e.target.value)}>
-                        <option value="data_desc">Data Nova</option>
-                        <option value="data_asc">Data Antiga</option>
-                    </select>
+                {/* ALTERAÇÃO AQUI: Flexbox para alinhar label e select lado a lado */}
+                <div className="sort-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '0.9rem', color: '#9ca3af', whiteSpace: 'nowrap' }}>Ordenar por:</span>
+                    <div style={{ minWidth: '160px' }}>
+                        <CustomSelect 
+                            name="sort"
+                            value={ordenacao}
+                            options={sortOptions}
+                            onChange={(e) => setOrdenacao(e.target.value)}
+                            // label removido
+                        />
+                    </div>
                 </div>
             </div>
 

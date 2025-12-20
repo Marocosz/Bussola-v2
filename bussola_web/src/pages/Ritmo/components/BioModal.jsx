@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createBioData } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
+import { CustomSelect } from '../../../components/CustomSelect'; 
 
 export function BioModal({ onClose, onSuccess, initialData }) {
     const { addToast } = useToast();
@@ -15,6 +16,26 @@ export function BioModal({ onClose, onSuccess, initialData }) {
         objetivo: 'manutencao',
         bf_estimado: ''
     });
+
+    // Opções para os Selects
+    const genderOptions = [
+        { value: 'M', label: 'Masculino' },
+        { value: 'F', label: 'Feminino' }
+    ];
+
+    const activityOptions = [
+        { value: 'sedentario', label: 'Sedentário (Pouco exercício)' },
+        { value: 'leve', label: 'Leve (1-3 dias/semana)' },
+        { value: 'moderado', label: 'Moderado (3-5 dias/semana)' },
+        { value: 'alto', label: 'Alto (6-7 dias/semana)' },
+        { value: 'atleta', label: 'Atleta (Muito intenso)' }
+    ];
+
+    const objectiveOptions = [
+        { value: 'perda_peso', label: 'Perda de Peso (Cutting)' },
+        { value: 'manutencao', label: 'Manutenção (Normo)' },
+        { value: 'ganho_massa', label: 'Ganho de Massa (Bulking)' }
+    ];
 
     // Efeito para preencher o formulário caso existam dados iniciais
     useEffect(() => {
@@ -62,69 +83,119 @@ export function BioModal({ onClose, onSuccess, initialData }) {
     return (
         <div className="ritmo-scope modal-overlay">
             <div className="modal-content" style={{maxWidth: '550px', width: '90%'}}>
-                <div className="modal-header">
-                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', width:'100%'}}>
-                        <h2 style={{margin:0, fontSize:'1.2rem'}}>Bio-Indicadores</h2>
-                        <button className="close-btn" onClick={onClose} style={{background:'none', border:'none', color:'var(--cor-texto-secundario)', cursor:'pointer', fontSize:'1.5rem'}}>&times;</button>
-                    </div>
+                
+                {/* Header limpo com classes */}
+                <div className="modal-header-flex">
+                    <h2 className="modal-title">Bio-Indicadores</h2>
+                    <button className="close-btn-styled" onClick={onClose}>&times;</button>
                 </div>
                 
                 <form onSubmit={handleSubmit}>
                     <div className="modal-body">
-                        <div className="form-row grid-50-50" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem', marginBottom:'1.2rem'}}>
+                        {/* Linha 1: Peso e Altura */}
+                        <div className="form-grid two-cols">
                             <div className="form-group">
                                 <label>Peso (kg)</label>
-                                <input className="form-input" type="number" step="0.1" name="peso" required value={formData.peso} onChange={handleChange} />
+                                <input 
+                                    className="form-input" 
+                                    type="number" 
+                                    step="0.1" 
+                                    name="peso" 
+                                    required 
+                                    value={formData.peso} 
+                                    onChange={handleChange} 
+                                />
                             </div>
                             <div className="form-group">
                                 <label>Altura (cm)</label>
-                                <input className="form-input" type="number" name="altura" required value={formData.altura} onChange={handleChange} placeholder="Ex: 175" />
+                                <input 
+                                    className="form-input" 
+                                    type="number" 
+                                    name="altura" 
+                                    required 
+                                    value={formData.altura} 
+                                    onChange={handleChange} 
+                                    placeholder="Ex: 175" 
+                                />
                             </div>
                         </div>
 
-                        <div className="form-row grid-50-50" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem', marginBottom:'1.2rem'}}>
+                        {/* Linha 2: Idade e Gênero */}
+                        <div className="form-grid two-cols">
                             <div className="form-group">
                                 <label>Idade</label>
-                                <input className="form-input" type="number" name="idade" required value={formData.idade} onChange={handleChange} />
+                                <input 
+                                    className="form-input" 
+                                    type="number" 
+                                    name="idade" 
+                                    required 
+                                    value={formData.idade} 
+                                    onChange={handleChange} 
+                                />
                             </div>
                             <div className="form-group">
-                                <label>Gênero</label>
-                                <select className="form-input" name="genero" value={formData.genero} onChange={handleChange}>
-                                    <option value="M">Masculino</option>
-                                    <option value="F">Feminino</option>
-                                </select>
+                                <CustomSelect 
+                                    className="form-input"
+                                    label="Gênero"
+                                    name="genero"
+                                    value={formData.genero}
+                                    options={genderOptions}
+                                    onChange={handleChange}
+                                />
                             </div>
                         </div>
 
-                        <div className="form-group" style={{marginBottom:'1.2rem'}}>
-                            <label>Nível de Atividade</label>
-                            <select className="form-input" name="nivel_atividade" value={formData.nivel_atividade} onChange={handleChange}>
-                                <option value="sedentario">Sedentário (Pouco exercício)</option>
-                                <option value="leve">Leve (1-3 dias/semana)</option>
-                                <option value="moderado">Moderado (3-5 dias/semana)</option>
-                                <option value="alto">Alto (6-7 dias/semana)</option>
-                                <option value="atleta">Atleta (Muito intenso)</option>
-                            </select>
+                        {/* Atividade */}
+                        <div className="form-grid">
+                            <div className="form-group">
+                                <CustomSelect
+                                    className="form-input"
+                                    label="Nível de Atividade"
+                                    name="nivel_atividade"
+                                    value={formData.nivel_atividade}
+                                    options={activityOptions}
+                                    onChange={handleChange}
+                                />
+                            </div>
                         </div>
 
-                        <div className="form-group" style={{marginBottom:'1.2rem'}}>
-                            <label>Objetivo Atual</label>
-                            <select className="form-input" name="objetivo" value={formData.objetivo} onChange={handleChange}>
-                                <option value="perda_peso">Perda de Peso (Cutting)</option>
-                                <option value="manutencao">Manutenção (Normo)</option>
-                                <option value="ganho_massa">Ganho de Massa (Bulking)</option>
-                            </select>
+                        {/* Objetivo */}
+                        <div className="form-grid">
+                            <div className="form-group">
+                                <CustomSelect
+                                    className="form-input"
+                                    label="Objetivo Atual"
+                                    name="objetivo"
+                                    value={formData.objetivo}
+                                    options={objectiveOptions}
+                                    onChange={handleChange}
+                                />
+                            </div>
                         </div>
 
-                        <div className="form-group">
-                            <label>BF% Estimado (Opcional)</label>
-                            <input className="form-input" type="number" step="0.1" name="bf_estimado" value={formData.bf_estimado} onChange={handleChange} placeholder="Ex: 15.5" />
+                        {/* BF (Opcional) */}
+                        <div className="form-grid">
+                            <div className="form-group">
+                                <label>BF% Estimado (Opcional)</label>
+                                <input 
+                                    className="form-input" 
+                                    type="number" 
+                                    step="0.1" 
+                                    name="bf_estimado" 
+                                    value={formData.bf_estimado} 
+                                    onChange={handleChange} 
+                                    placeholder="Ex: 15.5" 
+                                />
+                            </div>
                         </div>
                     </div>
 
+                    {/* Footer com Botões Padronizados */}
                     <div className="modal-footer">
-                        <button type="button" className="btn-secondary" onClick={onClose} style={{background:'transparent', border:'1px solid var(--cor-borda)', color:'var(--cor-texto-secundario)', padding:'8px 16px', borderRadius:'8px', cursor:'pointer'}}>Cancelar</button>
-                        <button type="submit" className="btn-primary" disabled={loading}>
+                        <button type="button" className="btn-modal-cancel" onClick={onClose}>
+                            Cancelar
+                        </button>
+                        <button type="submit" className="btn-modal-save" disabled={loading}>
                             {loading ? 'Calculando...' : 'Salvar Perfil'}
                         </button>
                     </div>
