@@ -441,7 +441,8 @@ export interface ExercicioItem {
 export interface DiaTreino { id?: number; nome: string; ordem: number; exercicios: ExercicioItem[]; }
 export interface PlanoTreino { id?: number; nome: string; descricao?: string; ativo?: boolean; dias: DiaTreino[]; }
 
-export const getPlanosTreino = async (): Promise<PlanoTreino[]> => {
+// Padronizei os nomes para bater com os imports do index.jsx
+export const getPlanos = async (): Promise<PlanoTreino[]> => {
     const response = await api.get('/ritmo/treinos');
     return response.data;
 };
@@ -456,12 +457,18 @@ export const createPlanoTreino = async (planoCompleto: PlanoTreino) => {
     return response.data;
 };
 
-export const ativarPlanoTreino = async (id: number) => {
+// Adicionado: faltava para o Modal de Treino funcionar na edição
+export const updatePlanoTreino = async (id: number, planoCompleto: PlanoTreino) => {
+    const response = await api.put(`/ritmo/treinos/${id}`, planoCompleto);
+    return response.data;
+};
+
+export const ativarPlano = async (id: number) => {
     const response = await api.patch(`/ritmo/treinos/${id}/ativar`);
     return response.data;
 };
 
-export const deletePlanoTreino = async (id: number) => {
+export const deletePlano = async (id: number) => {
     const response = await api.delete(`/ritmo/treinos/${id}`);
     return response.data;
 };

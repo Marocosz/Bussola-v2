@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createBioData } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 
-export function BioModal({ onClose, onSuccess }) {
+export function BioModal({ onClose, onSuccess, initialData }) {
     const { addToast } = useToast();
     const [loading, setLoading] = useState(false);
 
@@ -15,6 +15,21 @@ export function BioModal({ onClose, onSuccess }) {
         objetivo: 'manutencao',
         bf_estimado: ''
     });
+
+    // Efeito para preencher o formulário caso existam dados iniciais
+    useEffect(() => {
+        if (initialData) {
+            setFormData({
+                peso: initialData.peso || '',
+                altura: initialData.altura || '',
+                idade: initialData.idade || '',
+                genero: initialData.genero || 'M',
+                nivel_atividade: initialData.nivel_atividade || 'moderado',
+                objetivo: initialData.objetivo || 'manutencao',
+                bf_estimado: initialData.bf_estimado || ''
+            });
+        }
+    }, [initialData]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;

@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useToast } from '../../context/ToastContext';
-import { 
-    getBioData, 
-    getPlanoAtivo, 
+import {
+    getBioData,
+    getPlanoAtivo,
+    getPlanos,
+    ativarPlano,
+    deletePlano,
     getDietaAtiva,
     getDietas,
     ativarDieta,
@@ -17,16 +20,17 @@ import './styles.css';
 
 export function Ritmo() {
     const { addToast } = useToast();
-    
+
     // Estados de Dados
     const [bio, setBio] = useState(null);
     const [volumeSemanal, setVolumeSemanal] = useState({});
     const [treinoAtivo, setTreinoAtivo] = useState(null);
+    const [treinos, setTreinos] = useState([]); // Todos os treinos criados
     const [dietaAtiva, setDietaAtiva] = useState(null);
     const [dietas, setDietas] = useState([]); // Todas as dietas criadas
     const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false); // Estado para atualizações sem "flash"
-    
+    const [refreshing, setRefreshing] = useState(false);
+
     // Estado da Aba
     const [activeTab, setActiveTab] = useState('treino');
 
@@ -34,12 +38,32 @@ export function Ritmo() {
     const [showBioModal, setShowBioModal] = useState(false);
     const [showTreinoModal, setShowTreinoModal] = useState(false);
     const [showDietaModal, setShowDietaModal] = useState(false);
-    
+
     // Estado para Edição
     const [dietaParaEditar, setDietaParaEditar] = useState(null);
+    const [treinoParaEditar, setTreinoParaEditar] = useState(null);
+
+    // Cálculo automático dos macros da Dieta Ativa
+    const macrosDieta = useMemo(() => {
+        if (!dietaAtiva) return { p: 0, c: 0, g: 0 };
+        
+        return dietaAtiva.refeicoes.reduce((acc, ref) => {
+            const macrosRef = ref.alimentos.reduce((accAli, ali) => ({
+                p: accAli.p + (ali.proteina || 0),
+                c: accAli.c + (ali.carbo || 0),
+                g: accAli.g + (ali.gordura || 0)
+            }), { p: 0, c: 0, g: 0 });
+
+            return {
+                p: acc.p + macrosRef.p,
+                c: acc.c + macrosRef.c,
+                g: acc.g + macrosRef.g
+            };
+        }, { p: 0, c: 0, g: 0 });
+    }, [dietaAtiva]);
 
     useEffect(() => {
-        loadData(true); // Carga inicial com loading screen
+        loadData(true);
     }, []);
 
     const loadData = async (initial = false) => {
@@ -50,9 +74,10 @@ export function Ritmo() {
         }
 
         try {
-            const [bioRes, treinoRes, dietaAtivaRes, todasDietasRes] = await Promise.allSettled([
+            const [bioRes, treinoAtivoRes, todosTreinosRes, dietaAtivaRes, todasDietasRes] = await Promise.allSettled([
                 getBioData(),
                 getPlanoAtivo(),
+                getPlanos(),
                 getDietaAtiva(),
                 getDietas()
             ]);
@@ -60,13 +85,17 @@ export function Ritmo() {
             if (bioRes.status === 'fulfilled') {
                 const data = bioRes.value;
                 setBio(data.bio);
-                setVolumeSemanal(data.volume_semanal || {}); 
+                setVolumeSemanal(data.volume_semanal || {});
             }
 
-            if (treinoRes.status === 'fulfilled') {
-                setTreinoAtivo(treinoRes.value);
+            if (treinoAtivoRes.status === 'fulfilled') {
+                setTreinoAtivo(treinoAtivoRes.value);
             } else {
                 setTreinoAtivo(null);
+            }
+
+            if (todosTreinosRes.status === 'fulfilled') {
+                setTreinos(todosTreinosRes.value);
             }
 
             if (dietaAtivaRes.status === 'fulfilled') {
@@ -88,6 +117,43 @@ export function Ritmo() {
         }
     };
 
+    // --- Ações de Treino ---
+    const handleAtivarTreino = async (id) => {
+        try {
+            setRefreshing(true);
+            await ativarPlano(id);
+            addToast({ type: 'success', title: 'Treino Ativado', description: 'Seu plano de treinamento foi atualizado.' });
+            await loadData(false);
+        } catch (error) {
+            addToast({ type: 'error', title: 'Erro', description: 'Não foi possível ativar este treino.' });
+            setRefreshing(false);
+        }
+    };
+
+    const handleEditarTreino = (treino) => {
+        setTreinoParaEditar(treino);
+        setShowTreinoModal(true);
+    };
+
+    const handleExcluirTreino = async (id) => {
+        if (!window.confirm("Deseja realmente excluir este plano de treino?")) return;
+        try {
+            setRefreshing(true);
+            await deletePlano(id);
+            addToast({ type: 'success', title: 'Excluído', description: 'Plano de treino removido.' });
+            await loadData(false);
+        } catch (error) {
+            addToast({ type: 'error', title: 'Erro', description: 'Erro ao excluir plano de treino.' });
+            setRefreshing(false);
+        }
+    };
+
+    const handleCloseTreinoModal = () => {
+        setShowTreinoModal(false);
+        setTreinoParaEditar(null);
+    };
+
+    // --- Ações de Dieta ---
     const handleAtivarDieta = async (id) => {
         try {
             setRefreshing(true);
@@ -123,7 +189,6 @@ export function Ritmo() {
         setDietaParaEditar(null);
     };
 
-    // Função auxiliar para calcular macros totais de uma refeição
     const calcMealMacros = (alimentos) => {
         return alimentos.reduce((acc, curr) => ({
             kcal: acc.kcal + curr.calorias,
@@ -174,7 +239,7 @@ export function Ritmo() {
                                 <i className="fa-solid fa-sliders"></i>
                                 <span>Ajustar Perfil</span>
                             </button>
-                            
+
                             <div className="bio-indicator-group">
                                 <div className="bio-mini-card">
                                     <label>Peso Atual</label>
@@ -196,19 +261,28 @@ export function Ritmo() {
                         </div>
 
                         <div className="macros-clean-container">
-                            <div className="box-header">Distribuição de Macros</div>
+                            <div className="box-header">Distribuição (Meta / Planejado)</div>
                             <div className="macros-horizontal-row">
                                 <div className="macro-item-mini">
                                     <span className="m-label">Proteína</span>
-                                    <span className="m-val">{bio?.meta_proteina || 0}g</span>
+                                    <span className="m-val">
+                                        {bio?.meta_proteina || 0}g 
+                                        <span className="m-planned"> / {Math.round(macrosDieta.p)}g</span>
+                                    </span>
                                 </div>
                                 <div className="macro-item-mini">
                                     <span className="m-label">Carbo</span>
-                                    <span className="m-val">{bio?.meta_carbo || 0}g</span>
+                                    <span className="m-val">
+                                        {bio?.meta_carbo || 0}g 
+                                        <span className="m-planned"> / {Math.round(macrosDieta.c)}g</span>
+                                    </span>
                                 </div>
                                 <div className="macro-item-mini">
                                     <span className="m-label">Gordura</span>
-                                    <span className="m-val">{bio?.meta_gordura || 0}g</span>
+                                    <span className="m-val">
+                                        {bio?.meta_gordura || 0}g 
+                                        <span className="m-planned"> / {Math.round(macrosDieta.g)}g</span>
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -217,20 +291,20 @@ export function Ritmo() {
 
                 <div className="column-header-flex plans-header-container">
                     <div className="tab-selector-wrapper">
-                        <button 
+                        <button
                             className={`tab-btn-pill ${activeTab === 'treino' ? 'active' : ''}`}
                             onClick={() => setActiveTab('treino')}
                         >
                             Plano de Treino
                         </button>
-                        <button 
+                        <button
                             className={`tab-btn-pill ${activeTab === 'nutricao' ? 'active' : ''}`}
                             onClick={() => setActiveTab('nutricao')}
                         >
                             Plano de Dieta
                         </button>
                     </div>
-                    
+
                     <div className="header-actions-group">
                         <button className="btn-primary" onClick={() => activeTab === 'treino' ? setShowTreinoModal(true) : setShowDietaModal(true)}>
                             <i className="fa-solid fa-plus"></i>
@@ -239,32 +313,70 @@ export function Ritmo() {
                     </div>
                 </div>
 
-                {/* Container principal com efeito visual de refresh silencioso */}
                 <main className="ritmo-content-area" style={{ opacity: refreshing ? 0.6 : 1, transition: 'opacity 0.2s ease' }}>
                     {activeTab === 'treino' && (
                         <div className="tab-content fade-in">
-                            {treinoAtivo ? (
-                                <div className="treino-grid">
-                                    {treinoAtivo.dias.sort((a,b) => a.ordem - b.ordem).map(dia => (
-                                        <div key={dia.id} className="dia-card">
-                                            <div className="dia-header">
-                                                <span>{dia.nome}</span>
-                                                <i className="fa-solid fa-chevron-right"></i>
+                            <div className="diet-selection-section">
+                                <h3 className="section-subtitle">Minha Biblioteca de Treinos</h3>
+                                <div className="plans-horizontal-selector">
+                                    {treinos.map(t => (
+                                        <div key={t.id} className={`plan-mini-card ${t.ativo ? 'active' : ''}`}>
+                                            <div className="plan-info">
+                                                <span className="plan-name">{t.nome}</span>
+                                                <span className="plan-cal">{t.dias.length} dias cadastrados</span>
                                             </div>
-                                            <div className="exercicio-list">
-                                                {dia.exercicios.map(ex => (
-                                                    <div key={ex.id} className="exercicio-item">
-                                                        <div>
-                                                            <strong>{ex.nome_exercicio}</strong>
-                                                            <div className="exercicio-sets">
-                                                                {ex.series} x {ex.repeticoes_min}-{ex.repeticoes_max}
-                                                            </div>
-                                                        </div>
-                                                        {ex.carga_prevista && (
-                                                            <span className="carga-badge">{ex.carga_prevista}kg</span>
-                                                        )}
-                                                    </div>
-                                                ))}
+                                            <div className="plan-actions">
+                                                {!t.ativo && (
+                                                    <button title="Ativar" onClick={() => handleAtivarTreino(t.id)}><i className="fa-solid fa-play"></i></button>
+                                                )}
+                                                <button title="Editar" onClick={() => handleEditarTreino(t)}><i className="fa-solid fa-pen-to-square"></i></button>
+                                                <button title="Excluir" onClick={() => handleExcluirTreino(t.id)} className="btn-del"><i className="fa-solid fa-trash"></i></button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {treinoAtivo ? (
+                                <div className="dieta-grid-custom">
+                                    {treinoAtivo.dias.sort((a, b) => a.ordem - b.ordem).map(dia => (
+                                        <div key={dia.id} className="refeicao-card-pro">
+                                            <div className="refeicao-pro-header">
+                                                <div className="ref-title-group">
+                                                    <span className="ref-time">{dia.exercicios.length}</span>
+                                                    <span className="ref-name">{dia.nome}</span>
+                                                </div>
+                                                <div className="ref-total-badge">
+                                                    {dia.exercicios.reduce((acc, ex) => acc + ex.series, 0)} séries
+                                                </div>
+                                            </div>
+
+                                            <div className="alimentos-table-wrapper">
+                                                <table className="alimentos-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Exercício</th>
+                                                            <th className="text-right">Sets</th>
+                                                            <th className="text-right">Rep.</th>
+                                                            <th className="text-right">Carga</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {dia.exercicios.map(ex => (
+                                                            <tr key={ex.id}>
+                                                                <td className="alim-name-td">
+                                                                    {ex.nome_exercicio}
+                                                                    <div className="alim-sub" style={{ fontSize: '0.65rem' }}>{ex.grupo_muscular}</div>
+                                                                </td>
+                                                                <td className="text-right weight-700">{ex.series}</td>
+                                                                <td className="text-right alim-sub">{ex.repeticoes_min}-{ex.repeticoes_max}</td>
+                                                                <td className="text-right">
+                                                                    {ex.carga_prevista ? <span className="carga-badge-small">{ex.carga_prevista}kg</span> : '--'}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
                                             </div>
                                         </div>
                                     ))}
@@ -280,7 +392,6 @@ export function Ritmo() {
 
                     {activeTab === 'nutricao' && (
                         <div className="tab-content fade-in">
-                            {/* Seletor de Dietas Criadas */}
                             <div className="diet-selection-section">
                                 <h3 className="section-subtitle">Meus Planos de Dieta</h3>
                                 <div className="plans-horizontal-selector">
@@ -304,7 +415,7 @@ export function Ritmo() {
 
                             {dietaAtiva ? (
                                 <div className="dieta-grid-custom">
-                                    {dietaAtiva.refeicoes.sort((a,b) => a.ordem - b.ordem).map(ref => {
+                                    {dietaAtiva.refeicoes.sort((a, b) => a.ordem - b.ordem).map(ref => {
                                         const totals = calcMealMacros(ref.alimentos);
                                         return (
                                             <div key={ref.id} className="refeicao-card-pro">
@@ -317,7 +428,7 @@ export function Ritmo() {
                                                         {Math.round(totals.kcal)} kcal
                                                     </div>
                                                 </div>
-                                                
+
                                                 <div className="alimentos-table-wrapper">
                                                     <table className="alimentos-table">
                                                         <thead>
@@ -347,9 +458,9 @@ export function Ritmo() {
 
                                                 <div className="refeicao-pro-footer">
                                                     <div className="macro-summary-pill">
-                                                        <span className="m-p">P: {Math.round(totals.p)}g</span>
-                                                        <span className="m-c">C: {Math.round(totals.c)}g</span>
-                                                        <span className="m-g">G: {Math.round(totals.g)}g</span>
+                                                        <span className="m-p">Proteina: {Math.round(totals.p)}g</span>
+                                                        <span className="m-c">Carboidrato: {Math.round(totals.c)}g</span>
+                                                        <span className="m-g">Gordura: {Math.round(totals.g)}g</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -367,12 +478,24 @@ export function Ritmo() {
                 </main>
             </div>
 
-            {showBioModal && <BioModal onClose={() => setShowBioModal(false)} onSuccess={() => loadData(false)} />}
-            {showTreinoModal && <TreinoModal onClose={() => setShowTreinoModal(false)} onSuccess={() => loadData(false)} />}
+            {showBioModal && (
+                <BioModal
+                    onClose={() => setShowBioModal(false)}
+                    onSuccess={() => loadData(false)}
+                    initialData={bio} // Passando os dados atuais
+                />
+            )}
+            {showTreinoModal && (
+                <TreinoModal
+                    onClose={handleCloseTreinoModal}
+                    onSuccess={() => loadData(false)}
+                    initialData={treinoParaEditar}
+                />
+            )}
             {showDietaModal && (
-                <DietaModal 
-                    onClose={handleCloseDietaModal} 
-                    onSuccess={() => loadData(false)} 
+                <DietaModal
+                    onClose={handleCloseDietaModal}
+                    onSuccess={() => loadData(false)}
                     initialData={dietaParaEditar}
                 />
             )}

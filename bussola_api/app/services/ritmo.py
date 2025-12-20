@@ -122,9 +122,51 @@ class RitmoService:
         db.commit()
         db.refresh(db_plano)
 
-        for dia_in in plano_in.dias:
+        # Usa o helper para adicionar os dias/exercícios
+        RitmoService._adicionar_dias_plano(db, db_plano.id, plano_in.dias)
+
+        db.refresh(db_plano)
+        return db_plano
+
+    @staticmethod
+    def update_plano_completo(db: Session, user_id: int, plano_id: int, plano_in: PlanoTreinoCreate):
+        """Atualiza um plano de treino existente: limpa a estrutura antiga e reconstrói."""
+        db_plano = db.query(RitmoPlanoTreino).filter(
+            RitmoPlanoTreino.id == plano_id, 
+            RitmoPlanoTreino.user_id == user_id
+        ).first()
+        
+        if not db_plano:
+            return None
+
+        if plano_in.ativo:
+            RitmoService._desativar_outros_planos(db, user_id)
+
+        db_plano.nome = plano_in.nome
+        db_plano.descricao = plano_in.descricao
+        db_plano.ativo = plano_in.ativo
+
+        # CORREÇÃO CRÍTICA: Deletar via sessão para garantir o cascade correto
+        # Usamos list() para criar uma cópia da lista e evitar erro de iteração
+        for dia in list(db_plano.dias):
+            db.delete(dia)
+        
+        # Flush garante que o banco processe os deletes antes de tentar inserir novos com mesmos IDs (se fosse o caso)
+        db.flush()
+
+        # Reconstrução usando o helper
+        RitmoService._adicionar_dias_plano(db, db_plano.id, plano_in.dias)
+
+        db.commit()
+        db.refresh(db_plano)
+        return db_plano
+
+    @staticmethod
+    def _adicionar_dias_plano(db: Session, plano_id: int, dias_in: list):
+        """Helper privado para adicionar dias e exercícios a um plano."""
+        for dia_in in dias_in:
             db_dia = RitmoDiaTreino(
-                plano_id=db_plano.id,
+                plano_id=plano_id,
                 nome=dia_in.nome,
                 ordem=dia_in.ordem
             )
@@ -148,61 +190,6 @@ class RitmoService:
                 db.add(db_ex)
             
             db.commit()
-
-        db.refresh(db_plano)
-        return db_plano
-
-    @staticmethod
-    def update_plano_completo(db: Session, user_id: int, plano_id: int, plano_in: PlanoTreinoCreate):
-        """Atualiza um plano de treino existente: limpa a estrutura antiga e reconstrói."""
-        db_plano = db.query(RitmoPlanoTreino).filter(
-            RitmoPlanoTreino.id == plano_id, 
-            RitmoPlanoTreino.user_id == user_id
-        ).first()
-        
-        if not db_plano:
-            return None
-
-        if plano_in.ativo:
-            RitmoService._desativar_outros_planos(db, user_id)
-
-        db_plano.nome = plano_in.nome
-        db_plano.descricao = plano_in.descricao
-        db_plano.ativo = plano_in.ativo
-
-        # Limpeza: Deletamos os dias (Exercícios caem no cascade delete configurado no Model)
-        db.query(RitmoDiaTreino).filter(RitmoDiaTreino.plano_id == db_plano.id).delete()
-        db.commit()
-
-        # Reconstrução
-        for dia_in in plano_in.dias:
-            db_dia = RitmoDiaTreino(
-                plano_id=db_plano.id,
-                nome=dia_in.nome,
-                ordem=dia_in.ordem
-            )
-            db.add(db_dia)
-            db.commit()
-            db.refresh(db_dia)
-
-            for ex_in in dia_in.exercicios:
-                db_ex = RitmoExercicioItem(
-                    dia_treino_id=db_dia.id,
-                    nome_exercicio=ex_in.nome_exercicio,
-                    api_id=ex_in.api_id,
-                    grupo_muscular=ex_in.grupo_muscular,
-                    series=ex_in.series,
-                    repeticoes_min=ex_in.repeticoes_min,
-                    repeticoes_max=ex_in.repeticoes_max,
-                    carga_prevista=ex_in.carga_prevista,
-                    descanso_segundos=ex_in.descanso_segundos,
-                    observacao=ex_in.observacao
-                )
-                db.add(db_ex)
-            db.commit()
-
-        db.refresh(db_plano)
-        return db_plano
 
     @staticmethod
     def toggle_plano_ativo(db: Session, user_id: int, plano_id: int):
@@ -263,10 +250,52 @@ class RitmoService:
         db.commit()
         db.refresh(db_dieta)
 
+        # Usa o helper para calcular calorias e adicionar itens
+        total_calorias = RitmoService._adicionar_refeicoes_dieta(db, db_dieta.id, dieta_in.refeicoes)
+
+        db_dieta.calorias_calculadas = total_calorias
+        db.commit()
+        db.refresh(db_dieta)
+        return db_dieta
+
+    @staticmethod
+    def update_dieta_completa(db: Session, user_id: int, dieta_id: int, dieta_in: DietaConfigCreate):
+        """Atualiza uma dieta existente (remove refeições antigas e recria com as novas)."""
+        db_dieta = db.query(RitmoDietaConfig).filter(
+            RitmoDietaConfig.id == dieta_id, 
+            RitmoDietaConfig.user_id == user_id
+        ).first()
+        
+        if not db_dieta:
+            return None
+
+        if dieta_in.ativo:
+            RitmoService._desativar_outras_dietas(db, user_id)
+
+        db_dieta.nome = dieta_in.nome
+        db_dieta.ativo = dieta_in.ativo
+
+        # CORREÇÃO CRÍTICA: Deletar via sessão para garantir o cascade correto
+        for ref in list(db_dieta.refeicoes):
+            db.delete(ref)
+        
+        db.flush()
+
+        # Reconstrução usando o helper
+        total_calorias = RitmoService._adicionar_refeicoes_dieta(db, db_dieta.id, dieta_in.refeicoes)
+
+        db_dieta.calorias_calculadas = total_calorias
+        db.commit()
+        db.refresh(db_dieta)
+        return db_dieta
+
+    @staticmethod
+    def _adicionar_refeicoes_dieta(db: Session, dieta_id: int, refeicoes_in: list):
+        """Helper privado para adicionar refeições e alimentos."""
         total_calorias = 0
-        for ref_in in dieta_in.refeicoes:
+        for ref_in in refeicoes_in:
             db_ref = RitmoRefeicao(
-                dieta_id=db_dieta.id,
+                dieta_id=dieta_id,
                 nome=ref_in.nome,
                 horario=ref_in.horario,
                 ordem=ref_in.ordem
@@ -290,11 +319,7 @@ class RitmoService:
                 total_calorias += ali_in.calorias
             
             db.commit()
-
-        db_dieta.calorias_calculadas = total_calorias
-        db.commit()
-        db.refresh(db_dieta)
-        return db_dieta
+        return total_calorias
 
     @staticmethod
     def toggle_dieta_ativa(db: Session, user_id: int, dieta_id: int):
@@ -305,66 +330,6 @@ class RitmoService:
             db.commit()
             db.refresh(dieta)
         return dieta
-    
-    @staticmethod
-    def update_dieta_completa(db: Session, user_id: int, dieta_id: int, dieta_in: DietaConfigCreate):
-        """Atualiza uma dieta existente: limpa as refeições antigas e reconstrói."""
-        # 1. Localiza a dieta original
-        db_dieta = db.query(RitmoDietaConfig).filter(
-            RitmoDietaConfig.id == dieta_id, 
-            RitmoDietaConfig.user_id == user_id
-        ).first()
-        
-        if not db_dieta:
-            return None
-
-        # 2. Se a edição ativar a dieta, desativa as outras do usuário
-        if dieta_in.ativo:
-            RitmoService._desativar_outras_dietas(db, user_id)
-
-        # 3. Atualiza campos básicos
-        db_dieta.nome = dieta_in.nome
-        db_dieta.ativo = dieta_in.ativo
-
-        # 4. Limpeza das refeições e alimentos antigos
-        # Deletamos as refeições (os alimentos devem cair no cascade delete do banco/model)
-        db.query(RitmoRefeicao).filter(RitmoRefeicao.dieta_id == db_dieta.id).delete()
-        db.commit()
-
-        # 5. Reconstrução da estrutura (mesma lógica do create)
-        total_calorias = 0
-        for ref_in in dieta_in.refeicoes:
-            db_ref = RitmoRefeicao(
-                dieta_id=db_dieta.id,
-                nome=ref_in.nome,
-                horario=ref_in.horario,
-                ordem=ref_in.ordem
-            )
-            db.add(db_ref)
-            db.commit()
-            db.refresh(db_ref)
-
-            for ali_in in ref_in.alimentos:
-                db_ali = RitmoAlimentoItem(
-                    refeicao_id=db_ref.id,
-                    nome=ali_in.nome,
-                    quantidade=ali_in.quantidade,
-                    unidade=ali_in.unidade,
-                    calorias=ali_in.calorias,
-                    proteina=ali_in.proteina,
-                    carbo=ali_in.carbo,
-                    gordura=ali_in.gordura
-                )
-                db.add(db_ali)
-                total_calorias += ali_in.calorias
-            
-            db.commit()
-
-        # 6. Atualiza o total de calorias final e salva
-        db_dieta.calorias_calculadas = total_calorias
-        db.commit()
-        db.refresh(db_dieta)
-        return db_dieta
 
     @staticmethod
     def delete_dieta(db: Session, user_id: int, dieta_id: int):
@@ -406,15 +371,9 @@ class RitmoService:
     @staticmethod
     def search_taco_foods(query: str):
         """Busca alimentos no arquivo taco.json com diagnóstico aprimorado."""
-        # Tenta descobrir o caminho base (bussola_api) de forma mais segura
-        # __file__ é app/services/ritmo.py
-        current_dir = os.path.dirname(os.path.abspath(__file__)) # app/services
-        api_root = os.path.abspath(os.path.join(current_dir, "..", "..")) # bussola_api
+        current_dir = os.path.dirname(os.path.abspath(__file__)) 
+        api_root = os.path.abspath(os.path.join(current_dir, "..", "..")) 
         file_path = os.path.join(api_root, "data", "taco.json")
-        
-        print(f"--- DEBUG TACO SEARCH ---")
-        print(f"Query recebida: '{query}'")
-        print(f"Caminho do arquivo: {file_path}")
         
         if not os.path.exists(file_path):
             print(f"ERRO: Arquivo taco.json NÃO encontrado no caminho especificado!")
@@ -423,7 +382,6 @@ class RitmoService:
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 taco_data = json.load(f)
-                print(f"Sucesso: JSON carregado com {len(taco_data)} itens.")
         except Exception as e:
             print(f"ERRO CRÍTICO ao abrir/ler o JSON: {str(e)}")
             return []
@@ -448,6 +406,4 @@ class RitmoService:
             if len(results) >= 20:
                 break
         
-        print(f"Resultados encontrados: {len(results)}")
-        print(f"--------------------------")
         return results

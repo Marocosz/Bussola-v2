@@ -87,7 +87,8 @@
 
 .ritmo-scope .bio-grid-layout {
     display: grid;
-    grid-template-columns: 280px 1fr;
+    /* ALTERADO: max-content faz a coluna da esquerda ter a largura exata do seu conteúdo */
+    grid-template-columns: max-content 1fr; 
     gap: 1.5rem;
     margin-bottom: 2.5rem;
     align-items: stretch;
@@ -97,38 +98,55 @@
     background: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
     border-radius: 16px;
-    padding: 1.5rem;
+    padding: 1.2rem;
     display: flex;
     flex-direction: column;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    /* ADICIONADO: Define o limite máximo para forçar a quebra de linha após 4 cards (~440px) */
+    max-width: 440px; 
+    /* ADICIONADO: Garante que não fique menor que um card + padding */
+    min-width: min-content; 
 }
 
+/* ALTERADO: Flex + Wrap permite que o container encolha se tiver só 1 item */
 .ritmo-scope .volume-vertical-list {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
     margin-top: 1rem;
 }
 
+/* Mini cards de volume mais compactos */
 .ritmo-scope .vol-tag {
     background: var(--cor-card-secundario);
     border: 1px solid var(--cor-borda);
-    padding: 8px 12px;
+    padding: 6px 4px;
     border-radius: 8px;
     display: flex;
-    justify-content: space-between;
+    flex-direction: column; /* Stack vertical para caber melhor */
+    justify-content: center;
     align-items: center;
+    text-align: center;
+    min-height: 55px;
+    /* ADICIONADO: Largura fixa para garantir alinhamento tipo grid */
+    width: 92px; 
 }
 
 .ritmo-scope .tag-muscle {
-    font-size: 0.8rem;
+    font-size: 0.65rem;
     color: var(--cor-texto-secundario);
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
 }
 
 .ritmo-scope .tag-count {
-    font-size: 0.9rem;
-    font-weight: 700;
+    font-size: 1rem;
+    font-weight: 800;
     color: var(--cor-azul-primario);
+    line-height: 1.2;
 }
 
 .ritmo-scope .bio-right-column {
@@ -138,30 +156,34 @@
     justify-content: space-between;
 }
 
+/* Ajuste Side Tab: Padding zero na esquerda e stretch total */
 .ritmo-scope .profile-info-card {
     background: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
     border-radius: 16px;
-    padding: 0.5rem 1.5rem;
+    padding: 0 1.5rem 0 0; 
     display: flex;
-    align-items: center;
-    gap: 2rem;
+    align-items: stretch; 
+    gap: 1.5rem;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden; 
 }
 
+/* Botão Side Tab integrado à esquerda */
 .ritmo-scope .btn-adjust-profile-square {
     background: var(--cor-card-secundario);
-    border: 1px solid var(--cor-borda);
+    border: none;
+    border-right: 1px solid var(--cor-borda);
     color: var(--cor-texto-principal);
-    padding: 0.8rem;
-    border-radius: 12px;
+    padding: 0 1.2rem;
+    border-radius: 0; 
     cursor: pointer;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    min-width: 120px;
+    gap: 8px;
+    min-width: 100px;
     transition: all 0.2s;
 }
 
@@ -170,34 +192,42 @@
     color: white;
 }
 
-.ritmo-scope .btn-adjust-profile-square span {
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
+.ritmo-scope .btn-adjust-profile-square i {
+    font-size: 1.2rem;
 }
 
+.ritmo-scope .btn-adjust-profile-square span {
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    text-align: center;
+    line-height: 1.1;
+}
+
+/* Padding compensatório para o grupo de indicadores */
 .ritmo-scope .bio-indicator-group {
     display: flex;
     flex: 1;
     justify-content: space-around;
     gap: 1rem;
+    padding: 1rem 0; 
 }
 
 .ritmo-scope .bio-mini-card label {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--cor-texto-secundario);
     text-transform: uppercase;
     display: block;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 .ritmo-scope .bio-mini-card strong {
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     color: var(--cor-texto-principal);
 }
 
 .ritmo-scope .bio-mini-card strong span {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: var(--cor-texto-secundario);
     font-weight: 400;
 }
@@ -288,8 +318,10 @@
 
 .ritmo-scope .diet-selection-section {
     margin-bottom: 2rem;
-    padding: 0.5rem 0;
-    /* Removido fundo e bordas */
+    /* Adições para criar a borda e o container */
+    border: 1px solid var(--cor-borda);    /* A borda fina e simples */
+    border-radius: 16px;                   /* Arredondamento para combinar com o resto */
+    padding: 1.2rem;                       /* Espaço interno para o conteúdo não colar na borda */
 }
 
 .ritmo-scope .section-subtitle {
@@ -711,4 +743,44 @@
         width: 100%;
         justify-content: center;
     }
+}
+
+
+/* ============================================= */
+/* 11. ADIÇÕES ESPECÍFICAS PARA TREINO PRO       */
+/* ============================================= */
+
+.ritmo-scope .carga-badge-small {
+    background: rgba(74, 109, 255, 0.1);
+    color: var(--cor-azul-primario);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 800;
+    font-size: 0.75rem;
+    border: 1px solid rgba(74, 109, 255, 0.2);
+}
+
+.ritmo-scope .weight-700 {
+    font-weight: 700;
+}
+
+.ritmo-scope .text-right {
+    text-align: right;
+}
+
+/* Ajuste fino na tabela de exercícios para ocupar menos espaço vertical */
+.ritmo-scope .exercicio-table td {
+    padding: 8px 1.2rem;
+}
+
+/* Scroll horizontal suave para a biblioteca de treinos */
+.ritmo-scope .plans-horizontal-selector {
+    scrollbar-width: thin;
+    scrollbar-color: var(--cor-borda) transparent;
+}
+
+.ritmo-scope .m-planned {
+    font-size: 0.9rem;
+    color: var(--cor-texto-secundario);
+    font-weight: 500;
 }

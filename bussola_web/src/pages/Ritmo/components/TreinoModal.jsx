@@ -1,8 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { createPlanoTreino, searchExternalExercises } from '../../../services/api';
+import { createPlanoTreino, updatePlanoTreino, searchExternalExercises } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 
-export function TreinoModal({ onClose, onSuccess }) {
+// =========================================================
+// LISTA DE GRUPOS MUSCULARES (ADICIONE OU REMOVA AQUI)
+// =========================================================
+const GRUPOS_MUSCULARES = [
+    "Peito",
+    "Costas",
+    "Quadríceps",
+    "Posterior",
+    "Glúteos",
+    "Panturrilhas",
+    "Ombros",
+    "Bíceps",
+    "Tríceps",
+    "Antebraço",
+    "Abdominais",
+    "Outros"
+];
+
+export function TreinoModal({ onClose, onSuccess, initialData }) {
     const { addToast } = useToast();
     const [loading, setLoading] = useState(false);
     const [nomePlano, setNomePlano] = useState('');
@@ -12,9 +30,25 @@ export function TreinoModal({ onClose, onSuccess }) {
     // Estados para busca externa
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
-    const [activeSearch, setActiveSearch] = useState(null); // { dIndex, eIndex }
+    const [activeSearch, setActiveSearch] = useState(null);
 
-    // Lógica de Busca com Debounce
+    // Efeito para carregar dados (Deep Copy para evitar duplicação)
+    useEffect(() => {
+        if (initialData) {
+            setNomePlano(initialData.nome);
+            setDescricao(initialData.descricao || '');
+            if (initialData.dias && initialData.dias.length > 0) {
+                setDias(JSON.parse(JSON.stringify(initialData.dias)));
+            } else {
+                setDias([{ nome: 'Treino A', exercicios: [] }]);
+            }
+        } else {
+            setNomePlano('');
+            setDescricao('');
+            setDias([{ nome: 'Treino A', exercicios: [] }]);
+        }
+    }, [initialData]);
+
     useEffect(() => {
         const delayDebounceFn = setTimeout(async () => {
             if (searchQuery.length >= 3) {
@@ -33,56 +67,75 @@ export function TreinoModal({ onClose, onSuccess }) {
     }, [searchQuery]);
 
     const handleSelectExercise = (ex, dIndex, eIndex) => {
-        const newDias = [...dias];
-        newDias[dIndex].exercicios[eIndex] = {
-            ...newDias[dIndex].exercicios[eIndex],
-            nome_exercicio: ex.nome,
-            grupo_muscular: ex.grupo_sugerido
-        };
-        setDias(newDias);
+        setDias(prevDias => prevDias.map((dia, i) => {
+            if (i !== dIndex) return dia;
+            const newExercicios = [...dia.exercicios];
+            newExercicios[eIndex] = {
+                ...newExercicios[eIndex],
+                nome_exercicio: ex.nome,
+                grupo_muscular: ex.grupo_sugerido
+            };
+            return { ...dia, exercicios: newExercicios };
+        }));
         setSearchResults([]);
         setActiveSearch(null);
     };
 
     const addDia = () => {
-        setDias([...dias, { nome: `Treino ${String.fromCharCode(65 + dias.length)}`, exercicios: [] }]);
+        setDias(prev => [...prev, { nome: `Treino ${String.fromCharCode(65 + prev.length)}`, exercicios: [] }]);
     };
 
     const removeDia = (index) => {
-        const newDias = [...dias];
-        newDias.splice(index, 1);
-        setDias(newDias);
+        setDias(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleDiaChange = (index, value) => {
-        const newDias = [...dias];
-        newDias[index].nome = value;
-        setDias(newDias);
+        setDias(prevDias => prevDias.map((dia, i) => 
+            i === index ? { ...dia, nome: value } : dia
+        ));
     };
 
     const addExercicio = (diaIndex) => {
-        const newDias = [...dias];
-        newDias[diaIndex].exercicios.push({
-            nome_exercicio: '',
-            series: 3,
-            repeticoes_min: 8,
-            repeticoes_max: 12,
-            carga_prevista: '',
-            grupo_muscular: 'Outros'
-        });
-        setDias(newDias);
+        setDias(prevDias => prevDias.map((dia, i) => {
+            if (i !== diaIndex) return dia;
+            return {
+                ...dia,
+                exercicios: [
+                    ...dia.exercicios,
+                    {
+                        nome_exercicio: '',
+                        series: 3,
+                        repeticoes_min: 8,
+                        repeticoes_max: 12,
+                        carga_prevista: '',
+                        grupo_muscular: 'Outros'
+                    }
+                ]
+            };
+        }));
     };
 
     const removeExercicio = (diaIndex, exIndex) => {
-        const newDias = [...dias];
-        newDias[diaIndex].exercicios.splice(exIndex, 1);
-        setDias(newDias);
+        setDias(prevDias => prevDias.map((dia, i) => {
+            if (i !== diaIndex) return dia;
+            return {
+                ...dia,
+                exercicios: dia.exercicios.filter((_, j) => j !== exIndex)
+            };
+        }));
     };
 
     const handleExercicioChange = (diaIndex, exIndex, field, value) => {
-        const newDias = [...dias];
-        newDias[diaIndex].exercicios[exIndex][field] = value;
-        setDias(newDias);
+        setDias(prevDias => prevDias.map((dia, i) => {
+            if (i !== diaIndex) return dia;
+            
+            const newExercicios = dia.exercicios.map((ex, j) => {
+                if (j !== exIndex) return ex;
+                return { ...ex, [field]: value };
+            });
+
+            return { ...dia, exercicios: newExercicios };
+        }));
 
         if (field === 'nome_exercicio') {
             setSearchQuery(value);
@@ -97,25 +150,40 @@ export function TreinoModal({ onClose, onSuccess }) {
             const payload = {
                 nome: nomePlano,
                 descricao: descricao,
-                ativo: true,
+                ativo: initialData ? initialData.ativo : true,
                 dias: dias.map((dia, idx) => ({
                     nome: dia.nome,
                     ordem: idx,
                     exercicios: dia.exercicios.map(ex => ({
-                        ...ex,
+                        nome_exercicio: ex.nome_exercicio,
+                        api_id: ex.api_id,
+                        grupo_muscular: ex.grupo_muscular,
                         series: parseInt(ex.series) || 0,
                         repeticoes_min: parseInt(ex.repeticoes_min) || 0,
                         repeticoes_max: parseInt(ex.repeticoes_max) || 0,
-                        carga_prevista: ex.carga_prevista ? parseFloat(ex.carga_prevista) : null
+                        carga_prevista: ex.carga_prevista ? parseFloat(ex.carga_prevista) : null,
+                        descanso_segundos: ex.descanso_segundos,
+                        observacao: ex.observacao
                     }))
                 }))
             };
-            await createPlanoTreino(payload);
-            addToast({ type: 'success', title: 'Plano Criado!', description: 'Treino ativado com sucesso.' });
+
+            if (initialData && initialData.id) {
+                await updatePlanoTreino(initialData.id, payload);
+            } else {
+                await createPlanoTreino(payload);
+            }
+
+            addToast({ 
+                type: 'success', 
+                title: initialData ? 'Plano Atualizado!' : 'Plano Criado!', 
+                description: 'Seu cronograma de treinos foi sincronizado.' 
+            });
             onSuccess();
             onClose();
         } catch (error) {
-            addToast({ type: 'error', title: 'Erro', description: 'Falha ao criar plano de treino.' });
+            console.error(error);
+            addToast({ type: 'error', title: 'Erro', description: 'Falha ao salvar plano de treino.' });
         } finally {
             setLoading(false);
         }
@@ -126,7 +194,9 @@ export function TreinoModal({ onClose, onSuccess }) {
             <div className="modal-content" style={{ maxWidth: '850px', width: '95%' }}>
                 <div className="modal-header">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                        <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Configurar Novo Treino</h2>
+                        <h2 style={{ margin: 0, fontSize: '1.2rem' }}>
+                            {initialData ? `Editar: ${initialData.nome}` : 'Configurar Novo Treino'}
+                        </h2>
                         <button className="close-btn" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--cor-texto-secundario)', cursor: 'pointer', fontSize: '1.5rem' }}>&times;</button>
                     </div>
                 </div>
@@ -160,7 +230,6 @@ export function TreinoModal({ onClose, onSuccess }) {
                                                 <label style={{ fontSize: '0.6rem' }}>Exercício</label>
                                                 <input className="form-input" style={{ height: '35px', padding: '0 5px' }} type="text" value={ex.nome_exercicio} onChange={(e) => handleExercicioChange(dIndex, eIndex, 'nome_exercicio', e.target.value)} required autoComplete="off" />
                                                 
-                                                {/* Dropdown de Sugestões API */}
                                                 {activeSearch?.dIndex === dIndex && activeSearch?.eIndex === eIndex && searchResults.length > 0 && (
                                                     <div className="search-results-dropdown" style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--cor-card-principal)', border: '1px solid var(--cor-borda)', zIndex: 10, borderRadius: '8px', maxHeight: '200px', overflowY: 'auto', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}>
                                                         {searchResults.map((exercise, fIdx) => (
@@ -171,19 +240,24 @@ export function TreinoModal({ onClose, onSuccess }) {
                                                     </div>
                                                 )}
                                             </div>
+                                            
+                                            {/* DROPDOWN DINÂMICO DE GRUPOS MUSCULARES */}
                                             <div className="form-group">
                                                 <label style={{ fontSize: '0.6rem' }}>Grupo</label>
-                                                <select className="form-input" style={{ height: '35px', padding: '0 5px' }} value={ex.grupo_muscular} onChange={(e) => handleExercicioChange(dIndex, eIndex, 'grupo_muscular', e.target.value)}>
-                                                    <option value="Peito">Peito</option>
-                                                    <option value="Costas">Costas</option>
-                                                    <option value="Pernas">Pernas</option>
-                                                    <option value="Ombros">Ombros</option>
-                                                    <option value="Bíceps">Bíceps</option>
-                                                    <option value="Tríceps">Tríceps</option>
-                                                    <option value="Abdominais">Abs</option>
-                                                    <option value="Outros">Outros</option>
+                                                <select 
+                                                    className="form-input" 
+                                                    style={{ height: '35px', padding: '0 5px' }} 
+                                                    value={ex.grupo_muscular} 
+                                                    onChange={(e) => handleExercicioChange(dIndex, eIndex, 'grupo_muscular', e.target.value)}
+                                                >
+                                                    {GRUPOS_MUSCULARES.map(grupo => (
+                                                        <option key={grupo} value={grupo}>
+                                                            {grupo}
+                                                        </option>
+                                                    ))}
                                                 </select>
                                             </div>
+
                                             <div className="form-group">
                                                 <label style={{ fontSize: '0.6rem' }}>Sets</label>
                                                 <input className="form-input" style={{ height: '35px', padding: '0 5px' }} type="number" value={ex.series} onChange={(e) => handleExercicioChange(dIndex, eIndex, 'series', e.target.value)} />
@@ -214,7 +288,7 @@ export function TreinoModal({ onClose, onSuccess }) {
 
                     <div className="modal-footer">
                         <button type="button" onClick={onClose} style={{ background: 'transparent', border: '1px solid var(--cor-borda)', color: 'var(--cor-texto-secundario)', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}>Cancelar</button>
-                        <button type="submit" className="btn-primary" disabled={loading}>{loading ? 'Salvando...' : 'Criar Plano'}</button>
+                        <button type="submit" className="btn-primary" disabled={loading}>{loading ? 'Salvando...' : (initialData ? 'Salvar Alterações' : 'Criar Plano')}</button>
                     </div>
                 </form>
             </div>
