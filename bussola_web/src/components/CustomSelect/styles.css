@@ -98,3 +98,67 @@
     background-color: var(--cor-borda);
     border-radius: 3px;
 }
+
+/* ========================================================= */
+/* ESTILO PARA O SEU COMPONENTE CUSTOM SELECT (DIVS)         */
+/* ========================================================= */
+
+.ritmo-scope .custom-select-trigger {
+    width: 100%;
+    height: 48px !important; /* FORÇA A ALTURA IGUAL AOS INPUTS */
+    min-height: 48px !important;
+    padding: 0 1rem; /* Mesmo padding lateral dos inputs */
+    
+    background-color: var(--cor-fundo);
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    color: var(--cor-texto-principal);
+    
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Separa texto da seta */
+    
+    cursor: pointer;
+    box-sizing: border-box !important;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+}
+
+/* Estado Hover/Open (Opcional, para feedback visual) */
+.ritmo-scope .custom-select-trigger:hover,
+.ritmo-scope .custom-select-trigger.open {
+    border-color: var(--cor-azul-primario);
+}
+
+/* Ajuste da lista de opções (Dropdown) */
+.ritmo-scope .custom-select-options {
+    position: absolute;
+    top: 105%; /* Logo abaixo do input */
+    left: 0;
+    width: 100%;
+    background: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    z-index: 200;
+    overflow: hidden;
+}
+
+.ritmo-scope .custom-option {
+    padding: 12px 1rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--cor-texto-secundario);
+    transition: background 0.2s;
+}
+
+.ritmo-scope .custom-option:hover {
+    background: var(--cor-card-secundario);
+    color: var(--cor-texto-principal);
+}
+
+.ritmo-scope .custom-option.selected {
+    background: rgba(74, 109, 255, 0.1); /* Azul bem claro */
+    color: var(--cor-azul-primario);
+    font-weight: 600;
+}

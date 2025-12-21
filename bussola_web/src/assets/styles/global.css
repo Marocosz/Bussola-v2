@@ -468,3 +468,38 @@ main.container {
 .confirm-footer .btn-confirm.info:hover {
     background: var(--cor-azul-hover);
 }
+
+/* ============================================================ */
+/* FORÇAR ESTILO DE DROPDOWN GLOBAL (Baseado no Modal de Perfil) */
+/* ============================================================ */
+
+/* 1. O item base */
+[role="option"], 
+.custom-option,
+.select-item {
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    font-size: 0.9rem;
+    padding: 12px 1rem; /* O padding gordinho que você usa */
+    border-radius: 6px; /* Bordas levemente arredondadas */
+}
+
+/* 2. O efeito de HOVER (Passar o mouse) */
+/* Aplica em: classes manuais, Radix UI (data-highlighted) e hover padrão */
+[role="option"]:hover,
+[role="option"][data-highlighted], 
+.custom-option:hover {
+    background-color: var(--cor-card-secundario) !important;
+    color: var(--cor-texto-principal) !important;
+    outline: none; /* Remove borda azul padrão de navegadores */
+}
+
+/* 3. O efeito de SELECIONADO (Item ativo) */
+/* Aplica a cor azul bem clarinha com texto azul forte */
+[role="option"][aria-selected="true"],
+[role="option"][data-state="checked"],
+.custom-option.selected {
+    background-color: rgba(74, 109, 255, 0.1) !important; /* Azul transparente */
+    color: var(--cor-azul-primario) !important;
+    font-weight: 600 !important;
+}
