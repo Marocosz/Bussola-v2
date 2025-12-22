@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useToast } from '../../context/ToastContext';
+// [NOVO] Import do Hook de Confirmação (Ajuste o caminho se o arquivo tiver outro nome)
+import { useConfirm } from '../../context/ConfirmDialogContext';
+
 import {
     getBioData,
     getPlanoAtivo,
@@ -20,6 +23,8 @@ import './styles.css';
 
 export function Ritmo() {
     const { addToast } = useToast();
+    // [NOVO] Inicializa o Dialog
+    const confirm = useConfirm();
 
     // Estados de Dados
     const [bio, setBio] = useState(null);
@@ -136,7 +141,16 @@ export function Ritmo() {
     };
 
     const handleExcluirTreino = async (id) => {
-        if (!window.confirm("Deseja realmente excluir este plano de treino?")) return;
+        // [ATUALIZADO] Usando confirm dialog customizado
+        const isConfirmed = await confirm({
+            title: 'Excluir Plano de Treino',
+            description: 'Deseja realmente excluir este plano? Todo o histórico de dias e exercícios será perdido.',
+            variant: 'danger',
+            confirmLabel: 'Sim, Excluir'
+        });
+
+        if (!isConfirmed) return;
+
         try {
             setRefreshing(true);
             await deletePlano(id);
@@ -172,7 +186,16 @@ export function Ritmo() {
     };
 
     const handleExcluirDieta = async (id) => {
-        if (!window.confirm("Deseja realmente excluir esta dieta?")) return;
+        // [ATUALIZADO] Usando confirm dialog customizado
+        const isConfirmed = await confirm({
+            title: 'Excluir Dieta',
+            description: 'Tem certeza que deseja excluir esta dieta? Todas as refeições configuradas serão perdidas.',
+            variant: 'danger',
+            confirmLabel: 'Sim, Excluir'
+        });
+
+        if (!isConfirmed) return;
+
         try {
             setRefreshing(true);
             await deleteDieta(id);
