@@ -1,17 +1,18 @@
-import os
 from sqlalchemy import Column, Integer, String, Text, Date, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from cryptography.fernet import Fernet
 from app.db.base_class import Base
 
-# Carrega a chave de criptografia do ambiente
-encryption_key = os.getenv('ENCRYPTION_KEY')
+# [AQUI ESTÁ A MÁGICA] Importamos a configuração centralizada
+from app.core.config import settings 
 
-if encryption_key:
-    cipher_suite = Fernet(encryption_key.encode())
-else:
-    print("AVISO CRÍTICO: ENCRYPTION_KEY não definida no ambiente.")
+# Inicializa a criptografia usando a variável que o Pydantic carregou
+try:
+    cipher_suite = Fernet(settings.ENCRYPTION_KEY.encode())
+except Exception as e:
+    # Se a chave no .env estiver errada/vazia, avisa mas não derruba o sistema inteiro
+    print(f"AVISO: Falha ao carregar ENCRYPTION_KEY no Model Cofre: {e}")
     cipher_suite = None
 
 class Segredo(Base):
@@ -24,27 +25,26 @@ class Segredo(Base):
     data_criacao = Column(Date, default=datetime.utcnow)
     data_expiracao = Column(Date, nullable=True)
 
-    # Armazena o valor criptografado
+    # Armazena o valor criptografado no banco
     _valor_criptografado = Column(String(500), nullable=False)
 
-    # [SEGURANÇA] Vínculo com Usuário
+    # [SEGURANÇA] Vínculo com Usuário (Multi-tenancy)
     user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     user = relationship("User", back_populates="segredos")
 
     @property
     def valor(self):
-        """Descriptografa ao ler"""
+        """Lê do banco e descriptografa para usar na API"""
         if cipher_suite and self._valor_criptografado:
             try:
                 return cipher_suite.decrypt(self._valor_criptografado.encode()).decode()
-            except Exception as e:
-                print(f"Erro ao descriptografar segredo ID {self.id}: {e}")
-                return "!! ERRO !!"
+            except Exception:
+                return "!! ERRO DE DESCRIPTOGRAFIA !!"
         return None
 
     @valor.setter
     def valor(self, valor_plano: str):
-        """Criptografa ao salvar"""
+        """Recebe senha limpa e criptografa antes de salvar no banco"""
         if cipher_suite and valor_plano:
             encrypted_value = cipher_suite.encrypt(valor_plano.encode())
             self._valor_criptografado = encrypted_value.decode()

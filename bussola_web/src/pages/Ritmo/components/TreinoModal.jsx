@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { createPlanoTreino, updatePlanoTreino, searchExternalExercises } from '../../../services/api';
+// [CORREÇÃO] Removida a importação de searchExternalExercises que não existe
+import { createPlanoTreino, updatePlanoTreino } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 import { CustomSelect } from '../../../components/CustomSelect';
 
@@ -30,10 +31,7 @@ export function TreinoModal({ onClose, onSuccess, initialData }) {
     // Preparar opções para o Select
     const groupOptions = GRUPOS_MUSCULARES.map(g => ({ value: g, label: g }));
 
-    // Estados para busca externa
-    const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState([]);
-    const [activeSearch, setActiveSearch] = useState(null);
+    // [CORREÇÃO] Removidos estados de busca (searchQuery, searchResults, activeSearch)
 
     // Efeito para carregar dados (Deep Copy)
     useEffect(() => {
@@ -50,37 +48,9 @@ export function TreinoModal({ onClose, onSuccess, initialData }) {
         }
     }, [initialData]);
 
-    useEffect(() => {
-        const delayDebounceFn = setTimeout(async () => {
-            if (searchQuery.length >= 3) {
-                try {
-                    const data = await searchExternalExercises(searchQuery);
-                    setSearchResults(data);
-                } catch (error) {
-                    console.error("Erro na busca de exercícios");
-                }
-            } else {
-                setSearchResults([]);
-            }
-        }, 500);
+    // [CORREÇÃO] Removido useEffect de debounce da busca
 
-        return () => clearTimeout(delayDebounceFn);
-    }, [searchQuery]);
-
-    const handleSelectExercise = (ex, dIndex, eIndex) => {
-        setDias(prevDias => prevDias.map((dia, i) => {
-            if (i !== dIndex) return dia;
-            const newExercicios = [...dia.exercicios];
-            newExercicios[eIndex] = {
-                ...newExercicios[eIndex],
-                nome_exercicio: ex.nome,
-                grupo_muscular: ex.grupo_sugerido
-            };
-            return { ...dia, exercicios: newExercicios };
-        }));
-        setSearchResults([]);
-        setActiveSearch(null);
-    };
+    // [CORREÇÃO] Removida função handleSelectExercise
 
     const addDia = () => {
         setDias(prev => [...prev, { nome: `Treino ${String.fromCharCode(65 + prev.length)}`, exercicios: [] }]);
@@ -137,10 +107,7 @@ export function TreinoModal({ onClose, onSuccess, initialData }) {
             return { ...dia, exercicios: newExercicios };
         }));
 
-        if (field === 'nome_exercicio') {
-            setSearchQuery(value);
-            setActiveSearch({ dIndex: diaIndex, eIndex: exIndex });
-        }
+        // [CORREÇÃO] Removida lógica que disparava a busca ao digitar
     };
 
     const handleSubmit = async (e) => {
@@ -220,17 +187,8 @@ export function TreinoModal({ onClose, onSuccess, initialData }) {
                                         <div key={eIndex} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 0.6fr 0.6fr 0.6fr 30px', gap: '8px', alignItems: 'end', marginBottom: '8px', position: 'relative' }}>
                                             <div className="form-group">
                                                 <label style={{ fontSize: '0.6rem' }}>Exercício</label>
-                                                <input className="form-input" style={{ height: '35px', padding: '0 5px' }} type="text" value={ex.nome_exercicio} onChange={(e) => handleExercicioChange(dIndex, eIndex, 'nome_exercicio', e.target.value)} required autoComplete="off" />
-                                                
-                                                {activeSearch?.dIndex === dIndex && activeSearch?.eIndex === eIndex && searchResults.length > 0 && (
-                                                    <div className="search-results-dropdown" style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--cor-card-principal)', border: '1px solid var(--cor-borda)', zIndex: 10, borderRadius: '8px', maxHeight: '200px', overflowY: 'auto', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}>
-                                                        {searchResults.map((exercise, fIdx) => (
-                                                            <div key={fIdx} onClick={() => handleSelectExercise(exercise, dIndex, eIndex)} style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid var(--cor-borda)', fontSize: '0.8rem' }}>
-                                                                <strong>{exercise.nome}</strong> <small style={{ color: 'var(--cor-texto-secundario)' }}>({exercise.grupo_sugerido})</small>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                )}
+                                                {/* [CORREÇÃO] Input simplificado sem Dropdown de busca */}
+                                                <input className="form-input" style={{ height: '35px', padding: '0 5px' }} type="text" value={ex.nome_exercicio} onChange={(e) => handleExercicioChange(dIndex, eIndex, 'nome_exercicio', e.target.value)} required autoComplete="off" placeholder="Nome do exercício" />
                                             </div>
                                             
                                             <div className="form-group">
