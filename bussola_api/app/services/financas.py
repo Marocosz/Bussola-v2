@@ -27,26 +27,27 @@ class FinancasService:
             cores.append(color)
         return cores
 
-    # --- CORREÇÃO AQUI ---
-    def get_or_create_indefinida(self, db: Session, tipo: str) -> Categoria:
+    def get_or_create_indefinida(self, db: Session, tipo: str, user_id: int) -> Categoria:
         """
-        Busca ou cria uma categoria 'Indefinida' ESPECÍFICA para o tipo.
+        Busca ou cria uma categoria 'Indefinida' ESPECÍFICA para o tipo E USUÁRIO.
         Usa nomes distintos para não quebrar a constraint UNIQUE do banco.
         """
         # Ex: "Indefinida (Despesa)" ou "Indefinida (Receita)"
         nome_padrao = f"Indefinida ({tipo.capitalize()})"
         
+        # [SEGURANÇA] Busca considerando user_id
         cat = db.query(Categoria).filter(
             Categoria.nome == nome_padrao,
-            Categoria.tipo == tipo
+            Categoria.tipo == tipo,
+            Categoria.user_id == user_id
         ).first()
 
         if not cat:
-            # Tenta buscar só por "Indefinida" caso tenha sobrado da tentativa anterior errada
-            # para evitar duplicidade ou erro se você limpar o banco manualmente
+            # Tenta buscar só por "Indefinida" legado (apenas se for do usuário)
             cat_legacy = db.query(Categoria).filter(
                 Categoria.nome == "Indefinida", 
-                Categoria.tipo == tipo
+                Categoria.tipo == tipo,
+                Categoria.user_id == user_id
             ).first()
             
             if cat_legacy:
@@ -56,13 +57,14 @@ class FinancasService:
                 db.refresh(cat_legacy)
                 return cat_legacy
 
-            # Cria nova se não existir nada
+            # Cria nova vinculada ao usuário
             cat = Categoria(
                 nome=nome_padrao,
                 tipo=tipo,
                 icone="fa-solid fa-circle-question", 
                 cor="#94a3b8", # Cinza
-                meta_limite=0
+                meta_limite=0,
+                user_id=user_id # [SEGURANÇA]
             )
             db.add(cat)
             db.commit()
@@ -70,18 +72,25 @@ class FinancasService:
         
         return cat
 
-    def gerar_transacoes_futuras(self, db: Session):
+    def gerar_transacoes_futuras(self, db: Session, user_id: int):
         today_date = datetime.now().date()
 
+        # [SEGURANÇA] Filtra grupos que pertencem a transações do usuário
         grupos = db.query(Transacao.id_grupo_recorrencia).filter(
-            Transacao.tipo_recorrencia.in_(['recorrente', 'parcelada'])
+            Transacao.tipo_recorrencia.in_(['recorrente', 'parcelada']),
+            Transacao.user_id == user_id
         ).distinct().all()
 
         for grupo_tuple in grupos:
             grupo_id = grupo_tuple[0]
             if not grupo_id: continue
 
-            ultima = db.query(Transacao).filter_by(id_grupo_recorrencia=grupo_id).order_by(Transacao.data.desc()).first()
+            # Busca última e garante que pertence ao usuário
+            ultima = db.query(Transacao).filter(
+                Transacao.id_grupo_recorrencia == grupo_id,
+                Transacao.user_id == user_id
+            ).order_by(Transacao.data.desc()).first()
+            
             if not ultima: continue
 
             if ultima.tipo_recorrencia == 'recorrente':
@@ -96,7 +105,8 @@ class FinancasService:
                     nova = Transacao(
                         descricao=ultima.descricao, valor=ultima.valor, data=proximo_vencimento,
                         categoria_id=ultima.categoria_id, tipo_recorrencia='recorrente',
-                        id_grupo_recorrencia=grupo_id, status='Pendente', frequencia=frequencia
+                        id_grupo_recorrencia=grupo_id, status='Pendente', frequencia=frequencia,
+                        user_id=user_id # [SEGURANÇA]
                     )
                     db.add(nova)
                     if frequencia == 'semanal': proximo_vencimento += relativedelta(weeks=1)
@@ -114,7 +124,8 @@ class FinancasService:
                         descricao=ultima.descricao, valor=ultima.valor, data=prox_vencimento,
                         categoria_id=ultima.categoria_id, tipo_recorrencia='parcelada',
                         parcela_atual=prox_parcela, total_parcelas=ultima.total_parcelas,
-                        id_grupo_recorrencia=grupo_id, status='Pendente'
+                        id_grupo_recorrencia=grupo_id, status='Pendente',
+                        user_id=user_id # [SEGURANÇA]
                     )
                     db.add(nova)
                     prox_vencimento += relativedelta(months=1)
@@ -122,9 +133,11 @@ class FinancasService:
         
         db.commit()
 
-    def criar_transacao(self, db: Session, dados: TransacaoCreate):
+    def criar_transacao(self, db: Session, dados: TransacaoCreate, user_id: int):
+        # [OPCIONAL] Poderia validar se a categoria pertence ao user_id aqui também
+        
         if dados.tipo_recorrencia == 'pontual':
-            nova = Transacao(**dados.model_dump())
+            nova = Transacao(**dados.model_dump(), user_id=user_id) # [SEGURANÇA]
             if not dados.status: nova.status = 'Pendente'
             db.add(nova)
             db.commit()
@@ -158,7 +171,8 @@ class FinancasService:
                     parcela_atual=i,
                     total_parcelas=qtd_parcelas,
                     id_grupo_recorrencia=grupo_id,
-                    status=dados.status or 'Pendente'
+                    status=dados.status or 'Pendente',
+                    user_id=user_id # [SEGURANÇA]
                 )
                 
                 db.add(nova)
@@ -172,14 +186,15 @@ class FinancasService:
 
         elif dados.tipo_recorrencia == 'recorrente':
             grupo_id = uuid.uuid4().hex
-            nova = Transacao(**dados.model_dump())
+            nova = Transacao(**dados.model_dump(), user_id=user_id) # [SEGURANÇA]
             nova.id_grupo_recorrencia = grupo_id
             db.add(nova)
             db.commit()
             return nova
 
-    def atualizar_transacao(self, db: Session, id: int, dados: TransacaoUpdate):
-        transacao = db.query(Transacao).get(id)
+    def atualizar_transacao(self, db: Session, id: int, dados: TransacaoUpdate, user_id: int):
+        # [SEGURANÇA] Filtra por id e user_id
+        transacao = db.query(Transacao).filter(Transacao.id == id, Transacao.user_id == user_id).first()
         if not transacao:
             return None
         

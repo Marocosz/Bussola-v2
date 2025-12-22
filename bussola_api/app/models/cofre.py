@@ -1,5 +1,6 @@
 import os
-from sqlalchemy import Column, Integer, String, Text, Date
+from sqlalchemy import Column, Integer, String, Text, Date, ForeignKey
+from sqlalchemy.orm import relationship
 from datetime import datetime
 from cryptography.fernet import Fernet
 from app.db.base_class import Base
@@ -25,6 +26,10 @@ class Segredo(Base):
 
     # Armazena o valor criptografado
     _valor_criptografado = Column(String(500), nullable=False)
+
+    # [SEGURANÇA] Vínculo com Usuário
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    user = relationship("User", back_populates="segredos")
 
     @property
     def valor(self):

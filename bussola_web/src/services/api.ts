@@ -3,10 +3,12 @@ import axios from 'axios';
 // ==========================================================
 // 1. CONFIGURAÇÃO BASE & INTERCEPTORES
 // ==========================================================
+// Certifique-se que a URL bate com o seu backend rodando (Docker ou Local)
 const api = axios.create({
     baseURL: 'http://127.0.0.1:8000/api/v1',
 });
 
+// [SEGURANÇA] Injeta o Token JWT em toda requisição
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('@Bussola:token');
     if (token) {
@@ -15,6 +17,7 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+// [SEGURANÇA] Desloga o usuário se o token vencer ou for inválido
 api.interceptors.response.use(
     (response) => response,
     (error) => {
@@ -457,7 +460,6 @@ export const createPlanoTreino = async (planoCompleto: PlanoTreino) => {
     return response.data;
 };
 
-// Adicionado: faltava para o Modal de Treino funcionar na edição
 export const updatePlanoTreino = async (id: number, planoCompleto: PlanoTreino) => {
     const response = await api.put(`/ritmo/treinos/${id}`, planoCompleto);
     return response.data;
@@ -541,9 +543,7 @@ export const searchLocalFoods = async (query: string) => {
     return response.data;
 };
 
-export const searchExternalExercises = async (query: string) => {
-    const response = await api.get(`/ritmo/external/exercises?q=${query}`);
-    return response.data;
-};
+// NOTA: Endpoint externo removido para evitar 404, pois não foi implementado no backend atual
+// export const searchExternalExercises = async (query: string) => ...
 
 export default api;

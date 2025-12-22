@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey
+from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.db.base_class import Base
 
@@ -14,3 +15,7 @@ class Compromisso(Base):
     
     # Status: 'Pendente', 'Realizado', 'Perdido'
     status = Column(String(50), default='Pendente')
+
+    # [SEGURANÇA] Vínculo com Usuário
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    user = relationship("User", back_populates="compromissos")

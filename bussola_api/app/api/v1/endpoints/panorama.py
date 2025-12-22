@@ -9,7 +9,7 @@ router = APIRouter()
 
 @router.get("/", response_model=PanoramaResponse)
 def get_panorama(
-    period: str = "Mensal", # <--- Parâmetro adicionado
+    period: str = "Mensal",
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):
@@ -17,7 +17,8 @@ def get_panorama(
     Retorna KPIs consolidados, gráficos e dados gerais do Dashboard.
     Aceita 'period': 'Mensal' | 'Trimestral' | 'Semestral'
     """
-    return panorama_service.get_dashboard_data(db, period=period)
+    # [FIX] Passando user_id
+    return panorama_service.get_dashboard_data(db, current_user.id, period=period)
 
 # --- ENDPOINTS PARA OS MODAIS (Lazy Loading) ---
 
@@ -27,7 +28,8 @@ def get_provisoes(
     current_user = Depends(deps.get_current_user)
 ):
     """ Retorna lista de transações futuras/pendentes para o modal Provisões """
-    return panorama_service.get_provisoes_data(db)
+    # [FIX] Passando user_id
+    return panorama_service.get_provisoes_data(db, current_user.id)
 
 @router.get("/roteiro", response_model=List[RoteiroItem])
 def get_roteiro(
@@ -35,7 +37,8 @@ def get_roteiro(
     current_user = Depends(deps.get_current_user)
 ):
     """ Retorna lista de compromissos futuros para o modal Roteiro """
-    return panorama_service.get_roteiro_data(db)
+    # [FIX] Passando user_id
+    return panorama_service.get_roteiro_data(db, current_user.id)
 
 @router.get("/registros", response_model=List[RegistroItem])
 def get_registros_resumo(
@@ -43,7 +46,8 @@ def get_registros_resumo(
     current_user = Depends(deps.get_current_user)
 ):
     """ Retorna resumo de tarefas e anotações para o modal Registros """
-    return panorama_service.get_registros_resumo_data(db)
+    # [FIX] Passando user_id
+    return panorama_service.get_registros_resumo_data(db, current_user.id)
 
 
 # --- HISTÓRICO (Mantido) ---
@@ -53,4 +57,5 @@ def get_category_history_data(
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):
-    return panorama_service.get_category_history(db, category_id)
+    # [FIX] Passando user_id
+    return panorama_service.get_category_history(db, category_id, current_user.id)

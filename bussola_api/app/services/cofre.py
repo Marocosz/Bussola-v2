@@ -4,15 +4,17 @@ from app.schemas.cofre import SegredoCreate, SegredoUpdate
 
 class CofreService:
     
-    def get_all(self, db: Session):
-        return db.query(Segredo).order_by(Segredo.servico, Segredo.titulo).all()
+    def get_all(self, db: Session, user_id: int):
+        # [SEGURANÇA] Filtra por user_id
+        return db.query(Segredo).filter(Segredo.user_id == user_id).order_by(Segredo.servico, Segredo.titulo).all()
 
-    def create(self, db: Session, dados: SegredoCreate):
+    def create(self, db: Session, dados: SegredoCreate, user_id: int):
         novo = Segredo(
             titulo=dados.titulo,
             servico=dados.servico,
             notas=dados.notas,
-            data_expiracao=dados.data_expiracao
+            data_expiracao=dados.data_expiracao,
+            user_id=user_id # [SEGURANÇA]
         )
         # O setter do model criptografa automaticamente
         novo.valor = dados.valor
@@ -22,8 +24,9 @@ class CofreService:
         db.refresh(novo)
         return novo
 
-    def update(self, db: Session, id: int, dados: SegredoUpdate):
-        segredo = db.query(Segredo).get(id)
+    def update(self, db: Session, id: int, dados: SegredoUpdate, user_id: int):
+        # [SEGURANÇA] Filtra por id e user_id
+        segredo = db.query(Segredo).filter(Segredo.id == id, Segredo.user_id == user_id).first()
         if not segredo: return None
 
         if dados.titulo is not None: segredo.titulo = dados.titulo
@@ -41,16 +44,18 @@ class CofreService:
         db.refresh(segredo)
         return segredo
 
-    def delete(self, db: Session, id: int):
-        segredo = db.query(Segredo).get(id)
+    def delete(self, db: Session, id: int, user_id: int):
+        # [SEGURANÇA] Filtra por id e user_id
+        segredo = db.query(Segredo).filter(Segredo.id == id, Segredo.user_id == user_id).first()
         if segredo:
             db.delete(segredo)
             db.commit()
             return True
         return False
 
-    def get_decrypted_value(self, db: Session, id: int):
-        segredo = db.query(Segredo).get(id)
+    def get_decrypted_value(self, db: Session, id: int, user_id: int):
+        # [SEGURANÇA] Filtra por id e user_id
+        segredo = db.query(Segredo).filter(Segredo.id == id, Segredo.user_id == user_id).first()
         if not segredo: return None
         # O getter do model descriptografa automaticamente
         return segredo.valor

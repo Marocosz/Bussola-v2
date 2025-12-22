@@ -25,21 +25,10 @@ class AgendaService:
         last_date_of_month = (first_date_of_month + relativedelta(months=1)) - timedelta(days=1)
 
         # 2. Calcular o início do Grid (Domingo anterior ou o próprio dia 1)
-        # weekday(): 0=Seg, 1=Ter ... 6=Dom
-        # Se dia 1 for Dom (6) -> (6+1)%7 = 0 (Sem recuo)
-        # Se dia 1 for Seg (0) -> (0+1)%7 = 1 (Recua 1 dia para pegar Dom)
         days_to_retreat = (first_date_of_month.weekday() + 1) % 7
         grid_start_date = first_date_of_month - timedelta(days=days_to_retreat)
 
         # 3. Calcular o fim do Grid (Sábado posterior ou o próprio último dia)
-        # Queremos chegar no próximo Sábado.
-        # Se último dia for Sáb (5) -> precisamos de 0 dias?
-        # weekday(): 5=Sáb.
-        # Logica: (5 - weekday - 1) % 7 ... vamos simplificar:
-        # 0=Seg...5=Sab, 6=Dom.
-        # Alvo: Sábado (5 no weekday do python? Não, cuidado com calendar)
-        # Vamos usar a lógica de "dias até o final da semana"
-        # Sábado é o índice 5 se a semana começa na segunda? Não, vamos usar (weekday + 1) % 7 onde Dom=0...Sab=6
         last_weekday_idx = (last_date_of_month.weekday() + 1) % 7 # 0(Dom) a 6(Sab)
         days_to_add = 6 - last_weekday_idx
         grid_end_date = last_date_of_month + timedelta(days=days_to_add)
@@ -57,8 +46,6 @@ class AgendaService:
             comps_json = [{"titulo": c.titulo, "hora": c.data_hora.strftime("%H:%M")} for c in comps]
             
             # Índice para nome da semana (0=Dom ... 6=Sáb)
-            # weekday() python: 0=Seg...6=Dom. 
-            # Nosso array começa com Dom.
             w_idx = (iter_date.weekday() + 1) % 7
 
             grid_days.append({
@@ -74,13 +61,17 @@ class AgendaService:
             
         return grid_days
     
-    def get_dashboard(self, db: Session):
+    def get_dashboard(self, db: Session, user_id: int):
         agora = datetime.now()
         
         # Busca dados (com margem de segurança de 15 dias antes para pegar paddings do inicio)
         inicio_busca = agora.replace(day=1) - timedelta(days=15)
-        todos = db.query(Compromisso).filter(Compromisso.data_hora >= inicio_busca)\
-            .order_by(Compromisso.data_hora.asc()).all()
+        
+        # [SEGURANÇA] Filtra por user_id
+        todos = db.query(Compromisso).filter(
+            Compromisso.user_id == user_id,
+            Compromisso.data_hora >= inicio_busca
+        ).order_by(Compromisso.data_hora.asc()).all()
 
         # Agrupamento da Esquerda (Lista)
         por_mes = defaultdict(list)
@@ -128,27 +119,31 @@ class AgendaService:
         }
 
     # --- CRUD Básico Mantido ---
-    def create(self, db: Session, dados: CompromissoCreate):
-        novo = Compromisso(**dados.model_dump())
+    def create(self, db: Session, dados: CompromissoCreate, user_id: int):
+        # [SEGURANÇA] Adiciona user_id na criação
+        novo = Compromisso(**dados.model_dump(), user_id=user_id)
         db.add(novo); db.commit(); db.refresh(novo)
         return novo
 
-    def update(self, db: Session, id: int, dados: CompromissoUpdate):
-        comp = db.query(Compromisso).get(id)
+    def update(self, db: Session, id: int, dados: CompromissoUpdate, user_id: int):
+        # [SEGURANÇA] Filtra por id e user_id
+        comp = db.query(Compromisso).filter(Compromisso.id == id, Compromisso.user_id == user_id).first()
         if not comp: return None
         for k, v in dados.model_dump(exclude_unset=True).items(): setattr(comp, k, v)
         db.commit(); db.refresh(comp)
         return comp
 
-    def toggle_status(self, db: Session, id: int):
-        comp = db.query(Compromisso).get(id)
+    def toggle_status(self, db: Session, id: int, user_id: int):
+        # [SEGURANÇA] Filtra por id e user_id
+        comp = db.query(Compromisso).filter(Compromisso.id == id, Compromisso.user_id == user_id).first()
         if comp:
             comp.status = 'Pendente' if comp.status == 'Realizado' else 'Realizado'
             db.commit()
         return comp
 
-    def delete(self, db: Session, id: int):
-        comp = db.query(Compromisso).get(id)
+    def delete(self, db: Session, id: int, user_id: int):
+        # [SEGURANÇA] Filtra por id e user_id
+        comp = db.query(Compromisso).filter(Compromisso.id == id, Compromisso.user_id == user_id).first()
         if comp: db.delete(comp); db.commit(); return True
         return False
 

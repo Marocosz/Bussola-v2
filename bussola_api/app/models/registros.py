@@ -14,23 +14,30 @@ class GrupoAnotacao(Base):
     __tablename__ = 'grupo_anotacao'
 
     id = Column(Integer, primary_key=True, index=True)
-    nome = Column(String(100), nullable=False, unique=True)
-    cor = Column(String(7), default="#FFFFFF") # Ex: Hex color para UI
+    nome = Column(String(100), nullable=False) # Removido unique global para permitir nomes iguais de users diferentes
+    cor = Column(String(7), default="#FFFFFF") 
     
+    # [SEGURANÇA] Vínculo com Usuário
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    user = relationship("User", back_populates="grupos_anotacao")
+
     anotacoes = relationship("Anotacao", back_populates="grupo")
 
 class Anotacao(Base):
     __tablename__ = 'anotacao'
 
     id = Column(Integer, primary_key=True, index=True)
-    titulo = Column(String(200), nullable=True) # Título opcional agora
+    titulo = Column(String(200), nullable=True)
     conteudo = Column(Text, nullable=True)
     fixado = Column(Boolean, default=False)
     data_criacao = Column(DateTime, default=datetime.utcnow)
     
-    # Relacionamento com Grupo (Substitui a string 'tipo')
     grupo_id = Column(Integer, ForeignKey('grupo_anotacao.id'), nullable=True)
     grupo = relationship("GrupoAnotacao", back_populates="anotacoes")
+
+    # [SEGURANÇA] Vínculo com Usuário
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    user = relationship("User", back_populates="anotacoes")
 
     links = relationship("Link", back_populates="anotacao", cascade="all, delete-orphan")
 
@@ -50,15 +57,18 @@ class Tarefa(Base):
     titulo = Column(String(200), nullable=False)
     descricao = Column(Text, nullable=True)
     
-    # Novos Campos Solicitados
-    prioridade = Column(String(20), default="Média") # Crítica, Alta, Média, Baixa
-    prazo = Column(DateTime, nullable=True)          # Prazo opcional
+    prioridade = Column(String(20), default="Média")
+    prazo = Column(DateTime, nullable=True)
     
-    status = Column(String(50), default=StatusTarefa.PENDENTE.value) # Pendente, Em andamento, Concluído
+    status = Column(String(50), default=StatusTarefa.PENDENTE.value)
     fixado = Column(Boolean, default=False)
     
     data_criacao = Column(DateTime, default=datetime.utcnow)
     data_conclusao = Column(DateTime, nullable=True)
+
+    # [SEGURANÇA] Vínculo com Usuário
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    user = relationship("User", back_populates="tarefas")
 
     subtarefas = relationship("Subtarefa", back_populates="tarefa", cascade="all, delete-orphan")
 
@@ -76,7 +86,7 @@ class Subtarefa(Base):
     # Relacionamentos
     tarefa = relationship("Tarefa", back_populates="subtarefas")
     
-    # Filhos (Subtarefas desta subtarefa)
+    # Filhos
     subtarefas = relationship(
         "Subtarefa",
         backref=backref('parent', remote_side=[id]),

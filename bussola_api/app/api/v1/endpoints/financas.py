@@ -23,11 +23,13 @@ def get_financas_dashboard(
     current_user = Depends(deps.get_current_user)
 ):
     # 1. Manutenção e Garantia de Categorias do Sistema
-    financas_service.gerar_transacoes_futuras(db)
+    # [FIX] Passando user_id
+    financas_service.gerar_transacoes_futuras(db, current_user.id)
     
     # Cria "Indefinida (Despesa)" e "Indefinida (Receita)"
-    financas_service.get_or_create_indefinida(db, "despesa")
-    financas_service.get_or_create_indefinida(db, "receita")
+    # [FIX] Passando user_id
+    financas_service.get_or_create_indefinida(db, "despesa", current_user.id)
+    financas_service.get_or_create_indefinida(db, "receita", current_user.id)
 
     # 2. Datas
     today = datetime.now()
@@ -37,7 +39,8 @@ def get_financas_dashboard(
     # 3. Categorias com Totais
     
     # --- DESPESAS ---
-    cats_despesa = db.query(Categoria).filter(Categoria.tipo == 'despesa').all()
+    # [FIX] Filtro user_id
+    cats_despesa = db.query(Categoria).filter(Categoria.tipo == 'despesa', Categoria.user_id == current_user.id).all()
     for cat in cats_despesa:
         total_mes = db.query(func.sum(Transacao.valor)).filter(
             Transacao.categoria_id == cat.id,
@@ -61,7 +64,8 @@ def get_financas_dashboard(
         cat.qtd_transacoes = stats[2] or 0
 
     # --- RECEITAS ---
-    cats_receita = db.query(Categoria).filter(Categoria.tipo == 'receita').all()
+    # [FIX] Filtro user_id
+    cats_receita = db.query(Categoria).filter(Categoria.tipo == 'receita', Categoria.user_id == current_user.id).all()
     for cat in cats_receita:
         total_mes = db.query(func.sum(Transacao.valor)).filter(
             Transacao.categoria_id == cat.id,
@@ -85,7 +89,8 @@ def get_financas_dashboard(
         cat.qtd_transacoes = stats[2] or 0
 
     # 4. Transações Agrupadas
-    transacoes = db.query(Transacao).order_by(desc(Transacao.data)).all()
+    # [FIX] Filtro user_id
+    transacoes = db.query(Transacao).filter(Transacao.user_id == current_user.id).order_by(desc(Transacao.data)).all()
     
     pontuais_map = defaultdict(list)
     recorrentes_map = defaultdict(list)
@@ -118,7 +123,8 @@ def create_transacao(
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):
-    return financas_service.criar_transacao(db, transacao_in)
+    # [FIX] Passando user_id
+    return financas_service.criar_transacao(db, transacao_in, current_user.id)
 
 @router.put("/transacoes/{id}", response_model=TransacaoResponse)
 def update_transacao(
@@ -127,7 +133,8 @@ def update_transacao(
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):
-    transacao = financas_service.atualizar_transacao(db, id, transacao_in)
+    # [FIX] Passando user_id
+    transacao = financas_service.atualizar_transacao(db, id, transacao_in, current_user.id)
     if not transacao:
         raise HTTPException(status_code=404, detail="Transação não encontrada")
     return transacao
@@ -138,7 +145,8 @@ def toggle_status(
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):
-    transacao = db.query(Transacao).get(id)
+    # [FIX] Validação user_id
+    transacao = db.query(Transacao).filter(Transacao.id == id, Transacao.user_id == current_user.id).first()
     if not transacao:
         raise HTTPException(status_code=404, detail="Transação não encontrada")
     
@@ -152,12 +160,17 @@ def delete_transacao(
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):
-    transacao = db.query(Transacao).get(id)
+    # [FIX] Validação user_id
+    transacao = db.query(Transacao).filter(Transacao.id == id, Transacao.user_id == current_user.id).first()
     if not transacao:
         raise HTTPException(status_code=404, detail="Transação não encontrada")
     
     if transacao.id_grupo_recorrencia and transacao.tipo_recorrencia in ['recorrente', 'parcelada']:
-        db.query(Transacao).filter(Transacao.id_grupo_recorrencia == transacao.id_grupo_recorrencia).delete()
+        # [FIX] Filtro user_id
+        db.query(Transacao).filter(
+            Transacao.id_grupo_recorrencia == transacao.id_grupo_recorrencia,
+            Transacao.user_id == current_user.id
+        ).delete()
     else:
         db.delete(transacao)
     
@@ -171,20 +184,21 @@ def create_categoria(
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):
-    # Proteção: Impede criar algo contendo "Indefinida"
     if "indefinida" in cat_in.nome.strip().lower():
         raise HTTPException(status_code=400, detail="O nome 'Indefinida' é reservado pelo sistema.")
 
-    # Verifica duplicidade
+    # [FIX] Verifica duplicidade considerando user_id
     exists = db.query(Categoria).filter(
         func.lower(Categoria.nome) == cat_in.nome.lower(),
-        Categoria.tipo == cat_in.tipo
+        Categoria.tipo == cat_in.tipo,
+        Categoria.user_id == current_user.id
     ).first()
     
     if exists:
         raise HTTPException(status_code=400, detail=f"Já existe uma categoria '{cat_in.nome}' do tipo {cat_in.tipo}.")
     
-    nova_cat = Categoria(**cat_in.model_dump())
+    # [FIX] Cria com user_id
+    nova_cat = Categoria(**cat_in.model_dump(), user_id=current_user.id)
     db.add(nova_cat)
     db.commit()
     db.refresh(nova_cat)
@@ -197,11 +211,11 @@ def update_categoria(
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):
-    cat = db.query(Categoria).get(id)
+    # [FIX] Filtro user_id
+    cat = db.query(Categoria).filter(Categoria.id == id, Categoria.user_id == current_user.id).first()
     if not cat:
         raise HTTPException(status_code=404, detail="Categoria não encontrada")
     
-    # BLOQUEIO DE EDIÇÃO: Verifica se o nome contém "Indefinida"
     if "indefinida" in cat.nome.lower():
         raise HTTPException(status_code=403, detail="A categoria padrão do sistema não pode ser editada.")
 
@@ -219,20 +233,19 @@ def delete_categoria(
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):
-    cat = db.query(Categoria).get(id)
+    # [FIX] Filtro user_id
+    cat = db.query(Categoria).filter(Categoria.id == id, Categoria.user_id == current_user.id).first()
     if not cat:
         raise HTTPException(status_code=404, detail="Categoria não encontrada")
     
-    # BLOQUEIO DE EXCLUSÃO
     if "indefinida" in cat.nome.lower():
         raise HTTPException(status_code=403, detail="A categoria padrão do sistema não pode ser excluída.")
 
-    # Verifica se há transações vinculadas
     transacoes = db.query(Transacao).filter(Transacao.categoria_id == id).all()
     
     if transacoes:
-        # Busca/cria "Indefinida (Despesa)" ou "Indefinida (Receita)"
-        cat_destino = financas_service.get_or_create_indefinida(db, cat.tipo)
+        # [FIX] Passando user_id
+        cat_destino = financas_service.get_or_create_indefinida(db, cat.tipo, current_user.id)
         
         for t in transacoes:
             t.categoria_id = cat_destino.id

@@ -11,7 +11,7 @@ from app.models.cofre import Segredo
 
 class PanoramaService:
     
-    def get_dashboard_data(self, db: Session, period: str = 'Mensal'):
+    def get_dashboard_data(self, db: Session, user_id: int, period: str = 'Mensal'):
         today = datetime.now()
         
         # Define o range de datas baseado no filtro
@@ -28,10 +28,11 @@ class PanoramaService:
             start_date = today.replace(day=1, hour=0, minute=0, second=0)
 
         # ==========================================
-        # 1. FINANÇAS (Afetado pelo Filtro)
+        # 1. FINANÇAS (Afetado pelo Filtro + user_id)
         # ==========================================
         receita = db.query(func.sum(Transacao.valor)).join(Categoria).filter(
             Categoria.tipo == 'receita', 
+            Transacao.user_id == user_id, # [SEGURANÇA]
             Transacao.data >= start_date, 
             Transacao.data < end_date,
             Transacao.status == 'Efetivada'
@@ -39,24 +40,26 @@ class PanoramaService:
 
         despesa = db.query(func.sum(Transacao.valor)).join(Categoria).filter(
             Categoria.tipo == 'despesa',
+            Transacao.user_id == user_id, # [SEGURANÇA]
             Transacao.data >= start_date, 
             Transacao.data < end_date,
             Transacao.status == 'Efetivada'
         ).scalar() or 0.0
 
         # ==========================================
-        # 2. AGENDA (Compromissos) - AGORA AFETADO PELO FILTRO
+        # 2. AGENDA (Compromissos) - AFETADO PELO FILTRO + user_id
         # ==========================================
         # Realizados: Eventos passados DENTRO do período selecionado
         comp_realizados = db.query(func.count(Compromisso.id)).filter(
+            Compromisso.user_id == user_id, # [SEGURANÇA]
             Compromisso.data_hora >= start_date, 
             Compromisso.data_hora < today,
             Compromisso.status != 'Cancelado' 
         ).scalar() or 0
 
         # Pendentes: Futuros a partir de agora até o final do período visualizado
-        # (Ex: Se for Mensal, mostra pendentes só deste mês)
         comp_pendentes = db.query(func.count(Compromisso.id)).filter(
+            Compromisso.user_id == user_id, # [SEGURANÇA]
             Compromisso.data_hora >= today,
             Compromisso.data_hora < end_date,
             Compromisso.status != 'Cancelado'
@@ -64,13 +67,15 @@ class PanoramaService:
 
         # Perdidos: Passados (dentro da janela) com status Pendente
         comp_perdidos = db.query(func.count(Compromisso.id)).filter(
+            Compromisso.user_id == user_id, # [SEGURANÇA]
             Compromisso.data_hora >= start_date,
             Compromisso.data_hora < today,
             Compromisso.status == 'Pendente' 
         ).scalar() or 0
         
-        # Próximo Compromisso (Este continua global a partir de HOJE, pois é um "Next Step")
+        # Próximo Compromisso (Este continua global a partir de HOJE)
         proximo_comp_obj = db.query(Compromisso).filter(
+            Compromisso.user_id == user_id, # [SEGURANÇA]
             Compromisso.data_hora >= today,
             Compromisso.status != 'Cancelado'
         ).order_by(Compromisso.data_hora.asc()).first()
@@ -84,10 +89,11 @@ class PanoramaService:
             }
 
         # ==========================================
-        # 3. REGISTROS (Anotações e Tarefas) - AGORA AFETADO PELO FILTRO
+        # 3. REGISTROS (Anotações e Tarefas) - AFETADO PELO FILTRO + user_id
         # ==========================================
         # Anotações criadas dentro do período selecionado
         total_anotacoes = db.query(func.count(Anotacao.id)).filter(
+            Anotacao.user_id == user_id, # [SEGURANÇA]
             Anotacao.data_criacao >= start_date,
             Anotacao.data_criacao < end_date
         ).scalar() or 0
@@ -97,8 +103,9 @@ class PanoramaService:
             Tarefa.prioridade, 
             func.count(Tarefa.id)
         ).filter(
+            Tarefa.user_id == user_id, # [SEGURANÇA]
             Tarefa.status != 'Concluído',
-            Tarefa.data_criacao >= start_date, # Filtro de data aplicado
+            Tarefa.data_criacao >= start_date, 
             Tarefa.data_criacao < end_date
         ).group_by(Tarefa.prioridade).all()
         
@@ -113,8 +120,8 @@ class PanoramaService:
         
         # Tarefas Concluídas (Concluídas DENTRO do período - Produtividade)
         total_tarefas_concluidas = db.query(func.count(Tarefa.id)).filter(
+            Tarefa.user_id == user_id, # [SEGURANÇA]
             Tarefa.status == 'Concluído',
-            # Usa data_conclusao se existir, senão usa data_criacao como fallback
             or_(
                 and_(Tarefa.data_conclusao != None, Tarefa.data_conclusao >= start_date, Tarefa.data_conclusao < end_date),
                 and_(Tarefa.data_conclusao == None, Tarefa.data_criacao >= start_date, Tarefa.data_criacao < end_date)
@@ -122,13 +129,20 @@ class PanoramaService:
         ).scalar() or 0
 
         # ==========================================
-        # 4. COFRE (Segredos) - NÃO AFETADO (Snapshot atual)
+        # 4. COFRE (Segredos) - NÃO AFETADO (Snapshot atual) + user_id
         # ==========================================
         try:
-            chaves_ativas = db.query(func.count(Segredo.id)).filter(or_(Segredo.data_expiracao == None, Segredo.data_expiracao >= today)).scalar() or 0
-            chaves_expiradas = db.query(func.count(Segredo.id)).filter(Segredo.data_expiracao < today).scalar() or 0
+            chaves_ativas = db.query(func.count(Segredo.id)).filter(
+                Segredo.user_id == user_id, # [SEGURANÇA]
+                or_(Segredo.data_expiracao == None, Segredo.data_expiracao >= today)
+            ).scalar() or 0
+            
+            chaves_expiradas = db.query(func.count(Segredo.id)).filter(
+                Segredo.user_id == user_id, # [SEGURANÇA]
+                Segredo.data_expiracao < today
+            ).scalar() or 0
         except:
-            chaves_ativas = db.query(func.count(Segredo.id)).scalar() or 0
+            chaves_ativas = 0
             chaves_expiradas = 0
 
         # ==========================================
@@ -150,13 +164,14 @@ class PanoramaService:
         }
 
         # ==========================================
-        # GRÁFICOS (Afetados pelo Filtro)
+        # GRÁFICOS (Afetados pelo Filtro + user_id)
         # ==========================================
         
-        # Gráfico Rosca (Gastos por Categoria - Usa período selecionado)
+        # Gráfico Rosca (Gastos por Categoria)
         gastos_cat = db.query(Categoria.nome, Categoria.cor, func.sum(Transacao.valor))\
             .join(Transacao).filter(
                 Categoria.tipo == 'despesa',
+                Transacao.user_id == user_id, # [SEGURANÇA]
                 Transacao.data >= start_date,
                 Transacao.data < end_date,
                 Transacao.status == 'Efetivada'
@@ -166,7 +181,7 @@ class PanoramaService:
         rosca_colors = [g[1] for g in gastos_cat]
         rosca_data = [g[2] for g in gastos_cat]
 
-        # Evolução Mensal (Sempre mostra os últimos 6 meses fixos para contexto histórico)
+        # Evolução Mensal
         evolucao_labels, evol_rec, evol_desp = [], [], []
         for i in range(5, -1, -1):
             mes_alvo = today - relativedelta(months=i)
@@ -177,10 +192,15 @@ class PanoramaService:
             evolucao_labels.append(f"{meses_pt[ini.month-1]}/{ini.year % 100}")
 
             r = db.query(func.sum(Transacao.valor)).join(Categoria).filter(
-                Categoria.tipo == 'receita', Transacao.data >= ini, Transacao.data < fim, Transacao.status == 'Efetivada'
+                Categoria.tipo == 'receita', 
+                Transacao.user_id == user_id, # [SEGURANÇA]
+                Transacao.data >= ini, Transacao.data < fim, Transacao.status == 'Efetivada'
             ).scalar() or 0.0
+            
             d = db.query(func.sum(Transacao.valor)).join(Categoria).filter(
-                Categoria.tipo == 'despesa', Transacao.data >= ini, Transacao.data < fim, Transacao.status == 'Efetivada'
+                Categoria.tipo == 'despesa', 
+                Transacao.user_id == user_id, # [SEGURANÇA]
+                Transacao.data >= ini, Transacao.data < fim, Transacao.status == 'Efetivada'
             ).scalar() or 0.0
             
             evol_rec.append(r)
@@ -190,7 +210,10 @@ class PanoramaService:
         semanal_labels = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
         semanal_data = [0, 0, 0, 0, 0, 0, 0]
         
-        cats_filtro = db.query(Categoria).filter(Categoria.tipo == 'despesa').all()
+        cats_filtro = db.query(Categoria).filter(
+            Categoria.tipo == 'despesa',
+            Categoria.user_id == user_id # [SEGURANÇA]
+        ).all()
 
         return {
             "kpis": kpis,
@@ -206,11 +229,12 @@ class PanoramaService:
     # NOVOS MÉTODOS PARA OS MODAIS (Alterados)
     # ==========================================
 
-    def get_provisoes_data(self, db: Session):
+    def get_provisoes_data(self, db: Session, user_id: int):
         """ Retorna transações futuras (Status = Pendente ou Data > Hoje). """
         today = datetime.now()
         
         transacoes = db.query(Transacao).join(Categoria).filter(
+            Transacao.user_id == user_id, # [SEGURANÇA]
             or_(Transacao.status == 'Pendente', Transacao.data > today)
         ).order_by(Transacao.data.asc()).all()
         
@@ -220,7 +244,6 @@ class PanoramaService:
             if hasattr(t, 'recorrente') and t.recorrente:
                 tipo = "Recorrente"
             elif hasattr(t, 'parcela_atual') and t.parcela_atual:
-                # CORREÇÃO AQUI: Mudado de t.parcela_total para t.total_parcelas
                 tipo = f"Parcela {t.parcela_atual}/{t.total_parcelas}"
             
             resultado.append({
@@ -235,9 +258,10 @@ class PanoramaService:
             })
         return resultado
 
-    def get_roteiro_data(self, db: Session):
+    def get_roteiro_data(self, db: Session, user_id: int):
         """ Retorna TODOS os compromissos (Passado e Futuro) para filtragem no front. """
         compromissos = db.query(Compromisso).filter(
+            Compromisso.user_id == user_id, # [SEGURANÇA]
             Compromisso.status != 'Cancelado'
         ).all()
 
@@ -254,14 +278,17 @@ class PanoramaService:
             })
         return res
 
-    def get_registros_resumo_data(self, db: Session):
+    def get_registros_resumo_data(self, db: Session, user_id: int):
         """ Retorna TODAS as tarefas e últimas anotações para o modal. """
-        # Notas: Mantivemos limit 10 pois o foco do modal agora é TAREFAS
-        notas = db.query(Anotacao).join(GrupoAnotacao, isouter=True).order_by(Anotacao.data_criacao.desc()).limit(10).all()
+        # Notas: Filtro por user_id
+        notas = db.query(Anotacao).join(GrupoAnotacao, isouter=True).filter(
+            Anotacao.user_id == user_id # [SEGURANÇA]
+        ).order_by(Anotacao.data_criacao.desc()).limit(10).all()
         
-        # Tarefas: RETORNA TUDO (Sem filtros de status e sem limite)
-        # O Frontend filtra se é Pendente/Concluído/Prioridade
-        tarefas = db.query(Tarefa).all()
+        # Tarefas: Filtro por user_id
+        tarefas = db.query(Tarefa).filter(
+            Tarefa.user_id == user_id # [SEGURANÇA]
+        ).all()
         
         res = []
         for t in tarefas:
@@ -287,10 +314,16 @@ class PanoramaService:
             
         return res
 
-    def get_category_history(self, db: Session, category_id: int):
+    def get_category_history(self, db: Session, category_id: int, user_id: int):
         labels = []
         data = []
         today = datetime.now()
+
+        # [SEGURANÇA EXTRA] Verifica se a categoria pertence ao usuário antes de consultar
+        # Embora o filtro da transação abaixo já fizesse isso, é bom validar a categoria em si
+        cat_check = db.query(Categoria).filter(Categoria.id == category_id, Categoria.user_id == user_id).first()
+        if not cat_check:
+            return {"labels": [], "data": []}
 
         for i in range(5, -1, -1):
             mes_alvo = today - relativedelta(months=i)
@@ -302,6 +335,7 @@ class PanoramaService:
 
             total = db.query(func.sum(Transacao.valor)).filter(
                 Transacao.categoria_id == category_id,
+                Transacao.user_id == user_id, # [SEGURANÇA]
                 Transacao.data >= ini,
                 Transacao.data < fim,
                 Transacao.status == 'Efetivada'
