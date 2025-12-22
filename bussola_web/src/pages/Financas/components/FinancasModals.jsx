@@ -1,23 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createTransacao, createCategoria, updateTransacao, updateCategoria } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
-import { CustomSelect } from '../../../components/CustomSelect'; // Importação do Componente
+import { CustomSelect } from '../../../components/CustomSelect';
+import { BaseModal } from '../../../components/BaseModal';
 
 export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardData, editingData }) {
     const { addToast } = useToast();
-    
-    // Estado do formulário
     const [formData, setFormData] = useState({});
-    
-    // Controles de UI (Apenas para ícones e cores, já que o Select agora é autônomo)
     const [showIconPicker, setShowIconPicker] = useState(false);
     const [showColorPicker, setShowColorPicker] = useState(false);
 
-    // Refs para clique fora (Pickers)
     const iconWrapperRef = useRef(null);
     const colorWrapperRef = useRef(null);
 
-    // --- EFEITO PRINCIPAL: CARREGAR DADOS ---
     useEffect(() => {
         if (!activeModal) return;
 
@@ -59,7 +54,6 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
 
     if (!activeModal) return null;
 
-    // --- HANDLERS ---
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -104,7 +98,6 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
         }
     };
 
-    // PROTEÇÃO TOTAL: Se dashboardData for undefined, usa arrays vazios
     const safeData = dashboardData || {};
     const safeDespesas = safeData.categorias_despesa || [];
     const safeReceitas = safeData.categorias_receita || [];
@@ -136,7 +129,7 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
     };
 
     return (
-        <div className="modal" style={{ display: 'flex' }}>
+        <BaseModal onClose={closeModal} className="modal">
             <div className="modal-content" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <h3>{titles[activeModal]}</h3>
@@ -323,6 +316,6 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                     </div>
                 </form>
             </div>
-        </div>
+        </BaseModal>
     );
 }

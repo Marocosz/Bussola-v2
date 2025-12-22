@@ -1,4 +1,5 @@
 import React from 'react';
+import { BaseModal } from '../../../components/BaseModal';
 import '../styles.css';
 
 export function ViewAnotacaoModal({ active, closeModal, nota, onEdit }) {
@@ -12,48 +13,33 @@ export function ViewAnotacaoModal({ active, closeModal, nota, onEdit }) {
     });
 
     return (
-        <div className="modal-overlay registros-scope" onClick={closeModal}>
+        <BaseModal onClose={closeModal} className="registros-scope">
             <div className="modal-content view-modal" onClick={e => e.stopPropagation()}>
-                
                 <div className="view-modal-header" style={{ borderLeft: `6px solid ${grupoCor}` }}>
                     <div className="view-header-top-row">
-                        <span className="view-group-badge" style={{ backgroundColor: grupoCor }}>
-                            {grupoNome}
-                        </span>
-                        
-                        {/* Botão X com &times; igual Finanças */}
-                        <span className="close-btn" onClick={closeModal} title="Fechar">
-                            &times;
-                        </span>
+                        <span className="view-group-badge" style={{ backgroundColor: grupoCor }}>{grupoNome}</span>
+                        <span className="close-btn" onClick={closeModal} title="Fechar">&times;</span>
                     </div>
-                    
                     <div className="view-header-main">
                         <h2 className="view-title">{nota.titulo}</h2>
                         <span className="view-date"><i className="fa-regular fa-clock"></i> {dataFormatada}</span>
                     </div>
                 </div>
-
                 <div className="modal-body view-body">
-                    <div 
-                        className="view-content-html"
-                        dangerouslySetInnerHTML={{ __html: nota.conteudo }}
-                    />
-
+                    <div className="view-content-html" dangerouslySetInnerHTML={{ __html: nota.conteudo }} />
                     {nota.links && nota.links.length > 0 && (
                         <div className="view-links-container">
                             <h4 className="links-title"><i className="fa-solid fa-link"></i> Links Anexados</h4>
                             <div className="links-list-view">
                                 {nota.links.map(link => (
                                     <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" className="link-item-view">
-                                        <i className="fa-solid fa-arrow-up-right-from-square"></i>
-                                        <span>{link.url}</span>
+                                        <i className="fa-solid fa-arrow-up-right-from-square"></i><span>{link.url}</span>
                                     </a>
                                 ))}
                             </div>
                         </div>
                     )}
                 </div>
-
                 <div className="modal-footer">
                     <button className="btn-secondary" onClick={closeModal}>Fechar</button>
                     <button className="btn-primary" onClick={() => { onEdit(nota); closeModal(); }}>
@@ -61,6 +47,6 @@ export function ViewAnotacaoModal({ active, closeModal, nota, onEdit }) {
                     </button>
                 </div>
             </div>
-        </div>
+        </BaseModal>
     );
 }

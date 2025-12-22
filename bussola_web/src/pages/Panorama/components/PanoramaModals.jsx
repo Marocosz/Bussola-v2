@@ -1,18 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { getProvisoesData, getRoteiroData, getRegistrosResumoData } from '../../../services/api';
 import { CustomSelect } from '../../../components/CustomSelect'; 
+import { BaseModal } from '../../../components/BaseModal';
 
 // --- MODAL GENÉRICO ---
-const BaseModal = ({ title, onClose, children, loading }) => {
-    useEffect(() => {
-        document.body.style.overflow = 'hidden';
-        return () => {
-            document.body.style.overflow = 'unset';
-        };
-    }, []);
-
+const PanoramaBaseModal = ({ title, onClose, children, loading }) => {
     return (
-        <div className="modal-overlay panorama-scope" onClick={onClose}>
+        <BaseModal onClose={onClose} className="panorama-scope">
             <div className="modal-content large-table-modal" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <h2>{title}</h2>
@@ -27,21 +21,19 @@ const BaseModal = ({ title, onClose, children, loading }) => {
                     <button className="btn-secondary" onClick={onClose}>Fechar</button>
                 </div>
             </div>
-        </div>
+        </BaseModal>
     );
 };
 
-// --- 1. MODAL PROVISÕES ---
 export function ProvisoesModal({ onClose }) {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
-    
     const [filtro, setFiltro] = useState('Todos'); 
     const [ordenacao, setOrdenacao] = useState('data_asc'); 
 
     useEffect(() => {
         getProvisoesData()
-            .then(res => setData(res || [])) // Garante que é array
+            .then(res => setData(res || []))
             .finally(() => setLoading(false));
     }, []);
 
@@ -53,12 +45,9 @@ export function ProvisoesModal({ onClose }) {
     ];
 
     const processData = () => {
-        // PROTEÇÃO: Garante que data é array antes de filtrar
         if (!Array.isArray(data)) return [];
-
         let result = data.filter(item => {
             if (filtro === 'Todos') return true;
-            // PROTEÇÃO: Usa fallback para string vazia se vier nulo
             const tipoLower = (item.tipo_recorrencia || '').toLowerCase();
             const filtroLower = filtro.toLowerCase();
             if (filtro === 'Parcelada') return tipoLower.includes('parcela');
@@ -79,21 +68,17 @@ export function ProvisoesModal({ onClose }) {
                 default: return 0;
             }
         });
-
         return result;
     };
 
     const filteredData = processData();
     const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
     const fmtDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR') : '-';
-    // PROTEÇÃO: Verifica nulo antes de toLowerCase
     const isPontual = (tipo) => (tipo || '').toLowerCase().includes('pontual');
-
-    // Handler para o CustomSelect
     const handleSortChange = (e) => setOrdenacao(e.target.value);
 
     return (
-        <BaseModal title="Provisões e Contas Futuras" onClose={onClose} loading={loading}>
+        <PanoramaBaseModal title="Provisões e Contas Futuras" onClose={onClose} loading={loading}>
             <div className="table-filter-bar">
                 <div className="filter-group">
                     <button className={`filter-pill ${filtro==='Todos'?'active':''}`} onClick={()=>setFiltro('Todos')}>Todos</button>
@@ -101,22 +86,13 @@ export function ProvisoesModal({ onClose }) {
                     <button className={`filter-pill ${filtro==='Recorrente'?'active':''}`} onClick={()=>setFiltro('Recorrente')}>Recorrentes</button>
                     <button className={`filter-pill ${filtro==='Parcelada'?'active':''}`} onClick={()=>setFiltro('Parcelada')}>Parceladas</button>
                 </div>
-
-                {/* ALTERAÇÃO AQUI: Flexbox para alinhar label e select lado a lado */}
                 <div className="sort-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{ fontSize: '0.9rem', color: '#9ca3af', whiteSpace: 'nowrap' }}>Ordenar por:</span>
                     <div style={{ minWidth: '160px' }}>
-                        <CustomSelect 
-                            name="sort"
-                            value={ordenacao}
-                            options={sortOptions}
-                            onChange={handleSortChange}
-                            // label removido para não empilhar
-                        />
+                        <CustomSelect name="sort" value={ordenacao} options={sortOptions} onChange={handleSortChange} />
                     </div>
                 </div>
             </div>
-
             <table className="panorama-table">
                 <thead>
                     <tr>
@@ -148,15 +124,13 @@ export function ProvisoesModal({ onClose }) {
                     ))}
                 </tbody>
             </table>
-        </BaseModal>
+        </PanoramaBaseModal>
     );
 }
 
-// --- 2. MODAL ROTEIRO (AGENDA COMPLETA) ---
 export function RoteiroModal({ onClose }) {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
-    
     const [filtro, setFiltro] = useState('Todos'); 
     const [ordenacao, setOrdenacao] = useState('data_asc');
 
@@ -175,22 +149,18 @@ export function RoteiroModal({ onClose }) {
             if (filtro === 'Todos') return true;
             return item.status === filtro;
         });
-
         result.sort((a, b) => {
             const dateA = new Date(a.data_inicio);
             const dateB = new Date(b.data_inicio);
-
             if (ordenacao === 'data_asc') return dateA - dateB; 
             if (ordenacao === 'data_desc') return dateB - dateA;
             return 0;
         });
-
         return result;
     };
 
     const filteredData = processData();
     const fmtDateFull = (d) => d ? new Date(d).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '-';
-
     const getStatusColor = (status) => {
         if(status === 'Realizado') return '#10b981';
         if(status === 'Perdido') return '#ef4444';
@@ -198,8 +168,7 @@ export function RoteiroModal({ onClose }) {
     };
 
     return (
-        <BaseModal title="Agenda Completa" onClose={onClose} loading={loading}>
-            
+        <PanoramaBaseModal title="Agenda Completa" onClose={onClose} loading={loading}>
             <div className="table-filter-bar">
                 <div className="filter-group">
                     <button className={`filter-pill ${filtro==='Todos'?'active':''}`} onClick={()=>setFiltro('Todos')}>Todos</button>
@@ -207,22 +176,13 @@ export function RoteiroModal({ onClose }) {
                     <button className={`filter-pill ${filtro==='Realizado'?'active':''}`} onClick={()=>setFiltro('Realizado')}>Realizados</button>
                     <button className={`filter-pill ${filtro==='Perdido'?'active':''}`} onClick={()=>setFiltro('Perdido')}>Perdidos</button>
                 </div>
-
-                {/* ALTERAÇÃO AQUI: Flexbox para alinhar label e select lado a lado */}
                 <div className="sort-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{ fontSize: '0.9rem', color: '#9ca3af', whiteSpace: 'nowrap' }}>Ordenar por:</span>
                     <div style={{ minWidth: '160px' }}>
-                        <CustomSelect 
-                            name="sort"
-                            value={ordenacao}
-                            options={sortOptions}
-                            onChange={(e) => setOrdenacao(e.target.value)}
-                            // label removido
-                        />
+                        <CustomSelect name="sort" value={ordenacao} options={sortOptions} onChange={(e) => setOrdenacao(e.target.value)} />
                     </div>
                 </div>
             </div>
-
             <table className="panorama-table">
                 <thead>
                     <tr>
@@ -243,14 +203,7 @@ export function RoteiroModal({ onClose }) {
                                 </div>
                             </td>
                             <td style={{width: '20%'}}>
-                                <span style={{
-                                    fontWeight: '600', 
-                                    color: getStatusColor(item.status),
-                                    backgroundColor: getStatusColor(item.status) + '20',
-                                    padding: '4px 8px',
-                                    borderRadius: '6px',
-                                    fontSize: '0.85rem'
-                                }}>
+                                <span style={{fontWeight: '600', color: getStatusColor(item.status), backgroundColor: getStatusColor(item.status) + '20', padding: '4px 8px', borderRadius: '6px', fontSize: '0.85rem'}}>
                                     {item.status}
                                 </span>
                             </td>
@@ -258,15 +211,13 @@ export function RoteiroModal({ onClose }) {
                     ))}
                 </tbody>
             </table>
-        </BaseModal>
+        </PanoramaBaseModal>
     );
 }
 
-// --- 3. MODAL REGISTROS (APENAS TAREFAS) ---
 export function RegistrosModal({ onClose }) {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
-    
     const [filtroPrio, setFiltroPrio] = useState('Todas');
     const [ordenacao, setOrdenacao] = useState('data_desc');
 
@@ -289,22 +240,18 @@ export function RegistrosModal({ onClose }) {
             if (filtroPrio === 'Todas') return true;
             return item.grupo_ou_prioridade === filtroPrio;
         });
-
         result.sort((a, b) => {
             const dateA = new Date(a.data_criacao);
             const dateB = new Date(b.data_criacao);
-
             if (ordenacao === 'data_asc') return dateA - dateB;
             if (ordenacao === 'data_desc') return dateB - dateA; 
             return 0;
         });
-
         return result;
     };
 
     const filteredData = processData();
     const fmtDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR') : '-';
-
     const getPrioClass = (prio) => {
         switch(prio) {
             case 'Crítica': return 'critica';
@@ -316,7 +263,7 @@ export function RegistrosModal({ onClose }) {
     };
 
     return (
-        <BaseModal title="Gerenciamento de Tarefas" onClose={onClose} loading={loading}>
+        <PanoramaBaseModal title="Gerenciamento de Tarefas" onClose={onClose} loading={loading}>
             <div className="table-filter-bar">
                 <div className="filter-group">
                     <button className={`filter-pill ${filtroPrio==='Todas'?'active':''}`} onClick={()=>setFiltroPrio('Todas')}>Todas</button>
@@ -325,22 +272,13 @@ export function RegistrosModal({ onClose }) {
                     <button className={`filter-pill ${filtroPrio==='Média'?'active':''}`} onClick={()=>setFiltroPrio('Média')}>Média</button>
                     <button className={`filter-pill ${filtroPrio==='Baixa'?'active':''}`} onClick={()=>setFiltroPrio('Baixa')}>Baixa</button>
                 </div>
-
-                {/* ALTERAÇÃO AQUI: Flexbox para alinhar label e select lado a lado */}
                 <div className="sort-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{ fontSize: '0.9rem', color: '#9ca3af', whiteSpace: 'nowrap' }}>Ordenar por:</span>
                     <div style={{ minWidth: '160px' }}>
-                        <CustomSelect 
-                            name="sort"
-                            value={ordenacao}
-                            options={sortOptions}
-                            onChange={(e) => setOrdenacao(e.target.value)}
-                            // label removido
-                        />
+                        <CustomSelect name="sort" value={ordenacao} options={sortOptions} onChange={(e) => setOrdenacao(e.target.value)} />
                     </div>
                 </div>
             </div>
-
             <table className="panorama-table">
                 <thead>
                     <tr>
@@ -371,6 +309,6 @@ export function RegistrosModal({ onClose }) {
                     ))}
                 </tbody>
             </table>
-        </BaseModal>
+        </PanoramaBaseModal>
     );
 }

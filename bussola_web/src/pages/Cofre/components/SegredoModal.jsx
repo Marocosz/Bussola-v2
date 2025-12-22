@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createSegredo, updateSegredo } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
+import { BaseModal } from '../../../components/BaseModal';
 
 export function SegredoModal({ active, closeModal, onUpdate, editingData }) {
     const { addToast } = useToast();
@@ -18,9 +19,7 @@ export function SegredoModal({ active, closeModal, onUpdate, editingData }) {
                 setTitulo(editingData.titulo);
                 setServico(editingData.servico || '');
                 setNotas(editingData.notas || '');
-                // Não setamos o valor aqui, pois ele é secreto e não vem na listagem
                 setValor(''); 
-                // Lógica de dias expirar é complexa de reverter da data, deixamos vazio na edição por enquanto
                 setDiasExpirar('');
             } else {
                 setTitulo('');
@@ -38,16 +37,15 @@ export function SegredoModal({ active, closeModal, onUpdate, editingData }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        // Calculo da data de expiração (se fornecido dias)
         let data_expiracao = null;
         if (diasExpirar && parseInt(diasExpirar) > 0) {
             const date = new Date();
             date.setDate(date.getDate() + parseInt(diasExpirar));
-            data_expiracao = date.toISOString().split('T')[0]; // YYYY-MM-DD
+            data_expiracao = date.toISOString().split('T')[0];
         }
 
         const payload = { titulo, servico, notas, data_expiracao };
-        if (!editingData) payload.valor = valor; // Só envia valor na criação
+        if (!editingData) payload.valor = valor;
 
         try {
             if (editingData) {
@@ -65,7 +63,7 @@ export function SegredoModal({ active, closeModal, onUpdate, editingData }) {
     };
 
     return (
-        <div className="modal" style={{display:'flex'}}>
+        <BaseModal onClose={closeModal} className="modal">
             <div className="modal-content">
                 <div className="modal-header">
                     <h3>{editingData ? 'Editar Segredo' : 'Guardar Novo Segredo'}</h3>
@@ -84,7 +82,6 @@ export function SegredoModal({ active, closeModal, onUpdate, editingData }) {
                             </div>
                         </div>
 
-                        {/* Campo de Valor só aparece na criação (Edição de valor requer outra UX) */}
                         {!editingData && (
                             <div className="form-group">
                                 <label>Valor da Chave / Senha</label>
@@ -122,6 +119,6 @@ export function SegredoModal({ active, closeModal, onUpdate, editingData }) {
                     </div>
                 </form>
             </div>
-        </div>
+        </BaseModal>
     );
 }

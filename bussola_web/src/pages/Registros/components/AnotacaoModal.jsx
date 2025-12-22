@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { createAnotacao, updateAnotacao } from '../../../services/api';
+import { BaseModal } from '../../../components/BaseModal';
 import '../styles.css';
 
 export function AnotacaoModal({ active, closeModal, onUpdate, editingData, gruposDisponiveis }) {
@@ -72,7 +73,6 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
 
     const handleSave = async () => {
         if (!titulo.trim()) return alert("O título é obrigatório");
-        
         setLoading(true);
         const payload = {
             titulo,
@@ -105,12 +105,10 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
     if (!active) return null;
 
     return (
-        <div className="modal-overlay registros-scope">
+        <BaseModal onClose={closeModal} className="registros-scope">
             <div className="modal-content large-modal" onClick={e => e.stopPropagation()}>
-                
                 <div className="modal-header">
                     <h2>{editingData ? 'Editar Anotação' : 'Nova Anotação'}</h2>
-                    {/* Alterado para SPAN e &times; para ficar IDÊNTICO ao Finanças */}
                     <span className="close-btn" onClick={closeModal}>&times;</span>
                 </div>
                 
@@ -227,6 +225,6 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
                     </div>
                 </div>
             </div>
-        </div>
+        </BaseModal>
     );
 }

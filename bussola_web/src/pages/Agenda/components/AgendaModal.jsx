@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createCompromisso, updateCompromisso } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
+import { BaseModal } from '../../../components/BaseModal';
 
 export function AgendaModal({ active, closeModal, onUpdate, editingData }) {
     const { addToast } = useToast();
@@ -15,7 +16,6 @@ export function AgendaModal({ active, closeModal, onUpdate, editingData }) {
         if (active) {
             if (editingData) {
                 setTitulo(editingData.titulo);
-                // Formatar data para input datetime-local (YYYY-MM-DDTHH:MM)
                 const isoDate = new Date(editingData.data_hora).toISOString().slice(0, 16);
                 setDataHora(isoDate);
                 setLocal(editingData.local || '');
@@ -53,7 +53,7 @@ export function AgendaModal({ active, closeModal, onUpdate, editingData }) {
     };
 
     return (
-        <div className="modal">
+        <BaseModal onClose={closeModal} className="modal">
             <div className="modal-content">
                 <div className="modal-header">
                     <h3>{editingData ? 'Editar Compromisso' : 'Novo Compromisso'}</h3>
@@ -119,6 +119,6 @@ export function AgendaModal({ active, closeModal, onUpdate, editingData }) {
                     </div>
                 </form>
             </div>
-        </div>
+        </BaseModal>
     );
 }
