@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     # Banco de Dados
     DATABASE_URL: str
 
-    # Chaves de API (IA e Externas)
+    # Chaves de API (IA e Externas - Obrigatórias para funcionamento base)
     GROQ_API_KEY: str
     OPENWEATHER_API_KEY: str
     NEWS_API_KEY: str
@@ -24,6 +24,30 @@ class Settings(BaseSettings):
 
     # Segurança de Dados
     ENCRYPTION_KEY: str
+
+    # =========================================================
+    # CONFIGURAÇÕES DE MODO (SAAS vs SELF-HOSTED)
+    # =========================================================
+    # Define se é "SAAS" ou "SELF_HOSTED"
+    DEPLOYMENT_MODE: str = "SELF_HOSTED" 
+    
+    # Define se o registro é aberto (SaaS) ou fechado (Self-Hosted após setup)
+    ENABLE_PUBLIC_REGISTRATION: bool = True 
+
+    # =========================================================
+    # INTEGRAÇÕES OPCIONAIS (SaaS / Premium)
+    # =========================================================
+    # Login Social (Google)
+    GOOGLE_CLIENT_ID: Optional[str] = None
+    GOOGLE_CLIENT_SECRET: Optional[str] = None
+
+    # Pagamentos (Stripe)
+    STRIPE_SECRET_KEY: Optional[str] = None
+    STRIPE_WEBHOOK_SECRET: Optional[str] = None
+
+    # Discord Bot
+    DISCORD_BOT_TOKEN: Optional[str] = None
+    DISCORD_CLIENT_ID: Optional[str] = None
 
     # CORS (Permitir que o React acesse o Backend)
     # Por padrão permite localhost:5173 (Vite) e localhost:3000 (React padrão)

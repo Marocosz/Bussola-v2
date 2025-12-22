@@ -13,6 +13,18 @@ class User(Base):
     is_superuser = Column(Boolean, default=False)
 
     # =========================================================
+    # CAMPOS SAAS / INTEGRAÇÕES (Novos)
+    # =========================================================
+    # Controle de Plano
+    is_premium = Column(Boolean, default=False)
+    plan_status = Column(String, default="free") # free, active, canceled, past_due
+    stripe_customer_id = Column(String, nullable=True, index=True)
+
+    # Integrações Sociais
+    discord_id = Column(String, unique=True, nullable=True, index=True)
+    avatar_url = Column(String, nullable=True) # Para foto do Google/Discord
+
+    # =========================================================
     # RELACIONAMENTOS GERAIS
     # =========================================================
     compromissos = relationship("Compromisso", back_populates="user", cascade="all, delete-orphan")
