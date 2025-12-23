@@ -4,6 +4,9 @@ import api from '../services/api';
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+    // [NOVO] Estado para guardar os dados do usuário (Nome, Admin, etc)
+    const [user, setUser] = useState(null);
+    
     // Começa como null para sabermos que ainda não foi verificado
     const [authenticated, setAuthenticated] = useState(false);
     // Loading começa TRUE para segurar a renderização das rotas até verificarmos o storage
@@ -15,9 +18,20 @@ export const AuthProvider = ({ children }) => {
             const storedToken = localStorage.getItem('@Bussola:token');
 
             if (storedToken) {
-                // Se tem token, injeta no axios e marca como autenticado
-                api.defaults.headers.Authorization = `Bearer ${storedToken}`;
-                setAuthenticated(true);
+                try {
+                    // Se tem token, injeta no axios
+                    api.defaults.headers.Authorization = `Bearer ${storedToken}`;
+                    
+                    // [NOVO] Valida o token e busca os dados do usuário
+                    const userResponse = await api.get('/users/me');
+                    
+                    setUser(userResponse.data); // Salva o usuário no estado
+                    setAuthenticated(true);
+                } catch (error) {
+                    console.error("Token inválido ou expirado:", error);
+                    // Se o token for inválido, limpa tudo
+                    logout();
+                }
             }
 
             // Só depois de verificar o storage nós paramos o loading
@@ -42,6 +56,10 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('@Bussola:token', access_token);
             api.defaults.headers.Authorization = `Bearer ${access_token}`;
 
+            // [NOVO] Imediatamente após pegar o token, buscamos os dados do usuário
+            const userResponse = await api.get('/users/me');
+            setUser(userResponse.data);
+
             setAuthenticated(true);
             
             return { success: true };
@@ -57,11 +75,13 @@ export const AuthProvider = ({ children }) => {
     const logout = () => {
         localStorage.removeItem('@Bussola:token');
         api.defaults.headers.Authorization = undefined;
+        setUser(null); // [NOVO] Limpa o usuário ao sair
         setAuthenticated(false);
     };
 
     return (
-        <AuthContext.Provider value={{ authenticated, login, logout, loading }}>
+        // [NOVO] Adicionamos 'user' no value para o Navbar poder ler
+        <AuthContext.Provider value={{ authenticated, user, login, logout, loading }}>
             {children}
         </AuthContext.Provider>
     );

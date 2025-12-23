@@ -543,7 +543,31 @@ export const searchLocalFoods = async (query: string) => {
     return response.data;
 };
 
-// NOTA: Endpoint externo removido para evitar 404, pois não foi implementado no backend atual
-// export const searchExternalExercises = async (query: string) => ...
+export const getSystemConfig = async () => {
+    try {
+        const response = await api.get('/system/config');
+        return response.data;
+    } catch (error) {
+        console.error("Erro ao carregar configurações do sistema", error);
+        // Fallback seguro caso a API esteja offline
+        return {
+            deployment_mode: "SELF_HOSTED",
+            public_registration: false,
+            google_login_enabled: false,
+            stripe_enabled: false
+        };
+    }
+};
+
+interface CreateUserDTO {
+    email: string;
+    full_name: string;
+    password?: string;
+}
+
+export const adminCreateUser = async (userData: CreateUserDTO) => {
+    const response = await api.post('/users/', userData);
+    return response.data;
+};
 
 export default api;

@@ -1,41 +1,52 @@
+import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useContext } from 'react';
-import { AuthContext } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext'; 
 
+import { Navbar } from '../components/Navbar';
 import { Login } from '../pages/Login';
 import { Home } from '../pages/Home';
+import { Financas } from '../pages/Financas';
+import { Agenda } from '../pages/Agenda';
+import { Registros } from '../pages/Registros';
+import { Panorama } from '../pages/Panorama';
+import { Cofre } from '../pages/Cofre';
+import { Ritmo } from '../pages/Ritmo'; 
 
-const PrivateRoute = ({ children }) => {
-    const { authenticated, loading } = useContext(AuthContext);
+function PrivateRoute({ children }) {
+    const { authenticated, loading } = useAuth();
 
-    // Enquanto verifica o localStorage, mostra carregando
     if (loading) {
-        return <div className="loading-screen">Carregando...</div>;
+        // Se a tela branca for aqui, adicione uma cor para testar: style={{color: 'red'}}
+        return <div className="loading-screen">Carregando Usuário...</div>;
     }
 
-    // Se terminou de carregar e NÃO está autenticado -> Login
     if (!authenticated) {
         return <Navigate to="/login" />;
     }
 
-    // Se está autenticado -> Mostra a página
-    return children;
-};
+    return (
+        <div className="app-layout">
+            <Navbar />
+            <div className="app-content">
+                {children}
+            </div>
+        </div>
+    );
+}
 
-export const AppRoutes = () => {
+export function AppRoutes() {
     return (
         <Routes>
             <Route path="/login" element={<Login />} />
             
-            <Route path="/home" element={
-                <PrivateRoute>
-                    <Home />
-                </PrivateRoute>
-            } />
-            
-            {/* Qualquer rota desconhecida vai tentar ir para Home. 
-                Se não estiver logado, o PrivateRoute da Home joga para Login. */}
-            <Route path="*" element={<Navigate to="/home" />} />
+            <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
+            <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
+            <Route path="/panorama" element={<PrivateRoute><Panorama /></PrivateRoute>} />
+            <Route path="/financas" element={<PrivateRoute><Financas /></PrivateRoute>} />
+            <Route path="/agenda" element={<PrivateRoute><Agenda /></PrivateRoute>} />
+            <Route path="/registros" element={<PrivateRoute><Registros /></PrivateRoute>} />
+            <Route path="/ritmo" element={<PrivateRoute><Ritmo /></PrivateRoute>} />
+            <Route path="/cofre" element={<PrivateRoute><Cofre /></PrivateRoute>} />
         </Routes>
     );
-};
+}

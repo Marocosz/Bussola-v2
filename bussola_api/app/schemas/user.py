@@ -26,6 +26,11 @@ class UserInDBBase(UserBase):
 
 # O que a API retorna
 class User(UserInDBBase):
+    # [ALTERAÇÃO IMPORTANTE]
+    # Redefinimos aqui para garantir que esses campos SEMPRE venham no JSON
+    # e não sejam tratados como opcionais ocultos.
+    is_superuser: bool
+    is_premium: bool = False # Adicionado pois seu script usa isso
     pass
 
 # O que é salvo no Banco (inclui a senha hash)

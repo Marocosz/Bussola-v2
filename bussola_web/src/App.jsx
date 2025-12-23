@@ -1,12 +1,26 @@
 import React from 'react';
+import { BrowserRouter } from 'react-router-dom';
 import { AppRoutes } from './routes'; 
 import './assets/styles/global.css'; 
 
+import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
+import { ConfirmDialogProvider } from './context/ConfirmDialogContext';
+import { SystemProvider } from './context/SystemContext'; 
+
 function App() {
-    // Apenas renderiza as rotas. 
-    // Toda a configuração (Router, AuthProvider, Toast) agora está dentro de AppRoutes.
     return (
-        <AppRoutes />
+        <BrowserRouter>
+            <ToastProvider>
+                <SystemProvider>
+                    <AuthProvider>
+                        <ConfirmDialogProvider>
+                            <AppRoutes />
+                        </ConfirmDialogProvider>
+                    </AuthProvider>
+                </SystemProvider>
+            </ToastProvider>
+        </BrowserRouter>
     );
 }
 

@@ -1,7 +1,9 @@
 import { useState, useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { useNavigate } from 'react-router-dom';
+// Importando o contexto do sistema
+import { useSystem } from '../../context/SystemContext'; 
+import { useNavigate, Link } from 'react-router-dom';
 import './styles.css'; 
 
 import loginImageLight from '../../assets/images/loginimage1.svg';
@@ -14,6 +16,10 @@ export function Login() {
     
     const { login } = useContext(AuthContext);
     const { addToast } = useToast();
+    
+    // Pegando configurações do sistema (canRegister vem inteligente do backend)
+    const { canRegister, config, loading: systemLoading } = useSystem(); 
+    
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
@@ -23,6 +29,8 @@ export function Login() {
             const result = await login(email, password);
             
             if (result.success) {
+                // Não precisa de toast aqui se for redirecionar direto, 
+                // mas deixei conforme seu código original
                 addToast({
                     type: 'success',
                     title: 'Bem-vindo(a)!',
@@ -44,6 +52,11 @@ export function Login() {
             });
         }
     };
+
+    // Evita piscar a tela
+    if (systemLoading) {
+        return <div className="loading-screen">Iniciando Bússola...</div>;
+    }
 
     return (
         <div className="auth-container">
@@ -67,7 +80,7 @@ export function Login() {
 
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label htmlFor="username">Nome de Usuário</label>
+                        <label htmlFor="username">E-mail</label>
                         <input 
                             type="text" 
                             id="username" 
@@ -76,6 +89,7 @@ export function Login() {
                             onChange={(e) => setEmail(e.target.value)}
                             required 
                             autoComplete="off"
+                            placeholder="seu@email.com"
                         />
                     </div>
                     <div className="form-group">
@@ -88,9 +102,38 @@ export function Login() {
                             onChange={(e) => setPassword(e.target.value)}
                             required 
                             autoComplete="off"
+                            placeholder="••••••••"
                         />
                     </div>
+                    
                     <button type="submit" className="btn-primary">Entrar</button>
+
+                    <div className="auth-actions" style={{ marginTop: '1.5rem', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        
+                        {/* [LÓGICA SAAS] Botão Google só aparece se configurado no backend */}
+                        {config.google_login_enabled && (
+                            <button type="button" className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>
+                                <i className="fa-brands fa-google" style={{ marginRight: '8px' }}></i>
+                                Entrar com Google
+                            </button>
+                        )}
+
+                        {/* [LÓGICA SELF-HOSTED] Link só aparece se backend permitir (canRegister) */}
+                        {canRegister ? (
+                            <div style={{ fontSize: '0.9rem', color: 'var(--cor-texto-secundario)' }}>
+                                Não tem uma conta?{' '}
+                                <Link to="/register" style={{ color: 'var(--cor-azul-primario)', fontWeight: 'bold', textDecoration: 'none' }}>
+                                    Crie agora
+                                </Link>
+                            </div>
+                        ) : (
+                            <div style={{ fontSize: '0.8rem', color: 'var(--cor-texto-terciario)', fontStyle: 'italic' }}>
+                                Acesso restrito a usuários cadastrados.
+                            </div>
+                        )}
+                        
+                    </div>
+
                 </form>
             </div>
         </div>

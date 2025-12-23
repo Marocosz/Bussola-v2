@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getHomeData } from '../../services/api';
-import { useToast } from '../../context/ToastContext'; // <--- Import Novo
+import { useToast } from '../../context/ToastContext'; 
+import { useSystem } from '../../context/SystemContext'; // [NOVO] Import do System
 import './styles.css';
 
 // Importação das Imagens (Vite)
@@ -14,15 +15,19 @@ export function Home() {
     // Estado para o Relógio
     const [currentTime, setCurrentTime] = useState(new Date());
 
-    // Estado para Dados da API (Clima e Notícias)
+    // Estado para Dados da API
     const [dashboardData, setDashboardData] = useState({
         weather: null,
         tech_news: []
     });
     const [loading, setLoading] = useState(true);
-    const { addToast } = useToast(); // <--- Hook Novo
+    
+    const { addToast } = useToast();
+    
+    // [NOVO] Pegar flag self-hosted
+    const { isSelfHosted } = useSystem();
 
-    // Efeito: Relógio (Tic-tac a cada segundo)
+    // Efeito: Relógio
     useEffect(() => {
         const timer = setInterval(() => {
             setCurrentTime(new Date());
@@ -30,7 +35,7 @@ export function Home() {
         return () => clearInterval(timer);
     }, []);
 
-    // Efeito: Busca Dados ao carregar
+    // Efeito: Busca Dados
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -38,7 +43,6 @@ export function Home() {
                 setDashboardData(data);
             } catch (error) {
                 console.error("Erro ao carregar dados da Home:", error);
-                // Toast discreto para erro
                 addToast({ type: 'warning', title: 'Atenção', description: 'Alguns dados do dashboard podem estar desatualizados.' });
             } finally {
                 setLoading(false);
@@ -47,7 +51,7 @@ export function Home() {
         fetchData();
     }, []);
 
-    // Helpers de Formatação de Data
+    // Helpers
     const formatTime = (date) => {
         return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     };
@@ -68,8 +72,7 @@ export function Home() {
                         <p className="subtitle">
                             Este não é apenas um painel de controle; é um ecossistema integrado projetado para trazer clareza à
                             complexidade do seu dia a dia. Gerencie seus fluxos financeiros, domine sua agenda, capture ideias e 
-                            proteja dados críticos em uma interface unificada,
-                            oferecendo clareza e controle total sobre suas informações.
+                            proteja dados críticos em uma interface unificada.
                         </p>
                     </div>
 
@@ -82,7 +85,7 @@ export function Home() {
                             </div>
                         </div>
 
-                        {/* Widget de Clima (Com Loading State) */}
+                        {/* Widget de Clima */}
                         <div className="weather-widget">
                             {loading ? (
                                 <div className="weather-loading" style={{display:'flex', alignItems:'center', gap:'10px', width:'100%', justifyContent:'center'}}>
@@ -110,28 +113,24 @@ export function Home() {
             {/* Seção de Funcionalidades */}
             <section className="features-presentation-area">
                 
-                {/* Linha 1: Finanças e Agenda */}
+                {/* Linha 1 */}
                 <div className="feature-row">
                     <div className="feature-image-showcase">
-                        {/* Lógica de Tema */}
-                        <img src={walletAmico} alt="Análise de Finanças e Agenda" className="theme-image image-light-mode" />
-                        <img src={walletAmicoDark} alt="Análise de Finanças e Agenda" className="theme-image image-dark-mode" />
+                        <img src={walletAmico} alt="Análise de Finanças" className="theme-image image-light-mode" />
+                        <img src={walletAmicoDark} alt="Análise de Finanças" className="theme-image image-dark-mode" />
                     </div>
                     <div className="feature-content-stack">
                         <div className="feature-item">
                             <h3 className="gradient-title">Provisões Financeiras</h3>
                             <p>Assuma o controle absoluto do seu fluxo de caixa. Desde o rastreamento de despesas recorrentes até a
-                                visualização de orçamentos por categoria, a Bússola transforma dados financeiros complexos em
-                                insights claros e acionáveis.</p>
+                                visualização de orçamentos por categoria.</p>
                             <Link to="/financas" className="cta-link">
                                 Explorar Finanças <i className="fa-solid fa-arrow-right-long"></i>
                             </Link>
                         </div>
                         <div className="feature-item">
                             <h3 className="gradient-title">Roteiro Estratégico</h3>
-                            <p>Visualize seu tempo e organize seus compromissos com precisão. A agenda integrada permite o
-                                gerenciamento de tarefas e eventos, garantindo que você esteja sempre um passo à frente do seu
-                                cronograma.</p>
+                            <p>Visualize seu tempo e organize seus compromissos com precisão, garantindo que você esteja sempre um passo à frente.</p>
                             <Link to="/agenda" className="cta-link">
                                 Acessar Agenda <i className="fa-solid fa-arrow-right-long"></i>
                             </Link>
@@ -139,21 +138,19 @@ export function Home() {
                     </div>
                 </div>
 
-                {/* Linha 2: Registros e Cofre */}
+                {/* Linha 2 */}
                 <div className="feature-row">
                     <div className="feature-content-stack align-right">
                         <div className="feature-item">
                             <h3 className="gradient-title">Registros e Conhecimento</h3>
-                            <p>Capture ideias, insights e informações importantes instantaneamente. Crie uma base de conhecimento
-                                pessoal estruturada com notas, listas de tarefas e links de referência.</p>
+                            <p>Capture ideias, insights e informações importantes instantaneamente. Crie uma base de conhecimento pessoal estruturada.</p>
                             <Link to="/registros" className="cta-link">
                                 <i className="fa-solid fa-arrow-left-long"></i> Ver Registros
                             </Link>
                         </div>
                         <div className="feature-item">
                             <h3 className="gradient-title">Cofre de Segredos</h3>
-                            <p>Proteja suas informações mais sensíveis. Armazene senhas, chaves de API e credenciais com
-                                criptografia robusta, monitorando datas de expiração e acessando dados com segurança.</p>
+                            <p>Proteja suas informações mais sensíveis. Armazene senhas e credenciais com criptografia robusta.</p>
                             <Link to="/cofre" className="cta-link">
                                 <i className="fa-solid fa-arrow-left-long"></i> Acessar Cofre
                             </Link>
@@ -161,8 +158,8 @@ export function Home() {
                     </div>
 
                     <div className="feature-image-showcase">
-                        <img src={systemPana} alt="Segurança e Registros" className="theme-image image-light-mode" />
-                        <img src={systemPanaDark} alt="Segurança e Registros" className="theme-image image-dark-mode" />
+                        <img src={systemPana} alt="Segurança" className="theme-image image-light-mode" />
+                        <img src={systemPanaDark} alt="Segurança" className="theme-image image-dark-mode" />
                     </div>
                 </div>
             </section>
@@ -173,11 +170,36 @@ export function Home() {
                     <div className="panorama-icon"><i className="fa-solid fa-binoculars"></i></div>
                     <h2>Conheça o Panorama</h2>
                     <p>A visão de 30.000 pés da sua vida digital. O Panorama consolida métricas de finanças, agenda e produtividade
-                        em um único dashboard inteligente, permitindo que você identifique tendências e tome decisões baseadas em
-                        dados com uma rapidez sem precedentes.</p>
+                        em um único dashboard inteligente.</p>
                     <Link to="/panorama" className="btn-primary large-button">Ver Panorama Completo</Link>
                 </div>
             </section>
+
+            {/* [NOVO] Sponsor Banner (Exclusivo Self-Hosted) */}
+            {isSelfHosted && (
+                <section className="sponsor-section" style={{
+                    marginTop: '60px',
+                    padding: '30px',
+                    borderRadius: '16px',
+                    background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
+                    border: '1px solid var(--cor-borda)',
+                    textAlign: 'center'
+                }}>
+                    <div style={{maxWidth: '600px', margin: '0 auto'}}>
+                        <h3 style={{fontSize: '1.5rem', marginBottom: '10px', color: 'var(--cor-destaque)'}}>
+                            <i className="fa-solid fa-heart" style={{marginRight: '10px', color: '#e53e3e'}}></i>
+                            Apoie o Projeto
+                        </h3>
+                        <p style={{marginBottom: '20px', color: 'var(--cor-texto-secundario)'}}>
+                            O Bússola Self-Hosted é open-source e mantido pela comunidade. 
+                            Considere se tornar um sponsor para garantir a evolução contínua da ferramenta.
+                        </p>
+                        <button className="btn-primary" style={{borderRadius: '25px', padding: '10px 25px'}}>
+                            Torne-se um Sponsor
+                        </button>
+                    </div>
+                </section>
+            )}
 
             {/* Footer de Notícias */}
             <footer className="news-footer-section">

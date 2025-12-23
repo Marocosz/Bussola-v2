@@ -51,18 +51,22 @@ body.light-theme {
 /* ========================================================= */
 /* 3. RESET E CONFIGURAÇÕES GERAIS                           */
 /* ========================================================= */
-* { 
-    margin: 0; 
-    padding: 0; 
-    box-sizing: border-box; 
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-html { 
-    height: 100%; 
+html {
+    height: 100%;
 }
 
 /* --- ATUALIZAÇÃO DE TIPOGRAFIA --- */
-body, button, input, textarea, select {
+body,
+button,
+input,
+textarea,
+select {
     font-family: 'Poppins', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -76,29 +80,32 @@ body {
     flex-direction: column;
 }
 
-a { 
-    color: var(--cor-texto-principal); 
-    text-decoration: none; 
+a {
+    color: var(--cor-texto-principal);
+    text-decoration: none;
 }
 
 /* Scrollbar Personalizada */
-::-webkit-scrollbar { 
-    width: 10px; 
+::-webkit-scrollbar {
+    width: 10px;
 }
-::-webkit-scrollbar-track { 
-    background: transparent; 
+
+::-webkit-scrollbar-track {
+    background: transparent;
 }
-::-webkit-scrollbar-thumb { 
-    background-color: var(--cor-scrollbar); 
-    border-radius: 20px; 
-    border: 3px solid var(--cor-fundo); 
+
+::-webkit-scrollbar-thumb {
+    background-color: var(--cor-scrollbar);
+    border-radius: 20px;
+    border: 3px solid var(--cor-fundo);
 }
-::-webkit-scrollbar-thumb:hover { 
-    background-color: var(--cor-scrollbar-hover); 
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: var(--cor-scrollbar-hover);
 }
 
 /* ========================================================= */
-/* 4. COMPONENTES (BOTÕES, INPUTS, CARDS)                    */
+/* 4. COMPONENTES BASE (BOTÕES, INPUTS)                      */
 /* ========================================================= */
 
 /* --- Botões Base --- */
@@ -143,6 +150,7 @@ a {
 .btn-secondary {
     background-color: var(--cor-cinza-botao);
 }
+
 .btn-secondary:hover {
     background-color: var(--cor-cinza-botao-hover);
     transform: translateY(-2px);
@@ -152,6 +160,7 @@ a {
 .btn-delete {
     background-color: var(--cor-vermelho-delete);
 }
+
 .btn-delete:hover {
     background-color: var(--cor-vermelho-delete-hover);
     transform: translateY(-2px);
@@ -172,6 +181,7 @@ a {
     transition: all 0.2s ease;
     padding: 0;
 }
+
 .btn-action-icon:hover {
     background-color: var(--cor-azul-hover);
     color: white;
@@ -186,8 +196,9 @@ a {
     background-color: var(--cor-fundo);
     color: var(--cor-texto-principal);
     font-size: 1rem;
-    font-family: 'Poppins', sans-serif; 
+    font-family: 'Poppins', sans-serif;
 }
+
 .form-input:focus {
     outline: none;
     border-color: var(--cor-azul-primario);
@@ -202,43 +213,10 @@ a {
 }
 
 /* ========================================================= */
-/* 5. LAYOUT GERAL                                           */
+/* 5. UTILITÁRIOS GLOBAIS (TOAST, MODAL, ETC)                */
 /* ========================================================= */
-.container {
-    width: 100%;
-    margin: 0 auto;
-    padding: 0 20px;
-    max-width: 1920px;
-}
 
-main.container {
-    flex-grow: 1;
-    padding-top: 2rem;
-    padding-bottom: 2rem;
-}
-
-/* ========================================================= */
-/* 6. ACCORDION GLOBAL                                       */
-/* ========================================================= */
-.accordion-wrapper {
-    display: grid;
-    grid-template-rows: 0fr;
-    transition: grid-template-rows 0.3s ease-out;
-}
-
-.accordion-wrapper.open {
-    grid-template-rows: 1fr;
-}
-
-.accordion-inner {
-    overflow: hidden;
-    min-height: 0;
-}
-
-
-/* ========================================================= */
-/* 7. TOAST NOTIFICATIONS (GLOBAL)                           */
-/* ========================================================= */
+/* --- TOAST NOTIFICATIONS --- */
 .toast-container {
     position: fixed;
     top: 20px;
@@ -247,7 +225,7 @@ main.container {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    pointer-events: none; /* Permite clicar através do container */
+    pointer-events: none;
 }
 
 .toast-notification {
@@ -261,7 +239,7 @@ main.container {
     display: flex;
     align-items: flex-start;
     gap: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     animation: slideIn 0.3s ease forwards;
     position: relative;
     overflow: hidden;
@@ -270,8 +248,15 @@ main.container {
 }
 
 @keyframes slideIn {
-    from { opacity: 0; transform: translateX(100%); }
-    to { opacity: 1; transform: translateX(0); }
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 .toast-content {
@@ -310,40 +295,76 @@ main.container {
     color: var(--cor-texto-principal);
 }
 
-/* Tipos de Toast */
-.toast-success { border-left: 4px solid var(--cor-verde-sucesso); }
-.toast-success .toast-icon { color: var(--cor-verde-sucesso); }
+.toast-success {
+    border-left: 4px solid var(--cor-verde-sucesso);
+}
 
-.toast-error { border-left: 4px solid var(--cor-vermelho-delete); }
-.toast-error .toast-icon { color: var(--cor-vermelho-delete); }
+.toast-success .toast-icon {
+    color: var(--cor-verde-sucesso);
+}
 
-.toast-warning { border-left: 4px solid var(--cor-laranja-aviso); }
-.toast-warning .toast-icon { color: var(--cor-laranja-aviso); }
+.toast-error {
+    border-left: 4px solid var(--cor-vermelho-delete);
+}
 
-.toast-info { border-left: 4px solid var(--cor-azul-primario); }
-.toast-info .toast-icon { color: var(--cor-azul-primario); }
+.toast-error .toast-icon {
+    color: var(--cor-vermelho-delete);
+}
 
-/* Barra de Progresso do Toast */
+.toast-warning {
+    border-left: 4px solid var(--cor-laranja-aviso);
+}
+
+.toast-warning .toast-icon {
+    color: var(--cor-laranja-aviso);
+}
+
+.toast-info {
+    border-left: 4px solid var(--cor-azul-primario);
+}
+
+.toast-info .toast-icon {
+    color: var(--cor-azul-primario);
+}
+
 .toast-progress {
     position: absolute;
     bottom: 0;
     left: 0;
     height: 3px;
-    background: rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.2);
     width: 100%;
     animation-name: progress;
     animation-timing-function: linear;
 }
 
 @keyframes progress {
-    from { width: 100%; }
-    to { width: 0%; }
+    from {
+        width: 100%;
+    }
+
+    to {
+        width: 0%;
+    }
 }
 
+/* --- ACCORDION GLOBAL --- */
+.accordion-wrapper {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease-out;
+}
 
-/* ========================================================= */
-/* 8. CONFIRM DIALOG (GLOBAL)                                */
-/* ========================================================= */
+.accordion-wrapper.open {
+    grid-template-rows: 1fr;
+}
+
+.accordion-inner {
+    overflow: hidden;
+    min-height: 0;
+}
+
+/* --- CONFIRM DIALOG GLOBAL --- */
 .confirm-overlay {
     position: fixed;
     inset: 0;
@@ -357,8 +378,13 @@ main.container {
 }
 
 @keyframes fadeInOverlay {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 .confirm-modal {
@@ -376,8 +402,15 @@ main.container {
 }
 
 @keyframes scaleInConfirm {
-    from { transform: scale(0.9) translateY(20px); opacity: 0; }
-    to { transform: scale(1) translateY(0); opacity: 1; }
+    from {
+        transform: scale(0.9) translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
 }
 
 .confirm-header {
@@ -469,37 +502,29 @@ main.container {
     background: var(--cor-azul-hover);
 }
 
-/* ============================================================ */
-/* FORÇAR ESTILO DE DROPDOWN GLOBAL (Baseado no Modal de Perfil) */
-/* ============================================================ */
-
-/* 1. O item base */
-[role="option"], 
+/* --- DROPDOWN GLOBAL --- */
+[role="option"],
 .custom-option,
 .select-item {
     cursor: pointer;
     transition: background 0.2s, color 0.2s;
     font-size: 0.9rem;
-    padding: 12px 1rem; /* O padding gordinho que você usa */
-    border-radius: 6px; /* Bordas levemente arredondadas */
+    padding: 12px 1rem;
+    border-radius: 6px;
 }
 
-/* 2. O efeito de HOVER (Passar o mouse) */
-/* Aplica em: classes manuais, Radix UI (data-highlighted) e hover padrão */
 [role="option"]:hover,
-[role="option"][data-highlighted], 
+[role="option"][data-highlighted],
 .custom-option:hover {
     background-color: var(--cor-card-secundario) !important;
     color: var(--cor-texto-principal) !important;
-    outline: none; /* Remove borda azul padrão de navegadores */
+    outline: none;
 }
 
-/* 3. O efeito de SELECIONADO (Item ativo) */
-/* Aplica a cor azul bem clarinha com texto azul forte */
 [role="option"][aria-selected="true"],
 [role="option"][data-state="checked"],
 .custom-option.selected {
-    background-color: rgba(74, 109, 255, 0.1) !important; /* Azul transparente */
+    background-color: rgba(74, 109, 255, 0.1) !important;
     color: var(--cor-azul-primario) !important;
     font-weight: 600 !important;
 }

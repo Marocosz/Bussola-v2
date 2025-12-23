@@ -1,0 +1,131 @@
+/* ============================ */
+/* ESTILOS ÚNICOS DO ADMIN MODAL */
+/* ============================ */
+
+/* OVERLAY */
+.admin-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(5px);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeInOverlay 0.2s ease-out;
+}
+
+/* CONTENT */
+.admin-modal-content {
+    background: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    border-radius: 16px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    animation: scaleInModal 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    width: 90%;
+    max-width: 500px;
+    overflow: hidden; /* Garante que o rodapé respeite a borda arredondada */
+}
+
+/* HEADER - Fundo Cinza */
+.admin-modal-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--cor-borda);
+    background: var(--cor-card-secundario); 
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.admin-modal-header h2 {
+    font-size: 1.4rem;
+    margin: 0;
+    color: var(--cor-texto-principal);
+    font-weight: 600;
+}
+
+.admin-modal-close-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 1.5rem;
+    color: var(--cor-texto-secundario);
+    cursor: pointer;
+    transition: color 0.2s;
+    line-height: 1;
+}
+
+.admin-modal-close-btn:hover {
+    color: var(--cor-texto-principal);
+}
+
+/* CONTAINER DO FORM */
+.admin-modal-form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+/* CORPO (Inputs) - Fundo Normal */
+.admin-modal-body {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    background: var(--cor-fundo);
+}
+
+/* INPUTS ESPECÍFICOS */
+.admin-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.admin-form-group label {
+    font-size: 0.9rem;
+    color: var(--cor-texto-secundario);
+    font-weight: 500;
+}
+
+.admin-form-input {
+    background: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    padding: 12px 16px;
+    border-radius: 8px;
+    color: var(--cor-texto-principal);
+    font-size: 1rem;
+    transition: all 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.admin-form-input:focus {
+    outline: none;
+    border-color: var(--cor-azul-primario);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* RODAPÉ - Fundo Cinza (Igual ao Panorama/Header) */
+.admin-modal-footer {
+    padding: 1.5rem 2rem;
+    border-top: 1px solid var(--cor-borda);
+    background: var(--cor-card-secundario);
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+/* ANIMAÇÕES */
+@keyframes fadeInOverlay {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes scaleInModal {
+    from { opacity: 0; transform: scale(0.98) translateY(15px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
