@@ -12,6 +12,8 @@ import { Panorama } from '../pages/Panorama';
 import { Cofre } from '../pages/Cofre';
 import { Ritmo } from '../pages/Ritmo';
 import { Register } from '../pages/Register';
+import { ForgotPassword } from '../pages/Auth/ForgotPassword';
+import { ResetPassword } from '../pages/Auth/ResetPassword';
 
 function PrivateRoute({ children }) {
     const { authenticated, loading } = useAuth();
@@ -39,6 +41,8 @@ export function AppRoutes() {
         <Routes>
             {/* --- ROTAS PÚBLICAS --- */}
             <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             
             {/* [CORREÇÃO CRÍTICA] O Registro deve ser público, senão ninguém cria conta */}
             <Route path="/register" element={<Register />} />

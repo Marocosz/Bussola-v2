@@ -36,3 +36,8 @@ class User(UserInDBBase):
 # O que é salvo no Banco (inclui a senha hash)
 class UserInDB(UserInDBBase):
     hashed_password: str
+
+# [NOVO] Schema para definir a Nova Senha (Reset)
+class NewPassword(BaseModel):
+    token: str
+    new_password: str

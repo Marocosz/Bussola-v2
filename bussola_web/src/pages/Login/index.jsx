@@ -30,27 +30,27 @@ export function Login() {
         onSuccess: async (tokenResponse) => {
             // O Google retorna um access_token, enviamos para o backend validar
             const result = await loginGoogle(tokenResponse.access_token);
-            
+
             if (result.success) {
-                addToast({ 
-                    type: 'success', 
-                    title: 'Login Google', 
-                    description: 'Sucesso!' 
+                addToast({
+                    type: 'success',
+                    title: 'Login Google',
+                    description: 'Sucesso!'
                 });
                 navigate('/home');
             } else {
-                addToast({ 
-                    type: 'error', 
-                    title: 'Falha', 
-                    description: 'Não foi possível logar com Google.' 
+                addToast({
+                    type: 'error',
+                    title: 'Falha',
+                    description: 'Não foi possível logar com Google.'
                 });
             }
         },
         onError: () => {
-            addToast({ 
-                type: 'error', 
-                title: 'Erro Google', 
-                description: 'O popup foi fechado ou falhou.' 
+            addToast({
+                type: 'error',
+                title: 'Erro Google',
+                description: 'O popup foi fechado ou falhou.'
             });
         }
     });
@@ -137,15 +137,21 @@ export function Login() {
                             />
                         </div>
 
+                        <div className="forgot-password-link" style={{ textAlign: 'right', marginTop: '0.5rem' }}>
+                            <Link to="/forgot-password" style={{ fontSize: '0.9rem', color: '#aaa', textDecoration: 'none' }}>
+                                Esqueceu a senha?
+                            </Link>
+                        </div>
+
                         <button type="submit" className="btn-primary">Entrar</button>
 
                         <div className="auth-actions" style={{ marginTop: '1.5rem', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
                             {/* 1. LÓGICA DO GOOGLE (Apenas SaaS) */}
                             {isSaaS && (
-                                <button 
-                                    type="button" 
-                                    className="btn-secondary" 
+                                <button
+                                    type="button"
+                                    className="btn-secondary"
                                     style={{ width: '100%', justifyContent: 'center' }}
                                     // [ALTERADO] Adicionado evento de clique do hook
                                     onClick={() => handleGoogleClick()}

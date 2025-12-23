@@ -11,7 +11,7 @@ alembic revision --autogenerate -m "Reset tables"
 alembic upgrade head
 
 # 5
-python create_user.py --email marocos@bussola.com --password 159951
+python create_user.py --email marcosrodriguesepro@gmail.com --password 159951
 
 # 6
 python populate_db.py
