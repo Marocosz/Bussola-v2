@@ -3,6 +3,9 @@ import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useSystem } from '../../context/SystemContext';
 import { useNavigate, Link } from 'react-router-dom';
+// [NOVO] Import do Hook do Google
+import { useGoogleLogin } from '@react-oauth/google';
+
 import './styles.css';
 
 import loginImageLight from '../../assets/images/loginimage1.svg';
@@ -13,13 +16,44 @@ export function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
-    const { login } = useContext(AuthContext);
+    // [ALTERADO] Adicionamos 'loginGoogle' na desestruturação
+    const { login, loginGoogle } = useContext(AuthContext);
     const { addToast } = useToast();
 
     // Pegamos as flags do sistema
     const { canRegister, isSaaS, loading: systemLoading } = useSystem();
 
     const navigate = useNavigate();
+
+    // [NOVO] Configuração da ação do Google (Hook)
+    const handleGoogleClick = useGoogleLogin({
+        onSuccess: async (tokenResponse) => {
+            // O Google retorna um access_token, enviamos para o backend validar
+            const result = await loginGoogle(tokenResponse.access_token);
+            
+            if (result.success) {
+                addToast({ 
+                    type: 'success', 
+                    title: 'Login Google', 
+                    description: 'Sucesso!' 
+                });
+                navigate('/home');
+            } else {
+                addToast({ 
+                    type: 'error', 
+                    title: 'Falha', 
+                    description: 'Não foi possível logar com Google.' 
+                });
+            }
+        },
+        onError: () => {
+            addToast({ 
+                type: 'error', 
+                title: 'Erro Google', 
+                description: 'O popup foi fechado ou falhou.' 
+            });
+        }
+    });
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -109,7 +143,13 @@ export function Login() {
 
                             {/* 1. LÓGICA DO GOOGLE (Apenas SaaS) */}
                             {isSaaS && (
-                                <button type="button" className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>
+                                <button 
+                                    type="button" 
+                                    className="btn-secondary" 
+                                    style={{ width: '100%', justifyContent: 'center' }}
+                                    // [ALTERADO] Adicionado evento de clique do hook
+                                    onClick={() => handleGoogleClick()}
+                                >
                                     <i className="fa-brands fa-google" style={{ marginRight: '8px' }}></i>
                                     Entrar com Google
                                 </button>
