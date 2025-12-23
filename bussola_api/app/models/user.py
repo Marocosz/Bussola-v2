@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Integer, String
+from sqlalchemy import Boolean, Column, Integer, String, JSON
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
 
@@ -7,22 +7,44 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
+    
+    # [ALTERADO] Senha opcional para suportar Login Social
+    hashed_password = Column(String, nullable=True)
+    
     full_name = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
 
     # =========================================================
-    # CAMPOS SAAS / INTEGRAÇÕES (Novos)
+    # [NOVO] SEGURANÇA E AUTH
+    # =========================================================
+    # Bloqueia login local até clicar no email. 
+    # Google Login deve setar isso como True automaticamente.
+    is_verified = Column(Boolean, default=False)
+    
+    # 'local', 'google', 'facebook'. Ajuda no frontend a saber se mostra botão "Alterar Senha"
+    auth_provider = Column(String, default="local") 
+    
+    # ID único do Google/Facebook para garantir account linking seguro
+    provider_id = Column(String, nullable=True, index=True)
+
+    # =========================================================
+    # CAMPOS SAAS / INTEGRAÇÕES
     # =========================================================
     # Controle de Plano
     is_premium = Column(Boolean, default=False)
     plan_status = Column(String, default="free") # free, active, canceled, past_due
     stripe_customer_id = Column(String, nullable=True, index=True)
 
-    # Integrações Sociais
+    # Integrações Sociais (Mantidos legado ou para outros usos)
     discord_id = Column(String, unique=True, nullable=True, index=True)
-    avatar_url = Column(String, nullable=True) # Para foto do Google/Discord
+    avatar_url = Column(String, nullable=True) 
+
+    # =========================================================
+    # PREFERÊNCIAS DE USUÁRIO (Dashboard)
+    # =========================================================
+    city = Column(String, default="Uberlandia", nullable=True)
+    news_preferences = Column(JSON, default=["tech"], nullable=True)
 
     # =========================================================
     # RELACIONAMENTOS GERAIS

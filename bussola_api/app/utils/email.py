@@ -52,8 +52,39 @@ async def send_password_reset_email(email_to: str, token: str):
     </html>
     """
 
+async def send_account_verification_email(email_to: str, token: str):
+    """
+    Envia email de confirmação de conta.
+    """
+    # Link que aponta para o Frontend
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    
+    # URL para onde o usuário será enviado no React
+    verify_link = f"{frontend_url}/verify-email?token={token}&email={email_to}"
+
+    html = f"""
+    <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                <h2 style="color: #333;">Bem-vindo ao Bússola!</h2>
+                <p>Olá,</p>
+                <p>Obrigado por se cadastrar. Para garantir a segurança da sua conta, precisamos confirmar seu endereço de e-mail.</p>
+                <p>Clique no botão abaixo para verificar sua conta:</p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{verify_link}" style="background-color: #10B981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                        Confirmar Meu E-mail
+                    </a>
+                </div>
+                <p style="font-size: 12px; color: #666;">Se você não criou uma conta no Bússola, por favor ignore este e-mail.</p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                <p style="font-size: 12px; color: #999;">Equipe Bússola</p>
+            </div>
+        </body>
+    </html>
+    """
+
     message = MessageSchema(
-        subject="Redefinição de Senha - Bússola",
+        subject="Confirmação de E-mail - Bússola",
         recipients=[email_to],
         body=html,
         subtype=MessageType.html

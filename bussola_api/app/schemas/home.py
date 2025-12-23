@@ -6,6 +6,7 @@ class WeatherData(BaseModel):
     temperature: int
     description: str
     icon_class: str
+    city: str # [NOVO] Retorna o nome da cidade para o front saber qual foi usada
 
 # --- News Schemas ---
 class NewsSource(BaseModel):
@@ -16,6 +17,7 @@ class NewsArticle(BaseModel):
     url: str
     source: NewsSource
     published_at: str
+    topic: Optional[str] = "Geral" # [NOVO] Identifica o tópico da notícia
 
 # --- Main Home Response ---
 class HomeDashboardResponse(BaseModel):

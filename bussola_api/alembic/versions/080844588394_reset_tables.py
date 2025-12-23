@@ -1,8 +1,8 @@
 """Reset tables
 
-Revision ID: 367333b8f544
+Revision ID: 080844588394
 Revises: 
-Create Date: 2025-12-23 15:39:12.724873
+Create Date: 2025-12-23 17:15:16.522398
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '367333b8f544'
+revision: str = '080844588394'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -33,6 +33,8 @@ def upgrade() -> None:
     sa.Column('stripe_customer_id', sa.String(), nullable=True),
     sa.Column('discord_id', sa.String(), nullable=True),
     sa.Column('avatar_url', sa.String(), nullable=True),
+    sa.Column('city', sa.String(), nullable=True),
+    sa.Column('news_preferences', sa.JSON(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_user_discord_id'), 'user', ['discord_id'], unique=True)
