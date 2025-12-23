@@ -2,20 +2,26 @@
 /* ESTILOS ÚNICOS DO ADMIN MODAL */
 /* ============================ */
 
-/* OVERLAY */
-.admin-modal-overlay {
-    position: fixed;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.75);
+/* [CORREÇÃO] TROUXEMOS DE VOLTA O OVERLAY FIXO */
+/* Isso garante que ele saia de dentro da Navbar e cubra a tela */
+.admin-modal-wrapper {
+    position: fixed; /* O segredo para sair do fluxo da página */
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.75); /* Fundo escuro */
     backdrop-filter: blur(5px);
-    z-index: 99999;
+    z-index: 99999; /* Garante que fique acima de tudo */
+    
     display: flex;
     align-items: center;
     justify-content: center;
+    
     animation: fadeInOverlay 0.2s ease-out;
 }
 
-/* CONTENT */
+/* CONTENT - O Cartão do Modal */
 .admin-modal-content {
     background: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
@@ -23,11 +29,12 @@
     box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
     display: flex;
     flex-direction: column;
-    position: relative;
-    animation: scaleInModal 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    
     width: 90%;
     max-width: 500px;
-    overflow: hidden; /* Garante que o rodapé respeite a borda arredondada */
+    overflow: hidden; 
+    
+    animation: scaleInModal 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* HEADER - Fundo Cinza */
@@ -109,7 +116,7 @@
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* RODAPÉ - Fundo Cinza (Igual ao Panorama/Header) */
+/* RODAPÉ */
 .admin-modal-footer {
     padding: 1.5rem 2rem;
     border-top: 1px solid var(--cor-borda);

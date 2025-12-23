@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { adminCreateUser } from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { BaseModal } from './BaseModal'; 
 import './AdminUserModal.css';
 
 export function AdminUserModal({ isOpen, onClose }) {
@@ -11,6 +12,7 @@ export function AdminUserModal({ isOpen, onClose }) {
     
     const { addToast } = useToast();
 
+    // 1. OBRIGATÓRIO: Se fechado, retorna null (para sumir da tela)
     if (!isOpen) return null;
 
     const handleSubmit = async (e) => {
@@ -26,7 +28,6 @@ export function AdminUserModal({ isOpen, onClose }) {
                 description: `A conta para ${fullName} foi criada com sucesso.`
             });
             
-            // Limpa o form e fecha
             setEmail('');
             setPassword('');
             setFullName('');
@@ -45,76 +46,84 @@ export function AdminUserModal({ isOpen, onClose }) {
     };
 
     return (
-        <div className="admin-modal-overlay" onClick={onClose}>
-            <div className="admin-modal-content" onClick={e => e.stopPropagation()}>
+        <BaseModal 
+            isOpen={isOpen} 
+            onClose={onClose}
+        >
+            {/* [CORREÇÃO] Adicionamos o Wrapper que tem 'position: fixed'
+                Isso garante que ele sobreponha a página, independente de onde o BaseModal esteja.
+            */}
+            <div className="admin-modal-wrapper" onClick={onClose}>
                 
-                <div className="admin-modal-header">
-                    <h2>Novo Usuário (Admin)</h2>
-                    <button className="admin-modal-close-btn" onClick={onClose}>&times;</button>
+                {/* O conteúdo (Cartão) */}
+                <div className="admin-modal-content" onClick={(e) => e.stopPropagation()}>
+                    
+                    <div className="admin-modal-header">
+                        <h2>Novo Usuário (Admin)</h2>
+                        <button className="admin-modal-close-btn" type="button" onClick={onClose}>&times;</button>
+                    </div>
+
+                    <form onSubmit={handleSubmit} className="admin-modal-form">
+                        
+                        <div className="admin-modal-body">
+                            <div className="admin-form-group">
+                                <label>Nome Completo</label>
+                                <input 
+                                    type="text" 
+                                    className="admin-form-input"
+                                    value={fullName}
+                                    onChange={e => setFullName(e.target.value)}
+                                    required
+                                    placeholder="Ex: João Silva"
+                                />
+                            </div>
+
+                            <div className="admin-form-group">
+                                <label>E-mail de Acesso</label>
+                                <input 
+                                    type="email" 
+                                    className="admin-form-input"
+                                    value={email}
+                                    onChange={e => setEmail(e.target.value)}
+                                    required
+                                    placeholder="usuario@email.com"
+                                />
+                            </div>
+
+                            <div className="admin-form-group">
+                                <label>Senha Inicial</label>
+                                <input 
+                                    type="password" 
+                                    className="admin-form-input"
+                                    value={password}
+                                    onChange={e => setPassword(e.target.value)}
+                                    required
+                                    minLength={6}
+                                    placeholder="******"
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="admin-modal-footer">
+                            <button 
+                                type="button" 
+                                onClick={onClose} 
+                                className="btn-secondary"
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                type="submit" 
+                                disabled={loading}
+                                className="btn-primary"
+                            >
+                                {loading ? 'Criando...' : 'Criar Usuário'}
+                            </button>
+                        </div>
+
+                    </form>
                 </div>
-
-                <form onSubmit={handleSubmit} className="admin-modal-form">
-                    
-                    {/* CORPO DO FORMULÁRIO */}
-                    <div className="admin-modal-body">
-                        <div className="admin-form-group">
-                            <label>Nome Completo</label>
-                            <input 
-                                type="text" 
-                                className="admin-form-input"
-                                value={fullName}
-                                onChange={e => setFullName(e.target.value)}
-                                required
-                                placeholder="Ex: João Silva"
-                            />
-                        </div>
-
-                        <div className="admin-form-group">
-                            <label>E-mail de Acesso</label>
-                            <input 
-                                type="email" 
-                                className="admin-form-input"
-                                value={email}
-                                onChange={e => setEmail(e.target.value)}
-                                required
-                                placeholder="usuario@email.com"
-                            />
-                        </div>
-
-                        <div className="admin-form-group">
-                            <label>Senha Inicial</label>
-                            <input 
-                                type="password" 
-                                className="admin-form-input"
-                                value={password}
-                                onChange={e => setPassword(e.target.value)}
-                                required
-                                minLength={6}
-                                placeholder="******"
-                            />
-                        </div>
-                    </div>
-                    
-                    {/* RODAPÉ COM BOTÕES GLOBAIS */}
-                    <div className="admin-modal-footer">
-                        <button 
-                            type="button" 
-                            onClick={onClose} 
-                            className="btn-secondary"
-                        >
-                            Cancelar
-                        </button>
-                        <button 
-                            type="submit" 
-                            disabled={loading}
-                            className="btn-primary"
-                        >
-                            {loading ? 'Criando...' : 'Criar Usuário'}
-                        </button>
-                    </div>
-
-                </form>
             </div>
-        </div>
+        </BaseModal>
     );
 }
