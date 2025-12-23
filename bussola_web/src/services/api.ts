@@ -570,4 +570,9 @@ export const adminCreateUser = async (userData: CreateUserDTO) => {
     return response.data;
 };
 
+export const registerUser = async (userData: any) => {
+    const response = await api.post('/users/open', userData);
+    return response.data;
+};
+
 export default api;

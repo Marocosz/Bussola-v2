@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext'; 
+// [NOVO] Importando Contexto do Sistema para verificar se é SelfHosted
+import { useSystem } from '../../context/SystemContext';
 // Import do Modal de Usuário
 import { AdminUserModal } from '../AdminUserModal'; 
 
@@ -9,6 +11,10 @@ import '../../assets/styles/layout.css';
 
 export function Navbar() {
     const { authenticated, logout, user } = useContext(AuthContext);
+    
+    // [CORREÇÃO] Pegamos a flag isSelfHosted do sistema
+    const { isSelfHosted } = useSystem();
+
     const [theme, setTheme] = useState('dark');
     const [showAdminModal, setShowAdminModal] = useState(false);
 
@@ -55,10 +61,8 @@ export function Navbar() {
                                     <Link to="/login" onClick={logout}>Sair</Link>
                                 </li>
 
-                                {/* [ALTERAÇÃO AQUI] 
-                                   Mudei de 'btn-primary' para 'btn-secondary' 
-                                */}
-                                {user?.is_superuser && (
+                                {/* [CORREÇÃO] Só exibe se for Self-Hosted E Admin */}
+                                {isSelfHosted && user?.is_superuser && (
                                     <li>
                                         <button 
                                             className="btn-secondary btn-nav-create"

@@ -1,7 +1,6 @@
 import { useState, useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-// Importando o contexto do sistema
 import { useSystem } from '../../context/SystemContext'; 
 import { useNavigate, Link } from 'react-router-dom';
 import './styles.css'; 
@@ -17,8 +16,8 @@ export function Login() {
     const { login } = useContext(AuthContext);
     const { addToast } = useToast();
     
-    // Pegando configurações do sistema (canRegister vem inteligente do backend)
-    const { canRegister, config, loading: systemLoading } = useSystem(); 
+    // Pegamos as flags do sistema
+    const { canRegister, isSaaS, loading: systemLoading } = useSystem(); 
     
     const navigate = useNavigate();
 
@@ -29,8 +28,6 @@ export function Login() {
             const result = await login(email, password);
             
             if (result.success) {
-                // Não precisa de toast aqui se for redirecionar direto, 
-                // mas deixei conforme seu código original
                 addToast({
                     type: 'success',
                     title: 'Bem-vindo(a)!',
@@ -53,7 +50,6 @@ export function Login() {
         }
     };
 
-    // Evita piscar a tela
     if (systemLoading) {
         return <div className="loading-screen">Iniciando Bússola...</div>;
     }
@@ -110,18 +106,21 @@ export function Login() {
 
                     <div className="auth-actions" style={{ marginTop: '1.5rem', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         
-                        {/* [LÓGICA SAAS] Botão Google só aparece se configurado no backend */}
-                        {config.google_login_enabled && (
+                        {/* 1. LÓGICA DO GOOGLE (Apenas SaaS) */}
+                        {isSaaS && (
                             <button type="button" className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>
                                 <i className="fa-brands fa-google" style={{ marginRight: '8px' }}></i>
                                 Entrar com Google
                             </button>
                         )}
 
-                        {/* [LÓGICA SELF-HOSTED] Link só aparece se backend permitir (canRegister) */}
-                        {canRegister ? (
+                        {/* 2. LÓGICA DO LINK DE CADASTRO 
+                            Aparece se: É SaaS (sempre) OU se o Registro Público está ativado no Self-Hosted.
+                        */}
+                        {(isSaaS || canRegister) ? (
                             <div style={{ fontSize: '0.9rem', color: 'var(--cor-texto-secundario)' }}>
                                 Não tem uma conta?{' '}
+                                {/* O LINK JÁ ESTÁ CORRETO AQUI, APONTANDO PARA /register */}
                                 <Link to="/register" style={{ color: 'var(--cor-azul-primario)', fontWeight: 'bold', textDecoration: 'none' }}>
                                     Crie agora
                                 </Link>

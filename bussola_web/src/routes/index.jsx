@@ -10,13 +10,13 @@ import { Agenda } from '../pages/Agenda';
 import { Registros } from '../pages/Registros';
 import { Panorama } from '../pages/Panorama';
 import { Cofre } from '../pages/Cofre';
-import { Ritmo } from '../pages/Ritmo'; 
+import { Ritmo } from '../pages/Ritmo';
+import { Register } from '../pages/Register';
 
 function PrivateRoute({ children }) {
     const { authenticated, loading } = useAuth();
 
     if (loading) {
-        // Se a tela branca for aqui, adicione uma cor para testar: style={{color: 'red'}}
         return <div className="loading-screen">Carregando Usuário...</div>;
     }
 
@@ -37,8 +37,13 @@ function PrivateRoute({ children }) {
 export function AppRoutes() {
     return (
         <Routes>
+            {/* --- ROTAS PÚBLICAS --- */}
             <Route path="/login" element={<Login />} />
             
+            {/* [CORREÇÃO CRÍTICA] O Registro deve ser público, senão ninguém cria conta */}
+            <Route path="/register" element={<Register />} />
+            
+            {/* --- ROTAS PRIVADAS --- */}
             <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
             <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
             <Route path="/panorama" element={<PrivateRoute><Panorama /></PrivateRoute>} />
