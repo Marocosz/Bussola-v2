@@ -4,17 +4,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-
-# [NOVO] Bibliotecas do Google para validar o token
-from google.oauth2 import id_token
-from google.auth.transport import requests as google_requests
+import httpx # [MUDANÇA] Usado para validar o token na API do Google
 
 # Imports de Schemas
 from app.schemas.user import User as UserSchema, UserCreate, NewPassword
 from app.schemas.token import Token
 from app.schemas.msg import Msg
 
-# [NOVO] Import do Service e Core Security
+# Imports do Service e Core Security
 from app.services.auth import AuthService
 from app.core import security
 from app.core.config import settings
@@ -68,38 +65,46 @@ def login_access_token(
     )
 
 @router.post("/google", response_model=Token)
-def login_google(
+async def login_google(
     payload: GoogleLoginRequest,
     session: deps.SessionDep,
 ) -> Any:
     """
     Login via Google.
     Lógica de Account Linking:
-    1. Valida token no Google.
+    1. Valida token (Access Token) na API do Google.
     2. Se usuário não existe -> Cria (Verificado=True, Senha=Null).
     3. Se usuário existe -> Atualiza (Verificado=True, Provider=Google/Hybrid).
     """
-    try:
-        # 1. Validar token do Google
-        # Defina GOOGLE_CLIENT_ID no seu .env ou settings
-        client_id = getattr(settings, "GOOGLE_CLIENT_ID", None)
-        
-        # Se não tiver client_id configurado, aceita qualquer um (APENAS DEV) 
-        # ou lança erro. Ajuste conforme sua segurança.
-        id_info = id_token.verify_oauth2_token(
-            payload.token, 
-            google_requests.Request(), 
-            audience=client_id
-        )
-        
-        email = id_info.get("email")
-        google_sub = id_info.get("sub") # ID único do usuário no Google
-        name = id_info.get("name")
-        picture = id_info.get("picture")
+    
+    # 1. [CORREÇÃO] Validar o Access Token batendo na API do Google
+    # O front está mandando um Access Token, não um ID Token (JWT).
+    google_user_info = None
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                headers={"Authorization": f"Bearer {payload.token}"}
+            )
+            
+            if response.status_code != 200:
+                raise HTTPException(status_code=400, detail="Token do Google inválido ou expirado.")
+            
+            google_user_info = response.json()
+            
+        except Exception as e:
+            print(f"Erro conexão Google: {e}")
+            raise HTTPException(status_code=400, detail="Falha ao conectar com o Google.")
 
-    except ValueError as e:
-        print(f"Erro validação Google: {e}")
-        raise HTTPException(status_code=400, detail="Token Google inválido")
+    # Extrair dados da resposta do Google
+    email = google_user_info.get("email")
+    google_sub = google_user_info.get("sub") # ID único do usuário no Google
+    name = google_user_info.get("name")
+    picture = google_user_info.get("picture")
+
+    if not email:
+         raise HTTPException(status_code=400, detail="Google não retornou o e-mail.")
 
     # 2. Verificar se usuário existe no banco
     user = session.query(User).filter(User.email == email).first()
@@ -137,7 +142,8 @@ def login_google(
         # Vincula o ID do Google se ainda não tiver
         if not user.provider_id:
             user.provider_id = google_sub
-            user.auth_provider = "hybrid" # Usa senha E Google
+            # Se já tinha senha, vira hibrido. Se não tinha, é google puro.
+            user.auth_provider = "hybrid" if user.hashed_password else "google"
             updated = True
             
         if not user.avatar_url and picture:

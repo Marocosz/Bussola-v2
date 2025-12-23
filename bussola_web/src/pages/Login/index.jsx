@@ -3,8 +3,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useSystem } from '../../context/SystemContext';
 import { useNavigate, Link } from 'react-router-dom';
-// [NOVO] Import do Hook do Google
-import { useGoogleLogin } from '@react-oauth/google';
+import { useGoogleLogin } from '@react-oauth/google'; // Importando Hook Google
 
 import './styles.css';
 
@@ -15,72 +14,68 @@ import logoBussola from '../../assets/images/bussola.svg';
 export function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    // [ALTERADO] Adicionamos 'loginGoogle' na desestruturação
-    const { login, loginGoogle } = useContext(AuthContext);
+    // Contexto de Autenticação
+    const { login, loginGoogle } = useContext(AuthContext); 
     const { addToast } = useToast();
 
-    // Pegamos as flags do sistema
+    // Contexto de Sistema (Flags de configuração)
     const { canRegister, isSaaS, loading: systemLoading } = useSystem();
 
     const navigate = useNavigate();
 
-    // [NOVO] Configuração da ação do Google (Hook)
+    // --- LÓGICA DO LOGIN GOOGLE ---
     const handleGoogleClick = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
-            // O Google retorna um access_token, enviamos para o backend validar
-            const result = await loginGoogle(tokenResponse.access_token);
+            setLoading(true);
+            try {
+                // Chama a função do Contexto que chama a API
+                const result = await loginGoogle(tokenResponse.access_token);
 
-            if (result.success) {
-                addToast({
-                    type: 'success',
-                    title: 'Login Google',
-                    description: 'Sucesso!'
-                });
-                navigate('/home');
-            } else {
-                addToast({
-                    type: 'error',
-                    title: 'Falha',
-                    description: 'Não foi possível logar com Google.'
-                });
+                if (result.success) {
+                    addToast({ type: 'success', title: 'Login com Google', description: 'Bem-vindo de volta!' });
+                    navigate('/home');
+                } else {
+                    addToast({ type: 'error', title: 'Falha', description: 'Não foi possível autenticar com o Google.' });
+                }
+            } catch (error) {
+                console.error(error);
+                addToast({ type: 'error', title: 'Erro', description: 'Erro na comunicação com o Google.' });
+            } finally {
+                setLoading(false);
             }
         },
         onError: () => {
-            addToast({
-                type: 'error',
-                title: 'Erro Google',
-                description: 'O popup foi fechado ou falhou.'
-            });
+            addToast({ type: 'error', title: 'Erro', description: 'O login com Google foi cancelado.' });
         }
     });
 
+    // --- LÓGICA DO LOGIN LOCAL ---
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
 
         try {
             const result = await login(email, password);
 
             if (result.success) {
-                addToast({
-                    type: 'success',
-                    title: 'Bem-vindo(a)!',
-                    description: 'Login realizado com sucesso.'
-                });
+                addToast({ type: 'success', title: 'Bem-vindo!', description: 'Login realizado com sucesso.' });
                 navigate('/home');
             } else {
-                addToast({
-                    type: 'error',
-                    title: 'Falha no Login',
-                    description: result.message || 'Verifique suas credenciais.'
-                });
+                // Tratamento específico para conta não verificada (Backend retorna 401 com mensagem)
+                const errorMsg = result.message || 'Credenciais inválidas.';
+                
+                if (errorMsg.includes("verificado") || errorMsg.includes("e-mail")) {
+                    addToast({ type: 'warning', title: 'E-mail não verificado', description: errorMsg });
+                } else {
+                    addToast({ type: 'error', title: 'Falha no Login', description: errorMsg });
+                }
             }
         } catch (error) {
-            addToast({
-                type: 'error',
-                title: 'Erro inesperado',
-                description: 'Não foi possível conectar ao servidor.'
-            });
+            addToast({ type: 'error', title: 'Erro', description: 'Servidor indisponível no momento.' });
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -119,7 +114,7 @@ export function Login() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
-                                autoComplete="off"
+                                autoComplete="username"
                                 placeholder="seu@email.com"
                             />
                         </div>
@@ -132,7 +127,7 @@ export function Login() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                autoComplete="off"
+                                autoComplete="current-password"
                                 placeholder="••••••••"
                             />
                         </div>
@@ -143,43 +138,41 @@ export function Login() {
                             </Link>
                         </div>
 
-                        <button type="submit" className="btn-primary">Entrar</button>
+                        <button type="submit" className="btn-primary" disabled={loading}>
+                            {loading ? 'Entrando...' : 'Entrar'}
+                        </button>
 
                         <div className="auth-actions" style={{ marginTop: '1.5rem', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-
-                            {/* 1. LÓGICA DO GOOGLE (Apenas SaaS) */}
+                            
+                            {/* BOTÃO GOOGLE (Habilitado se for SaaS ou Configurado) */}
                             {isSaaS && (
                                 <button
                                     type="button"
                                     className="btn-secondary"
-                                    style={{ width: '100%', justifyContent: 'center' }}
-                                    // [ALTERADO] Adicionado evento de clique do hook
+                                    style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '8px' }}
                                     onClick={() => handleGoogleClick()}
+                                    disabled={loading}
                                 >
-                                    <i className="fa-brands fa-google" style={{ marginRight: '8px' }}></i>
+                                    <i className="fa-brands fa-google"></i>
                                     Entrar com Google
                                 </button>
                             )}
 
-                            {/* 2. LÓGICA DO LINK DE CADASTRO 
-                            Aparece se: É SaaS (sempre) OU se o Registro Público está ativado no Self-Hosted.
-                        */}
+                            {/* LINK CADASTRO */}
                             {(isSaaS || canRegister) ? (
                                 <div style={{ fontSize: '0.9rem', color: 'var(--cor-texto-secundario)' }}>
                                     Não tem uma conta?{' '}
-                                    {/* O LINK JÁ ESTÁ CORRETO AQUI, APONTANDO PARA /register */}
                                     <Link to="/register" style={{ color: 'var(--cor-azul-primario)', fontWeight: 'bold', textDecoration: 'none' }}>
                                         Crie agora
                                     </Link>
                                 </div>
                             ) : (
                                 <div style={{ fontSize: '0.8rem', color: 'var(--cor-texto-terciario)', fontStyle: 'italic' }}>
-                                    Acesso restrito a usuários cadastrados.
+                                    Cadastro fechado para novos usuários.
                                 </div>
                             )}
 
                         </div>
-
                     </form>
                 </div>
             </div>

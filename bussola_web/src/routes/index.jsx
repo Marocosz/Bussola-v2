@@ -14,6 +14,7 @@ import { Ritmo } from '../pages/Ritmo';
 import { Register } from '../pages/Register';
 import { ForgotPassword } from '../pages/Auth/ForgotPassword';
 import { ResetPassword } from '../pages/Auth/ResetPassword';
+import { VerifyEmail } from '../pages/Auth/VerifyEmail';
 
 function PrivateRoute({ children }) {
     const { authenticated, loading } = useAuth();
@@ -41,11 +42,10 @@ export function AppRoutes() {
         <Routes>
             {/* --- ROTAS PÚBLICAS --- */}
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            
-            {/* [CORREÇÃO CRÍTICA] O Registro deve ser público, senão ninguém cria conta */}
-            <Route path="/register" element={<Register />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
             
             {/* --- ROTAS PRIVADAS --- */}
             <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />

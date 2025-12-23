@@ -15,20 +15,26 @@ async def get_home_data(
 ) -> Any:
     """
     Retorna os dados para a Home: Clima e Notícias.
-    Personalizado com base na Cidade e Preferências do Usuário.
+    Usa asyncio.gather para processar Clima e Notícias em paralelo
+    sem travar o servidor.
     """
     
     # Define valores padrão caso o usuário não tenha configurado
     city = current_user.city if current_user.city else "Uberlandia"
     topics = current_user.news_preferences if current_user.news_preferences else ["tech"]
 
-    # Busca em paralelo (Clima + Notícias dos tópicos escolhidos)
+    # Criamos as coroutines (as funções async)
+    weather_task = external_service.get_weather(city=city)
+    news_task = external_service.get_news_by_topics(user_topics=topics)
+
+    # asyncio.gather dispara as duas ao mesmo tempo.
+    # Com o redis.asyncio, se o Redis demorar, o Event Loop continua livre.
     weather_data, news_data = await asyncio.gather(
-        external_service.get_weather(city=city),
-        external_service.get_news_by_topics(user_topics=topics)
+        weather_task,
+        news_task
     )
     
     return {
         "weather": weather_data,
-        "tech_news": news_data # O nome do campo no JSON ainda é tech_news por compatibilidade com front
+        "tech_news": news_data
     }

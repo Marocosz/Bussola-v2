@@ -86,7 +86,7 @@ async def create_user_open(
     
     db.add(db_user)
     db.commit()
-    db.refresh(db_user)
+    db_user.refresh()
 
     # --- ENVIO DE EMAIL COM TOKEN REAL ---
     if not should_be_verified:
@@ -129,6 +129,7 @@ def verify_email(
 
     # 2. Valida Token
     try:
+        # [CORREÇÃO] Acessando a constante ALGORITHM agora definida em security
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]
         )

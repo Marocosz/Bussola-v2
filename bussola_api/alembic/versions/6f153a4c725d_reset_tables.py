@@ -1,8 +1,8 @@
 """Reset tables
 
-Revision ID: 080844588394
+Revision ID: 6f153a4c725d
 Revises: 
-Create Date: 2025-12-23 17:15:16.522398
+Create Date: 2025-12-23 19:56:31.143657
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '080844588394'
+revision: str = '6f153a4c725d'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -24,10 +24,13 @@ def upgrade() -> None:
     op.create_table('user',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('email', sa.String(), nullable=False),
-    sa.Column('hashed_password', sa.String(), nullable=False),
+    sa.Column('hashed_password', sa.String(), nullable=True),
     sa.Column('full_name', sa.String(), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=True),
     sa.Column('is_superuser', sa.Boolean(), nullable=True),
+    sa.Column('is_verified', sa.Boolean(), nullable=True),
+    sa.Column('auth_provider', sa.String(), nullable=True),
+    sa.Column('provider_id', sa.String(), nullable=True),
     sa.Column('is_premium', sa.Boolean(), nullable=True),
     sa.Column('plan_status', sa.String(), nullable=True),
     sa.Column('stripe_customer_id', sa.String(), nullable=True),
@@ -40,6 +43,7 @@ def upgrade() -> None:
     op.create_index(op.f('ix_user_discord_id'), 'user', ['discord_id'], unique=True)
     op.create_index(op.f('ix_user_email'), 'user', ['email'], unique=True)
     op.create_index(op.f('ix_user_id'), 'user', ['id'], unique=False)
+    op.create_index(op.f('ix_user_provider_id'), 'user', ['provider_id'], unique=False)
     op.create_index(op.f('ix_user_stripe_customer_id'), 'user', ['stripe_customer_id'], unique=False)
     op.create_table('categoria',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -289,6 +293,7 @@ def downgrade() -> None:
     op.drop_table('compromisso')
     op.drop_table('categoria')
     op.drop_index(op.f('ix_user_stripe_customer_id'), table_name='user')
+    op.drop_index(op.f('ix_user_provider_id'), table_name='user')
     op.drop_index(op.f('ix_user_id'), table_name='user')
     op.drop_index(op.f('ix_user_email'), table_name='user')
     op.drop_index(op.f('ix_user_discord_id'), table_name='user')

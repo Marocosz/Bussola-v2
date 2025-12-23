@@ -10,11 +10,5 @@ alembic revision --autogenerate -m "Reset tables"
 # 4. Aplique a migração (Cria as tabelas fisicamente no SQLite)
 alembic upgrade head
 
-# 5
-python create_user.py --email marcosrodriguesepro@gmail.com --password 159951
-
-# 6
-python populate_db.py
-
 # 7 
 uvicorn app.main:app --reload

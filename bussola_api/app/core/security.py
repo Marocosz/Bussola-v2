@@ -7,6 +7,9 @@ from app.core.config import settings
 # Configuração do Hashing (Bcrypt)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+# [NOVO] Constante exportada para ser usada na decodificação de tokens
+ALGORITHM = settings.ALGORITHM
+
 def create_access_token(subject: Union[str, Any], expires_delta: timedelta = None) -> str:
     """Gera um token JWT com tempo de expiração."""
     if expires_delta:
@@ -15,7 +18,8 @@ def create_access_token(subject: Union[str, Any], expires_delta: timedelta = Non
         expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     
     to_encode = {"exp": expire, "sub": str(subject)}
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    # Usa a constante local ALGORITHM
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
