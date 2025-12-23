@@ -15,6 +15,7 @@ import { Register } from '../pages/Register';
 import { ForgotPassword } from '../pages/Auth/ForgotPassword';
 import { ResetPassword } from '../pages/Auth/ResetPassword';
 import { VerifyEmail } from '../pages/Auth/VerifyEmail';
+import { RegisterSuccess } from '../pages/Auth/RegisterSuccess';
 
 function PrivateRoute({ children }) {
     const { authenticated, loading } = useAuth();
@@ -46,6 +47,7 @@ export function AppRoutes() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/register-success" element={<RegisterSuccess />} />
             
             {/* --- ROTAS PRIVADAS --- */}
             <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />

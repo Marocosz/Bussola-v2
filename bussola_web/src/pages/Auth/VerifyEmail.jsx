@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react'; // Adicionado useRef
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { verifyUserEmail } from '../../services/api'; // Importa a função que criamos no api.ts
 import { useToast } from '../../context/ToastContext';
@@ -11,6 +11,9 @@ export function VerifyEmail() {
     const navigate = useNavigate();
     const { addToast } = useToast();
 
+    // [NOVO] Referência para impedir execução duplicada no React Strict Mode
+    const initialized = useRef(false);
+
     // Estados da tela
     const [status, setStatus] = useState('loading');
     const [message, setMessage] = useState('Validando sua conta...');
@@ -20,12 +23,18 @@ export function VerifyEmail() {
     const email = searchParams.get('email');
 
     useEffect(() => {
+        // [NOVO] Bloqueio contra Strict Mode: Se já inicializou, interrompe a segunda execução
+        if (initialized.current) return;
+        
         // 1. Validação inicial: se não tiver token na URL, é erro na certa.
         if (!token || !email) {
             setStatus('error');
             setMessage('Link de verificação inválido ou incompleto.');
             return;
         }
+
+        // Marca como inicializado para evitar repetição
+        initialized.current = true;
 
         // 2. Função assíncrona para chamar o backend
         const verify = async () => {

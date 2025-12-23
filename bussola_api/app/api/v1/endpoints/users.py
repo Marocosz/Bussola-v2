@@ -1,9 +1,8 @@
 from typing import Any, List
 from datetime import timedelta
 
-# [NOVO] Imports para manipulação de Token e validação
 from jose import jwt, JWTError
-from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status, BackgroundTasks
 from fastapi.encoders import jsonable_encoder
 from pydantic.networks import EmailStr
 from sqlalchemy.orm import Session
@@ -15,8 +14,7 @@ from app.models.user import User
 from app.schemas.user import User as UserSchema, UserCreate, UserUpdate
 from app.core.security import get_password_hash
 
-# [NOVO] Import da função de email (certifique-se que o arquivo existe em app/utils/email.py)
-# Se você salvou em outro lugar, ajuste este import.
+# Import da função de email
 from app.utils.email import send_account_verification_email 
 
 router = APIRouter()
@@ -29,25 +27,25 @@ def read_user_me(
     return current_user
 
 # 2. Rota PÚBLICA de Registro
-# [ATENÇÃO] Alterado para 'async def' para permitir envio de email
 @router.post("/open", response_model=UserSchema)
 async def create_user_open(
     *,
     db: Session = Depends(deps.get_db),
     user_in: UserCreate,
+    background_tasks: BackgroundTasks
 ) -> Any:
     """
     Rota de registro público.
     Lógica de Segurança:
-    1. Se for o 1º usuário: Cria VERIFICADO (True) e ADMIN.
-    2. Demais usuários: Cria NÃO VERIFICADO (False) e envia e-mail com Token.
+    - No Self-Hosted: 1º usuário é Admin Verificado.
+    - No SaaS: Todos nascem desativados e aguardam e-mail.
     """
     
-    # --- LÓGICA DE PROTEÇÃO (SaaS vs Self-Hosted) ---
     user_count = db.query(User).count()
+    is_saas = (settings.DEPLOYMENT_MODE == "SAAS") # Verifica se é SaaS
     
+    # --- LÓGICA DE PROTEÇÃO DE REGISTRO ---
     if not settings.ENABLE_PUBLIC_REGISTRATION:
-        # Se registro fechado, só permite se for o PRIMEIRO usuário (Instalação limpa)
         if user_count > 0:
             raise HTTPException(
                 status_code=403,
@@ -62,54 +60,47 @@ async def create_user_open(
             detail="Este e-mail já está cadastrado.",
         )
 
-    # --- DEFINIÇÃO DE PERMISSÕES INICIAIS ---
-    is_first_user = (user_count == 0)
-    
-    # Se for o primeiro usuário (Admin), nasce verificado.
-    # Se for usuário comum, nasce bloqueado (False).
-    should_be_verified = is_first_user 
+    # --- DEFINIÇÃO DE PERMISSÕES INICIAIS (CORRIGIDO) ---
+    # No SaaS, is_first_user não importa para privilégios ou verificação
+    if is_saas:
+        is_admin = False
+        should_be_verified = False
+    else:
+        # Modo Self-Hosted: Primeiro é o mestre
+        is_admin = (user_count == 0)
+        should_be_verified = is_admin
 
     db_user = User(
         email=user_in.email,
         hashed_password=get_password_hash(user_in.password),
         full_name=user_in.full_name,
         is_active=True,
-        
-        # Privilégios
-        is_superuser=is_first_user, 
-        is_premium=is_first_user, # 1º user ganha premium tbm
-        
-        # [NOVO] Segurança de Auth
+        is_superuser=is_admin, 
+        is_premium=is_admin, 
         is_verified=should_be_verified, 
         auth_provider="local"
     )
     
     db.add(db_user)
     db.commit()
-    db_user.refresh()
+    db.refresh(db_user)
 
-    # --- ENVIO DE EMAIL COM TOKEN REAL ---
+    # --- ENVIO DE EMAIL (BACKGROUND) ---
     if not should_be_verified:
-        try:
-            # 1. Gera Token de Verificação (Válido por 24 horas)
-            verify_token = security.create_access_token(
-                subject=db_user.id, # O 'sub' do token é o ID do usuário
-                expires_delta=timedelta(hours=24)
-            )
-            
-            # 2. Envia o Email
-            await send_account_verification_email(
-                email_to=user_in.email, 
-                token=verify_token
-            )
-        except Exception as e:
-            # Logamos o erro mas não cancelamos a criação do usuário para não frustrar o user.
-            # Idealmente, use um logger aqui (ex: logger.error(f"Email failed: {e}"))
-            print(f"ERRO CRÍTICO AO ENVIAR EMAIL: {e}")
+        verify_token = security.create_access_token(
+            subject=db_user.id, 
+            expires_delta=timedelta(hours=24)
+        )
+        
+        background_tasks.add_task(
+            send_account_verification_email,
+            email_to=user_in.email, 
+            token=verify_token
+        )
     
     return db_user
 
-# 3. [NOVO] Rota para Verificar Email
+# 3. Rota para Verificar Email
 @router.post("/verify-email", response_model=Any)
 def verify_email(
     token: str, 
@@ -119,7 +110,6 @@ def verify_email(
     """
     Valida o email do usuário decodificando o Token JWT.
     """
-    # 1. Busca usuário
     user = db.query(User).filter(User.email == email).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
@@ -127,13 +117,11 @@ def verify_email(
     if user.is_verified:
         return {"msg": "Email já verificado anteriormente."}
 
-    # 2. Valida Token
     try:
-        # [CORREÇÃO] Acessando a constante ALGORITHM agora definida em security
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]
         )
-        token_sub = payload.get("sub") # ID do usuário dentro do token
+        token_sub = payload.get("sub")
         
         if not token_sub or str(token_sub) != str(user.id):
             raise HTTPException(status_code=403, detail="Token inválido para este usuário.")
@@ -144,7 +132,6 @@ def verify_email(
             detail="O link de verificação é inválido ou expirou."
         )
 
-    # 3. Sucesso
     user.is_verified = True
     db.add(user)
     db.commit()
@@ -157,7 +144,7 @@ def create_user_admin_manual(
     *,
     db: Session = Depends(deps.get_db),
     user_in: UserCreate,
-    current_user: User = Depends(deps.get_current_active_superuser), # Só Admin entra aqui
+    current_user: User = Depends(deps.get_current_active_superuser), 
 ) -> Any:
     """
     Criação manual de usuários pelo Painel Admin.
@@ -175,8 +162,6 @@ def create_user_admin_manual(
         full_name=user_in.full_name,
         is_active=True,
         is_superuser=False, 
-        
-        # Admin criando manualmente -> Assume-se verificado e seguro
         is_verified=True,
         auth_provider="local"
     )

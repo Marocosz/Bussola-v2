@@ -47,19 +47,13 @@ export function Register() {
                 full_name: fullName
             });
 
-            // [MUDANÇA IMPORTANTE] Mensagem de verificação
-            addToast({
-                type: 'success',
-                title: 'Conta Criada!',
-                description: 'Verifique seu e-mail para ativar a conta antes de logar.'
-            });
-            
-            navigate('/login');
+            // [ALTERADO] Redireciona para a página de sucesso completa em vez de voltar ao login
+            navigate('/register-success');
 
         } catch (error) {
             console.error(error);
-            const msg = error.response?.data?.detail || 'Erro ao criar conta.';
-            addToast({ type: 'error', title: 'Erro', description: msg });
+            const msg = (error).response?.data?.detail || 'Não foi possível criar a conta. Tente outro e-mail.';
+            addToast({ type: 'error', title: 'Erro no Registro', description: msg });
         } finally {
             setLoading(false);
         }
