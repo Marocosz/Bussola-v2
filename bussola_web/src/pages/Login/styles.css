@@ -1,3 +1,18 @@
+/* ================================================= */
+/* === Wrapper exclusivo da página de Login/Auth === */
+/* ================================================= */
+
+.auth-page {
+    min-height: 100vh;
+    width: 100%;
+
+    display: flex;
+    align-items: center;     /* centraliza vertical */
+    justify-content: center; /* centraliza horizontal */
+
+    overflow: hidden; /* garante zero scroll */
+}
+
 /* =================================================================== */
 /* === ESTRUTURA GERAL DA PÁGINA DE AUTENTICAÇÃO
 /* =================================================================== */
@@ -5,21 +20,20 @@
 /* Define o container principal da página de login/registro */
 .auth-container {
     display: grid;
-    /* Divide a página em duas colunas (introdução e formulário) em telas grandes */
     grid-template-columns: 1fr 1fr;
     align-items: center;
     justify-items: center;
+
     width: 100%;
     max-width: 1100px;
-    /* Limita a largura máxima para melhor visualização em desktops */
-    margin: 0 auto;
-    /* Centraliza o container na página */
+
     padding: 2rem;
     gap: 4rem;
-    /* Espaçamento entre as duas colunas */
-    flex-grow: 1;
-    /* Garante que o container ocupe o espaço vertical disponível */
+
+    margin: 0 auto;
 }
+
+
 
 /* Botão de alternância de tema posicionado de forma flutuante no canto da tela */
 .standalone-theme-toggle {

@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useToast } from '../../context/ToastContext';
-import { useSystem } from '../../context/SystemContext'; 
+import { useSystem } from '../../context/SystemContext';
 import { registerUser } from '../../services/api'; // <--- Função nova
 import { useNavigate, Link, Navigate } from 'react-router-dom';
 
 // Reutilizando os estilos e imagens do Login para consistência
-import '../Login/styles.css'; 
+import '../Login/styles.css';
 import loginImageLight from '../../assets/images/loginimage1.svg';
 import loginImageDark from '../../assets/images/loginimage1-dark.svg';
 import logoBussola from '../../assets/images/bussola.svg';
@@ -16,9 +16,9 @@ export function Register() {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    
+
     const { addToast } = useToast();
-    const { canRegister, loading: systemLoading } = useSystem(); 
+    const { canRegister, loading: systemLoading } = useSystem();
     const navigate = useNavigate();
 
     // Se o sistema ainda está carregando, mostra loading
@@ -55,15 +55,15 @@ export function Register() {
         }
 
         setLoading(true);
-        
+
         try {
             // 2. Chama a API
-            await registerUser({ 
-                email, 
-                password, 
-                full_name: fullName 
+            await registerUser({
+                email,
+                password,
+                full_name: fullName
             });
-            
+
             // 3. Sucesso
             addToast({
                 type: 'success',
@@ -85,89 +85,91 @@ export function Register() {
     };
 
     return (
-        <div className="auth-container">
-            {/* COLUNA DA ESQUERDA (INTRO) */}
-            <div className="auth-intro">
-                <div className="auth-intro-header">
-                    <h1>Comece sua Jornada</h1>
-                </div>
-                <p>
-                    Junte-se ao Bússola e transforme a maneira como você organiza sua vida financeira e pessoal.
-                    Simples, rápido e eficiente.
-                </p>
-                <img src={loginImageLight} alt="Ilustração Light" className="auth-intro-image theme-image image-light-mode" />
-                <img src={loginImageDark} alt="Ilustração Dark" className="auth-intro-image theme-image image-dark-mode" />
-            </div>
-
-            {/* COLUNA DA DIREITA (FORMULÁRIO) */}
-            <div className="auth-card">
-                <div className="auth-card-header">
-                    <img src={logoBussola} alt="Logo Bússola" className="auth-logo-card" />
-                    <h2>Crie sua Conta</h2>
+        <div className="auth-page">
+            <div className="auth-container">
+                {/* COLUNA DA ESQUERDA (INTRO) */}
+                <div className="auth-intro">
+                    <div className="auth-intro-header">
+                        <h1>Comece sua Jornada</h1>
+                    </div>
+                    <p>
+                        Junte-se ao Bússola e transforme a maneira como você organiza sua vida financeira e pessoal.
+                        Simples, rápido e eficiente.
+                    </p>
+                    <img src={loginImageLight} alt="Ilustração Light" className="auth-intro-image theme-image image-light-mode" />
+                    <img src={loginImageDark} alt="Ilustração Dark" className="auth-intro-image theme-image image-dark-mode" />
                 </div>
 
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label>Nome Completo</label>
-                        <input 
-                            type="text" 
-                            className="form-input"
-                            value={fullName}
-                            onChange={(e) => setFullName(e.target.value)}
-                            required 
-                            placeholder="Seu Nome"
-                        />
+                {/* COLUNA DA DIREITA (FORMULÁRIO) */}
+                <div className="auth-card">
+                    <div className="auth-card-header">
+                        <img src={logoBussola} alt="Logo Bússola" className="auth-logo-card" />
+                        <h2>Crie sua Conta</h2>
                     </div>
 
-                    <div className="form-group">
-                        <label>E-mail</label>
-                        <input 
-                            type="email" 
-                            className="form-input"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required 
-                            placeholder="seu@email.com"
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Senha</label>
-                        <input 
-                            type="password" 
-                            className="form-input"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required 
-                            placeholder="Mínimo 6 caracteres"
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Confirmar Senha</label>
-                        <input 
-                            type="password" 
-                            className="form-input"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            required 
-                            placeholder="Repita a senha"
-                        />
-                    </div>
-                    
-                    <button type="submit" className="submit-button" disabled={loading} style={{width: '100%', marginTop: '10px'}}>
-                        {loading ? 'Criando Conta...' : 'Cadastrar'}
-                    </button>
-
-                    <div className="auth-actions" style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-                        <div style={{ fontSize: '0.9rem', color: 'var(--cor-texto-secundario)' }}>
-                            Já tem uma conta?{' '}
-                            <Link to="/login" style={{ color: 'var(--cor-azul-primario)', fontWeight: 'bold', textDecoration: 'none' }}>
-                                Fazer Login
-                            </Link>
+                    <form onSubmit={handleSubmit}>
+                        <div className="form-group">
+                            <label>Nome Completo</label>
+                            <input
+                                type="text"
+                                className="form-input"
+                                value={fullName}
+                                onChange={(e) => setFullName(e.target.value)}
+                                required
+                                placeholder="Seu Nome"
+                            />
                         </div>
-                    </div>
-                </form>
+
+                        <div className="form-group">
+                            <label>E-mail</label>
+                            <input
+                                type="email"
+                                className="form-input"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                placeholder="seu@email.com"
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Senha</label>
+                            <input
+                                type="password"
+                                className="form-input"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                placeholder="Mínimo 6 caracteres"
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Confirmar Senha</label>
+                            <input
+                                type="password"
+                                className="form-input"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                required
+                                placeholder="Repita a senha"
+                            />
+                        </div>
+
+                        <button type="submit" className="submit-button" disabled={loading} style={{ width: '100%', marginTop: '10px' }}>
+                            {loading ? 'Criando Conta...' : 'Cadastrar'}
+                        </button>
+
+                        <div className="auth-actions" style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+                            <div style={{ fontSize: '0.9rem', color: 'var(--cor-texto-secundario)' }}>
+                                Já tem uma conta?{' '}
+                                <Link to="/login" style={{ color: 'var(--cor-azul-primario)', fontWeight: 'bold', textDecoration: 'none' }}>
+                                    Fazer Login
+                                </Link>
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     );
