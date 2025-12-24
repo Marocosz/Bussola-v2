@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import api from '../services/api';
+import api, { updateUser } from '../services/api'; // Importando updateUser
 
 export const AuthContext = createContext();
 
@@ -53,10 +53,8 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // [NOVO] Função para Login com Google
     const loginGoogle = async (googleToken) => {
         try {
-            // Envia o token para o backend
             const response = await api.post('/login/google', { token: googleToken });
             const { access_token } = response.data;
 
@@ -74,6 +72,18 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // [NOVO] Função para atualizar os dados do usuário no estado global
+    const updateUserData = async (data) => {
+        try {
+            const updatedUser = await updateUser(data);
+            setUser(updatedUser);
+            return { success: true };
+        } catch (error) {
+            console.error("Erro ao atualizar usuário:", error);
+            return { success: false };
+        }
+    };
+
     const logout = () => {
         localStorage.removeItem('@Bussola:token');
         api.defaults.headers.Authorization = undefined;
@@ -82,8 +92,8 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        // [NOVO] Adicionado loginGoogle ao value
-        <AuthContext.Provider value={{ authenticated, user, login, loginGoogle, logout, loading }}>
+        // [ADICIONADO] updateUserData ao value
+        <AuthContext.Provider value={{ authenticated, user, login, loginGoogle, logout, updateUserData, loading }}>
             {children}
         </AuthContext.Provider>
     );

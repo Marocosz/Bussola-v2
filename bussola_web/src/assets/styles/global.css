@@ -528,3 +528,231 @@ a {
     color: var(--cor-azul-primario) !important;
     font-weight: 600 !important;
 }
+
+/* ========================================================= */
+/* 6. ACCOUNT DRAWER (PERFIL LATERAL)                        */
+/* ========================================================= */
+
+/* Botão da Navbar */
+.btn-nav-account {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--cor-card-secundario);
+    border: 1px solid var(--cor-borda);
+    padding: 5px 12px;
+    border-radius: 20px;
+    color: var(--cor-texto-principal);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-nav-account:hover {
+    border-color: var(--cor-azul-primario);
+    background: var(--cor-fundo-hover);
+}
+
+.nav-user-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--cor-azul-primario);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-size: 0.8rem;
+}
+
+.nav-user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Overlay do Drawer */
+.account-drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.account-drawer-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* O Painel Lateral (Drawer) */
+.account-drawer {
+    position: fixed;
+    top: 0;
+    left: -400px; /* Começa escondido à esquerda */
+    width: 100%;
+    max-width: 380px;
+    height: 100vh;
+    background: var(--cor-card-principal);
+    box-shadow: 10px 0 30px rgba(0,0,0,0.2);
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.account-drawer.open {
+    left: 0; /* Entra na tela */
+}
+
+.drawer-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--cor-borda);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.btn-close-drawer {
+    background: transparent;
+    border: none;
+    color: var(--cor-texto-secundario);
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.drawer-body {
+    flex: 1;
+    padding: 2rem 1.5rem;
+    overflow-y: auto;
+}
+
+.drawer-avatar-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.drawer-avatar-large {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: var(--cor-fundo);
+    border: 3px solid var(--cor-azul-primario);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+.drawer-avatar-large img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.drawer-email {
+    color: var(--cor-texto-secundario);
+    font-size: 0.9rem;
+}
+
+.premium-badge {
+    margin-top: 8px;
+    background: linear-gradient(45deg, #ffd700, #ffa500);
+    color: #000;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.drawer-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.drawer-footer {
+    padding: 1.5rem;
+    border-top: 1px solid var(--cor-borda);
+}
+
+/* ... (mantenha o que já adicionamos e inclua estes novos abaixo) */
+
+.form-divider {
+    margin: 1rem 0 0.5rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: var(--cor-azul-primario);
+    font-weight: 700;
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--cor-borda);
+    padding-bottom: 5px;
+}
+
+.auth-provider-tag {
+    margin-top: 10px;
+    padding: 4px 12px;
+    background: var(--cor-fundo-hover);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    color: var(--cor-texto-secundario);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: capitalize;
+}
+
+.google-info-box {
+    background: rgba(74, 109, 255, 0.05);
+    border: 1px dashed var(--cor-azul-primario);
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: var(--cor-texto-secundario);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.custom-select-area {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Reutilizando as classes que você já tem para os tópicos */
+.account-drawer .custom-option {
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.account-drawer .custom-option:hover {
+    background: var(--cor-fundo-hover);
+}
+
+.account-drawer .custom-option.selected {
+    border-color: var(--cor-azul-primario);
+    background: rgba(74, 109, 255, 0.1) !important;
+    color: var(--cor-azul-primario) !important;
+}
+
+/* Animação para o Drawer */
+@keyframes drawerFadeIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.account-drawer.open .drawer-body > * {
+    animation: drawerFadeIn 0.4s ease forwards;
+}

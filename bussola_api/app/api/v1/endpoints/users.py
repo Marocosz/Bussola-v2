@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Optional
 from datetime import timedelta
 
 from jose import jwt, JWTError
@@ -12,7 +12,7 @@ from app.core import security
 from app.core.config import settings
 from app.models.user import User
 from app.schemas.user import User as UserSchema, UserCreate, UserUpdate
-from app.core.security import get_password_hash
+from app.core.security import get_password_hash, verify_password
 
 # Import da função de email
 from app.utils.email import send_account_verification_email 
@@ -26,6 +26,56 @@ def read_user_me(
 ) -> Any:
     return current_user
 
+# [NOVO] Rota para atualizar os dados do próprio usuário
+@router.patch("/me", response_model=UserSchema)
+def update_user_me(
+    *,
+    db: Session = Depends(deps.get_db),
+    full_name: Optional[str] = Body(None),
+    email: Optional[EmailStr] = Body(None),
+    city: Optional[str] = Body(None),
+    news_preferences: Optional[List[str]] = Body(None),
+    current_password: Optional[str] = Body(None),
+    new_password: Optional[str] = Body(None),
+    current_user: User = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Atualiza os dados do perfil, preferências e segurança.
+    Exige senha atual para mudanças sensíveis em contas locais.
+    """
+    # 1. Validação de segurança para troca de email ou senha
+    if (new_password or (email and email != current_user.email)) and current_user.auth_provider == "local":
+        if not current_password or not verify_password(current_password, current_user.hashed_password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="A senha atual está incorreta. Confirmação necessária para alterações de segurança."
+            )
+
+    # 2. Atualização de campos básicos
+    if full_name is not None:
+        current_user.full_name = full_name
+    if city is not None:
+        current_user.city = city
+    if news_preferences is not None:
+        current_user.news_preferences = news_preferences
+
+    # 3. Atualização de E-mail (Somente Contas Locais)
+    if email is not None and current_user.auth_provider == "local":
+        if email != current_user.email:
+            existing_user = db.query(User).filter(User.email == email).first()
+            if existing_user:
+                raise HTTPException(status_code=400, detail="Este e-mail já está em uso por outro usuário.")
+            current_user.email = email
+
+    # 4. Atualização de Senha (Somente Contas Locais)
+    if new_password is not None and current_user.auth_provider == "local":
+        current_user.hashed_password = get_password_hash(new_password)
+
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
 # 2. Rota PÚBLICA de Registro
 @router.post("/open", response_model=UserSchema)
 async def create_user_open(
@@ -36,15 +86,10 @@ async def create_user_open(
 ) -> Any:
     """
     Rota de registro público.
-    Lógica de Segurança:
-    - No Self-Hosted: 1º usuário é Admin Verificado.
-    - No SaaS: Todos nascem desativados e aguardam e-mail.
     """
-    
     user_count = db.query(User).count()
-    is_saas = (settings.DEPLOYMENT_MODE == "SAAS") # Verifica se é SaaS
+    is_saas = (settings.DEPLOYMENT_MODE == "SAAS")
     
-    # --- LÓGICA DE PROTEÇÃO DE REGISTRO ---
     if not settings.ENABLE_PUBLIC_REGISTRATION:
         if user_count > 0:
             raise HTTPException(
@@ -52,7 +97,6 @@ async def create_user_open(
                 detail="O registro público está desativado nesta instância.",
             )
 
-    # --- VERIFICAÇÃO DE DUPLICIDADE ---
     user = db.query(User).filter(User.email == user_in.email).first()
     if user:
         raise HTTPException(
@@ -60,13 +104,10 @@ async def create_user_open(
             detail="Este e-mail já está cadastrado.",
         )
 
-    # --- DEFINIÇÃO DE PERMISSÕES INICIAIS (CORRIGIDO) ---
-    # No SaaS, is_first_user não importa para privilégios ou verificação
     if is_saas:
         is_admin = False
         should_be_verified = False
     else:
-        # Modo Self-Hosted: Primeiro é o mestre
         is_admin = (user_count == 0)
         should_be_verified = is_admin
 
@@ -85,7 +126,6 @@ async def create_user_open(
     db.commit()
     db.refresh(db_user)
 
-    # --- ENVIO DE EMAIL (BACKGROUND) ---
     if not should_be_verified:
         verify_token = security.create_access_token(
             subject=db_user.id, 
@@ -107,9 +147,6 @@ def verify_email(
     email: EmailStr,
     db: Session = Depends(deps.get_db)
 ) -> Any:
-    """
-    Valida o email do usuário decodificando o Token JWT.
-    """
     user = db.query(User).filter(User.email == email).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
@@ -146,9 +183,6 @@ def create_user_admin_manual(
     user_in: UserCreate,
     current_user: User = Depends(deps.get_current_active_superuser), 
 ) -> Any:
-    """
-    Criação manual de usuários pelo Painel Admin.
-    """
     user = db.query(User).filter(User.email == user_in.email).first()
     if user:
         raise HTTPException(

@@ -645,4 +645,16 @@ export const registerUser = async (userData: any) => {
     return response.data;
 };
 
+export const updateUser = async (data: { 
+    full_name?: string, 
+    city?: string, 
+    avatar_url?: string,
+    news_preferences?: string[], // Lista de tópicos (tech, finance, etc)
+    email?: string,
+    password?: string
+}) => {
+    const response = await api.patch('/users/me', data);
+    return response.data;
+};
+
 export default api;
