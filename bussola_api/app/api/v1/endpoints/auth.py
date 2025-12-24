@@ -41,7 +41,8 @@ async def login_google(
     foi movida para o AuthService.authenticate_google.
     """
     service = AuthService(session)
-    return await service.authenticate_google(token=payload.token)
+    # [CORREÇÃO] O argumento no service chama 'google_token', não 'token'
+    return await service.authenticate_google(google_token=payload.token)
 
 @router.post("/register", response_model=UserSchema)
 def register_public_user(
