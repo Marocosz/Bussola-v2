@@ -17,7 +17,7 @@ export function Register() {
     const [loading, setLoading] = useState(false);
 
     const { addToast } = useToast();
-    const { canRegister, loading: systemLoading } = useSystem();
+    const { canRegister, loading: systemLoading, isSelfHosted } = useSystem();
     const navigate = useNavigate();
 
     if (systemLoading) return <div className="loading-screen">Carregando...</div>;
@@ -47,12 +47,22 @@ export function Register() {
                 full_name: fullName
             });
 
-            // [ALTERADO] Redireciona para a página de sucesso completa em vez de voltar ao login
-            navigate('/register-success');
+            // Lógica de Redirecionamento SaaS vs Self-Hosted
+            if (isSelfHosted) {
+                addToast({
+                    type: 'success',
+                    title: 'Sucesso!',
+                    description: 'Sua conta foi criada. Você já pode fazer login.'
+                });
+                navigate('/login');
+            } else {
+                // No SaaS, precisamos que ele veja a página pedindo para olhar o e-mail
+                navigate('/register-success');
+            }
 
         } catch (error) {
             console.error(error);
-            const msg = (error).response?.data?.detail || 'Não foi possível criar a conta. Tente outro e-mail.';
+            const msg = error?.response?.data?.detail || 'Não foi possível criar a conta. Tente outro e-mail.';
             addToast({ type: 'error', title: 'Erro no Registro', description: msg });
         } finally {
             setLoading(false);

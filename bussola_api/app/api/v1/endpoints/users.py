@@ -104,12 +104,15 @@ async def create_user_open(
             detail="Este e-mail já está cadastrado.",
         )
 
+    # Lógica Inteligente SaaS vs Self-Hosted
     if is_saas:
+        # No SaaS, ninguém nasce admin ou verificado
         is_admin = False
         should_be_verified = False
     else:
+        # No Self-Hosted, o primeiro é Admin e já nasce verificado
         is_admin = (user_count == 0)
-        should_be_verified = is_admin
+        should_be_verified = True # No local, não exigimos e-mail para ativar
 
     db_user = User(
         email=user_in.email,
@@ -126,7 +129,8 @@ async def create_user_open(
     db.commit()
     db.refresh(db_user)
 
-    if not should_be_verified:
+    # SÓ envia e-mail se for modo SAAS e o usuário não estiver verificado
+    if is_saas and not should_be_verified:
         verify_token = security.create_access_token(
             subject=db_user.id, 
             expires_delta=timedelta(hours=24)
@@ -196,7 +200,7 @@ def create_user_admin_manual(
         full_name=user_in.full_name,
         is_active=True,
         is_superuser=False, 
-        is_verified=True,
+        is_verified=True, # Criado por Admin já nasce verificado
         auth_provider="local"
     )
     db.add(db_user)

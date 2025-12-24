@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-import httpx # [MUDANÇA] Usado para validar o token na API do Google
+import httpx 
 
 # Imports de Schemas
 from app.schemas.user import User as UserSchema, UserCreate, NewPassword
@@ -33,7 +33,7 @@ def login_access_token(
     OAuth2 compatible token login.
     Lógica de Segurança:
     1. Verifica credenciais (Email/Senha).
-    2. [NOVO] Verifica se o email foi confirmado (is_verified).
+    2. [SaaS vs Self-Hosted] Verifica is_verified apenas se modo for SaaS.
     """
     # 1. Busca Usuário
     user = session.query(User).filter(User.email == form_data.username).first()
@@ -48,8 +48,9 @@ def login_access_token(
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Usuário inativo.")
 
-    # 3. [BLOQUEIO] Se não verificou email, não entra.
-    if not user.is_verified:
+    # 3. [LÓGICA SAAS VS SELF-HOSTED]
+    # Se for SAAS, exige e-mail verificado. Se for SELF_HOSTED, permite o login.
+    if settings.DEPLOYMENT_MODE == "SAAS" and not user.is_verified:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, 
             detail="Seu e-mail ainda não foi verificado. Verifique sua caixa de entrada."
@@ -71,14 +72,7 @@ async def login_google(
 ) -> Any:
     """
     Login via Google.
-    Lógica de Account Linking:
-    1. Valida token (Access Token) na API do Google.
-    2. Se usuário não existe -> Cria (Verificado=True, Senha=Null).
-    3. Se usuário existe -> Atualiza (Verificado=True, Provider=Google/Hybrid).
     """
-    
-    # 1. [CORREÇÃO] Validar o Access Token batendo na API do Google
-    # O front está mandando um Access Token, não um ID Token (JWT).
     google_user_info = None
     
     async with httpx.AsyncClient() as client:
@@ -97,52 +91,38 @@ async def login_google(
             print(f"Erro conexão Google: {e}")
             raise HTTPException(status_code=400, detail="Falha ao conectar com o Google.")
 
-    # Extrair dados da resposta do Google
     email = google_user_info.get("email")
-    google_sub = google_user_info.get("sub") # ID único do usuário no Google
+    google_sub = google_user_info.get("sub") 
     name = google_user_info.get("name")
     picture = google_user_info.get("picture")
 
     if not email:
          raise HTTPException(status_code=400, detail="Google não retornou o e-mail.")
 
-    # 2. Verificar se usuário existe no banco
     user = session.query(User).filter(User.email == email).first()
 
     if not user:
-        # CENÁRIO A: Usuário Novo (Entrando 1ª vez via Google)
-        # Cria conta JÁ verificada e SEM senha
         user = User(
             email=email,
             full_name=name,
             avatar_url=picture,
             auth_provider="google",
             provider_id=google_sub,
-            is_verified=True, # Google garantiu o email
+            is_verified=True, 
             is_active=True,
             hashed_password=None 
         )
         session.add(user)
         session.commit()
         session.refresh(user)
-
     else:
-        # CENÁRIO B: Usuário Existente (Account Linking)
-        # O usuário provou ao Google que é dono do email. 
-        # Então, se estava como "Não verificado" no nosso banco, validamos agora.
-        
         updated = False
-        
-        # Se ele tinha criado conta local mas nunca clicou no link,
-        # o login do Google serve como verificação.
         if not user.is_verified:
             user.is_verified = True
             updated = True
         
-        # Vincula o ID do Google se ainda não tiver
         if not user.provider_id:
             user.provider_id = google_sub
-            # Se já tinha senha, vira hibrido. Se não tinha, é google puro.
             user.auth_provider = "hybrid" if user.hashed_password else "google"
             updated = True
             
@@ -158,7 +138,6 @@ async def login_google(
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Usuário inativo")
 
-    # 3. Gera Token JWT do sistema
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return Token(
         access_token=security.create_access_token(
@@ -172,11 +151,6 @@ def register_public_user(
     session: deps.SessionDep,
     user_in: UserCreate,
 ) -> Any:
-    """
-    Registro público (Wrapper para o Service).
-    Nota: A lógica de validação de email deve ser tratada no service
-    ou use o endpoint /users/open para controle mais fino.
-    """
     service = AuthService(session)
     return service.register_user(user_in)
 

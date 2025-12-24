@@ -146,9 +146,14 @@ export function Navbar() {
 
                                 <li><Link to="/login" onClick={logout}>Sair</Link></li>
 
+                                {/* Lógica Self-Hosted Restaurada */}
                                 {isSelfHosted && user?.is_superuser && (
                                     <li>
-                                        <button className="btn-secondary btn-nav-create" onClick={() => setShowAdminModal(true)}>
+                                        <button 
+                                            className="btn-secondary btn-nav-create" 
+                                            onClick={() => setShowAdminModal(true)}
+                                            title="Criar Novo Usuário"
+                                        >
                                             <i className="fa-solid fa-user-plus"></i>
                                             <span>Novo Usuário</span>
                                         </button>
