@@ -1,5 +1,14 @@
+import os
+from pathlib import Path
 from typing import List, Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# [NOVO] Define a raiz do projeto dinamicamente
+# __file__ = app/core/config.py
+# .parent  = app/core
+# .parent  = app
+# .parent  = raiz do projeto (bussola_api)
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 class Settings(BaseSettings):
     # Informações Básicas
@@ -28,13 +37,10 @@ class Settings(BaseSettings):
     # =========================================================
     # CONFIGURAÇÕES DE MODO (SAAS vs SELF-HOSTED)
     # =========================================================
-    # Define se é "SAAS" ou "SELF_HOSTED"
     DEPLOYMENT_MODE: str = "SELF_HOSTED" 
-    
-    # Define se o registro é aberto (SaaS) ou fechado (Self-Hosted após setup)
     ENABLE_PUBLIC_REGISTRATION: bool = True 
 
-    # [NOVO] Configurações de E-mail para validação interna
+    # Configurações de E-mail
     MAIL_USERNAME: Optional[str] = None
     MAIL_PASSWORD: Optional[str] = None
     MAIL_FROM: Optional[str] = None
@@ -48,26 +54,25 @@ class Settings(BaseSettings):
         return bool(self.MAIL_SERVER and self.MAIL_USERNAME and self.MAIL_PASSWORD)
 
     # =========================================================
-    # INTEGRAÇÕES OPCIONAIS (SaaS / Premium)
+    # INTEGRAÇÕES OPCIONAIS
     # =========================================================
-    # Login Social (Google)
     GOOGLE_CLIENT_ID: Optional[str] = None
     GOOGLE_CLIENT_SECRET: Optional[str] = None
-
-    # Pagamentos (Stripe)
     STRIPE_SECRET_KEY: Optional[str] = None
     STRIPE_WEBHOOK_SECRET: Optional[str] = None
-
-    # Discord Bot
     DISCORD_BOT_TOKEN: Optional[str] = None
     DISCORD_CLIENT_ID: Optional[str] = None
 
-    # CORS (Permitir que o React acesse o Backend)
+    # CORS
     BACKEND_CORS_ORIGINS: List[str] = [
         "http://localhost:5173", 
         "http://localhost:3000", 
         "http://127.0.0.1:5173"
     ]
+    
+    # [NOVO] Caminho para dados estáticos (Json, uploads, etc)
+    # Isso garante que funcione no Docker ou Local
+    DATA_DIR: str = os.path.join(str(BASE_DIR), "data")
 
     # Carrega as variáveis do arquivo .env automaticamente
     model_config = SettingsConfigDict(

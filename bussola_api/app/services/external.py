@@ -1,8 +1,7 @@
-import os
 import json
 import httpx
 import feedparser
-import redis.asyncio as redis # [MUDANÇA CRÍTICA] Usando versão assíncrona
+import redis.asyncio as redis
 import asyncio
 from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor
@@ -61,17 +60,17 @@ TOPIC_CONFIG = {
 class ExternalDataService:
     def __init__(self):
         self.redis_client = None
-        self.redis_url = getattr(settings, 'REDIS_URL', os.getenv('REDIS_URL'))
+        # [CORREÇÃO] Usa diretamente settings.REDIS_URL
+        self.redis_url = settings.REDIS_URL
         self._init_redis()
 
     def _init_redis(self):
         if self.redis_url:
             try:
-                # Criamos o pool mas não conectamos ainda (lazy loading)
                 self.redis_client = redis.from_url(
                     self.redis_url, 
                     decode_responses=True,
-                    socket_connect_timeout=1, # Timeout agressivo de 1s
+                    socket_connect_timeout=1,
                     socket_timeout=1
                 )
             except Exception as e:
@@ -84,19 +83,17 @@ class ExternalDataService:
         city_clean = (city or "Uberlandia").lower().strip().replace(" ", "")
         cache_key = f"weather:{city_clean}"
         
-        # 1. Tenta Cache (Assíncrono e Resiliente)
+        # 1. Tenta Cache
         if self.redis_client:
             try:
-                # O await aqui libera o Event Loop do FastAPI para outras rotas
                 cached = await self.redis_client.get(cache_key)
                 if cached:
                     return json.loads(cached)
             except Exception:
-                # Se falhar conexão ou DNS, ignoramos silenciosamente
                 pass
 
-        # 2. Busca na API
-        api_key = getattr(settings, 'OPENWEATHER_API_KEY', os.getenv('OPENWEATHER_API_KEY'))
+        # 2. Busca na API (Usa settings)
+        api_key = settings.OPENWEATHER_API_KEY
         if not api_key:
             return None
 
@@ -109,17 +106,15 @@ class ExternalDataService:
                     return None
                 
                 data = response.json()
-                icon_code = data['weather'][0]['icon']
                 
-                # Mapeamento de Ícones (Simplificado para o código não ficar gigante)
                 result = {
                     "temperature": round(data['main']['temp']),
                     "description": data['weather'][0]['description'],
-                    "icon_class": "wi-cloud", # Fallback ícone
+                    "icon_class": "wi-cloud", 
                     "city": data.get('name', city)
                 }
 
-                # 3. Salva no Cache (Assíncrono)
+                # 3. Salva no Cache
                 if self.redis_client:
                     try:
                         await self.redis_client.setex(cache_key, 1800, json.dumps(result))

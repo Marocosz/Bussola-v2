@@ -13,7 +13,7 @@ from app.schemas.financas import (
     TransacaoCreate, TransacaoUpdate, TransacaoResponse, 
     FinancasDashboardResponse
 )
-from app.services.financas import financas_service, ICONES_DISPONIVEIS
+from app.services.financas import financas_service
 
 router = APIRouter()
 
@@ -22,99 +22,11 @@ def get_financas_dashboard(
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):
-    # 1. Manutenção e Garantia de Categorias do Sistema
-    # [FIX] Passando user_id
-    financas_service.gerar_transacoes_futuras(db, current_user.id)
-    
-    # Cria "Indefinida (Despesa)" e "Indefinida (Receita)"
-    # [FIX] Passando user_id
-    financas_service.get_or_create_indefinida(db, "despesa", current_user.id)
-    financas_service.get_or_create_indefinida(db, "receita", current_user.id)
-
-    # 2. Datas
-    today = datetime.now()
-    start_of_month = today.replace(day=1, hour=0, minute=0, second=0)
-    next_month = start_of_month + relativedelta(months=1)
-
-    # 3. Categorias com Totais
-    
-    # --- DESPESAS ---
-    # [FIX] Filtro user_id
-    cats_despesa = db.query(Categoria).filter(Categoria.tipo == 'despesa', Categoria.user_id == current_user.id).all()
-    for cat in cats_despesa:
-        total_mes = db.query(func.sum(Transacao.valor)).filter(
-            Transacao.categoria_id == cat.id,
-            Transacao.data >= start_of_month,
-            Transacao.data < next_month,
-            Transacao.status == 'Efetivada'
-        ).scalar()
-        cat.total_gasto = total_mes or 0.0
-
-        stats = db.query(
-            func.sum(Transacao.valor),   
-            func.avg(Transacao.valor),   
-            func.count(Transacao.id)     
-        ).filter(
-            Transacao.categoria_id == cat.id,
-            Transacao.status == 'Efetivada'
-        ).first()
-
-        cat.total_historico = stats[0] or 0.0
-        cat.media_valor = stats[1] or 0.0
-        cat.qtd_transacoes = stats[2] or 0
-
-    # --- RECEITAS ---
-    # [FIX] Filtro user_id
-    cats_receita = db.query(Categoria).filter(Categoria.tipo == 'receita', Categoria.user_id == current_user.id).all()
-    for cat in cats_receita:
-        total_mes = db.query(func.sum(Transacao.valor)).filter(
-            Transacao.categoria_id == cat.id,
-            Transacao.data >= start_of_month,
-            Transacao.data < next_month,
-            Transacao.status == 'Efetivada'
-        ).scalar()
-        cat.total_ganho = total_mes or 0.0
-
-        stats = db.query(
-            func.sum(Transacao.valor),
-            func.avg(Transacao.valor),
-            func.count(Transacao.id)
-        ).filter(
-            Transacao.categoria_id == cat.id,
-            Transacao.status == 'Efetivada'
-        ).first()
-
-        cat.total_historico = stats[0] or 0.0
-        cat.media_valor = stats[1] or 0.0
-        cat.qtd_transacoes = stats[2] or 0
-
-    # 4. Transações Agrupadas
-    # [FIX] Filtro user_id
-    transacoes = db.query(Transacao).filter(Transacao.user_id == current_user.id).order_by(desc(Transacao.data)).all()
-    
-    pontuais_map = defaultdict(list)
-    recorrentes_map = defaultdict(list)
-
-    meses_traducao = {
-        1: "Janeiro", 2: "Fevereiro", 3: "Março", 4: "Abril", 5: "Maio", 6: "Junho",
-        7: "Julho", 8: "Agosto", 9: "Setembro", 10: "Outubro", 11: "Novembro", 12: "Dezembro"
-    }
-
-    for t in transacoes:
-        mes_key = f"{meses_traducao[t.data.month]}/{t.data.year}"
-        if t.tipo_recorrencia == 'pontual':
-            pontuais_map[mes_key].append(t)
-        else:
-            recorrentes_map[mes_key].append(t)
-
-    return {
-        "categorias_despesa": cats_despesa,
-        "categorias_receita": cats_receita,
-        "transacoes_pontuais": pontuais_map,
-        "transacoes_recorrentes": recorrentes_map,
-        "icones_disponiveis": ICONES_DISPONIVEIS,
-        "cores_disponiveis": financas_service.gerar_paleta_cores()
-    }
+    """
+    Retorna todos os dados consolidados para o Dashboard Financeiro.
+    """
+    # [FIX] Passando user_id para o service que contem toda a logica
+    return financas_service.get_dashboard_data(db, current_user.id)
 
 # --- CRUD TRANSAÇÕES ---
 @router.post("/transacoes", response_model=TransacaoResponse)

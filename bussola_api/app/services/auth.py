@@ -1,7 +1,7 @@
 from datetime import timedelta
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
-import requests
+import httpx # [MUDANÇA] Alterado de requests para httpx para suportar async
 import secrets
 from jose import jwt, JWTError
 
@@ -17,17 +17,28 @@ class AuthService:
         self.session = session
 
     def authenticate_user(self, email: str, password: str) -> Token:
+        # 1. Busca Usuário
         user = self.session.query(User).filter(User.email == email).first()
         
-        if not user or not security.verify_password(password, user.hashed_password):
+        # 2. Verifica Credenciais
+        if not user or not user.hashed_password or not security.verify_password(password, user.hashed_password):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email ou senha incorretos",
+                detail="Email ou senha incorretos.",
             )
         
+        # 3. Verifica Status
         if not user.is_active:
-            raise HTTPException(status_code=400, detail="Usuário inativo")
+            raise HTTPException(status_code=400, detail="Usuário inativo.")
 
+        # 4. [LÓGICA SAAS VS SELF-HOSTED] (Movida da Rota para cá)
+        if settings.DEPLOYMENT_MODE == "SAAS" and not user.is_verified:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, 
+                detail="Seu e-mail ainda não foi verificado. Verifique sua caixa de entrada."
+            )
+
+        # 5. Gera Token
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         return Token(
             access_token=security.create_access_token(
@@ -36,44 +47,67 @@ class AuthService:
             token_type="bearer",
         )
 
-    def authenticate_google(self, google_token: str) -> Token:
-        # 1. Valida Google
-        try:
-            google_response = requests.get(
-                "https://www.googleapis.com/oauth2/v3/userinfo",
-                headers={"Authorization": f"Bearer {google_token}"}
-            )
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Falha ao conectar com Google: {str(e)}")
+    async def authenticate_google(self, google_token: str) -> Token:
+        # 1. Valida token na API do Google (Logica movida da Rota)
+        google_user_info = None
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.get(
+                    "https://www.googleapis.com/oauth2/v3/userinfo",
+                    headers={"Authorization": f"Bearer {google_token}"}
+                )
+                if response.status_code != 200:
+                    raise HTTPException(status_code=400, detail="Token do Google inválido ou expirado.")
+                google_user_info = response.json()
+            except Exception as e:
+                print(f"Erro conexão Google: {e}")
+                raise HTTPException(status_code=400, detail="Falha ao conectar com o Google.")
         
-        if google_response.status_code != 200:
-            raise HTTPException(status_code=400, detail="Token do Google inválido ou expirado.")
-            
-        user_info = google_response.json()
-        email = user_info.get("email")
-        name = user_info.get("name")
-        
-        if not email:
-            raise HTTPException(status_code=400, detail="Token do Google não contém e-mail.")
+        email = google_user_info.get("email")
+        google_sub = google_user_info.get("sub") 
+        name = google_user_info.get("name")
+        picture = google_user_info.get("picture")
 
-        # 2. Busca ou Cria
+        if not email:
+             raise HTTPException(status_code=400, detail="Google não retornou o e-mail.")
+
+        # 2. Busca, Cria ou Atualiza Usuário
         user = self.session.query(User).filter(User.email == email).first()
 
         if not user:
-            random_password = secrets.token_urlsafe(16)
+            # Criação de novo usuário via Google
             user = User(
                 email=email,
-                full_name=name if name else email.split("@")[0],
-                hashed_password=security.get_password_hash(random_password),
+                full_name=name,
+                avatar_url=picture,
+                auth_provider="google",
+                provider_id=google_sub,
+                is_verified=True, 
                 is_active=True,
-                is_superuser=False,
-                is_premium=False 
+                hashed_password=None # Google users não tem senha local
             )
             self.session.add(user)
             self.session.commit()
             self.session.refresh(user)
+        else:
+            # Atualização de usuário existente (Account Linking)
+            updated = False
+            if not user.is_verified:
+                user.is_verified = True
+                updated = True
+            if not user.provider_id:
+                user.provider_id = google_sub
+                user.auth_provider = "hybrid" if user.hashed_password else "google"
+                updated = True
+            if not user.avatar_url and picture:
+                user.avatar_url = picture
+                updated = True
+            if updated:
+                self.session.add(user)
+                self.session.commit()
+                self.session.refresh(user)
         
-        elif not user.is_active:
+        if not user.is_active:
             raise HTTPException(status_code=400, detail="Usuário inativo.")
 
         # 3. Gera Token
@@ -101,7 +135,6 @@ class AuthService:
                 detail="Este e-mail já está cadastrado no sistema.",
             )
         
-        # [NOVO] Lógica SaaS vs Self-Hosted
         is_saas = (settings.DEPLOYMENT_MODE == "SAAS")
         is_admin = (not is_saas and user_count == 0)
         should_be_verified = not is_saas or is_admin
@@ -133,7 +166,6 @@ class AuthService:
             user.id, expires_delta=password_reset_expires
         )
         
-        # Tenta enviar e-mail real se configurado
         if settings.EMAILS_ENABLED:
             try:
                 await send_password_reset_email(email_to=user.email, token=reset_token)
@@ -141,7 +173,6 @@ class AuthService:
             except Exception as e:
                 print(f"Erro SMTP: {e}")
         
-        # [MODIFICADO] Fallback Terminal para Self-Hosted
         if settings.DEPLOYMENT_MODE == "SELF_HOSTED":
             print("\n" + "="*60)
             print(f"RECUPERAÇÃO DE SENHA (SELF-HOSTED) PARA: {user.email}")
