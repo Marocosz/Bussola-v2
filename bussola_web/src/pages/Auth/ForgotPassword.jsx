@@ -8,6 +8,7 @@ export function ForgotPassword() {
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const [sent, setSent] = useState(false); // Controla se já enviou para mostrar mensagem de sucesso
+    const [isLocalMode, setIsLocalMode] = useState(false); // [NOVO] Estado para identificar modo local
     
     const { addToast } = useToast();
 
@@ -16,19 +17,33 @@ export function ForgotPassword() {
         setLoading(true);
 
         try {
-            await requestPasswordRecovery(email);
-            setSent(true);
-            addToast({
-                type: 'success',
-                title: 'E-mail enviado',
-                description: 'Verifique sua caixa de entrada (e spam) para redefinir a senha.'
-            });
+            const response = await requestPasswordRecovery(email);
+            
+            // [NOVO] Verifica se o retorno indica modo local sem e-mail
+            if (response.msg === "SISTEMA_LOCAL_SEM_EMAIL") {
+                setIsLocalMode(true);
+                setSent(true);
+                addToast({
+                    type: 'info',
+                    title: 'Modo Local',
+                    description: 'O link de recuperação foi gerado no console do administrador.',
+                    duration: 8000
+                });
+            } else {
+                setSent(true);
+                setIsLocalMode(false);
+                addToast({
+                    type: 'success',
+                    title: 'E-mail enviado',
+                    description: 'Verifique sua caixa de entrada (e spam) para redefinir a senha.'
+                });
+            }
         } catch (error) {
             console.error(error);
             addToast({
                 type: 'error',
                 title: 'Erro ao solicitar',
-                description: 'Não foi possível enviar o e-mail. Tente novamente.'
+                description: 'Não foi possível processar a solicitação. Tente novamente.'
             });
         } finally {
             setLoading(false);
@@ -64,10 +79,21 @@ export function ForgotPassword() {
                     </form>
                 ) : (
                     <div className="auth-success-message">
-                        <i className="fas fa-envelope-open-text" style={{ fontSize: '3rem', color: '#4F46E5', marginBottom: '1rem' }}></i>
-                        <h3>Verifique seu E-mail!</h3>
-                        <p>Enviamos um link de recuperação para <strong>{email}</strong>.</p>
-                        <p className="text-muted">O link expira em 15 minutos.</p>
+                        {isLocalMode ? (
+                            <>
+                                <i className="fas fa-terminal" style={{ fontSize: '3rem', color: 'var(--cor-azul-primario)', marginBottom: '1rem' }}></i>
+                                <h3>Link Gerado no Console!</h3>
+                                <p>Este sistema está rodando em <strong>modo local</strong> sem e-mail configurado.</p>
+                                <p>O administrador deve fornecer o link de reset impresso no console do servidor.</p>
+                            </>
+                        ) : (
+                            <>
+                                <i className="fas fa-envelope-open-text" style={{ fontSize: '3rem', color: '#4F46E5', marginBottom: '1rem' }}></i>
+                                <h3>Verifique seu E-mail!</h3>
+                                <p>Enviamos um link de recuperação para <strong>{email}</strong>.</p>
+                                <p className="text-muted">O link expira em 15 minutos.</p>
+                            </>
+                        )}
                     </div>
                 )}
 

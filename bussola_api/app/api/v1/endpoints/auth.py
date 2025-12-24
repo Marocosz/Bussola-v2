@@ -72,6 +72,10 @@ async def login_google(
 ) -> Any:
     """
     Login via Google.
+    Lógica de Account Linking:
+    1. Valida token (Access Token) na API do Google.
+    2. Se usuário não existe -> Cria (Verificado=True, Senha=Null).
+    3. Se usuário existe -> Atualiza (Verificado=True, Provider=Google/Hybrid).
     """
     google_user_info = None
     
@@ -81,12 +85,9 @@ async def login_google(
                 "https://www.googleapis.com/oauth2/v3/userinfo",
                 headers={"Authorization": f"Bearer {payload.token}"}
             )
-            
             if response.status_code != 200:
                 raise HTTPException(status_code=400, detail="Token do Google inválido ou expirado.")
-            
             google_user_info = response.json()
-            
         except Exception as e:
             print(f"Erro conexão Google: {e}")
             raise HTTPException(status_code=400, detail="Falha ao conectar com o Google.")
@@ -120,16 +121,13 @@ async def login_google(
         if not user.is_verified:
             user.is_verified = True
             updated = True
-        
         if not user.provider_id:
             user.provider_id = google_sub
             user.auth_provider = "hybrid" if user.hashed_password else "google"
             updated = True
-            
         if not user.avatar_url and picture:
             user.avatar_url = picture
             updated = True
-
         if updated:
             session.add(user)
             session.commit()

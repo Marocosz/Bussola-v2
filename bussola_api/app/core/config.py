@@ -34,6 +34,19 @@ class Settings(BaseSettings):
     # Define se o registro é aberto (SaaS) ou fechado (Self-Hosted após setup)
     ENABLE_PUBLIC_REGISTRATION: bool = True 
 
+    # [NOVO] Configurações de E-mail para validação interna
+    MAIL_USERNAME: Optional[str] = None
+    MAIL_PASSWORD: Optional[str] = None
+    MAIL_FROM: Optional[str] = None
+    MAIL_PORT: int = 587
+    MAIL_SERVER: Optional[str] = None
+    MAIL_STARTTLS: bool = True
+    MAIL_SSL_TLS: bool = False
+
+    @property
+    def EMAILS_ENABLED(self) -> bool:
+        return bool(self.MAIL_SERVER and self.MAIL_USERNAME and self.MAIL_PASSWORD)
+
     # =========================================================
     # INTEGRAÇÕES OPCIONAIS (SaaS / Premium)
     # =========================================================
@@ -50,7 +63,6 @@ class Settings(BaseSettings):
     DISCORD_CLIENT_ID: Optional[str] = None
 
     # CORS (Permitir que o React acesse o Backend)
-    # Por padrão permite localhost:5173 (Vite) e localhost:3000 (React padrão)
     BACKEND_CORS_ORIGINS: List[str] = [
         "http://localhost:5173", 
         "http://localhost:3000", 
@@ -61,7 +73,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env", 
         env_ignore_empty=True,
-        extra="ignore" # Ignora variáveis extras no .env que não estejam listadas aqui
+        extra="ignore"
     )
 
 settings = Settings()

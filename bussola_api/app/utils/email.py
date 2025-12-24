@@ -1,24 +1,21 @@
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 from app.core.config import settings
 from pathlib import Path
-
-# Configuração puxando do .env (ajuste conforme como você carrega suas envs)
-# Se você usa Pydantic Settings no app/core/config.py, o ideal é adicionar lá.
-# Mas para simplificar, vamos puxar direto de os.getenv ou usar um objeto simples aqui.
-
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
+# Criamos a configuração apenas com valores que não quebram a validação do Pydantic
+# Se as variáveis não existirem, usamos strings vazias para evitar o erro de 'NoneType'
 conf = ConnectionConfig(
-    MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
-    MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
-    MAIL_FROM=os.getenv("MAIL_FROM"),
-    MAIL_PORT=int(os.getenv("MAIL_PORT", 587)),
-    MAIL_SERVER=os.getenv("MAIL_SERVER"),
-    MAIL_STARTTLS=os.getenv("MAIL_STARTTLS") == "True",
-    MAIL_SSL_TLS=os.getenv("MAIL_SSL_TLS") == "True",
+    MAIL_USERNAME=settings.MAIL_USERNAME or "none",
+    MAIL_PASSWORD=settings.MAIL_PASSWORD or "none",
+    MAIL_FROM=settings.MAIL_FROM or "noreply@bussola.com",
+    MAIL_PORT=settings.MAIL_PORT or 587,
+    MAIL_SERVER=settings.MAIL_SERVER or "localhost",
+    MAIL_STARTTLS=settings.MAIL_STARTTLS,
+    MAIL_SSL_TLS=settings.MAIL_SSL_TLS,
     USE_CREDENTIALS=True,
     VALIDATE_CERTS=True
 )
@@ -51,6 +48,16 @@ async def send_password_reset_email(email_to: str, token: str):
         </body>
     </html>
     """
+    
+    message = MessageSchema(
+        subject="Recuperação de Senha - Bússola",
+        recipients=[email_to],
+        body=html,
+        subtype=MessageType.html
+    )
+
+    fm = FastMail(conf)
+    await fm.send_message(message)
 
 async def send_account_verification_email(email_to: str, token: str):
     """

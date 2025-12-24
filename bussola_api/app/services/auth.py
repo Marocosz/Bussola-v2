@@ -86,8 +86,8 @@ class AuthService:
         )
 
     def register_user(self, user_in: UserCreate) -> User:
+        user_count = self.session.query(User).count()
         if not settings.ENABLE_PUBLIC_REGISTRATION:
-            user_count = self.session.query(User).count()
             if user_count > 0:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -101,13 +101,19 @@ class AuthService:
                 detail="Este e-mail já está cadastrado no sistema.",
             )
         
+        # [NOVO] Lógica SaaS vs Self-Hosted
+        is_saas = (settings.DEPLOYMENT_MODE == "SAAS")
+        is_admin = (not is_saas and user_count == 0)
+        should_be_verified = not is_saas or is_admin
+
         db_user = User(
             email=user_in.email,
             hashed_password=security.get_password_hash(user_in.password),
             full_name=user_in.full_name,
             is_active=True,
-            is_superuser=False, 
-            is_premium=False    
+            is_superuser=is_admin, 
+            is_premium=is_admin,
+            is_verified=should_be_verified
         )
         
         self.session.add(db_user)
@@ -127,16 +133,26 @@ class AuthService:
             user.id, expires_delta=password_reset_expires
         )
         
-        try:
-            await send_password_reset_email(email_to=user.email, token=reset_token)
-        except Exception as e:
-            print(f"Erro ao enviar email: {e}")
-            raise HTTPException(
-                status_code=500,
-                detail="Falha ao enviar e-mail de recuperação."
-            )
+        # Tenta enviar e-mail real se configurado
+        if settings.EMAILS_ENABLED:
+            try:
+                await send_password_reset_email(email_to=user.email, token=reset_token)
+                return "Email de recuperação enviado."
+            except Exception as e:
+                print(f"Erro SMTP: {e}")
+        
+        # [MODIFICADO] Fallback Terminal para Self-Hosted
+        if settings.DEPLOYMENT_MODE == "SELF_HOSTED":
+            print("\n" + "="*60)
+            print(f"RECUPERAÇÃO DE SENHA (SELF-HOSTED) PARA: {user.email}")
+            print(f"LINK: http://localhost:5173/reset-password?token={reset_token}")
+            print("="*60 + "\n")
+            return "SISTEMA_LOCAL_SEM_EMAIL"
 
-        return "Email de recuperação enviado."
+        raise HTTPException(
+            status_code=500,
+            detail="Falha ao enviar e-mail de recuperação."
+        )
 
     def reset_password(self, payload: NewPassword) -> str:
         try:
