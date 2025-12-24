@@ -9,7 +9,8 @@ from app.api.v1.endpoints import (
     cofre, 
     panorama,
     system,
-    users
+    users,
+    ai
 )
 
 api_router = APIRouter()
@@ -25,6 +26,6 @@ api_router.include_router(registros.router, prefix="/registros", tags=["registro
 api_router.include_router(ritmo.router, prefix="/ritmo", tags=["ritmo"])
 api_router.include_router(cofre.router, prefix="/cofre", tags=["cofre"])
 api_router.include_router(panorama.router, prefix="/panorama", tags=["panorama"])
-
+api_router.include_router(ai.router, prefix="/ai", tags=["ai"]) 
 api_router.include_router(system.router, prefix="/system", tags=["system"])
 api_router.include_router(users.router, prefix="/users", tags=["users"])

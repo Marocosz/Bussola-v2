@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useToast } from '../../context/ToastContext';
 // [NOVO] Import do Hook de Confirmação (Ajuste o caminho se o arquivo tiver outro nome)
 import { useConfirm } from '../../context/ConfirmDialogContext';
+import { AiAssistant } from '../../components/AiAssistant';
 
 import {
     getBioData,
@@ -518,6 +519,7 @@ export function Ritmo() {
                     initialData={dietaParaEditar}
                 />
             )}
+            <AiAssistant context="ritmo" />
         </div>
     );
 }

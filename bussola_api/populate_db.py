@@ -1,19 +1,21 @@
 import random
-import uuid # [NOVO] Para gerar ID de grupos
+import uuid
 from datetime import datetime, timedelta, date
-from dateutil.relativedelta import relativedelta # [NOVO] Para cálculos de meses
+from dateutil.relativedelta import relativedelta
 from faker import Faker
 from sqlalchemy.orm import Session
 from sqlalchemy import inspect
-from dotenv import load_dotenv # [CORREÇÃO] Importante
+from dotenv import load_dotenv
+from cryptography.fernet import Fernet # [NOVO] Para criptografar senhas manualmente
 
-# [CORREÇÃO] Carrega variaveis de ambiente antes de qualquer import do App
+# Carrega variáveis de ambiente
 load_dotenv()
 
 # Imports do App
 from app.db.session import SessionLocal
+from app.core.config import settings
 
-# Tenta importar Models (incluindo o novo Ritmo)
+# Tenta importar Models
 try:
     from app.models.user import User
     from app.models.financas import Categoria, Transacao
@@ -28,9 +30,16 @@ except ImportError as e:
     print(f"⚠️ Erro ao importar Models: {e}")
     exit(1)
 
-# Inicializa Faker
+# Inicializa Faker e Banco
 fake = Faker('pt_BR')
 db = SessionLocal()
+
+# Inicializa Criptografia (Igual ao Service)
+try:
+    cipher_suite = Fernet(settings.ENCRYPTION_KEY.encode())
+except Exception:
+    cipher_suite = None
+    print("⚠️ AVISO: ENCRYPTION_KEY não encontrada. Senhas do cofre podem falhar.")
 
 # ==============================================================================
 # UTILITÁRIOS
@@ -44,7 +53,7 @@ def get_target_user_id():
             print(f"👤 Dados serão vinculados ao usuário: {user.email} (ID: {user.id})")
             return user.id
         else:
-            print("❌ Nenhum usuário encontrado! Rode 'python create_user.py' antes.")
+            print("❌ Nenhum usuário encontrado! Crie um usuário manualmente primeiro.")
             exit(1)
     except Exception as e:
         print(f"⚠️ Erro ao buscar usuário: {e}")
@@ -52,7 +61,7 @@ def get_target_user_id():
 
 def create_instance(model_class, data, user_id=None):
     """
-    Cria instância do model verificando colunas e injetando user_id.
+    Cria instância do model de forma segura.
     """
     mapper = inspect(model_class)
     columns = [c.key for c in mapper.attrs]
@@ -61,16 +70,10 @@ def create_instance(model_class, data, user_id=None):
     if user_id and 'user_id' in columns:
         data['user_id'] = user_id
         
-    # Remove campos inválidos
+    # Remove campos que não existem no model (segurança)
     clean_data = {k: v for k, v in data.items() if k in columns}
     
-    instance = model_class(**clean_data)
-    
-    # Tratamento especial para Setter de Criptografia do Cofre
-    if model_class == Segredo and 'valor' in data:
-        instance.valor = data['valor'] # Aciona o @valor.setter
-        
-    return instance
+    return model_class(**clean_data)
 
 # ==============================================================================
 # MÓDULOS DE POPULAÇÃO
@@ -92,18 +95,18 @@ def create_registros(user_id):
         if not grupo:
             grupo = create_instance(GrupoAnotacao, {"nome": nome, "cor": cor}, user_id)
             db.add(grupo)
-            db.commit() # Commit para gerar ID
+            db.commit()
             db.refresh(grupo)
         grupos_objs.append(grupo)
     
     # 2. Anotações (30 notas)
-    titulos_notas = ["Resumo Reunião", "Lista de Livros", "Ideia App SaaS", "Receita Panqueca", "Senhas Wifi", "Rascunho Email"]
+    titulos = ["Resumo Reunião", "Lista de Livros", "Ideia App SaaS", "Receita Panqueca", "Senhas Wifi", "Rascunho Email", "Playlist Foco"]
     for _ in range(30):
         grupo = random.choice(grupos_objs)
         html = f"<p>{fake.paragraph()}</p><ul><li>{fake.sentence()}</li><li>{fake.sentence()}</li></ul>"
         
         nota = create_instance(Anotacao, {
-            "titulo": f"{random.choice(titulos_notas)} - {fake.word().capitalize()}",
+            "titulo": f"{random.choice(titulos)} - {fake.word().capitalize()}",
             "conteudo": html,
             "fixado": random.choice([True] + [False]*9),
             "data_criacao": fake.date_time_between(start_date='-6M', end_date='now'),
@@ -113,13 +116,13 @@ def create_registros(user_id):
     db.commit()
             
     # 3. Tarefas (50 tarefas)
-    verbos = ["Ligar para", "Comprar", "Finalizar", "Estudar", "Enviar", "Pagar", "Revisar"]
+    verbos = ["Ligar para", "Comprar", "Finalizar", "Estudar", "Enviar", "Pagar", "Revisar", "Agendar"]
     for _ in range(50):
         dt_criacao = fake.date_time_between(start_date='-3M', end_date='now')
         status = random.choice(["Pendente", "Em andamento", "Concluído"])
         
         tarefa = create_instance(Tarefa, {
-            "titulo": f"{random.choice(verbos)} {fake.first_name() if 'Ligar' in verbos else fake.word()}",
+            "titulo": f"{random.choice(verbos)} {fake.bs()}",
             "descricao": fake.sentence(),
             "status": status,
             "prioridade": random.choice(["Baixa", "Média", "Alta", "Crítica"]),
@@ -136,7 +139,7 @@ def create_registros(user_id):
         if random.random() < 0.4:
             for i in range(random.randint(1, 3)):
                 sub = Subtarefa(
-                    titulo=f"Etapa {i+1}: {fake.word()}", 
+                    titulo=f"Passo {i+1}: {fake.word()}", 
                     concluido=random.choice([True, False]), 
                     tarefa_id=tarefa.id
                 )
@@ -146,7 +149,7 @@ def create_registros(user_id):
     print("   ✅ Registros OK.")
 
 def create_financas(user_id):
-    print("💰 Populando Finanças (Pontuais, Recorrentes e Parceladas)...")
+    print("💰 Populando Finanças (Transações Complexas)...")
     
     # 1. Categorias
     cats_config = [
@@ -159,7 +162,8 @@ def create_financas(user_id):
         ("Lazer", "despesa", "fa-gamepad", "#8b5cf6"),
         ("Assinaturas", "despesa", "fa-credit-card", "#6366f1"),
         ("Saúde", "despesa", "fa-heart-pulse", "#ec4899"),
-        ("Eletrônicos", "despesa", "fa-plug", "#6366f1"), # Nova categoria para parcelados
+        ("Eletrônicos", "despesa", "fa-plug", "#6366f1"),
+        ("Educação", "despesa", "fa-graduation-cap", "#14b8a6"),
     ]
     
     cats_objs = {}
@@ -199,23 +203,25 @@ def create_financas(user_id):
         db.add(trans)
 
     # 3. Transações RECORRENTES (Assinaturas e Contas Fixas - 12 meses)
-    print("   ... Gerando recorrências (Assinaturas)")
+    print("   ... Gerando assinaturas e fixos")
     recorrencias = [
-        ("Netflix", "Assinaturas", 55.90, "despesa"),
-        ("Spotify", "Assinaturas", 21.90, "despesa"),
-        ("Academia", "Saúde", 120.00, "despesa"),
-        ("Aluguel", "Moradia", 2500.00, "despesa"),
-        ("Salário Mensal", "Salário", 6500.00, "receita")
+        ("Netflix Premium", "Assinaturas", 55.90, "despesa"),
+        ("Spotify Family", "Assinaturas", 34.90, "despesa"),
+        ("Academia Smart", "Saúde", 129.90, "despesa"),
+        ("Aluguel Apt", "Moradia", 2200.00, "despesa"),
+        ("Internet Fibra", "Moradia", 149.90, "despesa"),
+        ("Salário Mensal", "Salário", 5500.00, "receita"),
+        ("Rendimentos CDI", "Investimentos", 120.50, "receita")
     ]
 
     for desc_base, cat_nome, valor, tipo in recorrencias:
         grupo_id = uuid.uuid4().hex
         cat = cats_objs.get(cat_nome)
-        if not cat: continue # Segurança
+        if not cat: continue 
 
         start_date = fake.date_time_between(start_date='-8M', end_date='-7M')
         
-        # Gera 12 ocorrências
+        # Gera 12 meses
         for i in range(12):
             data_venc = start_date + relativedelta(months=i)
             status = "Efetivada" if data_venc < datetime.now() else "Pendente"
@@ -232,17 +238,17 @@ def create_financas(user_id):
             }, user_id)
             db.add(trans)
 
-    # 4. Transações PARCELADAS (Compras Grandes)
+    # 4. Transações PARCELADAS
     print("   ... Gerando compras parceladas")
     parcelados = [
-        ("Notebook Gamer", "Eletrônicos", 7000.00, 10), # 10x
-        ("Viagem Férias", "Lazer", 4500.00, 6),         # 6x
-        ("iPhone 15", "Eletrônicos", 6000.00, 12),      # 12x
+        ("Macbook Air", "Eletrônicos", 8500.00, 10),
+        ("Curso Python Pro", "Educação", 1200.00, 4),
+        ("Revisão Carro", "Transporte", 1800.00, 3),
     ]
 
     for desc_base, cat_nome, valor_total, qtd_parcelas in parcelados:
         grupo_id = uuid.uuid4().hex
-        cat = cats_objs.get(cat_nome) or cats_objs.get("Lazer") # Fallback
+        cat = cats_objs.get(cat_nome) or cats_objs.get("Lazer")
         
         valor_parcela = round(valor_total / qtd_parcelas, 2)
         start_date = fake.date_time_between(start_date='-5M', end_date='-2M')
@@ -251,7 +257,7 @@ def create_financas(user_id):
             data_venc = start_date + relativedelta(months=i-1)
             status = "Efetivada" if data_venc < datetime.now() else "Pendente"
             
-            # Ajuste de centavos na primeira parcela (opcional, mas profissional)
+            # Ajuste de centavos
             valor_final = valor_parcela
             if i == 1:
                 diff = round(valor_total - (valor_parcela * qtd_parcelas), 2)
@@ -276,20 +282,19 @@ def create_financas(user_id):
 def create_agenda(user_id):
     print("📅 Populando Agenda...")
     
-    tipos = ["Reunião", "Consulta Médica", "Almoço com Cliente", "Treino", "Call Daily", "Aniversário"]
-    locais = ["Google Meet", "Escritório", "Centro", "Academia Smart", "Zoom"]
+    tipos = ["Daily Scrum", "Consulta Dentista", "Almoço Equipe", "Treino Pesado", "Review Projeto", "Aniversário Mãe"]
+    locais = ["Google Meet", "Consultório Dr. André", "Restaurante Coco Bambu", "Smart Fit", "Zoom", "Casa"]
     
     for _ in range(60):
         dt = fake.date_time_between(start_date='-2M', end_date='+2M')
-        # Zera segundos para ficar bonito
         dt = dt.replace(second=0, microsecond=0)
         
         status = 'Pendente'
         if dt < datetime.now():
-            status = random.choice(['Realizado', 'Perdido', 'Realizado']) # Mais chance de realizado
+            status = random.choice(['Realizado', 'Realizado', 'Perdido']) 
             
         evt = create_instance(Compromisso, {
-            "titulo": f"{random.choice(tipos)}: {fake.first_name()}",
+            "titulo": f"{random.choice(tipos)}",
             "descricao": fake.sentence(),
             "local": random.choice(locais),
             "data_hora": dt,
@@ -302,7 +307,7 @@ def create_agenda(user_id):
     print("   ✅ Agenda OK.")
 
 def create_cofre(user_id):
-    print("🔒 Populando Cofre...")
+    print("🔒 Populando Cofre (Com Criptografia)...")
     
     contas = [
         ("Netflix", "Entretenimento", "user@gmail.com"),
@@ -310,16 +315,25 @@ def create_cofre(user_id):
         ("Gov.br", "Pessoal", "123.456.789-00"),
         ("AWS Console", "Trabalho", "admin-user"),
         ("Instagram", "Social", "@usuario_insta"),
-        ("Banco Inter", "Financeiro", "conta 1234")
+        ("Banco Inter", "Financeiro", "conta 1234"),
+        ("Steam", "Games", "gamer_pro"),
+        ("Notion", "Produtividade", "email@corp.com")
     ]
     
     for titulo, servico, login in contas:
+        senha_limpa = fake.password(length=12)
+        
+        # Criptografa manualmente pois removemos o setter mágico do Model
+        senha_cripto = ""
+        if cipher_suite:
+            senha_cripto = cipher_suite.encrypt(senha_limpa.encode()).decode()
+        
         segredo = create_instance(Segredo, {
             "titulo": titulo,
             "servico": servico,
             "notas": f"Login: {login} | Criado em {fake.date()}",
             "data_expiracao": fake.future_date() if random.random() < 0.2 else None,
-            "valor": fake.password(length=12) # Isso será criptografado pelo Setter
+            "valor_criptografado": senha_cripto # Campo correto do BD
         }, user_id)
         db.add(segredo)
         
@@ -327,7 +341,7 @@ def create_cofre(user_id):
     print("   ✅ Cofre OK.")
 
 def create_ritmo(user_id):
-    print("💪 Populando Ritmo (Treino & Dieta)...")
+    print("💪 Populando Ritmo (Bio, Treinos, Nutrição)...")
     
     # 1. Bio
     bio = create_instance(RitmoBio, {
@@ -335,6 +349,7 @@ def create_ritmo(user_id):
         "nivel_atividade": "moderado", "objetivo": "ganho_massa",
         "tmb": 1800, "gasto_calorico_total": 2600,
         "meta_proteina": 160, "meta_carbo": 300, "meta_gordura": 70, "meta_agua": 3.5,
+        "bf_estimado": 18.5,
         "data_registro": datetime.now()
     }, user_id)
     db.add(bio)
@@ -347,11 +362,10 @@ def create_ritmo(user_id):
     db.commit()
     db.refresh(plano)
     
-    # Dias do Plano
     treinos = [
-        ("Treino A - Peito/Tríceps", [("Supino Reto", "Peito", 4), ("Crucifixo", "Peito", 3), ("Tríceps Corda", "Tríceps", 4)]),
-        ("Treino B - Costas/Bíceps", [("Puxada Alta", "Costas", 4), ("Remada Curvada", "Costas", 3), ("Rosca Direta", "Bíceps", 4)]),
-        ("Treino C - Pernas/Ombro", [("Agachamento", "Quadríceps", 4), ("Leg Press", "Quadríceps", 3), ("Elevação Lateral", "Ombros", 4)])
+        ("Treino A - Peito/Tríceps", [("Supino Reto", "Peito", 4), ("Crucifixo", "Peito", 3), ("Tríceps Corda", "Tríceps", 4), ("Mergulho", "Tríceps", 3)]),
+        ("Treino B - Costas/Bíceps", [("Puxada Alta", "Costas", 4), ("Remada Curvada", "Costas", 3), ("Rosca Direta", "Bíceps", 4), ("Rosca Martelo", "Bíceps", 3)]),
+        ("Treino C - Pernas/Ombro", [("Agachamento", "Quadríceps", 4), ("Leg Press", "Quadríceps", 3), ("Stiff", "Posterior", 4), ("Elevação Lateral", "Ombros", 4)])
     ]
     
     for idx, (nome_dia, exercicios) in enumerate(treinos):
@@ -381,12 +395,23 @@ def create_ritmo(user_id):
     db.refresh(dieta)
     
     # Refeições
-    ref1 = RitmoRefeicao(dieta_id=dieta.id, nome="Café da Manhã", ordem=0)
-    db.add(ref1); db.commit(); db.refresh(ref1)
-    
-    ali1 = RitmoAlimentoItem(refeicao_id=ref1.id, nome="Ovos Inteiros", quantidade=3, unidade="un", calorias=210, proteina=18, carbo=2, gordura=15)
-    ali2 = RitmoAlimentoItem(refeicao_id=ref1.id, nome="Pão Integral", quantidade=2, unidade="fatias", calorias=120, proteina=4, carbo=24, gordura=2)
-    db.add_all([ali1, ali2])
+    refeicoes_data = [
+        ("Café da Manhã", [("Ovos Inteiros", 3, "un", 210, 18, 2, 15), ("Pão Integral", 2, "fatias", 120, 4, 24, 2)]),
+        ("Almoço", [("Arroz Branco", 200, "g", 260, 5, 56, 0), ("Frango Grelhado", 150, "g", 240, 46, 0, 5), ("Feijão", 100, "g", 76, 5, 14, 0)]),
+        ("Lanche Tarde", [("Whey Protein", 1, "dose", 110, 24, 3, 1), ("Banana Prata", 1, "un", 70, 1, 18, 0)]),
+        ("Jantar", [("Patinho Moído", 150, "g", 300, 40, 0, 12), ("Batata Doce", 200, "g", 170, 3, 40, 0)])
+    ]
+
+    for idx, (nome_ref, alimentos) in enumerate(refeicoes_data):
+        ref = RitmoRefeicao(dieta_id=dieta.id, nome=nome_ref, ordem=idx)
+        db.add(ref); db.commit(); db.refresh(ref)
+        
+        for nome, qtd, unid, cal, prot, carb, gord in alimentos:
+            ali = RitmoAlimentoItem(
+                refeicao_id=ref.id, nome=nome, quantidade=qtd, unidade=unid,
+                calorias=cal, proteina=prot, carbo=carb, gordura=gord
+            )
+            db.add(ali)
     
     db.commit()
     print("   ✅ Ritmo OK.")
@@ -406,6 +431,8 @@ def main():
         
     except Exception as e:
         print(f"\n❌ Erro crítico: {e}")
+        import traceback
+        traceback.print_exc()
         db.rollback()
     finally:
         db.close()

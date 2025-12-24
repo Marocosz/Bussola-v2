@@ -33,6 +33,15 @@ class Settings(BaseSettings):
 
     # Segurança de Dados
     ENCRYPTION_KEY: str
+    
+    GROQ_API_KEY: Optional[str] = None
+    GEMINI_API_KEY: Optional[str] = None
+    OPENAI_API_KEY: Optional[str] = None
+
+    # Configuração da IA
+    # Opções: "groq", "gemini", "openai"
+    LLM_PROVIDER: str = "groq" 
+    LLM_MODEL_NAME: Optional[str] = None # Se None, usa o default do factory
 
     # =========================================================
     # CONFIGURAÇÕES DE MODO (SAAS vs SELF-HOSTED)
@@ -62,6 +71,8 @@ class Settings(BaseSettings):
     STRIPE_WEBHOOK_SECRET: Optional[str] = None
     DISCORD_BOT_TOKEN: Optional[str] = None
     DISCORD_CLIENT_ID: Optional[str] = None
+    
+    
 
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = [

@@ -657,4 +657,20 @@ export const updateUser = async (data: {
     return response.data;
 };
 
+export type AiContext = 'ritmo' | 'financas' | 'agenda' | 'registros' | 'cofre';
+
+export const aiService = {
+  // 2. Aplique o tipo no parâmetro 'context'
+  getInsight: async (context: AiContext) => {
+    try {
+      const endpoint = `/ai/${context}/insight`; 
+      const response = await api.get(endpoint);
+      return response.data;
+    } catch (error) {
+      console.error(`Erro ao buscar insight IA para ${context}:`, error);
+      throw error; 
+    }
+  },
+};
+
 export default api;

@@ -1,0 +1,184 @@
+/* Container Principal (Ocupa apenas o espaço do botão) */
+.ai-floating-container {
+  position: fixed;
+  z-index: 9999;
+  width: 56px; /* Tamanho exato do botão para o drag funcionar bem */
+  height: 56px;
+  /* Desabilita seleção de texto durante arraste */
+  user-select: none; 
+  /* Garante que o container não bloqueie cliques fora dele */
+  pointer-events: none; 
+}
+
+/* Botão Redondo (FAB) - Recebe os cliques */
+.ai-fab {
+  pointer-events: auto; /* Reabilita cliques no botão */
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #a855f7); /* Indigo to Purple */
+  border: none;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+  color: white;
+  font-size: 1.5rem;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+
+.ai-fab:active {
+  cursor: grabbing;
+  transform: scale(0.95);
+}
+
+.ai-fab:hover {
+  transform: scale(1.1);
+}
+
+/* Modal de Conteúdo (Posicionado Absolutamente acima do botão) */
+.ai-content-wrapper {
+  pointer-events: auto; /* Reabilita cliques no conteúdo */
+  position: absolute;
+  bottom: 70px; /* 56px do botão + margem */
+  left: 0;
+  width: 320px;
+  
+  /* Animação de entrada */
+  opacity: 0;
+  transform: scale(0.9) translateY(20px);
+  transform-origin: bottom left;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  
+  /* Esconde visualmente e do mouse quando fechado */
+  visibility: hidden; 
+}
+
+.ai-content-wrapper.visible {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  visibility: visible;
+}
+
+/* Card Visual */
+.ai-card {
+  background: rgba(30, 41, 59, 0.95); /* Dark Slate */
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 1.25rem;
+  color: #f8fafc;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  border-left: 4px solid #6366f1; /* Cor default */
+}
+
+/* Bordas coloridas baseadas na urgência/agente */
+.ai-card.border-red { border-left-color: #ef4444; }
+.ai-card.border-orange { border-left-color: #f97316; }
+.ai-card.border-green { border-left-color: #22c55e; }
+.ai-card.border-blue { border-left-color: #3b82f6; }
+
+/* Header interno */
+.ai-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.ai-badge {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.ai-refresh-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 4px;
+  transition: color 0.2s;
+}
+
+.ai-refresh-btn:hover:not(:disabled) {
+  color: #fff;
+}
+
+.ai-refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.timer {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Conteúdo */
+.ai-title {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.ai-message {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #cbd5e1;
+}
+
+/* Empty State */
+.ai-empty {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.btn-start {
+  background: #3b82f6;
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+/* Loading Skeleton */
+.ai-skeleton .line {
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
+  margin-bottom: 8px;
+  height: 12px;
+  animation: pulse 1.5s infinite;
+}
+.ai-skeleton .title { height: 20px; width: 60%; margin-bottom: 15px; }
+.ai-skeleton .body { width: 100%; }
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+/* Ping Animation no botão */
+.ping {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 2px solid #1e293b;
+}
