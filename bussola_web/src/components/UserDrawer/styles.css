@@ -1,0 +1,265 @@
+/* Overlay do Drawer */
+.drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6); /* Um pouco mais escuro para foco */
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.drawer-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* O Painel Lateral (Drawer) */
+.drawer-content {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    
+    /* CONFIGURAÇÃO: Nasce na Esquerda */
+    left: 0;
+    right: auto;
+    transform: translateX(-100%); 
+    
+    /* DIMENSÕES ATUALIZADAS */
+    width: 30%;            /* Ocupa 30% da tela */
+    min-width: 450px;      /* Garante que não fique muito fino em telas pequenas */
+    max-width: 800px;      /* Limite para telas ultrawide */
+    height: 100vh;
+    
+    background: var(--cor-card-principal);
+    box-shadow: 10px 0 40px rgba(0,0,0,0.3); /* Sombra mais difusa */
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.drawer-content.open {
+    transform: translateX(0);
+}
+
+/* Cabeçalho */
+.drawer-header {
+    padding: 2rem; /* Mais espaçamento */
+    border-bottom: 1px solid var(--cor-borda);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--cor-card-secundario); /* Destaque sutil no header */
+}
+
+.drawer-header h2 {
+    font-size: 1.4rem; /* Fonte maior */
+    color: var(--cor-texto-principal);
+    font-weight: 600;
+}
+
+.btn-close-drawer {
+    background: transparent;
+    border: none;
+    color: var(--cor-texto-secundario);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-close-drawer:hover {
+    background: var(--cor-fundo-hover);
+    color: var(--cor-texto-principal);
+}
+
+/* Corpo do Drawer */
+.drawer-body {
+    flex: 1;
+    padding: 2.5rem 2rem; /* Mais respiro interno */
+    overflow-y: auto;
+}
+
+/* --- PERFIL (SEM AVATAR) --- */
+.profile-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Alinhado à esquerda agora, mais elegante para wide */
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px dashed var(--cor-borda);
+}
+
+.profile-info h3 {
+    margin-bottom: 0.8rem;
+    font-size: 1.8rem; /* Nome bem grande */
+    font-weight: 700;
+    color: var(--cor-texto-principal);
+    letter-spacing: -0.5px;
+}
+
+.badge-provider {
+    padding: 6px 14px;
+    background: var(--cor-fundo-hover);
+    border: 1px solid var(--cor-borda);
+    border-radius: 30px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--cor-texto-secundario);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: capitalize;
+}
+
+/* Formulários */
+.drawer-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.8rem;
+}
+
+.form-section-title {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--cor-azul-primario);
+    font-weight: 700;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.6rem;
+    font-weight: 500;
+    font-size: 0.95rem;
+    color: var(--cor-texto-secundario);
+}
+
+.form-input {
+    padding: 1rem; /* Inputs mais altos/confortáveis */
+    font-size: 1rem;
+    background: var(--cor-fundo);
+    border-color: var(--cor-borda);
+}
+
+.form-input:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    background: rgba(255,255,255,0.02);
+}
+
+/* Tags de Interesse */
+.tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.tag-option {
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    padding: 12px 18px; /* Tags maiores */
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    color: var(--cor-texto-secundario);
+    flex-grow: 1; /* Ocupam espaço uniformemente */
+    text-align: center;
+}
+
+.tag-option:hover {
+    background: var(--cor-fundo-hover);
+    border-color: var(--cor-texto-secundario);
+}
+
+.tag-option.selected {
+    background: rgba(74, 109, 255, 0.15);
+    border-color: var(--cor-azul-primario);
+    color: var(--cor-azul-primario);
+    font-weight: 600;
+}
+
+/* Segurança */
+.security-box {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: var(--cor-fundo-hover); /* Fundo sutil para área de segurança */
+    border-radius: 12px;
+}
+
+.no-password-alert {
+    background: rgba(74, 109, 255, 0.1);
+    border: 1px solid var(--cor-azul-primario);
+    padding: 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: var(--cor-texto-principal);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.confirm-password-group {
+    background: rgba(231, 76, 60, 0.1);
+    padding: 1.2rem;
+    border-radius: 8px;
+    border: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+.confirm-password-group label {
+    color: #ff6b6b;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.confirm-password-group label::before {
+    content: '\f023'; /* Ícone de cadeado FontAwesome */
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+}
+
+.input-hint {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.8rem;
+    color: var(--cor-texto-secundario);
+    opacity: 0.7;
+}
+
+/* Footer */
+.drawer-footer {
+    padding: 2rem;
+    border-top: 1px solid var(--cor-borda);
+    background: var(--cor-card-secundario);
+}
+
+.large-btn {
+    padding: 1rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+/* Animação */
+@keyframes drawerFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.drawer-content.open .drawer-body > * {
+    animation: drawerFadeIn 0.5s ease forwards;
+}
