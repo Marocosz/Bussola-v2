@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react'; // [FIX] Added useContext
 import { Link } from 'react-router-dom';
 import { getHomeData } from '../../services/api';
 import { useToast } from '../../context/ToastContext'; 
-import { useSystem } from '../../context/SystemContext'; // [NOVO] Import do System
+import { useSystem } from '../../context/SystemContext';
+import { AuthContext } from '../../context/AuthContext'; // [FIX] Import AuthContext
+
 import './styles.css';
 
 // Importação das Imagens (Vite)
@@ -12,6 +14,10 @@ import systemPana from '../../assets/images/system-pana.svg';
 import systemPanaDark from '../../assets/images/system-pana-dark.svg';
 
 export function Home() {
+    const { user } = useContext(AuthContext); // [FIX] Get user for fallback city
+    const { isSelfHosted } = useSystem();
+    const { addToast } = useToast();
+
     // Estado para o Relógio
     const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -21,13 +27,8 @@ export function Home() {
         tech_news: []
     });
     const [loading, setLoading] = useState(true);
-    
-    const { addToast } = useToast();
-    
-    // [NOVO] Pegar flag self-hosted
-    const { isSelfHosted } = useSystem();
 
-    // Efeito: Relógio
+    // Efeito: Relógio (Atualiza a cada segundo)
     useEffect(() => {
         const timer = setInterval(() => {
             setCurrentTime(new Date());
@@ -43,7 +44,8 @@ export function Home() {
                 setDashboardData(data);
             } catch (error) {
                 console.error("Erro ao carregar dados da Home:", error);
-                addToast({ type: 'warning', title: 'Atenção', description: 'Alguns dados do dashboard podem estar desatualizados.' });
+                // Não mostra toast de erro na Home para não ser intrusivo, 
+                // o fallback visual (loading/error) já resolve.
             } finally {
                 setLoading(false);
             }
@@ -51,7 +53,7 @@ export function Home() {
         fetchData();
     }, []);
 
-    // Helpers
+    // Helpers de Formatação
     const formatTime = (date) => {
         return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     };
@@ -62,6 +64,9 @@ export function Home() {
         return formatted.charAt(0).toUpperCase() + formatted.slice(1);
     };
 
+    // Lógica para exibir a cidade: API > Usuário > Padrão
+    const displayCity = dashboardData.weather?.city || user?.city || "Localização";
+
     return (
         <main className="container main-container">
             {/* Seção Hero */}
@@ -71,8 +76,7 @@ export function Home() {
                         <h1>Bússola Hub</h1>
                         <p className="subtitle">
                             Este não é apenas um painel de controle; é um ecossistema integrado projetado para trazer clareza à
-                            complexidade do seu dia a dia. Gerencie seus fluxos financeiros, domine sua agenda, capture ideias e 
-                            proteja dados críticos em uma interface unificada.
+                            complexidade do seu dia a dia. Gerencie seus fluxos financeiros, domine sua agenda e proteja seus dados.
                         </p>
                     </div>
 
@@ -81,7 +85,7 @@ export function Home() {
                             <div className="time-display">{formatTime(currentTime)}</div>
                             <div className="date-location-display">
                                 <p>{formatDate(currentTime)}</p>
-                                <p>Uberlândia, BR</p>
+                                <p><i className="fa-solid fa-location-dot" style={{marginRight:'5px'}}></i> {displayCity}</p>
                             </div>
                         </div>
 
@@ -90,7 +94,7 @@ export function Home() {
                             {loading ? (
                                 <div className="weather-loading" style={{display:'flex', alignItems:'center', gap:'10px', width:'100%', justifyContent:'center'}}>
                                     <i className="fas fa-circle-notch fa-spin" style={{fontSize:'1.2rem', color:'var(--cor-azul-primario)'}}></i>
-                                    <span style={{fontSize:'0.9rem', color:'var(--cor-texto-secundario)'}}>Carregando clima...</span>
+                                    <span>Carregando...</span>
                                 </div>
                             ) : dashboardData.weather ? (
                                 <>
@@ -101,8 +105,8 @@ export function Home() {
                                     </div>
                                 </>
                             ) : (
-                                <div className="weather-error" style={{textAlign:'center', width:'100%', fontSize:'0.9rem', color:'var(--cor-texto-secundario)'}}>
-                                    Clima indisponível
+                                <div className="weather-error" style={{textAlign:'center', width:'100%', fontSize:'0.85rem', color:'var(--cor-texto-secundario)'}}>
+                                    <i className="fa-solid fa-cloud-slash"></i> Clima indisponível
                                 </div>
                             )}
                         </div>
@@ -112,8 +116,6 @@ export function Home() {
 
             {/* Seção de Funcionalidades */}
             <section className="features-presentation-area">
-                
-                {/* Linha 1 */}
                 <div className="feature-row">
                     <div className="feature-image-showcase">
                         <img src={walletAmico} alt="Análise de Finanças" className="theme-image image-light-mode" />
@@ -138,7 +140,6 @@ export function Home() {
                     </div>
                 </div>
 
-                {/* Linha 2 */}
                 <div className="feature-row">
                     <div className="feature-content-stack align-right">
                         <div className="feature-item">
@@ -175,7 +176,7 @@ export function Home() {
                 </div>
             </section>
 
-            {/* [NOVO] Sponsor Banner (Exclusivo Self-Hosted) */}
+            {/* Sponsor Banner (Self-Hosted) */}
             {isSelfHosted && (
                 <section className="sponsor-section" style={{
                     marginTop: '60px',
@@ -191,8 +192,7 @@ export function Home() {
                             Apoie o Projeto
                         </h3>
                         <p style={{marginBottom: '20px', color: 'var(--cor-texto-secundario)'}}>
-                            O Bússola Self-Hosted é open-source e mantido pela comunidade. 
-                            Considere se tornar um sponsor para garantir a evolução contínua da ferramenta.
+                            O Bússola Self-Hosted é open-source. Torne-se um sponsor.
                         </p>
                         <button className="btn-primary" style={{borderRadius: '25px', padding: '10px 25px'}}>
                             Torne-se um Sponsor
@@ -204,20 +204,29 @@ export function Home() {
             {/* Footer de Notícias */}
             <footer className="news-footer-section">
                 <div className="section-header">
-                    <h2>Feed Rápido de Tecnologia</h2>
+                    <h2>
+                        <i className="fa-regular fa-newspaper" style={{marginRight:'10px'}}></i> 
+                        Feed Rápido
+                    </h2>
                 </div>
-                <div className="news-list">
+                
+                <div className="news-grid">
                     {!loading && dashboardData.tech_news.length > 0 ? (
                         dashboardData.tech_news.map((article, index) => (
-                            <a key={index} href={article.url} target="_blank" rel="noopener noreferrer" className="news-item">
-                                <span className="news-title">{article.title}</span>
-                                <span className="news-source">{article.source.name}</span>
+                            <a key={index} href={article.url} target="_blank" rel="noopener noreferrer" className="news-card">
+                                <span className="news-topic-badge">{article.topic || 'Geral'}</span>
+                                <h4 className="news-title">{article.title}</h4>
+                                <div className="news-meta">
+                                    <span className="news-source">{article.source.name}</span>
+                                    <i className="fa-solid fa-external-link-alt"></i>
+                                </div>
                             </a>
                         ))
                     ) : (
-                        <p className="news-error" style={{textAlign: 'center', color: 'var(--cor-texto-secundario)'}}>
-                            {loading ? "Carregando notícias..." : "Não foi possível carregar as notícias no momento."}
-                        </p>
+                        <div className="news-error-state">
+                            <i className="fa-solid fa-satellite-dish"></i>
+                            <p>{loading ? "Buscando atualizações..." : "Nenhuma notícia encontrada no momento."}</p>
+                        </div>
                     )}
                 </div>
             </footer>
