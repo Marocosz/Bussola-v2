@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import api, { updateUser } from '../services/api'; // Importando updateUser
+import api, { updateUser } from '../services/api';
 
 export const AuthContext = createContext();
 
@@ -72,7 +72,8 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // [NOVO] Função para atualizar os dados do usuário no estado global
+    // Função para atualizar os dados do usuário no estado global
+    // Isso dispara o re-render na Home graças ao setUser
     const updateUserData = async (data) => {
         try {
             const updatedUser = await updateUser(data);
@@ -92,7 +93,6 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        // [ADICIONADO] updateUserData ao value
         <AuthContext.Provider value={{ authenticated, user, login, loginGoogle, logout, updateUserData, loading }}>
             {children}
         </AuthContext.Provider>

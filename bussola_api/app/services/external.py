@@ -63,22 +63,28 @@ class ExternalDataService:
         self.redis_url = settings.REDIS_URL
         self._init_redis()
         
-        # [NOVO] Headers para simular um navegador e evitar bloqueios em RSS
+        # Headers para simular um navegador e evitar bloqueios em RSS
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         }
 
     def _init_redis(self):
+        """Inicializa a conexão com o Redis de forma segura."""
         if self.redis_url:
             try:
+                # socket_timeout curto para não travar a API se o Redis estiver fora
                 self.redis_client = redis.from_url(
                     self.redis_url, 
                     decode_responses=True,
-                    socket_connect_timeout=1,
-                    socket_timeout=1
+                    socket_connect_timeout=2,
+                    socket_timeout=2
                 )
+                print(f"[Redis] Cliente configurado para: {self.redis_url.split('@')[-1]}") 
             except Exception as e:
-                print(f"[Aviso] Falha ao configurar Redis: {e}")
+                print(f"[ERRO] Falha crítica ao configurar Redis: {e}")
+                self.redis_client = None
+        else:
+            print("[Aviso] REDIS_URL não definida. Cache desativado.")
 
     # ==========================================================================
     # WEATHER SERVICE
@@ -88,16 +94,19 @@ class ExternalDataService:
         city_clean = (city or "Uberlandia").lower().strip().replace(" ", "")
         cache_key = f"weather:{city_clean}"
         
-        # 1. Tenta Cache
+        # 1. Tenta Cache (Redis)
         if self.redis_client:
             try:
+                # Tenta ler do cache
                 cached = await self.redis_client.get(cache_key)
                 if cached:
+                    # [DEBUG] print(f"Hit Cache Weather: {city}")
                     return json.loads(cached)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"[Redis Error] Falha ao ler clima: {e}")
+                # Não faz nada, segue para a API externa (Fallback)
 
-        # 2. Busca na API
+        # 2. Busca na API (Se não tiver cache ou Redis falhar)
         api_key = settings.OPENWEATHER_API_KEY
         if not api_key:
             return None
@@ -106,7 +115,7 @@ class ExternalDataService:
 
         async with httpx.AsyncClient() as client:
             try:
-                response = await client.get(url, timeout=3.0)
+                response = await client.get(url, timeout=4.0)
                 if response.status_code != 200:
                     return None
                 
@@ -129,14 +138,16 @@ class ExternalDataService:
                     "city": data.get('name', city)
                 }
 
-                # 3. Salva no Cache (30 min)
+                # 3. Salva no Cache (30 min = 1800s)
                 if self.redis_client:
                     try:
                         await self.redis_client.setex(cache_key, 1800, json.dumps(result))
-                    except: pass
+                    except Exception as e:
+                        print(f"[Redis Error] Falha ao salvar clima: {e}")
 
                 return result
-            except Exception:
+            except Exception as e:
+                print(f"[API Error] Erro OpenWeather: {e}")
                 return None
 
     # ==========================================================================
@@ -152,7 +163,6 @@ class ExternalDataService:
     def _fetch_topic_feeds(self, topic: str) -> List[Dict]:
         """
         Busca feeds de forma síncrona (rodará em thread).
-        [MELHORIA] Usa httpx para baixar o XML com User-Agent antes de passar pro feedparser.
         """
         config = TOPIC_CONFIG.get(topic)
         if not config: return []
@@ -210,7 +220,6 @@ class ExternalDataService:
         # 2. Busca tópicos faltantes em paralelo
         if missing_topics:
             loop = asyncio.get_running_loop()
-            # Aumentei workers para agilizar
             with ThreadPoolExecutor(max_workers=10) as executor:
                 futures = [loop.run_in_executor(executor, self._fetch_topic_feeds, topic) for topic in missing_topics]
                 results = await asyncio.gather(*futures)
@@ -218,7 +227,9 @@ class ExternalDataService:
                 for topic, articles in zip(missing_topics, results):
                     if articles:
                         if self.redis_client:
-                             try: await self.redis_client.setex(f"news_topic:{topic}", 3600, json.dumps(articles))
+                             try: 
+                                 # Cache de Notícias = 1 hora (3600s)
+                                 await self.redis_client.setex(f"news_topic:{topic}", 3600, json.dumps(articles))
                              except: pass
                         final_articles.extend(articles)
 
@@ -226,7 +237,6 @@ class ExternalDataService:
         unique_articles = []
         seen = set()
         
-        # Ordena por data (mais recente primeiro)
         sorted_articles = sorted(final_articles, key=lambda x: x['published_at'], reverse=True)
         
         for art in sorted_articles:
@@ -234,7 +244,6 @@ class ExternalDataService:
                 unique_articles.append(art)
                 seen.add(art['title'].lower())
         
-        # [REQUISITO] Retorna exatamente 8 notícias
         return unique_articles[:8]
 
 external_service = ExternalDataService()

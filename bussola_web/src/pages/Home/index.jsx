@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useContext } from 'react'; // [FIX] Added useContext
+import React, { useEffect, useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { getHomeData } from '../../services/api';
+import { getWeather, getNews } from '../../services/api'; // [NOVO] Importando funções separadas
 import { useToast } from '../../context/ToastContext'; 
 import { useSystem } from '../../context/SystemContext';
-import { AuthContext } from '../../context/AuthContext'; // [FIX] Import AuthContext
+import { AuthContext } from '../../context/AuthContext';
 
 import './styles.css';
 
@@ -14,19 +14,20 @@ import systemPana from '../../assets/images/system-pana.svg';
 import systemPanaDark from '../../assets/images/system-pana-dark.svg';
 
 export function Home() {
-    const { user } = useContext(AuthContext); // [FIX] Get user for fallback city
+    const { user } = useContext(AuthContext);
     const { isSelfHosted } = useSystem();
     const { addToast } = useToast();
 
     // Estado para o Relógio
     const [currentTime, setCurrentTime] = useState(new Date());
 
-    // Estado para Dados da API
-    const [dashboardData, setDashboardData] = useState({
-        weather: null,
-        tech_news: []
-    });
-    const [loading, setLoading] = useState(true);
+    // [NOVO] Estados separados para Clima e Notícias
+    const [weatherData, setWeatherData] = useState(null);
+    const [newsData, setNewsData] = useState([]);
+    
+    // [NOVO] Loadings independentes
+    const [loadingWeather, setLoadingWeather] = useState(true);
+    const [loadingNews, setLoadingNews] = useState(true);
 
     // Efeito: Relógio (Atualiza a cada segundo)
     useEffect(() => {
@@ -36,22 +37,43 @@ export function Home() {
         return () => clearInterval(timer);
     }, []);
 
-    // Efeito: Busca Dados
+    // [NOVO] Efeito: Busca CLIMA (Separado)
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchWeather = async () => {
+            setLoadingWeather(true);
             try {
-                const data = await getHomeData();
-                setDashboardData(data);
+                const data = await getWeather();
+                setWeatherData(data);
             } catch (error) {
-                console.error("Erro ao carregar dados da Home:", error);
-                // Não mostra toast de erro na Home para não ser intrusivo, 
-                // o fallback visual (loading/error) já resolve.
+                console.error("Erro ao carregar clima:", error);
             } finally {
-                setLoading(false);
+                setLoadingWeather(false);
             }
         };
-        fetchData();
-    }, []);
+
+        if (user) {
+            fetchWeather();
+        }
+    }, [user?.city]); // Recarrega se mudar a cidade
+
+    // [NOVO] Efeito: Busca NOTÍCIAS (Separado)
+    useEffect(() => {
+        const fetchNews = async () => {
+            setLoadingNews(true);
+            try {
+                const data = await getNews();
+                setNewsData(data || []);
+            } catch (error) {
+                console.error("Erro ao carregar notícias:", error);
+            } finally {
+                setLoadingNews(false);
+            }
+        };
+
+        if (user) {
+            fetchNews();
+        }
+    }, [JSON.stringify(user?.news_preferences)]); // Recarrega se mudar preferências
 
     // Helpers de Formatação
     const formatTime = (date) => {
@@ -64,8 +86,8 @@ export function Home() {
         return formatted.charAt(0).toUpperCase() + formatted.slice(1);
     };
 
-    // Lógica para exibir a cidade: API > Usuário > Padrão
-    const displayCity = dashboardData.weather?.city || user?.city || "Localização";
+    // Lógica de exibição da cidade
+    const displayCity = user?.city || weatherData?.city || "Localização";
 
     return (
         <main className="container main-container">
@@ -91,17 +113,17 @@ export function Home() {
 
                         {/* Widget de Clima */}
                         <div className="weather-widget">
-                            {loading ? (
+                            {loadingWeather ? (
                                 <div className="weather-loading" style={{display:'flex', alignItems:'center', gap:'10px', width:'100%', justifyContent:'center'}}>
                                     <i className="fas fa-circle-notch fa-spin" style={{fontSize:'1.2rem', color:'var(--cor-azul-primario)'}}></i>
-                                    <span>Carregando...</span>
+                                    <span>Atualizando...</span>
                                 </div>
-                            ) : dashboardData.weather ? (
+                            ) : weatherData ? (
                                 <>
-                                    <i className={`wi ${dashboardData.weather.icon_class}`}></i>
+                                    <i className={`wi ${weatherData.icon_class}`}></i>
                                     <div className="weather-details">
-                                        <span className="temperature">{dashboardData.weather.temperature}°C</span>
-                                        <span className="description">{dashboardData.weather.description}</span>
+                                        <span className="temperature">{weatherData.temperature}°C</span>
+                                        <span className="description">{weatherData.description}</span>
                                     </div>
                                 </>
                             ) : (
@@ -211,8 +233,8 @@ export function Home() {
                 </div>
                 
                 <div className="news-grid">
-                    {!loading && dashboardData.tech_news.length > 0 ? (
-                        dashboardData.tech_news.map((article, index) => (
+                    {!loadingNews && newsData.length > 0 ? (
+                        newsData.map((article, index) => (
                             <a key={index} href={article.url} target="_blank" rel="noopener noreferrer" className="news-card">
                                 <span className="news-topic-badge">{article.topic || 'Geral'}</span>
                                 <h4 className="news-title">{article.title}</h4>
@@ -225,7 +247,7 @@ export function Home() {
                     ) : (
                         <div className="news-error-state">
                             <i className="fa-solid fa-satellite-dish"></i>
-                            <p>{loading ? "Buscando atualizações..." : "Nenhuma notícia encontrada no momento."}</p>
+                            <p>{loadingNews ? "Buscando atualizações..." : "Nenhuma notícia encontrada no momento."}</p>
                         </div>
                     )}
                 </div>

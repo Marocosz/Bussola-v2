@@ -108,9 +108,24 @@ export interface HomeData {
     tech_news: NewsArticle[];
 }
 
-export const getHomeData = async (): Promise<HomeData> => {
-    const response = await api.get('/home/');
-    return response.data;
+export const getWeather = async () => {
+    try {
+        const response = await api.get('/home/weather');
+        return response.data;
+    } catch (error) {
+        console.error("Erro ao buscar clima:", error);
+        return null;
+    }
+};
+
+export const getNews = async () => {
+    try {
+        const response = await api.get('/home/news');
+        return response.data;
+    } catch (error) {
+        console.error("Erro ao buscar notícias:", error);
+        return [];
+    }
 };
 
 // ==========================================================
