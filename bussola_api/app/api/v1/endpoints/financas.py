@@ -1,3 +1,29 @@
+"""
+=======================================================================================
+ARQUIVO: financas.py (Endpoints de Gestão Financeira)
+=======================================================================================
+
+OBJETIVO:
+    Controlador para o módulo financeiro. Gerencia transações (Receitas/Despesas) e 
+    suas Categorias.
+
+PARTE DO SISTEMA:
+    Backend / API Layer / Endpoints
+
+RESPONSABILIDADES:
+    1. CRUD de Transações: Criação, edição, exclusão e toggle de status (Pendente/Efetivada).
+    2. CRUD de Categorias: Validação de nomes reservados e unicidade por usuário.
+    3. Integridade Referencial: Movimentação automática de transações para "Indefinida"
+       ao excluir uma categoria.
+    4. Exclusão em Lote: Deletar grupos inteiros de transações recorrentes/parceladas.
+
+COMUNICAÇÃO:
+    - Chama: app.services.financas.financas_service
+    - Depende: app.api.deps (Session e User)
+
+=======================================================================================
+"""
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
@@ -17,25 +43,38 @@ from app.services.financas import financas_service
 
 router = APIRouter()
 
+# --------------------------------------------------------------------------------------
+# DASHBOARD
+# --------------------------------------------------------------------------------------
+
 @router.get("/", response_model=FinancasDashboardResponse)
 def get_financas_dashboard(
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):
     """
-    Retorna todos os dados consolidados para o Dashboard Financeiro.
+    Retorna o panorama completo das finanças.
+    Inclui:
+    - Totais de despesa/receita do mês.
+    - Lista de transações pontuais e recorrentes agrupadas por mês.
+    - Paleta de cores e ícones disponíveis para UI.
     """
-    # [FIX] Passando user_id para o service que contem toda a logica
     return financas_service.get_dashboard_data(db, current_user.id)
 
-# --- CRUD TRANSAÇÕES ---
+# --------------------------------------------------------------------------------------
+# TRANSAÇÕES (CRUD)
+# --------------------------------------------------------------------------------------
+
 @router.post("/transacoes", response_model=TransacaoResponse)
 def create_transacao(
     transacao_in: TransacaoCreate,
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):
-    # [FIX] Passando user_id
+    """
+    Cria uma nova transação.
+    Se for 'parcelada' ou 'recorrente', o Service gerencia a criação de múltiplos registros.
+    """
     return financas_service.criar_transacao(db, transacao_in, current_user.id)
 
 @router.put("/transacoes/{id}", response_model=TransacaoResponse)
@@ -45,7 +84,7 @@ def update_transacao(
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):
-    # [FIX] Passando user_id
+    # Atualização unitária. Para editar recorrências em lote, lógica adicional seria necessária.
     transacao = financas_service.atualizar_transacao(db, id, transacao_in, current_user.id)
     if not transacao:
         raise HTTPException(status_code=404, detail="Transação não encontrada")
@@ -57,7 +96,7 @@ def toggle_status(
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):
-    # [FIX] Validação user_id
+    """Alterna rapidamente entre 'Pendente' e 'Efetivada'."""
     transacao = db.query(Transacao).filter(Transacao.id == id, Transacao.user_id == current_user.id).first()
     if not transacao:
         raise HTTPException(status_code=404, detail="Transação não encontrada")
@@ -72,34 +111,48 @@ def delete_transacao(
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):
-    # [FIX] Validação user_id
+    """
+    Exclui uma transação.
+    
+    Regra de Recorrência:
+        Se a transação faz parte de um grupo (parcelada/recorrente), TODAS as transações
+        desse grupo são excluídas em cascata para manter a integridade contábil.
+    """
     transacao = db.query(Transacao).filter(Transacao.id == id, Transacao.user_id == current_user.id).first()
     if not transacao:
         raise HTTPException(status_code=404, detail="Transação não encontrada")
     
+    # Exclusão em Lote se pertencer a um grupo
     if transacao.id_grupo_recorrencia and transacao.tipo_recorrencia in ['recorrente', 'parcelada']:
-        # [FIX] Filtro user_id
         db.query(Transacao).filter(
             Transacao.id_grupo_recorrencia == transacao.id_grupo_recorrencia,
             Transacao.user_id == current_user.id
         ).delete()
     else:
+        # Exclusão unitária
         db.delete(transacao)
     
     db.commit()
     return {"status": "success"}
 
-# --- CRUD CATEGORIAS ---
+# --------------------------------------------------------------------------------------
+# CATEGORIAS (CRUD)
+# --------------------------------------------------------------------------------------
+
 @router.post("/categorias", response_model=CategoriaResponse)
 def create_categoria(
     cat_in: CategoriaCreate, 
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):
+    """
+    Cria uma nova categoria personalizada.
+    Bloqueia o nome reservado "Indefinida".
+    """
     if "indefinida" in cat_in.nome.strip().lower():
         raise HTTPException(status_code=400, detail="O nome 'Indefinida' é reservado pelo sistema.")
 
-    # [FIX] Verifica duplicidade considerando user_id
+    # Validação de duplicidade por usuário
     exists = db.query(Categoria).filter(
         func.lower(Categoria.nome) == cat_in.nome.lower(),
         Categoria.tipo == cat_in.tipo,
@@ -109,7 +162,6 @@ def create_categoria(
     if exists:
         raise HTTPException(status_code=400, detail=f"Já existe uma categoria '{cat_in.nome}' do tipo {cat_in.tipo}.")
     
-    # [FIX] Cria com user_id
     nova_cat = Categoria(**cat_in.model_dump(), user_id=current_user.id)
     db.add(nova_cat)
     db.commit()
@@ -123,11 +175,11 @@ def update_categoria(
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):
-    # [FIX] Filtro user_id
     cat = db.query(Categoria).filter(Categoria.id == id, Categoria.user_id == current_user.id).first()
     if not cat:
         raise HTTPException(status_code=404, detail="Categoria não encontrada")
     
+    # Proteção de sistema: Categorias padrão não podem ser editadas pelo usuário
     if "indefinida" in cat.nome.lower():
         raise HTTPException(status_code=403, detail="A categoria padrão do sistema não pode ser editada.")
 
@@ -145,7 +197,14 @@ def delete_categoria(
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):
-    # [FIX] Filtro user_id
+    """
+    Exclui uma categoria.
+    
+    Regra de Migração (Safe Delete):
+        Se existirem transações vinculadas a esta categoria, elas NÃO são apagadas.
+        Elas são movidas automaticamente para a categoria de fallback "Indefinida"
+        correspondente ao seu tipo (Receita ou Despesa).
+    """
     cat = db.query(Categoria).filter(Categoria.id == id, Categoria.user_id == current_user.id).first()
     if not cat:
         raise HTTPException(status_code=404, detail="Categoria não encontrada")
@@ -155,8 +214,8 @@ def delete_categoria(
 
     transacoes = db.query(Transacao).filter(Transacao.categoria_id == id).all()
     
+    # Se houver órfãos, move para a categoria de sistema
     if transacoes:
-        # [FIX] Passando user_id
         cat_destino = financas_service.get_or_create_indefinida(db, cat.tipo, current_user.id)
         
         for t in transacoes:
