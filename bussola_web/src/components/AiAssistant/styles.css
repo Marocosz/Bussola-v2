@@ -5,6 +5,7 @@
   width: 60px;
   height: 60px;
   user-select: none;
+  will-change: left, top;
 }
 
 .ai-floating-container.dragging {
@@ -37,16 +38,12 @@
   transform: scale(0.95);
 }
 
-/* Conteúdo interno do FAB (Gradiente Roxo/Azul) */
 .fab-content {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  
-  /* Gradiente Original */
   background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  
   display: flex;
   align-items: center;
   justify-content: center;
@@ -54,12 +51,9 @@
   position: relative;
   z-index: 2;
   font-size: 1.5rem;
-  
-  /* Ícone sempre BRANCO */
   color: #FFFFFF !important;
 }
 
-/* Efeito de Glow "Vivo" atrás do botão */
 .fab-glow {
   position: absolute;
   top: 50%; left: 50%;
@@ -94,64 +88,104 @@
 }
 
 /* =========================================
-   POPUP CONTENT (ABRE À DIREITA)
+   LAYER 1: SLIDER (ANIMAÇÃO SUAVE DE POSIÇÃO)
+   Esta div âncora desliza ao redor do botão dependendo do quadrante.
+   Usamos 'translate' para máxima performance.
    ========================================= */
-.ai-content-wrapper {
+.ai-content-slider {
   position: absolute;
-  bottom: 0; /* Alinhado com a base do botão */
-  left: 75px; /* Ao lado DIREITO do botão */
-  right: auto;
-  
+  top: 0; left: 0;
   width: 400px;
-  transform-origin: bottom left; /* Nasce do canto inferior esquerdo (perto do botão) */
-  
-  opacity: 0;
-  transform: scale(0.9) translateX(-20px);
-  visibility: hidden;
-  
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
+  
+  /* A Mágica: Transição lenta e suave nas coordenadas */
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.ai-content-wrapper.visible {
+/* CÁLCULOS DE POSIÇÃO (Baseados em botão 60px e Gap 20px) */
+
+/* 1. Direita + Baixo (Abre pra CIMA) */
+/* X: Move 80px pra direita. Y: Sobe 100% da própria altura + 10px */
+.pos-right-up {
+  transform: translate(80px, calc(-100% - 10px));
+}
+
+/* 2. Direita + Cima (Abre pra BAIXO) */
+/* X: Move 80px pra direita. Y: Desce 70px (abaixo do botão) */
+.pos-right-down {
+  transform: translate(80px, 70px);
+}
+
+/* 3. Esquerda + Baixo (Abre pra CIMA) */
+/* X: Volta 420px (Largura + Gap). Y: Sobe 100% + 10px */
+.pos-left-up {
+  transform: translate(-420px, calc(-100% - 10px));
+}
+
+/* 4. Esquerda + Cima (Abre pra BAIXO) */
+/* X: Volta 420px. Y: Desce 70px */
+.pos-left-down {
+  transform: translate(-420px, 70px);
+}
+
+
+/* =========================================
+   LAYER 2: ANIMATOR (ABRIR/FECHAR)
+   Controla apenas a visibilidade (Fade/Scale)
+   ========================================= */
+.ai-content-animator {
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.9);
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0.3s;
+  pointer-events: none;
+  
+  /* Origem da animação muda conforme a posição para parecer que sai do botão */
+  transform-origin: center; 
+}
+
+/* Ajuste de Origem da Animação baseado no pai */
+.pos-right-up .ai-content-animator { transform-origin: bottom left; }
+.pos-right-down .ai-content-animator { transform-origin: top left; }
+.pos-left-up .ai-content-animator { transform-origin: bottom right; }
+.pos-left-down .ai-content-animator { transform-origin: top right; }
+
+.ai-content-animator.visible {
   opacity: 1;
-  transform: scale(1) translateX(0);
+  transform: scale(1);
   visibility: visible;
   pointer-events: auto;
 }
 
+
 /* =========================================
-   CARD DESIGN (ADAPTATIVO)
+   CARD DESIGN
    ========================================= */
 .ai-glass-card {
-  /* Padrão (Dark Theme) */
-  background: rgba(20, 20, 25, 0.75); 
+  /* DARK THEME */
+  background: rgba(20, 20, 25, 0.8); 
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
   border-radius: 20px;
-  
-  /* Borda Lateral Sempre Azul/Roxo */
   border-left: 4px solid #6366f1; 
   
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  max-height: 600px;
-  color: #E8EAED; /* Texto claro padrão */
+  max-height: 550px; /* Altura segura */
+  color: #E8EAED;
 }
 
-/* OVERRIDE: Light Theme (Se a classe .light-theme estiver no body) */
 .light-theme .ai-glass-card {
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.8);
   border: 1px solid rgba(0, 0, 0, 0.05);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
-  color: #1e293b; /* Texto escuro */
+  color: #1e293b;
 }
 
-/* HEADER DO CARD */
 .ai-glass-header {
   padding: 1.2rem;
   background: rgba(255, 255, 255, 0.03);
@@ -191,7 +225,7 @@
 .ai-agent-name {
   font-weight: 700;
   font-size: 0.95rem;
-  color: inherit; /* Herda do card */
+  color: inherit;
 }
 
 .ai-agent-status {
@@ -238,14 +272,12 @@
     background: rgba(0,0,0,0.1);
 }
 
-/* BODY DO CARD */
 .ai-glass-body {
   padding: 1.5rem;
   overflow-y: auto; 
-  color: inherit; /* Herda do card */
+  color: inherit;
 }
 
-/* Scrollbar */
 .ai-glass-body::-webkit-scrollbar {
   width: 6px;
 }
@@ -257,7 +289,6 @@
   background: rgba(0,0,0,0.15);
 }
 
-/* Empty State */
 .ai-empty-state {
   display: flex;
   flex-direction: column;
@@ -291,7 +322,6 @@
   transform: translateY(-2px);
 }
 
-/* Conteúdo do Insight */
 .ai-insight-title {
   font-size: 1.2rem;
   font-weight: 700;
@@ -322,7 +352,6 @@
     border-top: 1px solid rgba(0,0,0,0.1);
 }
 
-/* Skeleton Loader */
 .ai-skeleton-loader {
   padding: 0.5rem 0;
 }
