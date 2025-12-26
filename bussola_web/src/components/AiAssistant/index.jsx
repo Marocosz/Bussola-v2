@@ -14,10 +14,10 @@ export const AiAssistant = ({ context }) => {
   const [insight, setInsight] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0); 
   
-  // Drag and Drop (Top/Left Fix)
+  // Drag and Drop (Posição Inicial: Canto Inferior ESQUERDO)
   const [position, setPosition] = useState(() => ({ 
-    x: 20, 
-    y: typeof window !== 'undefined' ? window.innerHeight - 90 : 20 
+    x: 30, // Margem esquerda
+    y: typeof window !== 'undefined' ? window.innerHeight - 100 : 20 // Margem inferior
   }));
   
   const [isDragging, setIsDragging] = useState(false);
@@ -39,7 +39,6 @@ export const AiAssistant = ({ context }) => {
       }
     }
 
-    // Só aplica o cooldown se a flag estiver FALSE
     if (lastUpdate && !DISABLE_COOLDOWN) {
       const diff = Date.now() - parseInt(lastUpdate);
       if (diff < COOLDOWN_MS) {
@@ -60,7 +59,6 @@ export const AiAssistant = ({ context }) => {
   }, [timeLeft]);
 
   const fetchInsight = async (force = false) => {
-    // Se a flag estiver ativa, ignora a verificação de timeLeft
     if (!force && timeLeft > 0 && insight && !DISABLE_COOLDOWN) return;
 
     setLoading(true);
@@ -73,11 +71,10 @@ export const AiAssistant = ({ context }) => {
         const now = Date.now();
         localStorage.setItem(`ai_last_update_${context}`, now.toString());
         
-        // Só define o tempo de espera se a flag estiver FALSE
         if (!DISABLE_COOLDOWN) {
             setTimeLeft(COOLDOWN_MS);
         } else {
-            setTimeLeft(0); // Zera o timer no modo DEV
+            setTimeLeft(0);
         }
       } else {
         localStorage.removeItem(`ai_insight_${context}`);
@@ -92,9 +89,11 @@ export const AiAssistant = ({ context }) => {
     }
   };
 
-  // --- Lógica de Drag and Drop (Mantida igual) ---
+  // --- Drag Logic ---
   const handleMouseDown = (e) => {
-    if (e.target.closest('.ai-content')) return;
+    // Evita arrastar se clicar dentro do conteúdo (card)
+    if (e.target.closest('.ai-content-wrapper')) return;
+    
     const rect = dragRef.current.getBoundingClientRect();
     offsetRef.current = {
       x: e.clientX - rect.left,
@@ -108,12 +107,14 @@ export const AiAssistant = ({ context }) => {
       if (!isDragging) return;
       const newX = e.clientX - offsetRef.current.x;
       const newY = e.clientY - offsetRef.current.y;
-      const maxX = window.innerWidth - 60;
-      const maxY = window.innerHeight - 60;
+      
+      // Limites da tela
+      const maxX = window.innerWidth - 70;
+      const maxY = window.innerHeight - 70;
 
       setPosition({ 
-        x: Math.max(0, Math.min(maxX, newX)), 
-        y: Math.max(0, Math.min(maxY, newY)) 
+        x: Math.max(10, Math.min(maxX, newX)), 
+        y: Math.max(10, Math.min(maxY, newY)) 
       });
     };
 
@@ -152,68 +153,90 @@ export const AiAssistant = ({ context }) => {
   return (
     <div 
       ref={dragRef}
-      className={`ai-floating-container ${isOpen ? 'open' : ''}`}
+      className={`ai-floating-container ${isOpen ? 'open' : ''} ${isDragging ? 'dragging' : ''}`}
       style={{ left: position.x, top: position.y }}
+      onMouseDown={handleMouseDown}
     >
-      <div className={`ai-content-wrapper ${isOpen ? 'visible' : ''}`}>
-        <div className={`ai-card border-${insight?.cor || 'blue'}`}>
-          <div className="ai-header">
-            <span className="ai-badge">
-              {insight?.origem || 'IA'} Agent
-            </span>
+      {/* Área do Conteúdo (Popup ao LADO DIREITO) */}
+      <div 
+        className={`ai-content-wrapper ${isOpen ? 'visible' : ''}`}
+        onMouseDown={(e) => e.stopPropagation()} 
+      >
+        <div className="ai-glass-card">
+          <div className="ai-glass-header">
+            <div className="ai-agent-identity">
+              <div className="ai-agent-icon">
+                <i className={`fa-solid ${getOriginIcon(insight?.origem)}`}></i>
+              </div>
+              <div className="ai-agent-info">
+                <span className="ai-agent-name">{insight?.origem || 'System'} Agent</span>
+                <span className="ai-agent-status">{loading ? 'Processando...' : 'Online'}</span>
+              </div>
+            </div>
+
             <button 
-              className="ai-refresh-btn" 
-              onClick={(e) => { e.stopPropagation(); fetchInsight(true); }}
-              // No modo DEV, nunca desabilita o botão pelo tempo
+              className="ai-action-btn refresh" 
+              onClick={() => fetchInsight(true)}
               disabled={loading || (timeLeft > 0 && !DISABLE_COOLDOWN)}
-              title={timeLeft > 0 && !DISABLE_COOLDOWN ? `Aguarde ${formatTime(timeLeft)}` : "Atualizar Análise"}
+              title="Nova Análise"
             >
-              {loading ? <i className="fa-solid fa-spinner fa-spin"></i> : 
-               (timeLeft > 0 && !DISABLE_COOLDOWN) ? <span className="timer">{formatTime(timeLeft)}</span> :
-               <i className="fa-solid fa-rotate-right"></i>
-              }
+              {loading ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-solid fa-rotate"></i>}
             </button>
           </div>
           
-          <div className="ai-body">
+          <div className="ai-glass-body">
             {!insight && !loading && (
-              <div className="ai-empty">
-                <p>Clique em atualizar para receber uma análise.</p>
-                <button className="btn-start" onClick={() => fetchInsight(true)}>Gerar Análise</button>
+              <div className="ai-empty-state">
+                <i className="fa-solid fa-wand-magic-sparkles"></i>
+                <p>Estou pronto para analisar seus dados.</p>
+                <button className="ai-btn-primary" onClick={() => fetchInsight(true)}>
+                  Gerar Insight
+                </button>
               </div>
             )}
 
             {loading && !insight && (
-              <div className="ai-skeleton">
-                <div className="line title"></div>
-                <div className="line body"></div>
-                <div className="line body"></div>
+              <div className="ai-skeleton-loader">
+                <div className="sk-line title"></div>
+                <div className="sk-line text"></div>
+                <div className="sk-line text"></div>
+                <div className="sk-line text short"></div>
               </div>
             )}
 
             {insight && (
-              <>
-                <h3 className="ai-title">
-                  <i className={`fa-solid ${getOriginIcon(insight.origem)}`}></i>
-                  {insight.titulo}
-                </h3>
-                <p className="ai-message">{insight.mensagem}</p>
-              </>
+              <div className="ai-insight-content">
+                <h3 className="ai-insight-title">{insight.titulo}</h3>
+                <div className="ai-insight-text">
+                  {insight.mensagem}
+                </div>
+                {(timeLeft > 0 && !DISABLE_COOLDOWN) && (
+                  <div className="ai-cooldown-bar">
+                    <i className="fa-regular fa-clock"></i>
+                    <span>Próxima análise em: {formatTime(timeLeft)}</span>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
       </div>
 
+      {/* Botão Flutuante (FAB) */}
       <button 
-        className="ai-fab" 
-        onMouseDown={handleMouseDown}
+        className="ai-fab-btn" 
         onClick={() => !isDragging && setIsOpen(!isOpen)}
-        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
       >
-        <div className="ai-fab-icon">
-          <i className="fa-solid fa-sparkles"></i>
+        <div className="fab-glow"></div>
+        <div className="fab-content">
+            {isOpen ? (
+                <i className="fa-solid fa-xmark"></i>
+            ) : (
+                <i className="fa-solid fa-robot"></i>
+            )}
         </div>
-        {!isOpen && insight && insight.origem !== 'System' && <span className="ping"></span>}
+        {/* Dot de notificação só aparece se tiver insight e estiver fechado */}
+        {!isOpen && insight && insight.origem !== 'System' && <span className="notification-dot"></span>}
       </button>
     </div>
   );

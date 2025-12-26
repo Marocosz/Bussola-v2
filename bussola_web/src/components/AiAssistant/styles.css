@@ -1,184 +1,348 @@
-/* Container Principal (Ocupa apenas o espaço do botão) */
+/* Container Principal */
 .ai-floating-container {
   position: fixed;
   z-index: 9999;
-  width: 56px; /* Tamanho exato do botão para o drag funcionar bem */
-  height: 56px;
-  /* Desabilita seleção de texto durante arraste */
-  user-select: none; 
-  /* Garante que o container não bloqueie cliques fora dele */
-  pointer-events: none; 
+  width: 60px;
+  height: 60px;
+  user-select: none;
 }
 
-/* Botão Redondo (FAB) - Recebe os cliques */
-.ai-fab {
-  pointer-events: auto; /* Reabilita cliques no botão */
-  width: 56px;
-  height: 56px;
+.ai-floating-container.dragging {
+  cursor: grabbing;
+}
+
+/* =========================================
+   FAB (Floating Action Button)
+   ========================================= */
+.ai-fab-btn {
+  position: relative;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1, #a855f7); /* Indigo to Purple */
   border: none;
-  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
-  color: white;
-  font-size: 1.5rem;
-  cursor: grab;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s, box-shadow 0.2s;
-  position: relative;
+  background: transparent;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 20; 
 }
 
-.ai-fab:active {
-  cursor: grabbing;
-  transform: scale(0.95);
-}
-
-.ai-fab:hover {
+.ai-fab-btn:hover {
   transform: scale(1.1);
 }
 
-/* Modal de Conteúdo (Posicionado Absolutamente acima do botão) */
-.ai-content-wrapper {
-  pointer-events: auto; /* Reabilita cliques no conteúdo */
+.ai-fab-btn:active {
+  transform: scale(0.95);
+}
+
+/* Conteúdo interno do FAB (Gradiente Roxo/Azul) */
+.fab-content {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  
+  /* Gradiente Original */
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.5);
+  position: relative;
+  z-index: 2;
+  font-size: 1.5rem;
+  
+  /* Ícone sempre BRANCO */
+  color: #FFFFFF !important;
+}
+
+/* Efeito de Glow "Vivo" atrás do botão */
+.fab-glow {
   position: absolute;
-  bottom: 70px; /* 56px do botão + margem */
-  left: 0;
-  width: 320px;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: inherit;
+  filter: blur(12px);
+  opacity: 0.4;
+  animation: pulse-glow 4s infinite;
+  z-index: 1;
+}
+
+@keyframes pulse-glow {
+  0% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.1); }
+  100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+}
+
+.notification-dot {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  width: 14px;
+  height: 14px;
+  background: #ef4444;
+  border: 2px solid #202124;
+  border-radius: 50%;
+  z-index: 10;
+  box-shadow: 0 0 5px #ef4444;
+}
+
+/* =========================================
+   POPUP CONTENT (ABRE À DIREITA)
+   ========================================= */
+.ai-content-wrapper {
+  position: absolute;
+  bottom: 0; /* Alinhado com a base do botão */
+  left: 75px; /* Ao lado DIREITO do botão */
+  right: auto;
   
-  /* Animação de entrada */
+  width: 400px;
+  transform-origin: bottom left; /* Nasce do canto inferior esquerdo (perto do botão) */
+  
   opacity: 0;
-  transform: scale(0.9) translateY(20px);
-  transform-origin: bottom left;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: scale(0.9) translateX(-20px);
+  visibility: hidden;
   
-  /* Esconde visualmente e do mouse quando fechado */
-  visibility: hidden; 
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
 }
 
 .ai-content-wrapper.visible {
   opacity: 1;
-  transform: scale(1) translateY(0);
+  transform: scale(1) translateX(0);
   visibility: visible;
+  pointer-events: auto;
 }
 
-/* Card Visual */
-.ai-card {
-  background: rgba(30, 41, 59, 0.95); /* Dark Slate */
-  backdrop-filter: blur(10px);
-  border-radius: 16px;
-  padding: 1.25rem;
-  color: #f8fafc;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-  border-left: 4px solid #6366f1; /* Cor default */
+/* =========================================
+   CARD DESIGN (ADAPTATIVO)
+   ========================================= */
+.ai-glass-card {
+  /* Padrão (Dark Theme) */
+  background: rgba(20, 20, 25, 0.75); 
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  border-radius: 20px;
+  
+  /* Borda Lateral Sempre Azul/Roxo */
+  border-left: 4px solid #6366f1; 
+  
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 600px;
+  color: #E8EAED; /* Texto claro padrão */
 }
 
-/* Bordas coloridas baseadas na urgência/agente */
-.ai-card.border-red { border-left-color: #ef4444; }
-.ai-card.border-orange { border-left-color: #f97316; }
-.ai-card.border-green { border-left-color: #22c55e; }
-.ai-card.border-blue { border-left-color: #3b82f6; }
+/* OVERRIDE: Light Theme (Se a classe .light-theme estiver no body) */
+.light-theme .ai-glass-card {
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
+  color: #1e293b; /* Texto escuro */
+}
 
-/* Header interno */
-.ai-header {
+/* HEADER DO CARD */
+.ai-glass-header {
+  padding: 1.2rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+}
+.light-theme .ai-glass-header {
+  background: rgba(0, 0, 0, 0.02);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.ai-badge {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 4px 8px;
-  border-radius: 4px;
-}
-
-.ai-refresh-btn {
-  background: transparent;
-  border: none;
-  color: #94a3b8;
-  cursor: pointer;
-  font-size: 0.9rem;
-  padding: 4px;
-  transition: color 0.2s;
-}
-
-.ai-refresh-btn:hover:not(:disabled) {
-  color: #fff;
-}
-
-.ai-refresh-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.timer {
-  font-size: 0.75rem;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Conteúdo */
-.ai-title {
-  font-size: 1.1rem;
-  margin-bottom: 0.5rem;
+.ai-agent-identity {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 600;
+  gap: 12px;
 }
 
-.ai-message {
-  font-size: 0.9rem;
-  line-height: 1.5;
-  color: #cbd5e1;
+.ai-agent-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(99, 102, 241, 0.15);
+  color: #6366f1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.ai-agent-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-agent-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: inherit; /* Herda do card */
+}
+
+.ai-agent-status {
+  font-size: 0.75rem;
+  color: #22c55e;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ai-agent-status::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  border-radius: 50%;
+  box-shadow: 0 0 5px #22c55e;
+}
+
+.ai-action-btn {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.05);
+  color: inherit;
+  opacity: 0.7;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.light-theme .ai-action-btn {
+    background: rgba(0,0,0,0.05);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.ai-action-btn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.15);
+  opacity: 1;
+}
+.light-theme .ai-action-btn:hover:not(:disabled) {
+    background: rgba(0,0,0,0.1);
+}
+
+/* BODY DO CARD */
+.ai-glass-body {
+  padding: 1.5rem;
+  overflow-y: auto; 
+  color: inherit; /* Herda do card */
+}
+
+/* Scrollbar */
+.ai-glass-body::-webkit-scrollbar {
+  width: 6px;
+}
+.ai-glass-body::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.15);
+  border-radius: 3px;
+}
+.light-theme .ai-glass-body::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.15);
 }
 
 /* Empty State */
-.ai-empty {
+.ai-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
-  padding: 1rem 0;
+  padding: 1.5rem 0;
+  opacity: 0.7;
 }
 
-.btn-start {
-  background: #3b82f6;
+.ai-empty-state i {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #6366f1;
+}
+
+.ai-btn-primary {
+  margin-top: 1rem;
+  background: linear-gradient(90deg, #6366f1, #a855f7);
   border: none;
   color: white;
-  padding: 8px 16px;
-  border-radius: 6px;
+  padding: 0.7rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
   cursor: pointer;
-  margin-top: 10px;
-  font-size: 0.9rem;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
 }
 
-/* Loading Skeleton */
-.ai-skeleton .line {
-  background: rgba(255,255,255,0.05);
+.ai-btn-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+}
+
+/* Conteúdo do Insight */
+.ai-insight-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: inherit;
+  line-height: 1.4;
+}
+
+.ai-insight-text {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: inherit;
+  opacity: 0.9;
+  white-space: pre-wrap; 
+}
+
+.ai-cooldown-bar {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  font-size: 0.8rem;
+  opacity: 0.7;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.light-theme .ai-cooldown-bar {
+    border-top: 1px solid rgba(0,0,0,0.1);
+}
+
+/* Skeleton Loader */
+.ai-skeleton-loader {
+  padding: 0.5rem 0;
+}
+.sk-line {
+  background: rgba(255,255,255,0.08);
+  height: 12px;
   border-radius: 4px;
-  margin-bottom: 8px;
-  height: 12px;
-  animation: pulse 1.5s infinite;
+  margin-bottom: 10px;
+  animation: sk-pulse 1.5s infinite ease-in-out;
 }
-.ai-skeleton .title { height: 20px; width: 60%; margin-bottom: 15px; }
-.ai-skeleton .body { width: 100%; }
+.light-theme .sk-line {
+    background: rgba(0,0,0,0.08);
+}
 
-@keyframes pulse {
-  0% { opacity: 0.6; }
+.sk-line.title { height: 22px; width: 70%; margin-bottom: 1.5rem; }
+.sk-line.text { width: 100%; }
+.sk-line.short { width: 40%; }
+
+@keyframes sk-pulse {
+  0% { opacity: 0.5; }
   50% { opacity: 1; }
-  100% { opacity: 0.6; }
-}
-
-/* Ping Animation no botão */
-.ping {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 12px;
-  height: 12px;
-  background: #ef4444;
-  border-radius: 50%;
-  border: 2px solid #1e293b;
+  100% { opacity: 0.5; }
 }
