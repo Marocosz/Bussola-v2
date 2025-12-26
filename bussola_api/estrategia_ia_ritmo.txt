@@ -1,0 +1,212 @@
+Eu fiz algumas alterações no planejamento, valide elas:
+
+Compreendido perfeitamente. Esta é uma abordagem de engenharia de software aplicada a LLMs (Agentic Workflow), onde tratamos o output da IA não como texto criativo, mas como dados estruturados, tipados e validados por código.
+Abaixo apresento a Estratégia Arquitetural Definitiva para o Ritmo AI 2.1, incorporando reforços de robustez, validação e escalabilidade, mantendo intacto tudo que já estava correto.
+=======================================================================================
+
+Visão Geral da Arquitetura: O "Conselho de Especialistas"
+=======================================================================================
+O sistema funcionará como uma pirâmide hierárquica de processamento de dados, com isolamento de contexto e responsabilidade clara por camada.
+Nível 0 (Aplicação):
+
+O Backend consulta o banco de dados e coleta todos os dados crus (Perfil, Treino Ativo, Dieta Ativa).
+Nível 1 (Orquestrador Ritmo):
+
+Recebe os dados brutos.
+Despacha o contexto para os domínios Nutrição e Coach em paralelo.
+Nunca contém lógica de análise ou decisão.
+Nível 2 (Orquestradores de Domínio):
+
+Recebem o contexto filtrado do domínio.
+Invocam seus agentes especialistas em paralelo.
+Agregam listas de sugestões atômicas.
+Nível 3 (Agentes Especialistas):
+
+Executam uma tarefa atômica.
+Retornam exclusivamente listas de objetos JSON estritos.
+Pós-Processamento (Camada Obrigatória):
+
+Validação estrutural dos schemas.
+Garantia de atomicidade real.
+Normalização e enriquecimento dos dados.
+Retorno:
+
+Os dados sobem a pirâmide, são validados, normalizados e entregues ao frontend como uma lista unificada de "Sugestões Atômicas".
+=======================================================================================
+2. Estrutura de Diretórios (Mandatória)
+ai/
+├── base/
+│ ├── init.py
+│ ├── llm_factory.py # Cliente HTTP (OpenAI/Gemini) + Retry + Timeout
+│ ├── base_schema.py # Modelo Base de Sugestão Atômica
+│ ├── post_processor.py # Validação, atomicidade, fallback e normalização
+│ ├── cache.py # Cache por agente (hash do input)
+│
+├── ritmo/
+│ ├── init.py
+│ ├── orchestrator.py # RitmoOrchestrator (Main Router)
+│ ├── schema.py # Schema agregado final (RitmoResponse)
+│ │
+│ ├── nutri/
+│ │ ├── init.py
+│ │ ├── orchestrator.py # NutriOrchestrator
+│ │ ├── schema.py # Schema agregado do domínio Nutri
+│ │ │
+│ │ ├── macro_auditor/
+│ │ │ ├── init.py
+│ │ │ ├── agent.py
+│ │ │ ├── schema.py
+│ │ │ └── prompts.py
+│ │ │
+│ │ ├── meal_detective/
+│ │ │ ├── init.py
+│ │ │ ├── agent.py
+│ │ │ ├── schema.py
+│ │ │ └── prompts.py
+│ │ │
+│ │ └── variety_expert/
+│ │ ├── init.py
+│ │ ├── agent.py
+│ │ ├── schema.py
+│ │ └── prompts.py
+│ │
+│ └── coach/
+│ ├── init.py
+│ ├── orchestrator.py # CoachOrchestrator
+│ ├── schema.py # Schema agregado do domínio Coach
+│ │
+│ ├── volume_architect/
+│ │ ├── init.py
+│ │ ├── agent.py
+│ │ ├── schema.py
+│ │ └── prompts.py
+│ │
+│ ├── technique_master/
+│ │ ├── init.py
+│ │ ├── agent.py
+│ │ ├── schema.py
+│ │ └── prompts.py
+│ │
+│ └── intensity_strategist/
+│ ├── init.py
+│ ├── agent.py
+│ ├── schema.py
+│ └── prompts.py
+=======================================================================================
+3. Definição dos Agentes e Responsabilidades
+Domínio: NUTRIÇÃO (ai/ritmo/nutri)
+O foco não é criar dietas, mas auditar, validar e otimizar a dieta gerada pelo algoritmo principal.
+Agent: Macro Auditor (macro_auditor)
+Responsabilidade: Auditoria matemática e biológica global.
+Input: Dados Bio (TMB, GET, Objetivo) vs. Totais da Dieta.
+Análise:
+Déficit/superávit seguro
+Distribuição de macros
+Ingestão hídrica
+Exemplo de Saída:
+
+"Alerta: Déficit calórico acima de 20% (risco de perda muscular)."
+Agent: Meal Detective (meal_detective)
+Responsabilidade: Análise micro por refeição.
+Input: Refeições e alimentos.
+Análise:
+Proteína por refeição
+Carga glicêmica estimada
+Timing alimentar
+Exemplo de Saída:
+
+"Café da Manhã: Baixo teor proteico (<10g)."
+Agent: Variety Expert (variety_expert)
+Responsabilidade: Combater monotonia alimentar.
+Input: Alimentos recorrentes.
+Análise:
+Repetições excessivas
+Sugestões nutricionalmente equivalentes
+Cada substituição é SEMPRE uma sugestão atômica individual.
+
+=======================================================================================
+Domínio: COACH/TREINO (ai/ritmo/coach)
+Agent: Volume Architect (volume_architect)
+Responsabilidade: Análise de volume semanal por grupo muscular.
+Input: Perfil + plano de treino.
+Análise:
+Junk volume
+Grupos negligenciados
+Agent: Technique Master (technique_master)
+Responsabilidade: Dicas técnicas de segurança.
+Input: Exercícios compostos.
+Análise:
+Cues de execução
+Prevenção de lesões
+Agent: Intensity Strategist (intensity_strategist)
+Responsabilidade: Estratégias de progressão.
+Input: Nível do usuário.
+Análise:
+Técnicas aplicáveis por nível
+=======================================================================================
+4. Padrão de Saída e Atomicidade (Schema Base)
+Todo agente deve retornar exclusivamente uma lista de objetos seguindo o BaseSchema.
+Modelo Conceitual:
+{
+"id": "uuid",
+"domain": "nutri | coach",
+"agent_source": "string",
+"type": "warning | tip | suggestion | praise",
+"severity": "low | medium | high",
+"action": {
+"kind": "swap | add | remove | adjust | info",
+"target": "string",
+"value": "string | number | null"
+},
+"title": "string",
+"content": "string",
+"related_entity_id": "number | null",
+"actionable": true | false
+}
+Regras Absolutas:
+
+1 objeto = 1 ação ou observação
+Nunca múltiplas sugestões no mesmo objeto
+Nunca enumeração dentro do texto
+=======================================================================================
+5. Regras de Prompting (Obrigatórias)
+System Prompt padrão:
+"Você é um especialista. Sua análise DEVE ser quebrada em itens individuais. Cada item deve gerar UM objeto JSON. Se identificar múltiplas ações, gere múltiplos objetos. NUNCA agrupe sugestões. NUNCA enumere texto. Retorne APENAS JSON válido."
+=======================================================================================
+6. Pós-Processamento e Validação (Obrigatório)
+A camada post_processor é responsável por:
+
+Validar schema
+Garantir atomicidade real
+Dividir respostas inválidas
+Gerar IDs
+Aplicar severidade padrão
+Remover duplicatas
+A aplicação NUNCA confia cegamente no output do LLM.
+
+=======================================================================================
+7. Fluxo de Execução
+Endpoint: GET /api/v1/ai/ritmo/analyze
+RitmoOrchestrator:
+
+Carrega dados do usuário
+Executa NutriOrchestrator e CoachOrchestrator em paralelo
+Nunca falha o endpoint por falha isolada de agente
+NutriOrchestrator / CoachOrchestrator:
+
+Preparam contexto
+Executam agentes
+Aplicam cache por agente
+Retornam listas parciais
+RitmoOrchestrator:
+
+Consolida listas
+Executa pós-processamento final
+Retorna payload final
+=======================================================================================
+8. Próximos Passos
+Implementar ai/base (schema, post_processor, cache)
+Implementar agentes simples
+Criar orquestradores
+Integrar API
+Estratégia validada para produção, escalável e resiliente a falhas de LLM.

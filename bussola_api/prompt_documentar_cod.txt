@@ -1,0 +1,110 @@
+Vou te enviar UM ARQUIVO DE CÓDIGO do meu projeto.
+
+Sua tarefa é documentar esse arquivo de forma clara, didática e profissional, sem alterar a lógica existente.
+
+Regras importantes:
+- NÃO altere nenhuma regra de negócio
+- NÃO refatore o código
+- NÃO mude nomes de variáveis, funções ou estrutura
+- APENAS adicione comentários
+- PODE remover comentários antigos, obsoletos ou temporários (por exemplo: "Correção", "ajustar depois", "teste", comentários confusos ou desatualizados), desde que não remova nenhuma lógica de código
+
+
+==================================================
+
+NÍVEL DE DETALHE DOS COMENTÁRIOS (MUITO IMPORTANTE):
+
+- NÃO explique conceitos óbvios ou amplamente conhecidos da linguagem ou framework
+  (ex: index=True, nullable=True, String(200), Column, relationship, map, if simples, etc)
+
+- NÃO descreva linha por linha quando a intenção for evidente
+
+- PREFIRA comentários em nível de BLOCO ou RESPONSABILIDADE, e não em cada linha simples
+
+- USE comentários detalhados APENAS quando:
+  - Existe regra de negócio
+  - Existe decisão importante
+  - Existe impacto em segurança, multi-tenant, permissões ou dados do usuário
+  - Existe lógica que não é óbvia à primeira leitura
+  - Existe dependência com outro sistema, serviço ou IA
+
+- Para campos, variáveis ou estruturas simples:
+  - Comente apenas se houver uma intenção específica
+  - Caso contrário, mantenha o código limpo e sem comentários desnecessários
+
+
+==================================================
+
+O que você deve fazer:
+
+1) Cabeçalho do arquivo
+No topo do arquivo, crie um comentário explicando:
+- Qual é o objetivo do arquivo
+- Em qual parte do sistema ele atua (frontend, backend, IA, integração externa, etc)
+- Quais responsabilidades ele possui
+- Quais outros arquivos ou módulos ele costuma se comunicar
+
+
+--------------------------------------------------
+
+2) Documentar funções, hooks, classes ou serviços
+Para cada função, método, hook ou lógica importante, explique:
+
+- O que essa função faz
+- Por que ela existe
+- Quando ela é chamada
+- Quais dados ela recebe
+- Quais dados ela retorna
+
+Sempre que fizer sentido, inclua:
+
+Exemplo de entrada:
+// Exemplo de parâmetros recebidos
+
+Exemplo de saída:
+// Exemplo do retorno esperado
+
+
+--------------------------------------------------
+
+3) Comentários por blocos de lógica
+Para cada bloco relevante (ifs complexos, regras de decisão, cálculos, fluxos de IA, validações, etc):
+
+- Explique a intenção da lógica
+- Explique o que acontece em cada etapa
+- Explique o que acontece em casos de erro
+
+Evite comentar estruturas simples que não adicionam entendimento real.
+
+
+--------------------------------------------------
+
+4) Integrações externas (se existirem)
+Caso o código utilize:
+- APIs externas
+- IA / LLMs
+- Banco de dados
+
+Explique apenas:
+- O papel da integração no sistema
+- O que é esperado como resposta
+- O impacto dessa resposta na lógica do sistema
+
+
+--------------------------------------------------
+
+5) Padrão dos comentários
+- Comentários devem ser claros, objetivos e enxutos
+- Priorize explicar o "por quê" ao invés do "o quê"
+- Escreva como se outro desenvolvedor fosse manter esse código
+- Evite comentários redundantes ou óbvios
+
+
+==================================================
+
+Importante:
+- Se alguma parte do código parecer confusa ou não trivial, explique
+- Se detectar alguma regra de negócio implícita, deixe isso claro
+- Não polua o código com comentários desnecessários
+
+Agora vou te enviar o arquivo:
