@@ -10,5 +10,5 @@ alembic revision --autogenerate -m "Reset tables"
 # 4. Aplique a migração (Cria as tabelas fisicamente no SQLite)
 alembic upgrade head
 
-# 7 
+# 5
 uvicorn app.main:app --reload

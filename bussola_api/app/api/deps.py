@@ -1,3 +1,29 @@
+"""
+=======================================================================================
+ARQUIVO: deps.py (Dependências da API)
+=======================================================================================
+
+OBJETIVO:
+    Centralizar as dependências injetáveis do FastAPI. Gerencia o ciclo de vida da 
+    sessão do banco de dados, a lógica de autenticação (JWT) e a verificação de permissões.
+
+PARTE DO SISTEMA:
+    Backend / API Core / Security
+
+RESPONSABILIDADES:
+    1. Prover sessões de banco de dados isoladas por requisição.
+    2. Decodificar e validar tokens JWT.
+    3. Recuperar o usuário atual do banco de dados.
+    4. Aplicar regras de negócio de segurança (ex: bloquear usuários inativos).
+    5. Autorizar acesso administrativo (Superuser).
+
+COMUNICAÇÃO:
+    - Utilizado por: Todos os Endpoints (routers) da API.
+    - Conecta com: app.core.security (JWT), app.db (Session), app.models (User).
+
+=======================================================================================
+"""
+
 from typing import Generator, Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -11,26 +37,47 @@ from app.db.session import SessionLocal
 from app.models.user import User
 from app.schemas.token import TokenPayload
 
-# [CORREÇÃO] Ajustado para /login/access-token para bater com o router acima
+# Configura o esquema de segurança OAuth2.
+# Define a URL que o Swagger UI utilizará para obter o token de acesso.
 reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/login/access-token"
 )
 
-# 1. Dependência de Banco de Dados
 def get_db() -> Generator:
+    """
+    Gerencia o ciclo de vida da sessão do banco de dados.
+    
+    Por que existe:
+        Garante que cada requisição tenha sua própria sessão isolada e,
+        crucialmente, que a conexão seja fechada (db.close) após o término
+        da requisição, mesmo em caso de erros.
+    """
     try:
         db = SessionLocal()
         yield db
     finally:
         db.close()
 
-# Alias para facilitar o uso nas rotas
+# Alias para injeção de dependência limpa nas rotas
 SessionDep = Annotated[Session, Depends(get_db)]
 TokenDep = Annotated[str, Depends(reusable_oauth2)]
 
-# 2. Obter Usuário Atual (Validação de Token)
 def get_current_user(session: SessionDep, token: TokenDep) -> User:
+    """
+    Autentica a requisição validando o Token JWT e recuperando o usuário.
+
+    Regras de Negócio e Segurança:
+    1. Valida a assinatura do JWT usando a SECRET_KEY.
+    2. Converte o 'sub' do token para buscar o usuário no banco.
+    3. Garante que o usuário ainda existe no banco.
+    4. Garante que o usuário está ATIVO (bloqueia acesso de usuários banidos/inativos
+       mesmo que possuam um token válido).
+
+    Retorna:
+        User: Instância do usuário autenticado.
+    """
     try:
+        # Decodifica e valida assinatura/expiração do token
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
@@ -41,26 +88,33 @@ def get_current_user(session: SessionDep, token: TokenDep) -> User:
             detail="Não foi possível validar as credenciais",
         )
     
-    # O token guarda o ID como string (sub), convertemos para int se necessário
+    # Busca o usuário pelo ID contido no 'sub' do token
     user = session.query(User).filter(User.id == int(token_data.sub)).first()
     
     if not user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
     
+    # Regra de Segurança: Impede login de usuários desativados logicamente
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Usuário inativo")
         
     return user
 
-# 3. Alias para Usuário Atual
+# Alias para injeção direta do usuário autenticado nas rotas
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
-# 4. Verificação de Super Usuário
 def get_current_active_superuser(
     current_user: User = Depends(get_current_user),
 ) -> User:
     """
-    Verifica se o usuário logado é um Super Administrador.
+    Middleware de autorização para rotas administrativas.
+
+    Lógica:
+        Aproveita a autenticação já feita por 'get_current_user' e adiciona
+        uma camada extra de verificação da flag 'is_superuser'.
+    
+    Retorna:
+        User: O usuário admin, ou lança 403 se não tiver permissão.
     """
     if not current_user.is_superuser:
         raise HTTPException(
