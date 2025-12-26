@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Dict
 
 # Importamos os Schemas individuais
 from app.schemas.home import WeatherData, NewsArticle
@@ -40,3 +40,14 @@ async def get_news_widget(
     news_data = await external_service.get_news_by_topics(user_topics=topics)
     
     return news_data
+
+# [NOVO] Endpoint para fornecer a lista de tópicos dinamicamente
+@router.get("/news/topics", response_model=List[Dict[str, str]])
+async def get_available_topics(
+    current_user: User = Depends(get_current_user)
+) -> Any:
+    """
+    Retorna a lista de tópicos disponíveis e seus labels (Ex: tech -> Tecnologia).
+    Permite que o Frontend construa o menu dinamicamente.
+    """
+    return external_service.get_available_topics()

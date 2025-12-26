@@ -10,50 +10,108 @@ from typing import List, Optional, Dict, Any
 from app.core.config import settings
 
 # --- Configurações de Fontes de Notícias ---
+# [ATUALIZADO] Inclui labels para o Frontend e novas categorias
 TOPIC_CONFIG = {
     "tech": {
+        "label": "Tecnologia",
         "urls": [
-            "https://canaltech.com.br/rss/",
             "https://tecnoblog.net/feed/",
-            "https://gizmodo.uol.com.br/feed/",
+            "https://canaltech.com.br/rss/",
             "https://www.tecmundo.com.br/rss",
-            "https://mittechreview.com.br/feed/"
+            "https://gizmodo.uol.com.br/feed/",
+            "https://olhardigital.com.br/feed/",
+            "https://jovemnerd.com.br/feed/nerdbunker/"
         ],
-        "keywords": ['inteligência artificial', 'chatgpt', 'openai', 'apple', 'google', 'microsoft', 'linux', 'python'],
-        "blocklist": ["tv", "promoção", "oferta", "review", "celular"]
+        "keywords": [
+            'ia', 'inteligência artificial', 'chatgpt', 'openai', 'gemini', 
+            'apple', 'iphone', 'google', 'android', 'microsoft', 'windows', 
+            'linux', 'python', 'cibersegurança', 'hardware', 'processador', 'nvidia'
+        ],
+        "blocklist": ["oferta", "desconto", "cupom", "promoção", "review", "compre", "barato", "black friday"]
     },
     "finance": {
+        "label": "Mercado & Finanças",
         "urls": [
             "https://www.infomoney.com.br/feed/",
             "https://braziljournal.com/feed/",
-            "https://investnews.com.br/feed/"
+            "https://investnews.com.br/feed/",
+            "https://valorinveste.globo.com/rss/valorinveste/ultimas-noticias",
+            "https://www.cnnbrasil.com.br/economia/feed/"
         ],
-        "keywords": ['ibovespa', 'dólar', 'ações', 'mercado', 'bitcoin', 'economia', 'selic'],
-        "blocklist": []
+        "keywords": [
+            'ibovespa', 'dólar', 'ações', 'mercado', 'selic', 'economia', 
+            'investimento', 'banco central', 'pib', 'inflação', 'dividendos'
+        ],
+        "blocklist": ["patrocinado", "publi", "curso", "assinatura"]
     },
     "crypto": {
+        "label": "Criptomoedas",
         "urls": [
             "https://br.cointelegraph.com/rss",
+            "https://portaldobitcoin.uol.com.br/feed/",
             "https://www.criptofacil.com/feed/"
         ],
-        "keywords": ['bitcoin', 'ethereum', 'blockchain', 'crypto', 'criptomoeda'],
-        "blocklist": []
+        "keywords": [
+            'bitcoin', 'btc', 'ethereum', 'eth', 'blockchain', 'crypto', 
+            'criptomoeda', 'nft', 'defi', 'binance', 'etf'
+        ],
+        "blocklist": ["cassino", "bet", "aposta", "patrocinado"]
     },
     "sports": {
+        "label": "Esportes",
         "urls": [
+            "https://ge.globo.com/rss/ge/",
             "https://www.espn.com.br/rss",
-            "https://ge.globo.com/rss/ge/"
+            "https://www.lance.com.br/rss",
+            "https://www.gazetaesportiva.com/feed/"
         ],
-        "keywords": ['futebol', 'basquete', 'vôlei', 'f1', 'campeonato'],
+        "keywords": [
+            'futebol', 'brasileirão', 'libertadores', 'copa', 'seleção', 
+            'neymar', 'flamengo', 'corinthians', 'palmeiras', 'são paulo',
+            'f1', 'fórmula 1', 'nba', 'basquete', 'vôlei', 'ufc'
+        ],
         "blocklist": []
     },
     "world": {
+         "label": "Mundo & Notícias",
          "urls": [
             "https://g1.globo.com/rss/g1/",
-            "https://rss.noticias.uol.com.br/ultnot/index.xml"
+            "https://rss.noticias.uol.com.br/ultnot/index.xml",
+            "https://www.cnnbrasil.com.br/feed/",
+            "https://www.bbc.com/portuguese/index.xml"
          ],
-         "keywords": [],
-         "blocklist": ["bbb", "fofoca", "reality", "horóscopo"]
+         "keywords": [], 
+         "blocklist": ["bbb", "fofoca", "reality", "horóscopo", "novela", "famosos"]
+    },
+    "games": {
+        "label": "Games & Geek",
+        "urls": [
+            "https://br.ign.com/feed.xml",
+            "https://jovemnerd.com.br/feed/nerdbunker/",
+            "https://www.theenemy.com.br/rss"
+        ],
+        "keywords": ['game', 'jogo', 'playstation', 'xbox', 'nintendo', 'steam', 'pc', 'rpg', 'gta', 'zelda'],
+        "blocklist": ["filme", "série"]
+    },
+    "science": {
+        "label": "Ciência & Espaço",
+        "urls": [
+            "https://canaltech.com.br/rss/espaco/",
+            "https://hypescience.com/feed/",
+            "https://www.bbc.com/portuguese/topics/c404v027pd4t/index.xml"
+        ],
+        "keywords": ['nasa', 'espaço', 'universo', 'ciência', 'medicina', 'descoberta', 'estudo', 'planeta'],
+        "blocklist": []
+    },
+    "entertainment": {
+        "label": "Cinema & TV",
+        "urls": [
+            "https://www.omelete.com.br/rss",
+            "https://jovemnerd.com.br/feed/nerdbunker/",
+            "https://pipocamoderna.com.br/feed/"
+        ],
+        "keywords": ['filme', 'série', 'netflix', 'marvel', 'dc', 'cinema', 'streaming', 'hbo'],
+        "blocklist": []
     }
 }
 
@@ -63,7 +121,7 @@ class ExternalDataService:
         self.redis_url = settings.REDIS_URL
         self._init_redis()
         
-        # Headers para simular um navegador e evitar bloqueios em RSS
+        # Headers para simular um navegador e evitar bloqueios em RSS (Erro 403)
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         }
@@ -86,6 +144,17 @@ class ExternalDataService:
         else:
             print("[Aviso] REDIS_URL não definida. Cache desativado.")
 
+    # [NOVO] Método para listar tópicos disponíveis dinamicamente
+    def get_available_topics(self) -> List[Dict[str, str]]:
+        """Retorna a lista de tópicos configurados no sistema (ID e Label)."""
+        topics_list = []
+        for key, config in TOPIC_CONFIG.items():
+            topics_list.append({
+                "id": key,
+                "label": config.get("label", key.capitalize())
+            })
+        return topics_list
+
     # ==========================================================================
     # WEATHER SERVICE
     # ==========================================================================
@@ -97,16 +166,13 @@ class ExternalDataService:
         # 1. Tenta Cache (Redis)
         if self.redis_client:
             try:
-                # Tenta ler do cache
                 cached = await self.redis_client.get(cache_key)
                 if cached:
-                    # [DEBUG] print(f"Hit Cache Weather: {city}")
                     return json.loads(cached)
             except Exception as e:
                 print(f"[Redis Error] Falha ao ler clima: {e}")
-                # Não faz nada, segue para a API externa (Fallback)
 
-        # 2. Busca na API (Se não tiver cache ou Redis falhar)
+        # 2. Busca na API
         api_key = settings.OPENWEATHER_API_KEY
         if not api_key:
             return None
@@ -121,7 +187,6 @@ class ExternalDataService:
                 
                 data = response.json()
                 
-                # Mapeamento simples de ícones
                 weather_id = data['weather'][0]['id']
                 icon_class = "wi-day-sunny"
                 if 200 <= weather_id <= 232: icon_class = "wi-thunderstorm"
@@ -151,12 +216,18 @@ class ExternalDataService:
                 return None
 
     # ==========================================================================
-    # NEWS SERVICE
+    # NEWS SERVICE (ROBUSTO)
     # ==========================================================================
     
     def _filter_article(self, title: str, summary: str, config: dict) -> bool:
+        """Filtra artigos baseados em keywords e blocklist."""
         text = (title + " " + summary).lower()
-        if any(bad in text for bad in config.get("blocklist", [])): return False
+        
+        # 1. Verifica Blocklist (Termos proibidos)
+        if any(bad in text for bad in config.get("blocklist", [])): 
+            return False
+            
+        # 2. Verifica Keywords (Se houver lista, tem que ter pelo menos uma)
         keywords = config.get("keywords", [])
         return True if not keywords else any(kw in text for kw in keywords)
 
@@ -170,19 +241,24 @@ class ExternalDataService:
         articles = []
         for url in config["urls"]:
             try:
-                # [FIX] Baixa o conteúdo com headers de navegador para evitar bloqueio 403
-                response = httpx.get(url, headers=self.headers, timeout=4.0, follow_redirects=True)
+                # Usa httpx com headers para baixar o XML (evita bloqueio 403)
+                response = httpx.get(url, headers=self.headers, timeout=5.0, follow_redirects=True)
                 if response.status_code != 200:
                     continue
                 
-                # Passa o conteúdo XML string para o feedparser
+                # Processa o XML
                 feed = feedparser.parse(response.content)
                 feed_title = feed.feed.get('title', url)
                 
-                for entry in feed.entries[:5]: # Pega apenas os 5 mais recentes de cada fonte
-                    if self._filter_article(entry.title, getattr(entry, 'summary', ''), config):
+                # [MELHORIA] Aumentamos para 15 para ter margem após filtragem
+                for entry in feed.entries[:15]: 
+                    summary = getattr(entry, 'summary', '')
+                    if self._filter_article(entry.title, summary, config):
                         pub_date = getattr(entry, 'published_parsed', None)
-                        dt_object = datetime(*pub_date[:6]).replace(tzinfo=timezone.utc) if pub_date else datetime.now(timezone.utc)
+                        if pub_date:
+                            dt_object = datetime(*pub_date[:6]).replace(tzinfo=timezone.utc)
+                        else:
+                            dt_object = datetime.now(timezone.utc)
                         
                         articles.append({
                             'title': entry.title, 
@@ -192,58 +268,82 @@ class ExternalDataService:
                             'topic': topic
                         })
             except Exception as e:
-                print(f"Erro ao ler feed {url}: {e}")
+                # Log silencioso para não poluir o terminal, apenas ignora a fonte ruim
                 continue
                 
-        return articles
+        # Ordena por data (mais recente) e remove duplicados básicos
+        # Nota: Retornamos TUDO que achamos aqui. O corte de quantidade acontece depois.
+        unique_articles = []
+        seen = set()
+        for art in sorted(articles, key=lambda x: x['published_at'], reverse=True):
+            if art['title'].lower() not in seen:
+                unique_articles.append(art)
+                seen.add(art['title'].lower())
+                
+        return unique_articles
 
     async def get_news_by_topics(self, user_topics: List[str]) -> List[Dict]:
+        """
+        Retorna notícias agregadas. 
+        Regra: Busca garantir ~8 notícias POR TÓPICO selecionado.
+        """
         if not user_topics: user_topics = ["tech"]
-        final_articles = []
+        
+        # Garante que os tópicos existem na config
+        valid_topics = [t for t in user_topics if t in TOPIC_CONFIG]
+        if not valid_topics: valid_topics = ["tech"]
+
+        articles_by_topic = {} # Armazena listas separadas: {'tech': [...], 'finance': [...]}
         missing_topics = []
 
-        # 1. Tenta recuperar do Cache
+        # 1. Tenta recuperar do Cache (Tópico por Tópico)
         if self.redis_client:
-            for topic in user_topics:
+            for topic in valid_topics:
                 try:
-                    cache_key = f"news_topic:{topic}"
+                    cache_key = f"news_topic_v2:{topic}" # v2 para invalidar cache antigo se houver
                     cached = await self.redis_client.get(cache_key)
                     if cached: 
-                        final_articles.extend(json.loads(cached))
+                        articles_by_topic[topic] = json.loads(cached)
                     else: 
                         missing_topics.append(topic)
                 except: 
                     missing_topics.append(topic)
         else:
-            missing_topics = [t for t in user_topics if t in TOPIC_CONFIG]
+            missing_topics = list(valid_topics)
 
-        # 2. Busca tópicos faltantes em paralelo
+        # 2. Busca tópicos faltantes em paralelo (API Externa)
         if missing_topics:
             loop = asyncio.get_running_loop()
+            # Aumentamos workers para lidar com múltiplas requisições HTTP
             with ThreadPoolExecutor(max_workers=10) as executor:
                 futures = [loop.run_in_executor(executor, self._fetch_topic_feeds, topic) for topic in missing_topics]
                 results = await asyncio.gather(*futures)
                 
                 for topic, articles in zip(missing_topics, results):
                     if articles:
+                        # Salva no Cache (1 hora)
                         if self.redis_client:
                              try: 
-                                 # Cache de Notícias = 1 hora (3600s)
-                                 await self.redis_client.setex(f"news_topic:{topic}", 3600, json.dumps(articles))
+                                 await self.redis_client.setex(f"news_topic_v2:{topic}", 3600, json.dumps(articles))
                              except: pass
-                        final_articles.extend(articles)
+                        articles_by_topic[topic] = articles
+                    else:
+                        articles_by_topic[topic] = []
 
-        # 3. Ordenação e Deduplicação
-        unique_articles = []
-        seen = set()
+        # 3. Montagem Final (Regra: 8 por tipo)
+        final_list = []
+        ITEMS_PER_TOPIC = 8 
+
+        for topic in valid_topics:
+            topic_articles = articles_by_topic.get(topic, [])
+            # Pega os X primeiros deste tópico
+            final_list.extend(topic_articles[:ITEMS_PER_TOPIC])
+
+        # 4. Ordenação Final da Lista Mista
+        # Ordenamos tudo por data para que o feed fique cronológico, 
+        # mas garantindo que o conteúdo de todos os tópicos esteja presente.
+        final_list.sort(key=lambda x: x['published_at'], reverse=True)
         
-        sorted_articles = sorted(final_articles, key=lambda x: x['published_at'], reverse=True)
-        
-        for art in sorted_articles:
-            if art['title'].lower() not in seen:
-                unique_articles.append(art)
-                seen.add(art['title'].lower())
-        
-        return unique_articles[:8]
+        return final_list
 
 external_service = ExternalDataService()

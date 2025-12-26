@@ -92,7 +92,7 @@ export interface WeatherData {
     temperature: number;
     description: string;
     icon_class: string;
-    city: string; // [Atualizado]
+    city: string; 
 }
 
 export interface NewsArticle {
@@ -100,9 +100,17 @@ export interface NewsArticle {
     url: string;
     source: { name: string };
     published_at: string;
-    topic?: string; // [Atualizado]
+    topic?: string; 
 }
 
+// [NOVO] Interface para a lista dinâmica de tópicos
+export interface NewsTopic {
+    id: string;
+    label: string;
+}
+
+// A interface HomeData antiga pode ser removida se não for usada em outro lugar,
+// pois agora buscamos separadamente. Mas mantive aqui por segurança.
 export interface HomeData {
     weather: WeatherData | null;
     tech_news: NewsArticle[];
@@ -124,6 +132,17 @@ export const getNews = async () => {
         return response.data;
     } catch (error) {
         console.error("Erro ao buscar notícias:", error);
+        return [];
+    }
+};
+
+// [NOVO] Busca a lista de tópicos dinamicamente do backend
+export const getNewsTopics = async () => {
+    try {
+        const response = await api.get('/home/news/topics');
+        return response.data; // Retorna array de {id, label}
+    } catch (error) {
+        console.error("Erro ao buscar tópicos:", error);
         return [];
     }
 };

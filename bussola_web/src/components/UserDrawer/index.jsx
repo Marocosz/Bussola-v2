@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '../../context/ToastContext';
-import { CitySelector } from '../CitySelector'; // [NOVO] Importe o seletor
+import { CitySelector } from '../CitySelector';
+import { getNewsTopics } from '../../services/api'; // [NOVO] Import da API
 import './styles.css';
 
 export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
@@ -8,14 +9,38 @@ export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
 
     // Estados locais
     const [editName, setEditName] = useState('');
-    const [editCity, setEditCity] = useState(''); // [NOTA] Armazena a string formatada
+    const [editCity, setEditCity] = useState('');
     const [editEmail, setEditEmail] = useState('');
     const [editPassword, setEditPassword] = useState('');
     const [currentPassword, setCurrentPassword] = useState('');
     const [newsPrefs, setNewsPrefs] = useState([]);
     const [isSaving, setIsSaving] = useState(false);
 
-    // Reinicia os estados
+    // [NOVO] Estado para armazenar os tópicos vindos do backend
+    const [availableTopics, setAvailableTopics] = useState([]);
+
+    // Busca tópicos ao carregar o componente (apenas uma vez)
+    useEffect(() => {
+        async function loadTopics() {
+            try {
+                const topics = await getNewsTopics();
+                if (topics && topics.length > 0) {
+                    setAvailableTopics(topics);
+                } else {
+                    // Fallback visual caso a API falhe, para não ficar vazio
+                    setAvailableTopics([
+                        { id: 'tech', label: 'Tecnologia' },
+                        { id: 'finance', label: 'Finanças' }
+                    ]);
+                }
+            } catch (err) {
+                console.error("Falha ao carregar tópicos:", err);
+            }
+        }
+        loadTopics();
+    }, []);
+
+    // Reinicia os estados do formulário
     useEffect(() => {
         if (user && isOpen) {
             setEditName(user.full_name || '');
@@ -29,14 +54,6 @@ export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
 
     const hasPasswordSet = user?.auth_provider === 'local' || user?.auth_provider === 'hybrid';
     const isGoogleOnly = user?.auth_provider === 'google' && !hasPasswordSet;
-
-    const availableTopics = [
-        { id: 'tech', label: 'Tecnologia' },
-        { id: 'finance', label: 'Economia' },
-        { id: 'crypto', label: 'Cripto' },
-        { id: 'sports', label: 'Esportes' },
-        { id: 'world', label: 'Mundo' }
-    ];
 
     const handleTopicToggle = (topicId) => {
         if (newsPrefs.includes(topicId)) {
@@ -55,7 +72,7 @@ export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
         
         const updatePayload = {
             full_name: editName,
-            city: editCity, // Envia a string formatada (Ex: "Uberlândia, MG, Brasil")
+            city: editCity,
             news_preferences: newsPrefs
         };
 
@@ -97,7 +114,6 @@ export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
                 </div>
 
                 <div className="drawer-body">
-                    {/* Cabeçalho do Perfil (Sem Avatar) */}
                     <div className="profile-summary">
                         <div className="profile-info">
                             <h3>{user?.full_name || 'Usuário'}</h3>
@@ -121,7 +137,6 @@ export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
 
                         <div className="form-group">
                             <label>Cidade (Para Clima e Notícias Locais)</label>
-                            {/* [NOVO] Componente de Autocomplete */}
                             <CitySelector 
                                 value={editCity} 
                                 onChange={(val) => setEditCity(val)} 
@@ -130,6 +145,7 @@ export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
 
                         <div className="form-group">
                             <label>Interesses de Notícias</label>
+                            {/* Renderização dinâmica */}
                             <div className="tags-container">
                                 {availableTopics.map(topic => (
                                     <span 
