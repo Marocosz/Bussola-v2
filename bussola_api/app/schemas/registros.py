@@ -1,8 +1,24 @@
+"""
+=======================================================================================
+ARQUIVO: registros.py (Schemas - Produtividade: Notas e Tarefas)
+=======================================================================================
+
+OBJETIVO:
+    Definir DTOs para Notas Rápidas (Keep-style) e Gestão de Tarefas (ToDo).
+    Gerencia a complexidade de recursividade em subtarefas.
+
+PARTE DO SISTEMA:
+    Backend / API Layer.
+=======================================================================================
+"""
+
 from pydantic import BaseModel, field_validator
 from typing import List, Optional, ForwardRef, Any
 from datetime import datetime
 
-# --- Schemas de Grupo ---
+# --------------------------------------------------------------------------------------
+# GRUPOS (Organização de Notas)
+# --------------------------------------------------------------------------------------
 class GrupoBase(BaseModel):
     nome: str
     cor: Optional[str] = "#FFFFFF"
@@ -15,14 +31,15 @@ class GrupoResponse(GrupoBase):
     class Config:
         from_attributes = True
 
-# --- Schemas de Link ---
+# --------------------------------------------------------------------------------------
+# LINKS E ANOTAÇÕES
+# --------------------------------------------------------------------------------------
 class LinkResponse(BaseModel):
     id: int
     url: str
     class Config:
         from_attributes = True
 
-# --- Schemas de Anotação ---
 class AnotacaoBase(BaseModel):
     titulo: Optional[str] = None
     conteudo: Optional[str] = None
@@ -48,27 +65,30 @@ class AnotacaoResponse(AnotacaoBase):
     class Config:
         from_attributes = True
 
-# --- Schemas de Tarefa e Subtarefa (RECURSIVIDADE COMPLETA) ---
+# --------------------------------------------------------------------------------------
+# TAREFAS E SUBTAREFAS (Recursividade)
+# --------------------------------------------------------------------------------------
 
+# Definição de referências futuras para permitir auto-referência (Subtarefa dentro de Subtarefa)
 SubtarefaCreate = ForwardRef('SubtarefaCreate')
 SubtarefaUpdate = ForwardRef('SubtarefaUpdate')
 SubtarefaResponse = ForwardRef('SubtarefaResponse')
 
-# Schema Base
+# --- SUBTAREFAS ---
+
 class SubtarefaBase(BaseModel):
     titulo: str
     concluido: bool = False
 
-# Create: Aceita lista de si mesmo (filhos)
 class SubtarefaCreate(SubtarefaBase):
+    """Criação recursiva: uma subtarefa pode nascer já com filhas."""
     subtarefas: List[SubtarefaCreate] = [] 
 
-# Update: Aceita ID (para identificar existente) e lista de filhos
 class SubtarefaUpdate(SubtarefaBase):
-    id: Optional[int] = None 
+    """Atualização recursiva."""
+    id: Optional[int] = None # ID opcional: se presente atualiza, se ausente cria.
     subtarefas: List[SubtarefaUpdate] = []
 
-# Response: Retorno padrão recursivo
 class SubtarefaResponse(SubtarefaBase):
     id: int
     parent_id: Optional[int] = None
@@ -77,10 +97,12 @@ class SubtarefaResponse(SubtarefaBase):
     class Config:
         from_attributes = True
 
-# Validando as referências circulares
+# Reconstrução dos modelos após definição para resolver ForwardRefs
 SubtarefaCreate.model_rebuild()
 SubtarefaUpdate.model_rebuild()
 SubtarefaResponse.model_rebuild()
+
+# --- TAREFAS (Raiz) ---
 
 class TarefaBase(BaseModel):
     titulo: str
@@ -91,7 +113,6 @@ class TarefaBase(BaseModel):
     prazo: Optional[datetime] = None
 
 class TarefaCreate(TarefaBase):
-    # Agora aceita a estrutura de árvore na criação
     subtarefas: Optional[List[SubtarefaCreate]] = []
 
 class TarefaUpdate(BaseModel):
@@ -101,7 +122,6 @@ class TarefaUpdate(BaseModel):
     fixado: Optional[bool] = None
     prioridade: Optional[str] = None
     prazo: Optional[datetime] = None
-    # Permite atualizar a árvore de subtarefas inteira
     subtarefas: Optional[List[SubtarefaUpdate]] = None
 
 class TarefaResponse(TarefaBase):
@@ -110,9 +130,12 @@ class TarefaResponse(TarefaBase):
     data_conclusao: Optional[datetime] = None
     subtarefas: List[SubtarefaResponse] = []
 
-    # Filtra apenas as raízes para não duplicar visualmente
     @field_validator('subtarefas', mode='before')
     def filter_root_subtarefas(cls, v: Any):
+        """
+        Regra de Exibição: Garante que apenas subtarefas diretas (nível 1) sejam listadas
+        na raiz, evitando duplicação visual de itens aninhados.
+        """
         if isinstance(v, list):
             return [sub for sub in v if getattr(sub, 'parent_id', None) is None]
         return v
@@ -120,7 +143,9 @@ class TarefaResponse(TarefaBase):
     class Config:
         from_attributes = True
 
-# --- Dashboard ---
+# --------------------------------------------------------------------------------------
+# DASHBOARD REGISTROS
+# --------------------------------------------------------------------------------------
 class RegistrosDashboardResponse(BaseModel):
     anotacoes_fixadas: List[AnotacaoResponse]
     anotacoes_por_mes: dict[str, List[AnotacaoResponse]]

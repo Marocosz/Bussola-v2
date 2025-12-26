@@ -1,60 +1,76 @@
+"""
+=======================================================================================
+ARQUIVO: user.py (Schemas - Gestão de Usuários)
+=======================================================================================
+
+OBJETIVO:
+    Definir DTOs para cadastro, atualização e leitura de usuários.
+    Gerencia a sensibilidade da senha (Input Only) e preferências de perfil.
+
+PARTE DO SISTEMA:
+    Backend / API Layer / Auth.
+=======================================================================================
+"""
+
 from typing import Optional, List
 from pydantic import BaseModel, EmailStr
 
-# Propriedades compartilhadas
+# Propriedades comuns a todos os schemas de User
 class UserBase(BaseModel):
     email: Optional[EmailStr] = None
     full_name: Optional[str] = None
     is_active: Optional[bool] = True
     is_superuser: Optional[bool] = False
     
-    # Campos de preferência
+    # Preferências de UI persistidas
     city: Optional[str] = "Uberlandia"
     news_preferences: Optional[List[str]] = ["tech"] 
 
-# Propriedades para receber via API na criação (senha é obrigatória para cadastro LOCAL)
 class UserCreate(UserBase):
+    """Cadastro inicial (Obrigatório Email e Senha)."""
     email: EmailStr
     password: str
 
-# Propriedades para atualizar
 class UserUpdate(UserBase):
+    """Atualização administrativa (Pode resetar senha)."""
     password: Optional[str] = None
 
-# Schema para o usuário atualizar a si mesmo
 class UserUpdateMe(BaseModel):
+    """Atualização do próprio perfil (Campos limitados por segurança)."""
     full_name: Optional[str] = None
     email: Optional[EmailStr] = None
     city: Optional[str] = None
     news_preferences: Optional[List[str]] = None
 
-# Propriedades para retornar via API (NUNCA retornamos a senha)
 class UserInDBBase(UserBase):
+    """Base para resposta segura (Sem senha)."""
     id: Optional[int] = None
     
-    # [NOVO] Informações de Auth na resposta
+    # Metadados de Auth
     is_verified: bool = False
     auth_provider: str = "local"
 
     class Config:
         from_attributes = True 
 
-# O que a API retorna
 class User(UserInDBBase):
+    """Schema público de retorno da API."""
     is_superuser: bool
     is_premium: bool = False
     pass
 
-# O que é salvo no Banco (inclui a senha hash)
 class UserInDB(UserInDBBase):
+    """Schema interno (Database), inclui hash da senha."""
     hashed_password: Optional[str] = None
 
-# Schema para definir a Nova Senha (Reset)
+# --- FLUXO DE SENHA ---
+
 class NewPassword(BaseModel):
+    """Recuperação de senha (Esqueci minha senha)."""
     token: str
     new_password: str
 
-# Schema para troca de senha logado
 class UpdatePassword(BaseModel):
+    """Troca de senha logado (Exige senha atual)."""
     current_password: str
     new_password: str

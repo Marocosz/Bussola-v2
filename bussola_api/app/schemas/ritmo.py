@@ -1,10 +1,24 @@
+"""
+=======================================================================================
+ARQUIVO: ritmo.py (Schemas - Saúde e Performance)
+=======================================================================================
+
+OBJETIVO:
+    Definir DTOs para o módulo Ritmo, cobrindo Biometria, Treino e Nutrição.
+    Estruturado hierarquicamente (Plano -> Dia -> Item).
+
+PARTE DO SISTEMA:
+    Backend / API Layer.
+=======================================================================================
+"""
+
 from typing import List, Optional
 from datetime import datetime
 from pydantic import BaseModel
 
-# ==========================================
-# 1. SCHEMAS BIO (Corpo)
-# ==========================================
+# ======================================================================================
+# 1. BIOMETRIA (Corpo e Metas)
+# ======================================================================================
 
 class BioBase(BaseModel):
     peso: float
@@ -20,6 +34,7 @@ class BioCreate(BioBase):
 
 class BioResponse(BioBase):
     id: int
+    # Campos calculados pelo backend (TMB, Macros)
     tmb: float
     gasto_calorico_total: float
     meta_proteina: float
@@ -32,11 +47,11 @@ class BioResponse(BioBase):
         from_attributes = True
 
 
-# ==========================================
-# 2. SCHEMAS TREINO
-# ==========================================
+# ======================================================================================
+# 2. TREINO (Estrutura Hierárquica)
+# ======================================================================================
 
-# --- Exercicio (Nível 3) ---
+# Nível 3: Exercício
 class ExercicioItemBase(BaseModel):
     nome_exercicio: str
     api_id: Optional[int] = None
@@ -44,7 +59,6 @@ class ExercicioItemBase(BaseModel):
     series: int
     repeticoes_min: int
     repeticoes_max: int
-    # REMOVIDO: carga_prevista
     descanso_segundos: Optional[int] = None
     observacao: Optional[str] = None
 
@@ -57,7 +71,7 @@ class ExercicioItemResponse(ExercicioItemBase):
     class Config:
         from_attributes = True
 
-# --- Dia de Treino (Nível 2) ---
+# Nível 2: Dia de Treino
 class DiaTreinoBase(BaseModel):
     nome: str
     ordem: int
@@ -72,10 +86,9 @@ class DiaTreinoResponse(DiaTreinoBase):
     class Config:
         from_attributes = True
 
-# --- Plano de Treino (Nível 1 - Topo) ---
+# Nível 1: Plano de Treino (Raiz)
 class PlanoTreinoBase(BaseModel):
     nome: str
-    # REMOVIDO: descricao
     ativo: bool = False
 
 class PlanoTreinoCreate(PlanoTreinoBase):
@@ -89,11 +102,11 @@ class PlanoTreinoResponse(PlanoTreinoBase):
         from_attributes = True
 
 
-# ==========================================
-# 3. SCHEMAS NUTRIÇÃO
-# ==========================================
+# ======================================================================================
+# 3. NUTRIÇÃO (Estrutura Hierárquica)
+# ======================================================================================
 
-# --- Alimento (Nível 3) ---
+# Nível 3: Alimento
 class AlimentoItemBase(BaseModel):
     nome: str
     quantidade: float
@@ -112,10 +125,9 @@ class AlimentoItemResponse(AlimentoItemBase):
     class Config:
         from_attributes = True
 
-# --- Refeição (Nível 2) ---
+# Nível 2: Refeição
 class RefeicaoBase(BaseModel):
     nome: str
-    # REMOVIDO: horario
     ordem: int
 
 class RefeicaoCreate(RefeicaoBase):
@@ -128,6 +140,7 @@ class RefeicaoResponse(RefeicaoBase):
     
     @property
     def total_calorias_refeicao(self) -> float:
+        """Cálculo on-the-fly do total calórico desta refeição."""
         if not self.alimentos:
             return 0.0
         return sum(a.calorias for a in self.alimentos)
@@ -135,7 +148,7 @@ class RefeicaoResponse(RefeicaoBase):
     class Config:
         from_attributes = True
 
-# --- Dieta Config (Nível 1 - Topo) ---
+# Nível 1: Dieta (Raiz)
 class DietaConfigBase(BaseModel):
     nome: str
     ativo: bool = False

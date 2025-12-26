@@ -1,3 +1,17 @@
+"""
+=======================================================================================
+ARQUIVO: cofre.py (Schemas - Cofre de Senhas)
+=======================================================================================
+
+OBJETIVO:
+    Definir DTOs para gestão segura de credenciais.
+    Separa estritamente a leitura de metadados da leitura do valor sensível (senha).
+
+PARTE DO SISTEMA:
+    Backend / API Layer / Security.
+=======================================================================================
+"""
+
 from pydantic import BaseModel
 from typing import Optional
 from datetime import date
@@ -9,23 +23,35 @@ class SegredoBase(BaseModel):
     data_expiracao: Optional[date] = None
 
 class SegredoCreate(SegredoBase):
-    valor: str # Recebe a senha em texto plano (HTTPS protege isso no trânsito)
+    """
+    Recebe a senha em texto plano via HTTPS.
+    O backend deve criptografar antes de salvar.
+    """
+    valor: str 
 
 class SegredoUpdate(BaseModel):
+    """
+    Atualização de metadados.
+    Por segurança, não permite alterar o valor da senha nesta rota simples.
+    """
     titulo: Optional[str] = None
     servico: Optional[str] = None
     notas: Optional[str] = None
     data_expiracao: Optional[date] = None
-    # Não permitimos alterar o valor na edição simples, apenas metadados por segurança/UX
 
 class SegredoResponse(SegredoBase):
+    """
+    Lista segura de segredos.
+    REGRA DE SEGURANÇA: NUNCA retorna o campo 'valor' (senha) nesta resposta.
+    """
     id: int
     data_criacao: date
-    # IMPORTANTE: Não retornamos o 'valor' aqui por segurança. 
-    # O valor só é retornado no endpoint específico de "copiar".
-
     class Config:
         from_attributes = True
 
 class SegredoValueResponse(BaseModel):
+    """
+    Schema exclusivo para a rota de 'Copiar Senha / Revelar'.
+    Retorna a senha descriptografada.
+    """
     valor: str

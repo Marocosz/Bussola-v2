@@ -1,9 +1,25 @@
+"""
+=======================================================================================
+ARQUIVO: financas.py (Schemas - Gestão Financeira)
+=======================================================================================
+
+OBJETIVO:
+    Definir DTOs para Categorias, Transações e Dashboards Financeiros.
+    Inclui validações de Enums para tipos e status.
+
+PARTE DO SISTEMA:
+    Backend / API Layer.
+=======================================================================================
+"""
+
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime, date
 from enum import Enum
 
-# --- Enums para padronizar opções ---
+# --------------------------------------------------------------------------------------
+# ENUMS (Domínios de Valores)
+# --------------------------------------------------------------------------------------
 class TipoCategoria(str, Enum):
     RECEITA = 'receita'
     DESPESA = 'despesa'
@@ -22,7 +38,9 @@ class Frequencia(str, Enum):
     MENSAL = 'mensal'
     ANUAL = 'anual'
 
-# --- CATEGORIAS ---
+# --------------------------------------------------------------------------------------
+# CATEGORIAS
+# --------------------------------------------------------------------------------------
 class CategoriaBase(BaseModel):
     nome: str
     tipo: TipoCategoria
@@ -33,7 +51,6 @@ class CategoriaBase(BaseModel):
 class CategoriaCreate(CategoriaBase):
     pass
 
-# NOVO: Schema para atualização
 class CategoriaUpdate(BaseModel):
     nome: Optional[str] = None
     tipo: Optional[TipoCategoria] = None
@@ -44,11 +61,11 @@ class CategoriaUpdate(BaseModel):
 class CategoriaResponse(CategoriaBase):
     id: int
     
-    # Dados do Mês Atual (para o card fechado)
+    # Métricas calculadas on-the-fly para exibição rápida no card
     total_gasto: Optional[float] = 0.0 
     total_ganho: Optional[float] = 0.0 
 
-    # Dados Históricos (para o card expandido/setinha)
+    # Métricas históricas (drill-down)
     total_historico: Optional[float] = 0.0
     media_valor: Optional[float] = 0.0
     qtd_transacoes: Optional[int] = 0
@@ -56,7 +73,9 @@ class CategoriaResponse(CategoriaBase):
     class Config:
         from_attributes = True
 
-# --- TRANSAÇÕES ---
+# --------------------------------------------------------------------------------------
+# TRANSAÇÕES
+# --------------------------------------------------------------------------------------
 class TransacaoBase(BaseModel):
     descricao: str
     valor: float
@@ -65,7 +84,7 @@ class TransacaoBase(BaseModel):
     tipo_recorrencia: TipoRecorrencia = TipoRecorrencia.PONTUAL
     status: StatusTransacao = StatusTransacao.PENDENTE
     
-    # Opcionais dependendo do tipo
+    # Campos para lógica de parcelamento/recorrência
     parcela_atual: Optional[int] = None
     total_parcelas: Optional[int] = None
     frequencia: Optional[Frequencia] = None
@@ -73,28 +92,33 @@ class TransacaoBase(BaseModel):
 class TransacaoCreate(TransacaoBase):
     pass
 
-# NOVO: Schema para atualização
 class TransacaoUpdate(BaseModel):
     descricao: Optional[str] = None
     valor: Optional[float] = None
     data: Optional[datetime] = None
     categoria_id: Optional[int] = None
     status: Optional[StatusTransacao] = None
-    # Geralmente não editamos recorrência complexa num update simples, mas pode ser adicionado se necessário
 
 class TransacaoResponse(TransacaoBase):
     id: int
-    categoria: Optional[CategoriaResponse] = None # Nested object
+    categoria: Optional[CategoriaResponse] = None # Objeto aninhado para evitar queries extras no front
     id_grupo_recorrencia: Optional[str] = None
 
     class Config:
         from_attributes = True
 
-# --- DASHBOARD (Resposta completa da rota /financas) ---
+# --------------------------------------------------------------------------------------
+# DASHBOARD FINANCEIRO
+# --------------------------------------------------------------------------------------
 class FinancasDashboardResponse(BaseModel):
+    """Agrega todos os dados necessários para renderizar a tela inicial de finanças."""
     categorias_despesa: List[CategoriaResponse]
     categorias_receita: List[CategoriaResponse]
-    transacoes_pontuais: dict[str, List[TransacaoResponse]] # Agrupado por mês "Janeiro/2025": [transacoes]
+    
+    # Transações agrupadas por mês (ex: "Janeiro/2025") para facilitar a listagem
+    transacoes_pontuais: dict[str, List[TransacaoResponse]] 
     transacoes_recorrentes: dict[str, List[TransacaoResponse]]
+    
+    # Metadados de UI
     icones_disponiveis: List[str]
     cores_disponiveis: List[str]

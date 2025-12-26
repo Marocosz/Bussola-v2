@@ -1,9 +1,25 @@
+"""
+=======================================================================================
+ARQUIVO: panorama.py (Schemas - Relatórios e KPIs)
+=======================================================================================
+
+OBJETIVO:
+    Definir a estrutura de dados para o módulo "Panorama" (BI/Analytics).
+    Agrega métricas de todos os módulos do sistema em uma visão unificada.
+
+PARTE DO SISTEMA:
+    Backend / API Layer / Analytics.
+=======================================================================================
+"""
+
 from pydantic import BaseModel
 from typing import List, Optional, Any
 from datetime import datetime
 from app.schemas.financas import CategoriaResponse 
 
-# --- SUB-SCHEMAS PARA OS KPIS ---
+# --------------------------------------------------------------------------------------
+# KPIS (Key Performance Indicators)
+# --------------------------------------------------------------------------------------
 class TarefasPendentesDetalhe(BaseModel):
     critica: int
     alta: int
@@ -11,6 +27,7 @@ class TarefasPendentesDetalhe(BaseModel):
     baixa: int
 
 class KpiData(BaseModel):
+    """Snapshot consolidado do estado atual do usuário."""
     # Finanças
     receita_mes: float
     despesa_mes: float
@@ -22,52 +39,63 @@ class KpiData(BaseModel):
     compromissos_perdidos: int
     proximo_compromisso: Optional[dict] = None 
     
-    # Registros (Anotações e Tarefas)
+    # Produtividade
     total_anotacoes: int
     tarefas_pendentes: TarefasPendentesDetalhe
     tarefas_concluidas: int
     
-    # Cofre
+    # Segurança
     chaves_ativas: int
     chaves_expiradas: int
 
+# --------------------------------------------------------------------------------------
+# GRÁFICOS (ChartJS Support)
+# --------------------------------------------------------------------------------------
 class ChartData(BaseModel):
     labels: List[str]
     data: List[float]
     colors: Optional[List[str]] = None
 
-# --- SCHEMAS PARA OS MODAIS (TABELAS) ---
-
+# --------------------------------------------------------------------------------------
+# ITENS DE DETALHE (Tabelas e Listas)
+# --------------------------------------------------------------------------------------
 class ProvisaoItem(BaseModel):
+    """Item financeiro previsto (Contas a Pagar/Receber)."""
     id: int
     descricao: str
     valor: float
     data_vencimento: datetime
     categoria_nome: str
     categoria_cor: str
-    tipo_recorrencia: str  # 'Pontual', 'Recorrente', 'Parcelada'
+    tipo_recorrencia: str 
     status: str
 
 class RoteiroItem(BaseModel):
+    """Item de agenda simplificado para timeline."""
     id: int
     titulo: str
     data_inicio: datetime
     data_fim: datetime
-    tipo: str # Ex: 'Reunião', 'Consulta', etc.
+    tipo: str 
     cor: str
-    status: str # 'Pendente', 'Realizado', etc.
+    status: str
 
 class RegistroItem(BaseModel):
+    """Item unificado de Notas e Tarefas."""
     id: int
     titulo: str
     tipo: str # 'Anotacao' ou 'Tarefa'
-    grupo_ou_prioridade: str # Nome do grupo (nota) ou Prioridade (tarefa)
+    grupo_ou_prioridade: str 
     data_criacao: datetime
-    status: Optional[str] = None # Para tarefas: Pendente/Concluido
+    status: Optional[str] = None 
 
-# --- RESPOSTA PRINCIPAL ---
+# --------------------------------------------------------------------------------------
+# RESPOSTA PRINCIPAL
+# --------------------------------------------------------------------------------------
 class PanoramaResponse(BaseModel):
     kpis: KpiData
+    
+    # Gráficos
     gastos_por_categoria: ChartData
     evolucao_mensal_receita: List[float]
     evolucao_mensal_despesa: List[float]
@@ -75,7 +103,7 @@ class PanoramaResponse(BaseModel):
     gasto_semanal: ChartData
     categorias_para_filtro: List[CategoriaResponse]
     
-    # NOVOS CAMPOS ADICIONADOS:
+    # Listas Detalhadas
     provisoes: List[ProvisaoItem] = []
     roteiro: List[RoteiroItem] = []
     registros: List[RegistroItem] = []

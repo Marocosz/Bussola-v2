@@ -1,14 +1,32 @@
+"""
+=======================================================================================
+ARQUIVO: home.py (Schemas - Dashboard Principal)
+=======================================================================================
+
+OBJETIVO:
+    Definir os dados para o Dashboard "Home" (Visão Geral), integrando serviços
+    externos como Clima e Notícias.
+
+PARTE DO SISTEMA:
+    Backend / API Layer / Integrations.
+=======================================================================================
+"""
+
 from typing import List, Optional
 from pydantic import BaseModel
 
-# --- Weather Schemas ---
+# --------------------------------------------------------------------------------------
+# WEATHER (CLIMA)
+# --------------------------------------------------------------------------------------
 class WeatherData(BaseModel):
     temperature: int
     description: str
     icon_class: str
-    city: str # [NOVO] Retorna o nome da cidade para o front saber qual foi usada
+    city: str # Confirmação da cidade utilizada na consulta da API
 
-# --- News Schemas ---
+# --------------------------------------------------------------------------------------
+# NEWS (NOTÍCIAS)
+# --------------------------------------------------------------------------------------
 class NewsSource(BaseModel):
     name: str
 
@@ -17,10 +35,11 @@ class NewsArticle(BaseModel):
     url: str
     source: NewsSource
     published_at: str
-    topic: Optional[str] = "Geral" # [NOVO] Identifica o tópico da notícia
+    topic: Optional[str] = "Geral" # Classificação do assunto (ex: Tech, Business)
 
-# --- Main Home Response ---
+# --------------------------------------------------------------------------------------
+# HOME RESPONSE
+# --------------------------------------------------------------------------------------
 class HomeDashboardResponse(BaseModel):
     weather: Optional[WeatherData] = None
     tech_news: List[NewsArticle] = []
-    # Nota: Data e Hora serão gerenciados pelo React no Frontend
