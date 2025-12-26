@@ -89,41 +89,31 @@
 
 /* =========================================
    LAYER 1: SLIDER (ANIMAÇÃO SUAVE DE POSIÇÃO)
-   Esta div âncora desliza ao redor do botão dependendo do quadrante.
-   Usamos 'translate' para máxima performance.
    ========================================= */
 .ai-content-slider {
   position: absolute;
   top: 0; left: 0;
   width: 400px;
   pointer-events: none;
-  
-  /* A Mágica: Transição lenta e suave nas coordenadas */
   transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* CÁLCULOS DE POSIÇÃO (Baseados em botão 60px e Gap 20px) */
-
 /* 1. Direita + Baixo (Abre pra CIMA) */
-/* X: Move 80px pra direita. Y: Sobe 100% da própria altura + 10px */
 .pos-right-up {
   transform: translate(80px, calc(-100% - 10px));
 }
 
 /* 2. Direita + Cima (Abre pra BAIXO) */
-/* X: Move 80px pra direita. Y: Desce 70px (abaixo do botão) */
 .pos-right-down {
   transform: translate(80px, 70px);
 }
 
 /* 3. Esquerda + Baixo (Abre pra CIMA) */
-/* X: Volta 420px (Largura + Gap). Y: Sobe 100% + 10px */
 .pos-left-up {
   transform: translate(-420px, calc(-100% - 10px));
 }
 
 /* 4. Esquerda + Cima (Abre pra BAIXO) */
-/* X: Volta 420px. Y: Desce 70px */
 .pos-left-down {
   transform: translate(-420px, 70px);
 }
@@ -131,7 +121,6 @@
 
 /* =========================================
    LAYER 2: ANIMATOR (ABRIR/FECHAR)
-   Controla apenas a visibilidade (Fade/Scale)
    ========================================= */
 .ai-content-animator {
   opacity: 0;
@@ -139,12 +128,9 @@
   transform: scale(0.9);
   transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0.3s;
   pointer-events: none;
-  
-  /* Origem da animação muda conforme a posição para parecer que sai do botão */
   transform-origin: center; 
 }
 
-/* Ajuste de Origem da Animação baseado no pai */
 .pos-right-up .ai-content-animator { transform-origin: bottom left; }
 .pos-right-down .ai-content-animator { transform-origin: top left; }
 .pos-left-up .ai-content-animator { transform-origin: bottom right; }
@@ -175,7 +161,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  max-height: 550px; /* Altura segura */
+  max-height: 550px; 
   color: #E8EAED;
 }
 
@@ -325,7 +311,7 @@
 .ai-insight-title {
   font-size: 1.2rem;
   font-weight: 700;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   color: inherit;
   line-height: 1.4;
 }
@@ -335,7 +321,90 @@
   line-height: 1.7;
   color: inherit;
   opacity: 0.9;
-  white-space: pre-wrap; 
+  white-space: pre-wrap;
+  margin-bottom: 1.5rem;
+}
+
+/* NOVOS ESTILOS: AGENTS GRID */
+.ai-summary-box {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.light-theme .ai-summary-box {
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.ai-agents-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ai-agent-mini-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    gap: 12px;
+    transition: background 0.2s;
+}
+.light-theme .ai-agent-mini-card {
+    background: rgba(0,0,0,0.03);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.ai-agent-mini-card:hover {
+    background: rgba(255,255,255,0.06);
+}
+.light-theme .ai-agent-mini-card:hover {
+    background: rgba(0,0,0,0.06);
+}
+
+.ai-mini-icon {
+    font-size: 1.2rem;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+}
+.light-theme .ai-mini-icon {
+    background: rgba(0,0,0,0.05);
+}
+
+.ai-mini-content {
+    flex: 1;
+}
+
+.ai-mini-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.ai-mini-name {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: inherit;
+}
+
+.ai-mini-status {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ai-mini-text {
+    font-size: 0.85rem;
+    color: inherit;
+    opacity: 0.8;
+    line-height: 1.4;
+    margin: 0;
 }
 
 .ai-cooldown-bar {

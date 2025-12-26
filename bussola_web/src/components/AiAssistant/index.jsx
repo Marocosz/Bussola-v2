@@ -13,10 +13,9 @@ export const AiAssistant = ({ context }) => {
   const [insight, setInsight] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0); 
   
-  // Estado de posição inteligente: x='right'|'left', y='down'|'up'
+  // Smart Pos: x='left'|'right', y='up'|'down'
   const [smartPos, setSmartPos] = useState({ x: 'right', y: 'up' });
 
-  // Posição Inicial
   const [position, setPosition] = useState(() => ({ 
     x: 30, 
     y: typeof window !== 'undefined' ? window.innerHeight - 100 : 20 
@@ -88,22 +87,16 @@ export const AiAssistant = ({ context }) => {
     }
   };
 
-  // --- Lógica Inteligente de Quadrantes ---
   const updateSmartPosition = (currentX, currentY) => {
       const screenWidth = window.innerWidth;
       const screenHeight = window.innerHeight;
-
-      // Se passar da metade da tela na horizontal -> Abre pra Esquerda
       const sideX = currentX > (screenWidth / 2) ? 'left' : 'right';
-      
-      // Se passar da metade da tela na vertical -> Abre pra Cima (Up)
       const sideY = currentY > (screenHeight / 2) ? 'up' : 'down';
-
       setSmartPos({ x: sideX, y: sideY });
   };
 
   const handleMouseDown = (e) => {
-    if (e.target.closest('.ai-content-slider')) return; // Permite selecionar texto
+    if (e.target.closest('.ai-content-slider')) return; 
     
     const rect = dragRef.current.getBoundingClientRect();
     offsetRef.current = {
@@ -115,7 +108,6 @@ export const AiAssistant = ({ context }) => {
 
   const handleMouseMove = (e) => {
     if (!isDragging) return;
-    
     if (requestRef.current) cancelAnimationFrame(requestRef.current);
 
     requestRef.current = requestAnimationFrame(() => {
@@ -168,7 +160,16 @@ export const AiAssistant = ({ context }) => {
     return icons[origin] || "fa-lightbulb";
   };
 
-  // Classe dinâmica composta: ex "pos-right-up"
+  // Helper para cor do status
+  const getStatusColor = (status) => {
+      switch(status) {
+          case 'critico': return '#ef4444'; // Red
+          case 'atencao': return '#f59e0b'; // Orange
+          case 'otimo': return '#22c55e'; // Green
+          default: return '#3b82f6'; // Blue (OK)
+      }
+  };
+
   const positionClass = `pos-${smartPos.x}-${smartPos.y}`;
 
   return (
@@ -178,13 +179,7 @@ export const AiAssistant = ({ context }) => {
       style={{ left: position.x, top: position.y }}
       onMouseDown={handleMouseDown}
     >
-      {/* WRAPPER DESLIZANTE (Slider)
-          Responsável apenas pela posição (x,y) relativa ao botão.
-          Usa 'transform' para garantir animação suave.
-      */}
       <div className={`ai-content-slider ${positionClass}`}>
-        
-        {/* WRAPPER DE VISIBILIDADE (Fade/Scale) */}
         <div 
             className={`ai-content-animator ${isOpen ? 'visible' : ''}`}
             onMouseDown={(e) => e.stopPropagation()} 
@@ -193,11 +188,11 @@ export const AiAssistant = ({ context }) => {
             <div className="ai-glass-header">
                 <div className="ai-agent-identity">
                 <div className="ai-agent-icon">
-                    <i className={`fa-solid ${getOriginIcon(insight?.origem)}`}></i>
+                    <i className="fa-solid fa-robot"></i>
                 </div>
                 <div className="ai-agent-info">
-                    <span className="ai-agent-name">{insight?.origem || 'System'} Agent</span>
-                    <span className="ai-agent-status">{loading ? 'Processando...' : 'Online'}</span>
+                    <span className="ai-agent-name">Performance Head</span>
+                    <span className="ai-agent-status">{loading ? 'Sincronizando...' : 'Online'}</span>
                 </div>
                 </div>
 
@@ -233,10 +228,34 @@ export const AiAssistant = ({ context }) => {
 
                 {insight && (
                 <div className="ai-insight-content">
-                    <h3 className="ai-insight-title">{insight.titulo}</h3>
-                    <div className="ai-insight-text">
-                    {insight.mensagem}
+                    {/* Cabeçalho Resumido */}
+                    <div className="ai-summary-box">
+                        <h3 className="ai-insight-title">{insight.titulo}</h3>
+                        <p className="ai-insight-text">{insight.mensagem}</p>
                     </div>
+
+                    {/* Lista de Agentes (Se disponível) */}
+                    {insight.agentes && insight.agentes.length > 0 && (
+                        <div className="ai-agents-grid">
+                            {insight.agentes.map((agent, idx) => (
+                                <div key={idx} className="ai-agent-mini-card">
+                                    <div className="ai-mini-icon" style={{color: getStatusColor(agent.status)}}>
+                                        <i className={`fa-solid ${getOriginIcon(agent.nome)}`}></i>
+                                    </div>
+                                    <div className="ai-mini-content">
+                                        <div className="ai-mini-header">
+                                            <span className="ai-mini-name">{agent.nome}</span>
+                                            <span className="ai-mini-status" style={{color: getStatusColor(agent.status)}}>
+                                                {agent.status === 'otimo' ? 'Excelente' : agent.status.toUpperCase()}
+                                            </span>
+                                        </div>
+                                        <p className="ai-mini-text">{agent.resumo}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
                     {(timeLeft > 0 && !DISABLE_COOLDOWN) && (
                     <div className="ai-cooldown-bar">
                         <i className="fa-regular fa-clock"></i>
