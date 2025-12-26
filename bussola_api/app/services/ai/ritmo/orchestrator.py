@@ -18,19 +18,20 @@ from app.services.ritmo import RitmoService
 class AgenteResumo(BaseModel):
     nome: str = Field(description="Nome do agente: 'Bio', 'Nutri' ou 'Coach'")
     status: str = Field(description="Status exato: 'ok', 'atencao', 'critico' ou 'otimo'")
-    resumo: str = Field(description="Resumo curto do insight em uma frase")
+    # ALTERAÇÃO AQUI: Mudamos a descrição para garantir que o texto completo passe
+    resumo: str = Field(description="O insight técnico COMPLETO e detalhado gerado pelo agente, preservando a formatação e profundidade.")
 
 class RitmoResponse(BaseModel):
-    titulo: str = Field(description="Manchete curta e motivadora")
-    mensagem: str = Field(description="Texto explicativo curto")
+    titulo: str = Field(description="Manchete curta e motivadora para o card principal")
+    mensagem: str = Field(description="Texto explicativo curto para o card principal")
     cor: str = Field(description="Cor do alerta: 'red', 'orange', 'green' ou 'blue'")
     origem: str = Field(description="Origem do insight principal (geralmente 'System')")
-    agentes: List[AgenteResumo] = Field(description="Lista com o resumo dos 3 agentes")
+    agentes: List[AgenteResumo] = Field(description="Lista com os relatórios detalhados dos 3 agentes")
 
 class RitmoOrchestrator(BaseOrchestrator):
     def __init__(self, db: Session):
         self.db = db
-        self.llm = get_llm(temperature=0.2) # Baixei a temperatura para reduzir alucinações
+        self.llm = get_llm(temperature=0.2) 
         
         self.bio_agent = BioAgent()
         self.coach_agent = CoachAgent()
@@ -73,12 +74,15 @@ class RitmoOrchestrator(BaseOrchestrator):
         3. NUTRI: {nutri}
 
         SUA MISSÃO:
-        Gerar um JSON estruturado contendo o resumo geral e os detalhes de cada área.
+        Gerar um JSON estruturado consolidando as informações.
+
+        REGRAS RÍGIDAS PARA O JSON:
+        1. Para o campo 'agentes':
+           - Copie o 'status' original de cada relatório.
+           - **IMPORTANTE:** No campo 'resumo' de cada agente, **NÃO RESUMA**. Você deve copiar o conteúdo principal do insight do agente, mantendo os detalhes técnicos e sugestões. Queremos que o usuário leia a análise completa.
         
-        REGRAS RÍGIDAS:
-        1. NÃO escreva código, não escreva markdown, não converse.
-        2. Retorne APENAS o JSON válido seguindo o formato abaixo.
-        3. Para a lista 'agentes', extraia o status e crie um resumo de 1 linha baseado no insight original.
+        2. Para 'titulo' e 'mensagem' (Card Principal):
+           - Crie uma manchete executiva baseada no problema mais crítico encontrado (ou elogio se tudo estiver 'otimo').
 
         FORMATO DE SAÍDA:
         {format_instructions}
@@ -101,15 +105,15 @@ class RitmoOrchestrator(BaseOrchestrator):
 
         except Exception as e:
             print(f"Erro Orquestrador Ritmo: {e}")
-            # Fallback seguro que mantém a estrutura para o frontend não quebrar
+            # Fallback seguro usando os insights originais (mesmo que longos)
             return {
                 "titulo": "Análise Indisponível",
                 "mensagem": "Não foi possível consolidar os dados dos agentes no momento.",
                 "cor": "gray",
                 "origem": "System",
                 "agentes": [
-                    {"nome": "Bio", "status": "ok", "resumo": bio_res.insight[:50] + "..."},
-                    {"nome": "Coach", "status": "ok", "resumo": coach_res.insight[:50] + "..."},
-                    {"nome": "Nutri", "status": "ok", "resumo": nutri_res.insight[:50] + "..."}
+                    {"nome": "Bio", "status": "ok", "resumo": bio_res.insight},
+                    {"nome": "Coach", "status": "ok", "resumo": coach_res.insight},
+                    {"nome": "Nutri", "status": "ok", "resumo": nutri_res.insight}
                 ]
             }

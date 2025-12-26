@@ -1,15 +1,31 @@
+import json
+import re
+from datetime import datetime
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from app.services.ai.base import BaseAgent, AgentOutput
 from app.services.ai.llm_factory import get_llm
-import json
-from datetime import datetime
 
 class BioAgent(BaseAgent):
     def __init__(self):
         # Temperatura baixa para análise de dados precisa
         self.llm = get_llm(temperature=0.1)
         self.parser = PydanticOutputParser(pydantic_object=AgentOutput)
+
+    def _clean_json_string(self, text: str) -> str:
+        """Limpa a string para garantir que apenas o JSON seja processado."""
+        # Remove blocos de código markdown se existirem
+        if "```json" in text:
+            text = text.split("```json")[1].split("```")[0]
+        elif "```" in text:
+            text = text.split("```")[1].split("```")[0]
+        
+        # Tenta encontrar o início e fim do JSON
+        start = text.find('{')
+        end = text.rfind('}') + 1
+        if start != -1 and end != -1:
+            return text[start:end]
+        return text.strip()
 
     async def analyze(self, data: dict) -> AgentOutput:
         if not data:
@@ -53,13 +69,24 @@ class BioAgent(BaseAgent):
         """
 
         prompt = ChatPromptTemplate.from_template(template)
-        chain = prompt | self.llm | self.parser
+        # Removemos o parser da chain para fazer o parse manual seguro
+        chain = prompt | self.llm 
 
         try:
-            return await chain.ainvoke({
+            raw_response = await chain.ainvoke({
                 "dados_usuario": json.dumps(data, default=str),
                 "format_instructions": self.parser.get_format_instructions()
             })
+
+            # Extração segura do texto
+            text_response = raw_response.content if hasattr(raw_response, 'content') else str(raw_response)
+            
+            # Limpeza e Parse
+            clean_json = self._clean_json_string(text_response)
+            parsed_data = json.loads(clean_json)
+            
+            return AgentOutput(**parsed_data)
+
         except Exception as e:
             print(f"Erro BioAgent: {e}")
             return AgentOutput(
