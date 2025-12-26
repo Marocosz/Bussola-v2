@@ -1,16 +1,42 @@
+"""
+=======================================================================================
+ARQUIVO: financas.py (Serviço de Domínio - Finanças Pessoais)
+=======================================================================================
+
+OBJETIVO:
+    Gerenciar toda a lógica financeira da aplicação, desde a simples criação de transações
+    até complexos algoritmos de projeção de gastos recorrentes e parcelados.
+
+PARTE DO SISTEMA:
+    Backend / Service Layer.
+
+RESPONSABILIDADES:
+    1. CRUD Inteligente: Criação de transações pontuais, recorrentes e parcelamentos.
+    2. Projeção Futura: Worker interno que gera lançamentos futuros automaticamente.
+    3. Dashboard: Agregação de dados, cálculo de totais por categoria e históricos.
+    4. Integridade: Gestão de categorias padrão ("Indefinida") à prova de falhas.
+
+COMUNICAÇÃO:
+    - Models: Transacao, Categoria.
+    - Utilizado por: app.api.endpoints.financas.
+    - Dependências: dateutil (cálculos de datas complexos), sqlalchemy (agregadores).
+
+=======================================================================================
+"""
+
 import uuid
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_, desc
-from sqlalchemy.exc import IntegrityError # [NOVO] Import para tratar concorrência
+from sqlalchemy.exc import IntegrityError # Import para tratamento de concorrência (Race Conditions)
 from collections import defaultdict
 import random
 
 from app.models.financas import Transacao, Categoria 
 from app.schemas.financas import TransacaoCreate, TransacaoUpdate, TipoRecorrencia
 
-# Lista de ícones
+# Catálogo de ícones FontAwesome disponíveis para escolha no frontend
 ICONES_DISPONIVEIS = [
     "fa-solid fa-utensils", "fa-solid fa-burger", "fa-solid fa-cart-shopping",
     "fa-solid fa-house", "fa-solid fa-lightbulb", "fa-solid fa-wifi",
@@ -22,6 +48,7 @@ ICONES_DISPONIVEIS = [
 class FinancasService:
     
     def gerar_paleta_cores(self, n=20):
+        """Gera cores hexadecimais aleatórias para gráficos e categorias."""
         cores = []
         for _ in range(n):
             color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
@@ -30,13 +57,16 @@ class FinancasService:
 
     def get_or_create_indefinida(self, db: Session, tipo: str, user_id: int) -> Categoria:
         """
-        Busca ou cria uma categoria 'Indefinida' ESPECÍFICA para o tipo E USUÁRIO.
-        Usa nomes distintos para não quebrar a constraint UNIQUE do banco.
-        BLINDADO: Usa try/except para evitar erro de concorrência (Race Condition).
+        Busca ou cria uma categoria de fallback ('Indefinida') para transações sem classificação.
+        
+        MECANISMO DE SEGURANÇA (CONCORRÊNCIA):
+        Em ambientes assíncronos, duas requisições podem tentar criar essa categoria ao mesmo tempo.
+        O bloco try/except IntegrityError captura essa colisão, faz rollback e retorna a categoria
+        que acabou de ser criada pela outra thread/processo, evitando erro 500.
         """
         nome_padrao = f"Indefinida ({tipo.capitalize()})"
         
-        # 1. Tenta buscar existente
+        # 1. Tenta buscar existente (Caminho feliz)
         cat = db.query(Categoria).filter(
             Categoria.nome == nome_padrao,
             Categoria.tipo == tipo,
@@ -46,7 +76,7 @@ class FinancasService:
         if cat:
             return cat
 
-        # 2. Se não achou, tenta a legada
+        # 2. Migração de legado: Renomeia categorias antigas se existirem
         cat_legacy = db.query(Categoria).filter(
             Categoria.nome == "Indefinida", 
             Categoria.tipo == tipo,
@@ -59,13 +89,13 @@ class FinancasService:
             db.refresh(cat_legacy)
             return cat_legacy
 
-        # 3. Se não achou nenhuma, tenta criar (com proteção de concorrência)
+        # 3. Criação segura (com proteção contra Race Condition)
         try:
             nova_cat = Categoria(
                 nome=nome_padrao,
                 tipo=tipo,
                 icone="fa-solid fa-circle-question", 
-                cor="#94a3b8", # Cinza
+                cor="#94a3b8", # Cinza neutro
                 meta_limite=0,
                 user_id=user_id
             )
@@ -75,8 +105,7 @@ class FinancasService:
             return nova_cat
         except IntegrityError:
             db.rollback()
-            # Se deu erro, é porque outra requisição criou milissegundos antes.
-            # Buscamos novamente e retornamos.
+            # Se falhou, é porque já existe. Busca novamente.
             return db.query(Categoria).filter(
                 Categoria.nome == nome_padrao,
                 Categoria.tipo == tipo,
@@ -84,22 +113,32 @@ class FinancasService:
             ).first()
 
     def gerar_transacoes_futuras(self, db: Session, user_id: int):
+        """
+        WORKER DE PROJEÇÃO: Gera lançamentos futuros baseados em regras de recorrência.
+        
+        Lógica:
+        1. Identifica todos os grupos de recorrência (id_grupo_recorrencia) do usuário.
+        2. Verifica a ÚLTIMA transação lançada de cada grupo.
+        3. Se a última transação já passou (está no passado), gera as próximas até alcançar a data atual.
+        
+        Isso garante que ao abrir o app no dia 05, as contas que venceram dia 01, 02, 03 e 04 sejam criadas.
+        """
         today_date = datetime.now().date()
 
-        # [PERFORMANCE] Busca APENAS grupos ativos do usuário para evitar processamento inútil
+        # Otimização: Busca apenas IDs de grupos que são 'recorrente' ou 'parcelada'
         grupos = db.query(Transacao.id_grupo_recorrencia).filter(
             Transacao.tipo_recorrencia.in_(['recorrente', 'parcelada']),
             Transacao.user_id == user_id
         ).distinct().all()
 
         if not grupos:
-            return # Sai cedo se não tiver nada pra processar
+            return 
 
         for grupo_tuple in grupos:
             grupo_id = grupo_tuple[0]
             if not grupo_id: continue
 
-            # Busca última transação deste grupo
+            # Pega o último lançamento conhecido deste grupo
             ultima = db.query(Transacao).filter(
                 Transacao.id_grupo_recorrencia == grupo_id,
                 Transacao.user_id == user_id
@@ -107,11 +146,11 @@ class FinancasService:
             
             if not ultima: continue
 
-            # Se a última já está no futuro, não precisamos fazer nada para este grupo
+            # Se já estamos projetados até o futuro, pula
             if ultima.data.date() > today_date:
                 continue
 
-            # Lógica de Geração
+            # CASO A: RECORRÊNCIA INFINITA (Assinaturas, Aluguel, Salário)
             if ultima.tipo_recorrencia == 'recorrente':
                 proximo_vencimento = ultima.data
                 frequencia = ultima.frequencia
@@ -121,6 +160,7 @@ class FinancasService:
                 elif frequencia == 'mensal': proximo_vencimento += relativedelta(months=1)
                 elif frequencia == 'anual': proximo_vencimento += relativedelta(years=1)
 
+                # Loop de "Catch-up": Gera todas as pendências até hoje
                 while proximo_vencimento.date() <= today_date:
                     nova = Transacao(
                         descricao=ultima.descricao, valor=ultima.valor, data=proximo_vencimento,
@@ -129,11 +169,12 @@ class FinancasService:
                         user_id=user_id
                     )
                     db.add(nova)
-                    # Próximo incremento
+                    
                     if frequencia == 'semanal': proximo_vencimento += relativedelta(weeks=1)
                     elif frequencia == 'mensal': proximo_vencimento += relativedelta(months=1)
                     elif frequencia == 'anual': proximo_vencimento += relativedelta(years=1)
 
+            # CASO B: PARCELAMENTO FINITO (Compra Parcela, Empréstimo)
             elif ultima.tipo_recorrencia == 'parcelada':
                 if ultima.parcela_atual >= ultima.total_parcelas: continue
 
@@ -156,26 +197,24 @@ class FinancasService:
 
     def get_dashboard_data(self, db: Session, user_id: int):
         """
-        Centraliza a lógica de montagem do dashboard de finanças.
-        Calcula estatísticas de categorias e agrupa transações.
+        Agregador de Dados para o Dashboard Financeiro.
+        Realiza cálculos on-the-fly de totais por categoria e agrupa transações por mês.
         """
-        # 1. Manutenção e Garantia de Categorias do Sistema
+        # 1. Manutenção: Atualiza projeções e garante categorias base
         self.gerar_transacoes_futuras(db, user_id)
-        
-        # Cria "Indefinida (Despesa)" e "Indefinida (Receita)"
         self.get_or_create_indefinida(db, "despesa", user_id)
         self.get_or_create_indefinida(db, "receita", user_id)
 
-        # 2. Datas
+        # 2. Definição do Período Atual (Mês vigente)
         today = datetime.now()
         start_of_month = today.replace(day=1, hour=0, minute=0, second=0)
         next_month = start_of_month + relativedelta(months=1)
 
-        # 3. Categorias com Totais
-        
-        # --- DESPESAS ---
+        # 3. Cálculo de Totais por Categoria (Despesas)
+        # Itera sobre categorias para calcular métricas individuais
         cats_despesa = db.query(Categoria).filter(Categoria.tipo == 'despesa', Categoria.user_id == user_id).all()
         for cat in cats_despesa:
+            # Total do Mês Atual (Apenas Efetivadas)
             total_mes = db.query(func.sum(Transacao.valor)).filter(
                 Transacao.categoria_id == cat.id,
                 Transacao.data >= start_of_month,
@@ -184,6 +223,7 @@ class FinancasService:
             ).scalar()
             cat.total_gasto = total_mes or 0.0
 
+            # Estatísticas Históricas (Vida toda)
             stats = db.query(
                 func.sum(Transacao.valor),   
                 func.avg(Transacao.valor),   
@@ -197,7 +237,7 @@ class FinancasService:
             cat.media_valor = stats[1] or 0.0
             cat.qtd_transacoes = stats[2] or 0
 
-        # --- RECEITAS ---
+        # 4. Cálculo de Totais por Categoria (Receitas) - Mesma lógica
         cats_receita = db.query(Categoria).filter(Categoria.tipo == 'receita', Categoria.user_id == user_id).all()
         for cat in cats_receita:
             total_mes = db.query(func.sum(Transacao.valor)).filter(
@@ -221,7 +261,7 @@ class FinancasService:
             cat.media_valor = stats[1] or 0.0
             cat.qtd_transacoes = stats[2] or 0
 
-        # 4. Transações Agrupadas
+        # 5. Agrupamento de Transações para UI (Lista por Mês)
         transacoes = db.query(Transacao).filter(Transacao.user_id == user_id).order_by(desc(Transacao.data)).all()
         
         pontuais_map = defaultdict(list)
@@ -248,8 +288,12 @@ class FinancasService:
             "cores_disponiveis": self.gerar_paleta_cores()
         }
 
+    # ----------------------------------------------------------------------------------
+    # LÓGICA DE CRIAÇÃO (FACTORY)
+    # ----------------------------------------------------------------------------------
     def criar_transacao(self, db: Session, dados: TransacaoCreate, user_id: int):
         
+        # CASO 1: Transação Simples
         if dados.tipo_recorrencia == 'pontual':
             nova = Transacao(**dados.model_dump(), user_id=user_id)
             if not dados.status: nova.status = 'Pendente'
@@ -258,12 +302,15 @@ class FinancasService:
             db.refresh(nova)
             return nova
 
+        # CASO 2: Parcelamento (Gera N transações futuras de uma vez)
         elif dados.tipo_recorrencia == 'parcelada':
             grupo_id = uuid.uuid4().hex
             
             valor_total = dados.valor
             qtd_parcelas = dados.total_parcelas
             
+            # Cálculo de divisão segura (evita dízimas perdidas)
+            # Ex: 100 / 3 = 33.33 + 33.33 + 33.34
             valor_parcela_base = round(valor_total / qtd_parcelas, 2)
             diferenca = round(valor_total - (valor_parcela_base * qtd_parcelas), 2)
             
@@ -271,6 +318,7 @@ class FinancasService:
 
             for i in range(1, qtd_parcelas + 1):
                 valor_desta = valor_parcela_base
+                # Joga a diferença de centavos na primeira parcela
                 if i == 1:
                     valor_desta += diferenca
                 
@@ -298,6 +346,7 @@ class FinancasService:
             db.refresh(primeira_criada)
             return primeira_criada
 
+        # CASO 3: Recorrência Contínua (Cria apenas a primeira, o Worker faz o resto)
         elif dados.tipo_recorrencia == 'recorrente':
             grupo_id = uuid.uuid4().hex
             nova = Transacao(**dados.model_dump(), user_id=user_id)

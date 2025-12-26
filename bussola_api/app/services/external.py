@@ -1,3 +1,30 @@
+"""
+=======================================================================================
+ARQUIVO: external.py (Serviço de Dados Externos)
+=======================================================================================
+
+OBJETIVO:
+    Gerenciar a comunicação com APIs externas e Feeds RSS para enriquecer o sistema
+    com informações em tempo real (Clima e Notícias).
+
+PARTE DO SISTEMA:
+    Backend / Service Layer / Integrations.
+
+RESPONSABILIDADES:
+    1. Consumir API de Clima (OpenWeatherMap) com estratégia de cache.
+    2. Consumir e normalizar múltiplos Feeds RSS de notícias.
+    3. Filtrar conteúdo de notícias (Blocklist/Keywords) para relevância.
+    4. Gerenciar Cache (Redis) para evitar rate-limits e melhorar performance.
+    5. Executar tarefas de I/O intensivo (RSS parsing) em paralelo.
+
+COMUNICAÇÃO:
+    - Redis (Cache).
+    - APIs Externas (OpenWeather, G1, TechCrunch, etc via HTTP).
+    - Utilizado por: app.api.endpoints.home (Dashboard).
+
+=======================================================================================
+"""
+
 import json
 import httpx
 import feedparser
@@ -9,8 +36,11 @@ from typing import List, Optional, Dict, Any
 
 from app.core.config import settings
 
-# --- Configurações de Fontes de Notícias ---
-# [ATUALIZADO] Inclui labels para o Frontend e novas categorias
+# --------------------------------------------------------------------------------------
+# CONFIGURAÇÃO DE CURADORIA DE NOTÍCIAS
+# --------------------------------------------------------------------------------------
+# Centraliza as fontes (URLs), regras de inclusão (keywords) e exclusão (blocklist).
+# Estrutura usada para filtrar o dilúvio de notícias RSS e entregar apenas o relevante.
 TOPIC_CONFIG = {
     "tech": {
         "label": "Tecnologia",
@@ -121,16 +151,24 @@ class ExternalDataService:
         self.redis_url = settings.REDIS_URL
         self._init_redis()
         
-        # Headers para simular um navegador e evitar bloqueios em RSS (Erro 403)
+        # Headers para simular um navegador real.
+        # Muitos servidores de RSS (como Cloudflare) bloqueiam requisições sem User-Agent definido.
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         }
 
     def _init_redis(self):
-        """Inicializa a conexão com o Redis de forma segura."""
+        """
+        Inicializa a conexão com o Redis com tolerância a falhas.
+        
+        Por que existe:
+            O cache é uma melhoria de performance, não um requisito crítico.
+            Se o Redis falhar, o sistema deve continuar funcionando (fazendo requisições diretas),
+            embora mais lento.
+        """
         if self.redis_url:
             try:
-                # socket_timeout curto para não travar a API se o Redis estiver fora
+                # Timeouts curtos garantem que a API não trave esperando o Redis conectar
                 self.redis_client = redis.from_url(
                     self.redis_url, 
                     decode_responses=True,
@@ -144,9 +182,11 @@ class ExternalDataService:
         else:
             print("[Aviso] REDIS_URL não definida. Cache desativado.")
 
-    # [NOVO] Método para listar tópicos disponíveis dinamicamente
     def get_available_topics(self) -> List[Dict[str, str]]:
-        """Retorna a lista de tópicos configurados no sistema (ID e Label)."""
+        """
+        Helper para o Frontend: Retorna quais tópicos estão disponíveis no backend.
+        Evita hardcode de IDs no código React.
+        """
         topics_list = []
         for key, config in TOPIC_CONFIG.items():
             topics_list.append({
@@ -156,14 +196,22 @@ class ExternalDataService:
         return topics_list
 
     # ==========================================================================
-    # WEATHER SERVICE
+    # WEATHER SERVICE (CLIMA)
     # ==========================================================================
     async def get_weather(self, city: str = "Uberlandia") -> Optional[Dict[str, Any]]:
-        # Limpeza básica do nome da cidade para cache key
+        """
+        Busca dados climáticos da OpenWeatherMap com padrão Cache-Aside.
+
+        Lógica de Cache:
+        1. Verifica Redis (Cache Hit).
+        2. Se não houver, chama API Externa.
+        3. Salva no Redis por 30 minutos (TTL 1800s).
+        """
+        # Normalização da chave de cache
         city_clean = (city or "Uberlandia").lower().strip().replace(" ", "")
         cache_key = f"weather:{city_clean}"
         
-        # 1. Tenta Cache (Redis)
+        # 1. Leitura do Cache
         if self.redis_client:
             try:
                 cached = await self.redis_client.get(cache_key)
@@ -172,7 +220,7 @@ class ExternalDataService:
             except Exception as e:
                 print(f"[Redis Error] Falha ao ler clima: {e}")
 
-        # 2. Busca na API
+        # 2. Chamada à API Externa
         api_key = settings.OPENWEATHER_API_KEY
         if not api_key:
             return None
@@ -187,6 +235,8 @@ class ExternalDataService:
                 
                 data = response.json()
                 
+                # Mapeamento de códigos de clima (ID) para ícones CSS (Weather Icons)
+                # Faixas baseadas na doc da OpenWeatherMap: https://openweathermap.org/weather-conditions
                 weather_id = data['weather'][0]['id']
                 icon_class = "wi-day-sunny"
                 if 200 <= weather_id <= 232: icon_class = "wi-thunderstorm"
@@ -203,7 +253,7 @@ class ExternalDataService:
                     "city": data.get('name', city)
                 }
 
-                # 3. Salva no Cache (30 min = 1800s)
+                # 3. Escrita no Cache
                 if self.redis_client:
                     try:
                         await self.redis_client.setex(cache_key, 1800, json.dumps(result))
@@ -216,24 +266,34 @@ class ExternalDataService:
                 return None
 
     # ==========================================================================
-    # NEWS SERVICE (ROBUSTO)
+    # NEWS SERVICE (RSS AGGREGATOR)
     # ==========================================================================
     
     def _filter_article(self, title: str, summary: str, config: dict) -> bool:
-        """Filtra artigos baseados em keywords e blocklist."""
+        """
+        Aplica regras de negócio para decidir se uma notícia é relevante.
+        
+        Regras:
+        1. Blocklist tem prioridade: Se contiver termos proibidos (ex: "promoção"), descarta.
+        2. Keywords: Se houver lista de keywords configurada, o texto DEVE conter pelo menos uma.
+        """
         text = (title + " " + summary).lower()
         
-        # 1. Verifica Blocklist (Termos proibidos)
+        # 1. Verifica Blocklist
         if any(bad in text for bad in config.get("blocklist", [])): 
             return False
             
-        # 2. Verifica Keywords (Se houver lista, tem que ter pelo menos uma)
+        # 2. Verifica Keywords (Whitelist)
         keywords = config.get("keywords", [])
         return True if not keywords else any(kw in text for kw in keywords)
 
     def _fetch_topic_feeds(self, topic: str) -> List[Dict]:
         """
-        Busca feeds de forma síncrona (rodará em thread).
+        Worker Síncrono: Baixa e processa todos os feeds de um único tópico.
+        
+        Por que é síncrono?
+            A lib 'feedparser' não é assíncrona. Executamos este método dentro de
+            uma ThreadPool para não bloquear o event loop principal do FastAPI.
         """
         config = TOPIC_CONFIG.get(topic)
         if not config: return []
@@ -241,19 +301,23 @@ class ExternalDataService:
         articles = []
         for url in config["urls"]:
             try:
-                # Usa httpx com headers para baixar o XML (evita bloqueio 403)
+                # Usa httpx para baixar o XML bruto (permite setar headers e timeouts)
+                # Evita erro 403 Forbidden comum em sites que bloqueiam bots simples
                 response = httpx.get(url, headers=self.headers, timeout=5.0, follow_redirects=True)
                 if response.status_code != 200:
                     continue
                 
-                # Processa o XML
+                # Parse do XML
                 feed = feedparser.parse(response.content)
                 feed_title = feed.feed.get('title', url)
                 
-                # [MELHORIA] Aumentamos para 15 para ter margem após filtragem
+                # Processa as primeiras 15 entradas (limite de segurança por feed)
                 for entry in feed.entries[:15]: 
                     summary = getattr(entry, 'summary', '')
+                    
+                    # Aplica filtro de conteúdo
                     if self._filter_article(entry.title, summary, config):
+                        # Normalização de data (RSS é caótico com datas)
                         pub_date = getattr(entry, 'published_parsed', None)
                         if pub_date:
                             dt_object = datetime(*pub_date[:6]).replace(tzinfo=timezone.utc)
@@ -268,11 +332,10 @@ class ExternalDataService:
                             'topic': topic
                         })
             except Exception as e:
-                # Log silencioso para não poluir o terminal, apenas ignora a fonte ruim
+                # Falha em um feed não deve parar os outros
                 continue
                 
-        # Ordena por data (mais recente) e remove duplicados básicos
-        # Nota: Retornamos TUDO que achamos aqui. O corte de quantidade acontece depois.
+        # Remove duplicatas e ordena por data (mais recente primeiro)
         unique_articles = []
         seen = set()
         for art in sorted(articles, key=lambda x: x['published_at'], reverse=True):
@@ -284,23 +347,32 @@ class ExternalDataService:
 
     async def get_news_by_topics(self, user_topics: List[str]) -> List[Dict]:
         """
-        Retorna notícias agregadas. 
-        Regra: Busca garantir ~8 notícias POR TÓPICO selecionado.
+        Agregador Principal de Notícias (Método Público Assíncrono).
+        
+        Lógica de Execução:
+        1. Cache-First: Verifica quais tópicos já estão salvos no Redis.
+        2. Paralelismo: Para tópicos não cacheados, dispara threads paralelas (_fetch_topic_feeds).
+        3. Composição: Junta notícias cacheadas com as novas.
+        4. Agrupamento: Seleciona ~8 notícias de cada tópico solicitado.
+        5. Ordenação: Mistura tudo cronologicamente.
+
+        Retorno:
+            Lista plana de artigos pronta para o frontend.
         """
         if not user_topics: user_topics = ["tech"]
         
-        # Garante que os tópicos existem na config
+        # Validação de input
         valid_topics = [t for t in user_topics if t in TOPIC_CONFIG]
         if not valid_topics: valid_topics = ["tech"]
 
-        articles_by_topic = {} # Armazena listas separadas: {'tech': [...], 'finance': [...]}
+        articles_by_topic = {} 
         missing_topics = []
 
-        # 1. Tenta recuperar do Cache (Tópico por Tópico)
+        # 1. Recuperação do Cache (por tópico)
         if self.redis_client:
             for topic in valid_topics:
                 try:
-                    cache_key = f"news_topic_v2:{topic}" # v2 para invalidar cache antigo se houver
+                    cache_key = f"news_topic_v2:{topic}" 
                     cached = await self.redis_client.get(cache_key)
                     if cached: 
                         articles_by_topic[topic] = json.loads(cached)
@@ -311,17 +383,17 @@ class ExternalDataService:
         else:
             missing_topics = list(valid_topics)
 
-        # 2. Busca tópicos faltantes em paralelo (API Externa)
+        # 2. Busca Paralela de Tópicos Faltantes
         if missing_topics:
             loop = asyncio.get_running_loop()
-            # Aumentamos workers para lidar com múltiplas requisições HTTP
+            # ThreadPoolExecutor permite I/O concorrente (múltiplos requests HTTP ao mesmo tempo)
             with ThreadPoolExecutor(max_workers=10) as executor:
                 futures = [loop.run_in_executor(executor, self._fetch_topic_feeds, topic) for topic in missing_topics]
                 results = await asyncio.gather(*futures)
                 
                 for topic, articles in zip(missing_topics, results):
                     if articles:
-                        # Salva no Cache (1 hora)
+                        # Salva no Redis (TTL: 1 hora)
                         if self.redis_client:
                              try: 
                                  await self.redis_client.setex(f"news_topic_v2:{topic}", 3600, json.dumps(articles))
@@ -330,18 +402,15 @@ class ExternalDataService:
                     else:
                         articles_by_topic[topic] = []
 
-        # 3. Montagem Final (Regra: 8 por tipo)
+        # 3. Montagem da Lista Final (Quota por tópico)
         final_list = []
         ITEMS_PER_TOPIC = 8 
 
         for topic in valid_topics:
             topic_articles = articles_by_topic.get(topic, [])
-            # Pega os X primeiros deste tópico
             final_list.extend(topic_articles[:ITEMS_PER_TOPIC])
 
-        # 4. Ordenação Final da Lista Mista
-        # Ordenamos tudo por data para que o feed fique cronológico, 
-        # mas garantindo que o conteúdo de todos os tópicos esteja presente.
+        # 4. Ordenação Cronológica Unificada
         final_list.sort(key=lambda x: x['published_at'], reverse=True)
         
         return final_list
