@@ -1,8 +1,37 @@
-# --- ADICIONE ESTAS LINHAS NO TOPO ---
+"""
+=======================================================================================
+ARQUIVO: main.py (Ponto de Entrada da Aplicação)
+=======================================================================================
+
+OBJETIVO:
+    Inicializar a aplicação FastAPI, configurar middlewares essenciais (como CORS),
+    garantir a criação da estrutura do banco de dados e registrar as rotas da API.
+
+PARTE DO SISTEMA:
+    Backend / Entrypoint.
+
+RESPONSABILIDADES:
+    1. Carregar variáveis de ambiente (.env) antes de qualquer outra configuração.
+    2. Inicializar o banco de dados (criar tabelas se não existirem).
+    3. Instanciar o servidor FastAPI com metadados do projeto.
+    4. Configurar segurança de acesso via navegador (CORS).
+    5. Centralizar e incluir todas as rotas (endpoints) da versão v1.
+
+COMUNICAÇÃO:
+    - Importa configurações de: app.core.config.
+    - Importa rotas de: app.api.v1.router.
+    - Importa infraestrutura de banco de: app.db.session e app.db.base.
+
+=======================================================================================
+"""
+
+# --- INICIALIZAÇÃO DE AMBIENTE ---
+# É crucial que o 'dotenv' seja carregado antes de importar 'app.core.config'.
+# Isso garante que a classe Settings leia o arquivo .env local corretamente
+# antes de tentar acessar variáveis de ambiente.
 from dotenv import load_dotenv
 import os
 
-# Força o carregamento do arquivo .env antes de qualquer outra coisa
 load_dotenv()
 # -------------------------------------
 
@@ -12,28 +41,60 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.v1.router import api_router
 from app.db.session import engine
+# Importamos 'base' para garantir que todos os Models sejam lidos pelo SQLAlchemy
 from app.db import base 
 
-# Cria as tabelas no banco de dados
+# --------------------------------------------------------------------------------------
+# INICIALIZAÇÃO DO BANCO DE DADOS
+# --------------------------------------------------------------------------------------
+# O comando create_all verifica os metadados (tabelas registradas em app.db.base)
+# e cria as tabelas que ainda não existem no banco de dados.
+# Nota: Em ambientes de produção com Alembic configurado, isso pode ser redundante,
+# mas é útil para garantir que o banco exista em desenvolvimento/testes.
 base.Base.metadata.create_all(bind=engine)
 
+# --------------------------------------------------------------------------------------
+# DEFINIÇÃO DA APLICAÇÃO
+# --------------------------------------------------------------------------------------
 app = FastAPI(
     title=settings.PROJECT_NAME,
+    # Define a URL onde o JSON do OpenAPI (Swagger) será servido
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
 
-# Configuração do CORS
+# --------------------------------------------------------------------------------------
+# CONFIGURAÇÃO DE SEGURANÇA (CORS)
+# --------------------------------------------------------------------------------------
+# O CORS (Cross-Origin Resource Sharing) permite que o navegador (Frontend)
+# faça requisições para este Backend, mesmo estando em portas/domínios diferentes 
+# (ex: Frontend em localhost:5173 e Backend em localhost:8000).
 if settings.BACKEND_CORS_ORIGINS:
     app.add_middleware(
         CORSMiddleware,
+        # Lista de origens permitidas (definida no .env/config)
         allow_origins=settings.BACKEND_CORS_ORIGINS,
+        # Permite envio de cookies/credenciais
         allow_credentials=True,
+        # Permite todos os métodos HTTP (GET, POST, PUT, DELETE, etc)
         allow_methods=["*"],
+        # Permite todos os headers
         allow_headers=["*"],
     )
 
+# --------------------------------------------------------------------------------------
+# REGISTRO DE ROTAS
+# --------------------------------------------------------------------------------------
+# Inclui o roteador principal que agrupa todos os endpoints (Auth, Users, Finanças, etc).
+# Adiciona o prefixo global (ex: /api/v1) a todas as rotas.
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
+# --------------------------------------------------------------------------------------
+# ROTA DE HEALTH CHECK
+# --------------------------------------------------------------------------------------
 @app.get("/")
 def root():
+    """
+    Rota raiz para verificação de saúde da API.
+    Útil para Load Balancers ou para checar se o deploy foi bem sucedido.
+    """
     return {"message": "Bússola API está online! 🧭"}

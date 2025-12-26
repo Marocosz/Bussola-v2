@@ -1,21 +1,57 @@
+"""
+=======================================================================================
+ARQUIVO: populate_db.py (Script de Seed / População de Dados)
+=======================================================================================
+
+OBJETIVO:
+    Preencher o banco de dados com dados fictícios (mas realistas) para facilitar o
+    desenvolvimento e testes. Cria cenários complexos como transações parceladas,
+    recorrências, histórico de agenda e dados criptografados.
+
+PARTE DO SISTEMA:
+    Scripts / Dev Tools.
+
+RESPONSABILIDADES:
+    1. Identificar um usuário alvo (primeiro do banco) para vincular os dados.
+    2. Gerar dados massivos para Finanças, Agenda, Registros, Cofre e Ritmo.
+    3. Simular lógica de negócio real (ex: Criptografar senhas do cofre, calcular datas de parcelas).
+    4. Garantir integridade referencial ao criar objetos (ex: Vincular Subtarefa -> Tarefa -> User).
+
+COMUNICAÇÃO:
+    - Models: Importa todos os modelos do sistema.
+    - DB: Usa app.db.session.SessionLocal.
+    - Libs: Faker (dados falsos), Cryptography (segurança), Dateutil (datas relativas).
+
+=======================================================================================
+"""
+
 import random
 import uuid
+import sys
+import os
 from datetime import datetime, timedelta, date
 from dateutil.relativedelta import relativedelta
 from faker import Faker
 from sqlalchemy.orm import Session
 from sqlalchemy import inspect
 from dotenv import load_dotenv
-from cryptography.fernet import Fernet # [NOVO] Para criptografar senhas manualmente
+from cryptography.fernet import Fernet 
+
+# Ajuste de Path para execução via CLI
+# Permite que o script encontre o pacote 'app' mesmo estando dentro de 'scripts/'
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
 
 # Carrega variáveis de ambiente
 load_dotenv()
 
-# Imports do App
+# Imports do App (Só funcionam após o sys.path.append)
 from app.db.session import SessionLocal
 from app.core.config import settings
 
-# Tenta importar Models
+# Importação defensiva dos Models
+# Se faltar algum model novo, o script avisa e para, evitando erros parciais.
 try:
     from app.models.user import User
     from app.models.financas import Categoria, Transacao
@@ -30,11 +66,13 @@ except ImportError as e:
     print(f"⚠️ Erro ao importar Models: {e}")
     exit(1)
 
-# Inicializa Faker e Banco
+# Inicializa Faker (Localizado PT-BR) e Sessão do Banco
 fake = Faker('pt_BR')
 db = SessionLocal()
 
-# Inicializa Criptografia (Igual ao Service)
+# Inicializa Motor de Criptografia
+# Necessário para popular a tabela 'Segredo' corretamente.
+# Se a chave não existir, o script roda mas avisa que as senhas estarão corrompidas.
 try:
     cipher_suite = Fernet(settings.ENCRYPTION_KEY.encode())
 except Exception:
@@ -46,7 +84,10 @@ except Exception:
 # ==============================================================================
 
 def get_target_user_id():
-    """Retorna o ID do primeiro usuário encontrado no banco."""
+    """
+    Busca o ID do usuário "dono" dos dados.
+    Geralmente pega o primeiro usuário criado (Admin).
+    """
     try:
         user = db.query(User).first()
         if user:
@@ -61,28 +102,34 @@ def get_target_user_id():
 
 def create_instance(model_class, data, user_id=None):
     """
-    Cria instância do model de forma segura.
+    Factory genérica e segura para criar instâncias de Models.
+    
+    Funcionalidades:
+    1. Introspecção: Verifica quais colunas o Model realmente tem.
+    2. Limpeza: Remove chaves do dicionário 'data' que não existem no Model (evita erros).
+    3. Injeção: Adiciona 'user_id' automaticamente se a tabela tiver essa coluna.
     """
     mapper = inspect(model_class)
     columns = [c.key for c in mapper.attrs]
     
-    # Injeta user_id se o modelo suportar
+    # Injeta user_id se o modelo suportar (Multi-tenancy)
     if user_id and 'user_id' in columns:
         data['user_id'] = user_id
         
-    # Remove campos que não existem no model (segurança)
+    # Filtro de campos inválidos
     clean_data = {k: v for k, v in data.items() if k in columns}
     
     return model_class(**clean_data)
 
 # ==============================================================================
-# MÓDULOS DE POPULAÇÃO
+# MÓDULOS DE POPULAÇÃO (SEEDERS)
 # ==============================================================================
 
 def create_registros(user_id):
+    """Popula o módulo de Produtividade (Notas e Tarefas)."""
     print("📝 Populando Caderno (Notas e Tarefas)...")
     
-    # 1. Grupos
+    # 1. Grupos (Pastas)
     grupos_data = [
         ("Pessoal", "#3b82f6"), ("Trabalho", "#ef4444"), 
         ("Estudos", "#10b981"), ("Ideias", "#f59e0b"), 
@@ -91,6 +138,7 @@ def create_registros(user_id):
     
     grupos_objs = []
     for nome, cor in grupos_data:
+        # Evita duplicar se rodar o script 2x
         grupo = db.query(GrupoAnotacao).filter_by(nome=nome, user_id=user_id).first()
         if not grupo:
             grupo = create_instance(GrupoAnotacao, {"nome": nome, "cor": cor}, user_id)
@@ -99,7 +147,7 @@ def create_registros(user_id):
             db.refresh(grupo)
         grupos_objs.append(grupo)
     
-    # 2. Anotações (30 notas)
+    # 2. Anotações (Gera 30 notas com HTML fake)
     titulos = ["Resumo Reunião", "Lista de Livros", "Ideia App SaaS", "Receita Panqueca", "Senhas Wifi", "Rascunho Email", "Playlist Foco"]
     for _ in range(30):
         grupo = random.choice(grupos_objs)
@@ -108,14 +156,14 @@ def create_registros(user_id):
         nota = create_instance(Anotacao, {
             "titulo": f"{random.choice(titulos)} - {fake.word().capitalize()}",
             "conteudo": html,
-            "fixado": random.choice([True] + [False]*9),
+            "fixado": random.choice([True] + [False]*9), # 10% de chance de ser fixado
             "data_criacao": fake.date_time_between(start_date='-6M', end_date='now'),
             "grupo_id": grupo.id
         }, user_id)
         db.add(nota)
     db.commit()
             
-    # 3. Tarefas (50 tarefas)
+    # 3. Tarefas (50 tarefas com status variados)
     verbos = ["Ligar para", "Comprar", "Finalizar", "Estudar", "Enviar", "Pagar", "Revisar", "Agendar"]
     for _ in range(50):
         dt_criacao = fake.date_time_between(start_date='-3M', end_date='now')
@@ -133,9 +181,9 @@ def create_registros(user_id):
         }, user_id)
         
         db.add(tarefa)
-        db.flush()
+        db.flush() # Necessário para gerar ID para as subtarefas
         
-        # Subtarefas
+        # Subtarefas (40% de chance de ter filhos)
         if random.random() < 0.4:
             for i in range(random.randint(1, 3)):
                 sub = Subtarefa(
@@ -149,9 +197,13 @@ def create_registros(user_id):
     print("   ✅ Registros OK.")
 
 def create_financas(user_id):
+    """
+    Popula o módulo Financeiro.
+    Cria cenários complexos: Pontuais, Parcelados e Assinaturas (Recorrentes).
+    """
     print("💰 Populando Finanças (Transações Complexas)...")
     
-    # 1. Categorias
+    # 1. Categorias Padrão
     cats_config = [
         ("Salário", "receita", "fa-money-bill", "#10b981"),
         ("Freelance", "receita", "fa-laptop", "#3b82f6"),
@@ -182,13 +234,14 @@ def create_financas(user_id):
     cats_rec = [c for c in cats_objs.values() if c.tipo == 'receita']
     cats_desp = [c for c in cats_objs.values() if c.tipo == 'despesa']
     
-    # 2. Transações PONTUAIS (150 itens)
+    # 2. Transações PONTUAIS (150 itens espalhados em 8 meses)
     print("   ... Gerando transações pontuais")
     for _ in range(150):
-        is_rec = random.random() < 0.3 
+        is_rec = random.random() < 0.3 # 30% Receita, 70% Despesa
         cat = random.choice(cats_rec) if is_rec else random.choice(cats_desp)
         
         dt = fake.date_time_between(start_date='-6M', end_date='+2M')
+        # Lógica temporal: Se data < hoje -> Efetivada, senão -> Pendente
         status = "Efetivada" if dt < datetime.now() else "Pendente"
         valor = random.uniform(200, 2000) if is_rec else random.uniform(15, 500)
         
@@ -202,7 +255,8 @@ def create_financas(user_id):
         }, user_id)
         db.add(trans)
 
-    # 3. Transações RECORRENTES (Assinaturas e Contas Fixas - 12 meses)
+    # 3. Transações RECORRENTES (Gera histórico de 12 meses)
+    # Simula o comportamento do worker de projeção
     print("   ... Gerando assinaturas e fixos")
     recorrencias = [
         ("Netflix Premium", "Assinaturas", 55.90, "despesa"),
@@ -221,7 +275,7 @@ def create_financas(user_id):
 
         start_date = fake.date_time_between(start_date='-8M', end_date='-7M')
         
-        # Gera 12 meses
+        # Gera 12 meses consecutivos
         for i in range(12):
             data_venc = start_date + relativedelta(months=i)
             status = "Efetivada" if data_venc < datetime.now() else "Pendente"
@@ -238,7 +292,7 @@ def create_financas(user_id):
             }, user_id)
             db.add(trans)
 
-    # 4. Transações PARCELADAS
+    # 4. Transações PARCELADAS (Compras grandes divididas)
     print("   ... Gerando compras parceladas")
     parcelados = [
         ("Macbook Air", "Eletrônicos", 8500.00, 10),
@@ -257,7 +311,7 @@ def create_financas(user_id):
             data_venc = start_date + relativedelta(months=i-1)
             status = "Efetivada" if data_venc < datetime.now() else "Pendente"
             
-            # Ajuste de centavos
+            # Ajuste de centavos na primeira parcela
             valor_final = valor_parcela
             if i == 1:
                 diff = round(valor_total - (valor_parcela * qtd_parcelas), 2)
@@ -280,6 +334,7 @@ def create_financas(user_id):
     print("   ✅ Finanças OK.")
 
 def create_agenda(user_id):
+    """Popula eventos de calendário (passados, futuros e perdidos)."""
     print("📅 Populando Agenda...")
     
     tipos = ["Daily Scrum", "Consulta Dentista", "Almoço Equipe", "Treino Pesado", "Review Projeto", "Aniversário Mãe"]
@@ -307,6 +362,10 @@ def create_agenda(user_id):
     print("   ✅ Agenda OK.")
 
 def create_cofre(user_id):
+    """
+    Popula cofre com criptografia real.
+    Simula o serviço: cifra o dado antes de salvar.
+    """
     print("🔒 Populando Cofre (Com Criptografia)...")
     
     contas = [
@@ -323,7 +382,7 @@ def create_cofre(user_id):
     for titulo, servico, login in contas:
         senha_limpa = fake.password(length=12)
         
-        # Criptografa manualmente pois removemos o setter mágico do Model
+        # Simula Criptografia do Service
         senha_cripto = ""
         if cipher_suite:
             senha_cripto = cipher_suite.encrypt(senha_limpa.encode()).decode()
@@ -333,7 +392,7 @@ def create_cofre(user_id):
             "servico": servico,
             "notas": f"Login: {login} | Criado em {fake.date()}",
             "data_expiracao": fake.future_date() if random.random() < 0.2 else None,
-            "valor_criptografado": senha_cripto # Campo correto do BD
+            "valor_criptografado": senha_cripto # Campo interno físico
         }, user_id)
         db.add(segredo)
         
@@ -341,9 +400,10 @@ def create_cofre(user_id):
     print("   ✅ Cofre OK.")
 
 def create_ritmo(user_id):
+    """Popula módulo de saúde (Bio, Treino Hierárquico e Dieta Hierárquica)."""
     print("💪 Populando Ritmo (Bio, Treinos, Nutrição)...")
     
-    # 1. Bio
+    # 1. Bio (Snapshot)
     bio = create_instance(RitmoBio, {
         "peso": 80.5, "altura": 178, "idade": 28, "genero": "M",
         "nivel_atividade": "moderado", "objetivo": "ganho_massa",
@@ -354,7 +414,7 @@ def create_ritmo(user_id):
     }, user_id)
     db.add(bio)
     
-    # 2. Planos de Treino
+    # 2. Planos de Treino (Plano -> Dias -> Exercícios)
     plano = create_instance(RitmoPlanoTreino, {
         "nome": "Hipertrofia ABC 2025", "ativo": True
     }, user_id)
@@ -386,7 +446,7 @@ def create_ritmo(user_id):
             )
             db.add(ex)
             
-    # 3. Dieta
+    # 3. Dieta (Dieta -> Refeições -> Alimentos)
     dieta = create_instance(RitmoDietaConfig, {
         "nome": "Bulking Limpo", "ativo": True, "calorias_calculadas": 2800
     }, user_id)
@@ -417,6 +477,7 @@ def create_ritmo(user_id):
     print("   ✅ Ritmo OK.")
 
 def main():
+    """Função Principal"""
     print("🚀 Iniciando script de população PROFISSIONAL...")
     try:
         uid = get_target_user_id()
@@ -427,7 +488,7 @@ def main():
         create_cofre(uid)
         create_ritmo(uid)
         
-        print("\n✨ Banco de dados populado com sucesso para o usuário ID {}!".format(uid))
+        print(f"\n✨ Banco de dados populado com sucesso para o usuário ID {uid}!")
         
     except Exception as e:
         print(f"\n❌ Erro crítico: {e}")

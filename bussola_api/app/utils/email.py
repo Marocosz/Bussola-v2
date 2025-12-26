@@ -1,3 +1,28 @@
+"""
+=======================================================================================
+ARQUIVO: email.py (Utilitário de Disparo de E-mails)
+=======================================================================================
+
+OBJETIVO:
+    Gerenciar o envio de e-mails transacionais assíncronos (Recuperação de Senha, 
+    Boas-vindas, Verificação de Conta). Utiliza templates HTML simples embutidos.
+
+PARTE DO SISTEMA:
+    Backend / Utils Layer / Notifications.
+
+RESPONSABILIDADES:
+    1. Configurar a conexão SMTP de forma segura.
+    2. Gerar templates HTML dinâmicos com links para o Frontend.
+    3. Enviar e-mails de forma assíncrona (non-blocking).
+
+COMUNICAÇÃO:
+    - Utiliza settings: app.core.config (Credenciais SMTP).
+    - Utilizado por: app.services.auth (Fluxos de Auth).
+    - Externo: Servidor SMTP (Gmail, SendGrid, etc).
+
+=======================================================================================
+"""
+
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 from app.core.config import settings
 from pathlib import Path
@@ -6,8 +31,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Criamos a configuração apenas com valores que não quebram a validação do Pydantic
-# Se as variáveis não existirem, usamos strings vazias para evitar o erro de 'NoneType'
+# --------------------------------------------------------------------------------------
+# CONFIGURAÇÃO SMTP DEFENSIVA
+# --------------------------------------------------------------------------------------
+# A biblioteca fastapi-mail é estrita com tipos (não aceita None).
+# Como o sistema pode rodar sem e-mail configurado (Self-Hosted), usamos valores
+# "dummy" (placeholders) se as variáveis de ambiente estiverem vazias.
+# Isso evita que a aplicação quebre na inicialização.
 conf = ConnectionConfig(
     MAIL_USERNAME=settings.MAIL_USERNAME or "none",
     MAIL_PASSWORD=settings.MAIL_PASSWORD or "none",
@@ -22,12 +52,17 @@ conf = ConnectionConfig(
 
 async def send_password_reset_email(email_to: str, token: str):
     """
-    Envia email com link de recuperação.
+    Envia e-mail com link único para redefinição de senha.
+    
+    Lógica de Link:
+        Constrói a URL apontando para a rota do FRONTEND (/reset-password),
+        não para a API. O token vai como query param (?token=...).
     """
-    # Link que aponta para o Frontend
+    # Recupera a URL do front do .env ou usa fallback local
     frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
     reset_link = f"{frontend_url}/reset-password?token={token}"
 
+    # Template HTML embutido (Simples e eficiente para evitar dependência de arquivos externos)
     html = f"""
     <html>
         <body style="font-family: Arial, sans-serif; line-height: 1.6;">
@@ -61,12 +96,12 @@ async def send_password_reset_email(email_to: str, token: str):
 
 async def send_account_verification_email(email_to: str, token: str):
     """
-    Envia email de confirmação de conta.
+    Envia e-mail de boas-vindas com link para ativação da conta.
+    Crítico para instalações SAAS onde a verificação é obrigatória.
     """
-    # Link que aponta para o Frontend
     frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
     
-    # URL para onde o usuário será enviado no React
+    # URL de destino no React
     verify_link = f"{frontend_url}/verify-email?token={token}&email={email_to}"
 
     html = f"""
