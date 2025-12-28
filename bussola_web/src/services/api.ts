@@ -694,10 +694,13 @@ export const updateUser = async (data: {
 export type AiContext = 'ritmo' | 'financas' | 'agenda' | 'registros' | 'cofre';
 
 export const aiService = {
-  // 2. Aplique o tipo no parâmetro 'context'
   getInsight: async (context: AiContext) => {
     try {
+      // A URL dinâmica funciona perfeitamente para os dois casos:
+      // context='ritmo'  -> GET /ai/ritmo/insight
+      // context='agenda' -> GET /ai/agenda/insight
       const endpoint = `/ai/${context}/insight`; 
+      
       const response = await api.get(endpoint);
       return response.data;
     } catch (error) {

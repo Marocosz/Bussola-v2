@@ -3,7 +3,8 @@ import { getAgendaDashboard } from '../../services/api';
 import { CompromissoCard } from './components/CompromissoCard';
 import { AgendaModal } from './components/AgendaModal';
 import { useToast } from '../../context/ToastContext';
-import { useConfirm } from '../../context/ConfirmDialogContext'; // <--- Import Adicionado
+import { useConfirm } from '../../context/ConfirmDialogContext';
+import { AiAssistant } from '../../components/AiAssistant'; // <--- Importado
 import './styles.css';
 
 export function Agenda() {
@@ -14,7 +15,7 @@ export function Agenda() {
     
     // Hooks de Contexto
     const { addToast } = useToast();
-    const dialogConfirm = useConfirm(); // <--- Hook Inicializado (Pronto para uso)
+    const dialogConfirm = useConfirm();
     
     const [tooltip, setTooltip] = useState({ visible: false, x: 0, y: 0, compromissos: [] });
 
@@ -189,6 +190,9 @@ export function Agenda() {
                 onUpdate={fetchData}
                 editingData={editingItem}
             />
+
+            {/* AI Assistant Integrado (Contexto Agenda) */}
+            <AiAssistant context="agenda" />
         </div>
     );
 }
