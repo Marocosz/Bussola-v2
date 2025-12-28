@@ -11,13 +11,13 @@ Sua missão é validar se a dieta atual do usuário está matematicamente alinha
 **FORMATO DE SAÍDA ESPERADO (JSON ARRAY):**
 Retorne APENAS uma lista de objetos JSON seguindo estritamente este schema (sem markdown):
 [
-  {
+  {{
     "title": "Título curto (ex: Déficit Excessivo)",
     "content": "Explicação técnica com markdown (ex: Seu déficit é de **800kcal**, o que arrisca massa magra).",
     "type": "warning", 
     "severity": "high",
-    "action": { "kind": "adjust", "target": "calorias", "value": "+200" } (Opcional)
-  }
+    "action": {{ "kind": "adjust", "target": "calorias", "value": "+200" }}
+  }}
 ]
 """
 

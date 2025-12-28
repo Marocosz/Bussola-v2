@@ -4,11 +4,11 @@ from typing import List, Annotated, TypedDict
 
 from langgraph.graph import StateGraph, END
 
-# Imports do Sistema
+# Imports Models
 from app.models.ritmo import RitmoBio, RitmoPlanoTreino
 from app.services.ai.base.base_schema import AtomicSuggestion
 
-# Imports dos Agentes
+# Imports Agents
 from app.services.ai.ritmo.coach.volume_architect.agent import VolumeArchitectAgent
 from app.services.ai.ritmo.coach.volume_architect.schema import VolumeArchitectContext
 
@@ -21,7 +21,7 @@ from app.services.ai.ritmo.coach.intensity_strategist.schema import IntensityStr
 logger = logging.getLogger(__name__)
 
 # ------------------------------------------------------------------------------
-# 1. STATE DEFINITION
+# 1. STATE
 # ------------------------------------------------------------------------------
 class CoachState(TypedDict):
     bio: RitmoBio
@@ -29,23 +29,20 @@ class CoachState(TypedDict):
     suggestions: Annotated[List[AtomicSuggestion], operator.add]
 
 # ------------------------------------------------------------------------------
-# 2. NODE FUNCTIONS (Adapters)
+# 2. NODES (Mappers Corrigidos conforme models/ritmo.py)
 # ------------------------------------------------------------------------------
 
 async def run_volume_architect(state: CoachState):
     bio = state["bio"]
     plano = state["plano"]
     
-    # Mapper: Calcula volume real iterando sobre dias e exercícios
     volume_map = {}
-    
     if plano.dias:
         for dia in plano.dias:
-            if dia.items:
-                for exercicio in dia.items:
-                    # Assumindo que o model RitmoTreinoItem tem 'series' e 'grupo_muscular'
-                    # Ajuste conforme seu model real
-                    grupo = getattr(exercicio, "grupo_muscular", "Geral")
+            # Model: relacionamento é 'exercicios', não 'items'
+            if dia.exercicios:
+                for exercicio in dia.exercicios:
+                    grupo = getattr(exercicio, "grupo_muscular", "Geral") or "Geral"
                     series = getattr(exercicio, "series", 3)
                     
                     if grupo in volume_map:
@@ -53,9 +50,12 @@ async def run_volume_architect(state: CoachState):
                     else:
                         volume_map[grupo] = int(series)
 
+    # Model: Usamos 'nivel_atividade' pois 'experiencia_treino' não existe no schema fornecido
+    nivel = getattr(bio, "nivel_atividade", "iniciante")
+    
     context = VolumeArchitectContext(
-        nivel_usuario=bio.experiencia_treino or "iniciante",
-        objetivo=bio.objetivo or "saude",
+        nivel_usuario=str(nivel),
+        objetivo=getattr(bio, "objetivo", "saude"),
         volume_semanal=volume_map
     )
     
@@ -65,24 +65,24 @@ async def run_volume_architect(state: CoachState):
 async def run_technique_master(state: CoachState):
     plano = state["plano"]
     
-    # Mapper: Extrai lista de exercícios únicos
     unique_exercises = []
     seen_names = set()
     
     if plano.dias:
         for dia in plano.dias:
-            if dia.items:
-                for item in dia.items:
-                    nome = getattr(item, "exercicio_nome", "Exercício")
-                    if nome not in seen_names:
+            if dia.exercicios:
+                for item in dia.exercicios:
+                    # Model: nome_exercicio
+                    nome = getattr(item, "nome_exercicio", None)
+                    if nome and nome not in seen_names:
                         unique_exercises.append(ExerciseItem(
-                            nome=nome,
-                            categoria=getattr(item, "grupo_muscular", "Geral")
+                            nome=str(nome),
+                            categoria=getattr(item, "grupo_muscular", "Geral") or "Geral"
                         ))
                         seen_names.add(nome)
 
     context = TechniqueMasterContext(
-        exercicios_chave=unique_exercises[:15] # Limita para não estourar prompt
+        exercicios_chave=unique_exercises[:15]
     )
     
     results = await TechniqueMasterAgent.run(context)
@@ -91,26 +91,26 @@ async def run_technique_master(state: CoachState):
 async def run_intensity_strategist(state: CoachState):
     bio = state["bio"]
     
+    nivel = getattr(bio, "nivel_atividade", "iniciante")
+    
     context = IntensityStrategistContext(
-        nivel_usuario=bio.experiencia_treino or "iniciante",
-        foco_treino=bio.objetivo or "hipertrofia"
+        nivel_usuario=str(nivel),
+        foco_treino=getattr(bio, "objetivo", "hipertrofia")
     )
     
     results = await IntensityStrategistAgent.run(context)
     return {"suggestions": results}
 
 # ------------------------------------------------------------------------------
-# 3. GRAPH CONSTRUCTION
+# 3. GRAPH
 # ------------------------------------------------------------------------------
 def build_coach_graph():
     workflow = StateGraph(CoachState)
     
-    # Nodes
     workflow.add_node("volume_architect", run_volume_architect)
     workflow.add_node("technique_master", run_technique_master)
     workflow.add_node("intensity_strategist", run_intensity_strategist)
     
-    # Edges (Parallel Execution)
     workflow.set_entry_point("volume_architect")
     workflow.set_entry_point("technique_master")
     workflow.set_entry_point("intensity_strategist")
@@ -123,20 +123,11 @@ def build_coach_graph():
 
 coach_graph = build_coach_graph()
 
-# ------------------------------------------------------------------------------
-# 4. FACADE
-# ------------------------------------------------------------------------------
 class CoachOrchestrator:
     @staticmethod
     async def analyze(bio: RitmoBio, plano: RitmoPlanoTreino) -> List[AtomicSuggestion]:
-        logger.info(f"Iniciando CoachOrchestrator via LangGraph para BioID: {bio.id}")
-        
-        initial_state = {
-            "bio": bio,
-            "plano": plano,
-            "suggestions": []
-        }
-        
+        logger.info(f"Iniciando CoachOrchestrator para BioID: {bio.id}")
+        initial_state = {"bio": bio, "plano": plano, "suggestions": []}
         try:
             final_state = await coach_graph.ainvoke(initial_state)
             return final_state["suggestions"]

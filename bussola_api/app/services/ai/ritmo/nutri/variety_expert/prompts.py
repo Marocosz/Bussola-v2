@@ -16,18 +16,18 @@ Sua missão é combater a monotonia da dieta sugerindo trocas que mantenham o va
 
 **FORMATO DE SAÍDA (JSON ARRAY):**
 [
-  {
+  {{
     "title": "Enjoou de Frango?",
     "content": "Para variar a proteína do jantar mantendo a magreza, a **Tilápia** é uma excelente opção leve.",
     "type": "suggestion",
     "severity": "low",
-    "action": { 
+    "action": {{ 
         "kind": "swap", 
         "target": "Frango Grelhado", 
         "value": "Tilápia (120g)" 
-    },
+    }},
     "actionable": true
-  }
+  }}
 ]
 """
 

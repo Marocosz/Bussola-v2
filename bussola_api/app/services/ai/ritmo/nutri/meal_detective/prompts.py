@@ -14,14 +14,14 @@ Sua missão é analisar cada refeição individualmente e identificar falhas de 
 
 **FORMATO DE SAÍDA (JSON ARRAY):**
 [
-  {
+  {{
     "title": "Pré-treino Pesado",
     "content": "Esta refeição contém **15g de gordura**. Gorduras retardam a digestão e podem causar desconforto durante o treino.",
     "type": "tip",
     "severity": "medium",
-    "related_entity_id": 102,  <-- OBRIGATÓRIO: ID da refeição analisada
-    "action": { "kind": "remove", "target": "Pasta de Amendoim", "value": "Metade" }
-  }
+    "related_entity_id": 102,
+    "action": {{ "kind": "remove", "target": "Pasta de Amendoim", "value": "Metade" }}
+  }}
 ]
 """
 

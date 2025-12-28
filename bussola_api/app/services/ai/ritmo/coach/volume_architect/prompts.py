@@ -18,13 +18,13 @@ Sua missão é evitar "Junk Volume" (excesso inútil) ou negligência muscular.
 
 **FORMATO (JSON ARRAY):**
 [
-  {
+  {{
     "title": "Volume de Costas Baixo",
     "content": "Você está fazendo apenas **6 séries** de Costas. Para equilibrar com o Peitoral (15 séries), aumente o volume.",
     "type": "warning",
     "severity": "medium",
-    "action": { "kind": "add", "target": "Treino de Costas", "value": "+4 séries" }
-  }
+    "action": {{ "kind": "add", "target": "Treino de Costas", "value": "+4 séries" }}
+  }}
 ]
 """
 

@@ -9,13 +9,13 @@ Se o aluno não progride, ele não evolui.
 
 **FORMATO (JSON ARRAY):**
 [
-  {
+  {{
     "title": "Desafio da Semana: Drop-set",
     "content": "Para estimular novos ganhos, na última série de **Elevação Lateral**, reduza a carga em 20% e continue até a falha sem descanso.",
     "type": "suggestion",
     "severity": "low",
-    "action": { "kind": "info", "target": "Elevação Lateral", "value": "Drop-set" }
-  }
+    "action": {{ "kind": "info", "target": "Elevação Lateral", "value": "Drop-set" }}
+  }}
 ]
 """
 

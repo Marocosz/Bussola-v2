@@ -31,11 +31,15 @@ export const AiAssistant = ({ context }) => {
     const lastUpdate = localStorage.getItem(`ai_last_update_${context}`);
 
     if (savedData) {
-      const parsedData = JSON.parse(savedData);
-      setInsight(parsedData);
-      if (parsedData.origem === 'System') {
-          setTimeLeft(0);
-          return;
+      try {
+        const parsedData = JSON.parse(savedData);
+        setInsight(parsedData);
+        // Se for resposta antiga (sem suggestions) ou System, reseta
+        if (!parsedData.suggestions && !parsedData.titulo) {
+           // Formato inválido ou antigo
+        }
+      } catch (e) {
+        console.error("Erro ao ler cache local da IA", e);
       }
     }
 
@@ -64,21 +68,17 @@ export const AiAssistant = ({ context }) => {
 
     setLoading(true);
     try {
+      // O backend agora retorna { suggestions: [...] }
       const data = await aiService.getInsight(context);
       setInsight(data);
       
-      if (data.origem !== 'System') {
-        localStorage.setItem(`ai_insight_${context}`, JSON.stringify(data));
-        const now = Date.now();
-        localStorage.setItem(`ai_last_update_${context}`, now.toString());
-        
-        if (!DISABLE_COOLDOWN) setTimeLeft(COOLDOWN_MS);
-        else setTimeLeft(0);
-      } else {
-        localStorage.removeItem(`ai_insight_${context}`);
-        localStorage.removeItem(`ai_last_update_${context}`);
-        setTimeLeft(0); 
-      }
+      // Salva no LocalStorage
+      localStorage.setItem(`ai_insight_${context}`, JSON.stringify(data));
+      const now = Date.now();
+      localStorage.setItem(`ai_last_update_${context}`, now.toString());
+      
+      if (!DISABLE_COOLDOWN) setTimeLeft(COOLDOWN_MS);
+      else setTimeLeft(0);
       
     } catch (error) {
       console.error(error);
@@ -148,29 +148,73 @@ export const AiAssistant = ({ context }) => {
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
-  const getOriginIcon = (origin) => {
-    const icons = {
-      Bio: "fa-heart-pulse",
-      Coach: "fa-dumbbell",
-      Nutri: "fa-apple-whole",
-      System: "fa-robot",
-      Finance: "fa-coins",
-      Agenda: "fa-calendar-check"
-    };
-    return icons[origin] || "fa-lightbulb";
+  // --- HELPER FUNCTIONS DE UI ---
+
+  const getDomainIcon = (domain) => {
+    switch(domain) {
+      case 'nutri': return 'fa-apple-whole';
+      case 'coach': return 'fa-dumbbell';
+      default: return 'fa-robot';
+    }
   };
 
-  // Helper para cor do status
-  const getStatusColor = (status) => {
-      switch(status) {
-          case 'critico': return '#ef4444'; // Red
-          case 'atencao': return '#f59e0b'; // Orange
-          case 'otimo': return '#22c55e'; // Green
-          default: return '#3b82f6'; // Blue (OK)
+const getTypeIcon = (type) => {
+    switch(type) {
+      case 'critical': return 'fa-circle-exclamation';
+      case 'error': return 'fa-bug'; // Novo
+      case 'warning': return 'fa-triangle-exclamation';
+      case 'praise': 
+      case 'compliment': return 'fa-trophy'; // Novo mapeamento
+      case 'tip': return 'fa-lightbulb';
+      case 'suggestion': return 'fa-shuffle';
+      default: return 'fa-info-circle';
+    }
+  };
+
+  const getAgentLabel = (agentSource) => {
+    // Formata nomes técnicos: meal_detective -> Meal Detective
+    if (!agentSource) return 'Agente';
+    return agentSource.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  // Renderiza texto com negrito simples (Markdown **bold**)
+  const renderFormattedText = (text) => {
+    if (!text) return null;
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={index}>{part.slice(2, -2)}</strong>;
       }
+      return part;
+    });
+  };
+
+  const renderAction = (action) => {
+    if (!action) return null;
+    
+    let label = "Ver Detalhes";
+    let icon = "fa-arrow-right";
+
+    if (action.kind === 'swap') { label = "Aplicar Troca"; icon = "fa-rotate"; }
+    if (action.kind === 'add') { label = "Adicionar"; icon = "fa-plus"; }
+    if (action.kind === 'remove') { label = "Remover"; icon = "fa-trash"; }
+    if (action.kind === 'adjust') { label = "Ajustar"; icon = "fa-sliders"; }
+    // Novo tipo aceito
+    if (action.kind === 'progression') { label = "Evoluir"; icon = "fa-chart-line"; } 
+    if (action.kind === 'info') { label = "Entendi"; icon = "fa-check"; }
+
+    return (
+        <button className="ai-card-action-btn">
+            <i className={`fa-solid ${icon}`}></i>
+            <span>{label}</span>
+        </button>
+    );
   };
 
   const positionClass = `pos-${smartPos.x}-${smartPos.y}`;
+
+  // Verifica se tem dados válidos
+  const hasSuggestions = insight && insight.suggestions && insight.suggestions.length > 0;
 
   return (
     <div 
@@ -188,11 +232,11 @@ export const AiAssistant = ({ context }) => {
             <div className="ai-glass-header">
                 <div className="ai-agent-identity">
                 <div className="ai-agent-icon">
-                    <i className="fa-solid fa-robot"></i>
+                    <i className="fa-solid fa-brain"></i>
                 </div>
                 <div className="ai-agent-info">
                     <span className="ai-agent-name">Performance Head</span>
-                    <span className="ai-agent-status">{loading ? 'Sincronizando...' : 'Online'}</span>
+                    <span className="ai-agent-status">{loading ? 'Analisando...' : 'Online'}</span>
                 </div>
                 </div>
 
@@ -210,9 +254,10 @@ export const AiAssistant = ({ context }) => {
                 {!insight && !loading && (
                 <div className="ai-empty-state">
                     <i className="fa-solid fa-wand-magic-sparkles"></i>
-                    <p>Estou pronto para analisar seus dados.</p>
+                    <h3>Ritmo Intelligence</h3>
+                    <p>Estou pronto para analisar seu Treino e Dieta.</p>
                     <button className="ai-btn-primary" onClick={() => fetchInsight(true)}>
-                    Gerar Insight
+                    Gerar Análise Completa
                     </button>
                 </div>
                 )}
@@ -220,41 +265,60 @@ export const AiAssistant = ({ context }) => {
                 {loading && !insight && (
                 <div className="ai-skeleton-loader">
                     <div className="sk-line title"></div>
-                    <div className="sk-line text"></div>
-                    <div className="sk-line text"></div>
-                    <div className="sk-line text short"></div>
+                    <div className="sk-card"></div>
+                    <div className="sk-card"></div>
+                    <div className="sk-card"></div>
                 </div>
                 )}
 
-                {insight && (
-                <div className="ai-insight-content">
-                    {/* Cabeçalho Resumido */}
-                    <div className="ai-summary-box">
-                        <h3 className="ai-insight-title">{insight.titulo}</h3>
-                        <p className="ai-insight-text">{insight.mensagem}</p>
+                {hasSuggestions && (
+                <div className="ai-feed">
+                    <div className="ai-feed-header">
+                        <span>{insight.suggestions.length} Insights Encontrados</span>
                     </div>
 
-                    {/* Lista de Agentes (Se disponível) */}
-                    {insight.agentes && insight.agentes.length > 0 && (
-                        <div className="ai-agents-grid">
-                            {insight.agentes.map((agent, idx) => (
-                                <div key={idx} className="ai-agent-mini-card">
-                                    <div className="ai-mini-icon" style={{color: getStatusColor(agent.status)}}>
-                                        <i className={`fa-solid ${getOriginIcon(agent.nome)}`}></i>
-                                    </div>
-                                    <div className="ai-mini-content">
-                                        <div className="ai-mini-header">
-                                            <span className="ai-mini-name">{agent.nome}</span>
-                                            <span className="ai-mini-status" style={{color: getStatusColor(agent.status)}}>
-                                                {agent.status === 'otimo' ? 'Excelente' : agent.status.toUpperCase()}
-                                            </span>
-                                        </div>
-                                        <p className="ai-mini-text">{agent.resumo}</p>
-                                    </div>
+                    {insight.suggestions.map((item) => (
+                        <div key={item.id} className={`ai-suggestion-card type-${item.type} severity-${item.severity}`}>
+                            <div className="ai-card-header">
+                                <div className="ai-card-badges">
+                                    <span className={`ai-domain-badge ${item.domain}`}>
+                                        <i className={`fa-solid ${getDomainIcon(item.domain)}`}></i>
+                                        {item.domain === 'nutri' ? 'Nutrição' : 'Coach'}
+                                    </span>
+                                    <span className="ai-agent-badge">
+                                        {getAgentLabel(item.agent_source)}
+                                    </span>
                                 </div>
-                            ))}
+                                <div className="ai-card-severity">
+                                    {/* Bolinha indicadora de severidade */}
+                                </div>
+                            </div>
+
+                            <div className="ai-card-content">
+                                <div className="ai-card-title-row">
+                                    <div className={`ai-card-icon-box ${item.type}`}>
+                                        <i className={`fa-solid ${getTypeIcon(item.type)}`}></i>
+                                    </div>
+                                    <h4 className="ai-card-title">{item.title}</h4>
+                                </div>
+                                
+                                <p className="ai-card-text">
+                                    {renderFormattedText(item.content)}
+                                </p>
+
+                                {item.actionable && item.action && (
+                                    <div className="ai-card-footer">
+                                        {renderAction(item.action)}
+                                        {item.action.value && (
+                                            <span className="ai-action-value">
+                                                {item.action.target} ➝ <b>{item.action.value}</b>
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    )}
+                    ))}
 
                     {(timeLeft > 0 && !DISABLE_COOLDOWN) && (
                     <div className="ai-cooldown-bar">
@@ -264,6 +328,16 @@ export const AiAssistant = ({ context }) => {
                     )}
                 </div>
                 )}
+                
+                {/* Fallback para caso retorne lista vazia */}
+                {insight && insight.suggestions && insight.suggestions.length === 0 && (
+                     <div className="ai-empty-state">
+                        <i className="fa-regular fa-thumbs-up"></i>
+                        <p>Tudo parece estar em ordem!</p>
+                        <p className="sub-text">Nenhuma observação crítica encontrada no momento.</p>
+                     </div>
+                )}
+
             </div>
             </div>
         </div>
@@ -281,7 +355,7 @@ export const AiAssistant = ({ context }) => {
                 <i className="fa-solid fa-robot"></i>
             )}
         </div>
-        {!isOpen && insight && insight.origem !== 'System' && <span className="notification-dot"></span>}
+        {!isOpen && hasSuggestions && <span className="notification-dot"></span>}
       </button>
     </div>
   );

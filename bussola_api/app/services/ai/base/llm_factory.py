@@ -42,7 +42,7 @@ class LLMFactory:
                     raise ValueError("GROQ_API_KEY is missing.")
                 
                 # Default model para Groq se não especificado
-                model = self.model_name or "llama-3.1-70b-versatile"
+                model = self.model_name or "llama-3.3-70b-versatile"
                 
                 self.llm = ChatGroq(
                     api_key=settings.GROQ_API_KEY,
