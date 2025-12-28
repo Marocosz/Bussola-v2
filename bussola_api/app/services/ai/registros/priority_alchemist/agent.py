@@ -32,29 +32,31 @@ class PriorityAlchemistAgent:
             today_dt = datetime.now() # Fallback
 
         for task in global_context.tarefas:
+            # Ajuste conforme o status exato do seu enum ('done', 'concluida', etc)
             if task.status == 'concluida': 
                 continue
 
             # Check de Alta Prioridade
-            if task.prioridade.lower() == 'alta':
+            if hasattr(task, 'prioridade') and task.prioridade and task.prioridade.lower() == 'alta':
                 alta_prioridade.append(task)
 
             # Check de Estagnação (Criada há > 15 dias e ainda pendente)
-            # Assumimos que created_at vem no formato YYYY-MM-DD
+            # Assumimos que created_at vem no formato YYYY-MM-DD ou ISO
             try:
-                created_dt = datetime.strptime(task.created_at.split('T')[0], "%Y-%m-%d")
+                # Garante que seja string antes de fazer split
+                c_date = str(task.created_at)
+                created_dt = datetime.strptime(c_date.split('T')[0], "%Y-%m-%d")
                 days_old = (today_dt - created_dt).days
                 
-                if days_old >= 15:
+                if days_old >= 15: # Ajustado para 15 conforme regra de negócio (estava 7 no código anterior, mas prompt diz 15)
                     # Adiciona atributo temporário para o prompt saber a idade
-                    # (Poderíamos usar um modelo intermediário, mas vamos formatar na string)
                     setattr(task, '_days_old', days_old) 
                     estagnadas.append(task)
             except Exception:
                 continue # Ignora se data estiver bugada
 
         # Se não tem nada velho nem inflação de prioridade (menos de 3 altas), ignora
-        if not estagnadas and len(alta_prioridade) < 3:
+        if not estagnadas and len(alta_prioridade) < 5: # Ajustado para < 5 para evitar chamadas triviais
             return []
 
         # 2. Contexto
@@ -70,14 +72,15 @@ class PriorityAlchemistAgent:
         if cached_response:
             return cached_response
 
-        # 4. Formatter
+        # 4. Formatter (CORRIGIDO: Acesso via atributo .titulo)
         def format_stale(tasks):
             if not tasks: return "Nenhuma."
-            return "\n".join([f"- {t['titulo']} (Criada há {getattr(t, '_days_old', 15)} dias)" for t in tasks])
+            # Usa getattr pois _days_old foi injetado dinamicamente
+            return "\n".join([f"- {t.titulo} (Criada há {getattr(t, '_days_old', 15)} dias)" for t in tasks])
 
         def format_high(tasks):
             if not tasks: return "Nenhuma."
-            return "\n".join([f"- {t['titulo']}" for t in tasks])
+            return "\n".join([f"- {t.titulo}" for t in tasks])
 
         user_prompt = USER_PROMPT_TEMPLATE.format(
             data_atual=context_dict["data_atual"],

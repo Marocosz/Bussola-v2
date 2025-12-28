@@ -5,7 +5,8 @@ import './styles.css';
 const COOLDOWN_HOURS = 3;
 const COOLDOWN_MS = COOLDOWN_HOURS * 60 * 60 * 1000;
 
-const DISABLE_COOLDOWN = true;
+// Em produção, isso deve ser false para evitar spam na API LLM
+const DISABLE_COOLDOWN = true; 
 
 export const AiAssistant = ({ context }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -173,8 +174,18 @@ export const AiAssistant = ({ context }) => {
     switch (domain) {
       case 'nutri': return 'fa-apple-whole';
       case 'coach': return 'fa-dumbbell';
+      case 'registros': return 'fa-list-check'; // [ATUALIZADO] Ícone de Tarefas
       default: return 'fa-robot';
     }
+  };
+
+  const getDomainLabel = (domain) => {
+      switch (domain) {
+          case 'nutri': return 'Nutrição';
+          case 'coach': return 'Treino';
+          case 'registros': return 'Gestão'; // [ATUALIZADO] Label para Registros
+          default: return 'AI';
+      }
   };
 
   const getTypeIcon = (type) => {
@@ -192,6 +203,7 @@ export const AiAssistant = ({ context }) => {
 
   const getAgentLabel = (agentSource) => {
     if (!agentSource) return 'Agente';
+    // Formata snake_case para Title Case (ex: flow_architect -> Flow Architect)
     return agentSource.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
@@ -223,7 +235,7 @@ export const AiAssistant = ({ context }) => {
         >
           <div className="ai-glass-card">
 
-            {/* --- HEADER ATUALIZADO --- */}
+            {/* --- HEADER --- */}
             <div className="ai-glass-header">
               <div className="ai-agent-identity">
                 <div className="ai-agent-icon">
@@ -261,8 +273,8 @@ export const AiAssistant = ({ context }) => {
               {!insight && !loading && (
                 <div className="ai-empty-state">
                   <i className="fa-solid fa-wand-magic-sparkles"></i>
-                  <h3>Ritmo Intelligence</h3>
-                  <p>Estou pronto para analisar seu Treino e Dieta.</p>
+                  <h3>Intelligence Hub</h3>
+                  <p>Estou pronto para analisar seu perfil.</p>
                   <button className="ai-btn-primary" onClick={() => fetchInsight(true)}>
                     Gerar Análise Completa
                   </button>
@@ -290,7 +302,7 @@ export const AiAssistant = ({ context }) => {
                         <div className="ai-card-badges">
                           <span className={`ai-domain-badge ${item.domain}`}>
                             <i className={`fa-solid ${getDomainIcon(item.domain)}`}></i>
-                            {item.domain === 'nutri' ? 'Nutrição' : 'Coach'}
+                            {getDomainLabel(item.domain)}
                           </span>
                           <span className="ai-agent-badge">
                             {getAgentLabel(item.agent_source)}

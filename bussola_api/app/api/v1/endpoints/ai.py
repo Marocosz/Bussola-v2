@@ -16,14 +16,16 @@ from app.services.ritmo import RitmoService
 from app.services.ai.ritmo.orchestrator import RitmoOrchestrator
 from app.services.ai.ritmo.schema import RitmoAnalysisResponse
 
-# NOVOS IMPORTS REGISTROS (Corrigidos para refletir a renomeação)
-from app.services.registros import RegistrosService # <--- Service Correto
-from app.services.ai.registros.orchestrator import RegistrosOrchestrator # <--- Nome da Classe corrigido
-from app.services.ai.registros.context import RegistrosContext, TaskItemContext # <--- Nome do Contexto corrigido
+# Imports Agenda/Registros
+from app.services.ai.registros.orchestrator import RegistrosOrchestrator
+from app.services.ai.registros.context import RegistrosContext, TaskItemContext
+
+# [CORREÇÃO] Importamos o Model Tarefa diretamente para fazer a query aqui
+# Caso seu model esteja em outro lugar (ex: app.models.registros), ajuste aqui.
+from app.models import Tarefa 
 
 router = APIRouter()
 
-# Tenta configurar locale para PT-BR para dia da semana
 try:
     locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
 except:
@@ -34,7 +36,6 @@ async def get_ritmo_ai_insight(
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ) -> Any:
-    # ... (Mantenha o código do ritmo intacto aqui)
     bio = RitmoService.get_latest_bio(db, current_user.id)
     if not bio:
         return RitmoAnalysisResponse(suggestions=[])
@@ -58,10 +59,9 @@ async def get_registros_ai_insight(
     Aciona: Time Strategist, Flow Architect, Priority Alchemist, Task Breaker.
     """
     
-    # 1. Coletar TAREFAS (Não Compromissos)
-    # Precisamos das tarefas pendentes e concluídas recentemente
-    # Chamando o RegistrosService correto
-    db_tasks = RegistrosService.get_all_tarefas(db, current_user.id) 
+    # 1. Coletar TAREFAS (Query Direta)
+    # [CORREÇÃO] Substituímos a chamada ao Service inexistente por uma query direta
+    db_tasks = db.query(Tarefa).filter(Tarefa.user_id == current_user.id).all()
     
     now = datetime.now()
     
@@ -71,17 +71,17 @@ async def get_registros_ai_insight(
         tasks_context_list.append(TaskItemContext(
             id=t.id,
             titulo=t.titulo,
-            descricao=t.descricao, # Se existir no model Tarefa
+            descricao=t.descricao, 
             prioridade=getattr(t, 'prioridade', 'media'),
             status='concluida' if t.status == 'Concluído' else 'pendente',
-            # Tarefas geralmente tem 'prazo' em vez de 'data'
+            # Tratamento seguro de datas
             data_vencimento=t.prazo.strftime("%Y-%m-%d") if t.prazo else None,
             created_at=t.data_criacao.strftime("%Y-%m-%d") if t.data_criacao else now.strftime("%Y-%m-%d"),
-            # Verifica se tem subtarefas para o TaskBreaker ignorar
-            has_subtasks=len(t.subtarefas) > 0 if t.subtarefas else False
+            # Verifica subtarefas se o relacionamento existir
+            has_subtasks=len(t.subtarefas) > 0 if getattr(t, 'subtarefas', None) else False
         ))
 
-    # 2. Montar Contexto (RegistrosContext)
+    # 2. Montar Contexto
     registros_context = RegistrosContext(
         user_id=current_user.id,
         data_atual=now.strftime("%Y-%m-%d"),

@@ -67,7 +67,7 @@ class FlowArchitectAgent:
             # 5. Post-Processing
             suggestions = PostProcessor.process_response(
                 raw_data=raw_response,
-                domain="coach", # Usamos 'coach' pois Agenda é um tipo de Coaching, ou crie 'agenda' no Schema
+                domain=cls.DOMAIN, 
                 agent_source=cls.AGENT_NAME
             )
 

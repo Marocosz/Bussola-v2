@@ -20,11 +20,11 @@ class TaskBreakerAgent:
     DOMAIN = "registros"
     AGENT_NAME = "task_breaker"
 
-    # Lista básica de verbos para filtro heurístico (evita chamar IA se já tiver verbo)
-    # Isso é uma otimização simples, mas a IA fará o julgamento final.
+    # Lista básica de verbos para filtro heurístico
     COMMON_VERBS = [
         "fazer", "criar", "ligar", "mandar", "enviar", "pagar", "agendar", 
-        "escrever", "ler", "estudar", "comprar", "limpar", "arrumar", "corrigir"
+        "escrever", "ler", "estudar", "comprar", "limpar", "arrumar", "corrigir",
+        "verificar", "analisar", "buscar"
     ]
 
     @classmethod
@@ -35,11 +35,14 @@ class TaskBreakerAgent:
         for task in global_context.tarefas:
             if task.status == 'concluida': continue
             
-            # Se já tem subtarefas, o usuário já quebrou. Ignora.
-            if task.has_subtasks: continue
+            # Se já tem subtarefas (assumindo que o model tem esse campo), o usuário já quebrou.
+            if hasattr(task, 'has_subtasks') and task.has_subtasks: 
+                continue
 
             # Heurística 1: Títulos muito curtos (ex: "Banco", "TCC") são suspeitos
-            words = task.titulo.split()
+            # Garante que titulo é string
+            titulo = str(task.titulo) if task.titulo else ""
+            words = titulo.split()
             is_short = len(words) <= 2
             
             # Heurística 2: Falta de Verbos (Check simples)
@@ -51,7 +54,7 @@ class TaskBreakerAgent:
                 candidatas.append(task)
                 
             # Heurística 3: Palavras "Monstro" (Projeto, Viagem, Reforma)
-            elif any(w in task.titulo.lower() for w in ["projeto", "viagem", "reforma", "mudança", "construção"]):
+            elif any(w in titulo.lower() for w in ["projeto", "viagem", "reforma", "mudança", "construção"]):
                 candidatas.append(task)
 
         if not candidatas:
@@ -69,9 +72,9 @@ class TaskBreakerAgent:
         if cached_response:
             return cached_response
 
-        # 4. Formatter
+        # 4. Formatter (CORRIGIDO: Acesso via atributo .titulo)
         def format_tasks(tasks):
-            return "\n".join([f"- {t['titulo']}" for t in tasks])
+            return "\n".join([f"- {t.titulo}" for t in tasks])
 
         user_prompt = USER_PROMPT_TEMPLATE.format(
             tarefas_json=format_tasks(candidatas)

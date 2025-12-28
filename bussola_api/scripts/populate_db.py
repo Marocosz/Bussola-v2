@@ -126,8 +126,11 @@ def create_instance(model_class, data, user_id=None):
 # ==============================================================================
 
 def create_registros(user_id):
-    """Popula o módulo de Produtividade (Notas e Tarefas)."""
-    print("📝 Populando Caderno (Notas e Tarefas)...")
+    """
+    Popula o módulo de Produtividade (Notas e Tarefas).
+    ATUALIZADO: Cria cenários específicos para testar os Agentes de IA.
+    """
+    print("📝 Populando Caderno e Tarefas (Cenários para IA)...")
     
     # 1. Grupos (Pastas)
     grupos_data = [
@@ -138,7 +141,6 @@ def create_registros(user_id):
     
     grupos_objs = []
     for nome, cor in grupos_data:
-        # Evita duplicar se rodar o script 2x
         grupo = db.query(GrupoAnotacao).filter_by(nome=nome, user_id=user_id).first()
         if not grupo:
             grupo = create_instance(GrupoAnotacao, {"nome": nome, "cor": cor}, user_id)
@@ -147,54 +149,112 @@ def create_registros(user_id):
             db.refresh(grupo)
         grupos_objs.append(grupo)
     
-    # 2. Anotações (Gera 30 notas com HTML fake)
+    # 2. Anotações (30 notas genéricas)
     titulos = ["Resumo Reunião", "Lista de Livros", "Ideia App SaaS", "Receita Panqueca", "Senhas Wifi", "Rascunho Email", "Playlist Foco"]
     for _ in range(30):
         grupo = random.choice(grupos_objs)
         html = f"<p>{fake.paragraph()}</p><ul><li>{fake.sentence()}</li><li>{fake.sentence()}</li></ul>"
-        
         nota = create_instance(Anotacao, {
             "titulo": f"{random.choice(titulos)} - {fake.word().capitalize()}",
             "conteudo": html,
-            "fixado": random.choice([True] + [False]*9), # 10% de chance de ser fixado
+            "fixado": random.choice([True] + [False]*9),
             "data_criacao": fake.date_time_between(start_date='-6M', end_date='now'),
             "grupo_id": grupo.id
         }, user_id)
         db.add(nota)
     db.commit()
-            
-    # 3. Tarefas (50 tarefas com status variados)
-    verbos = ["Ligar para", "Comprar", "Finalizar", "Estudar", "Enviar", "Pagar", "Revisar", "Agendar"]
-    for _ in range(50):
-        dt_criacao = fake.date_time_between(start_date='-3M', end_date='now')
-        status = random.choice(["Pendente", "Em andamento", "Concluído"])
-        
-        tarefa = create_instance(Tarefa, {
-            "titulo": f"{random.choice(verbos)} {fake.bs()}",
-            "descricao": fake.sentence(),
-            "status": status,
-            "prioridade": random.choice(["Baixa", "Média", "Alta", "Crítica"]),
-            "fixado": random.choice([True, False]),
-            "data_criacao": dt_criacao,
-            "data_conclusao": datetime.now() if status == "Concluído" else None,
-            "prazo": dt_criacao + timedelta(days=random.randint(1, 15))
-        }, user_id)
-        
-        db.add(tarefa)
-        db.flush() # Necessário para gerar ID para as subtarefas
-        
-        # Subtarefas (40% de chance de ter filhos)
-        if random.random() < 0.4:
-            for i in range(random.randint(1, 3)):
-                sub = Subtarefa(
-                    titulo=f"Passo {i+1}: {fake.word()}", 
-                    concluido=random.choice([True, False]), 
-                    tarefa_id=tarefa.id
-                )
-                db.add(sub)
 
+    # --- CENÁRIOS DE TAREFAS PARA IA ---
+    now = datetime.now()
+
+    # Cenário A: Task Breaker (Tarefas Vagas e Sem Verbo)
+    # Títulos curtos, sem descrição, sem subtarefas.
+    vagas = ["Projeto", "Reunião", "TCC", "Viagem", "Reforma", "Festa", "Mudar de Casa"]
+    for v in vagas:
+        t = create_instance(Tarefa, {
+            "titulo": v, # Título vago proposital
+            "descricao": None,
+            "status": "Pendente",
+            "prioridade": "Média",
+            "fixado": False,
+            "data_criacao": now - timedelta(days=2),
+            "prazo": now + timedelta(days=5)
+        }, user_id)
+        db.add(t)
+
+    # Cenário B: Time Strategist (Tarefas Atrasadas/Overdue)
+    atrasadas = ["Pagar Internet", "Entregar Relatório Mensal", "Renovar Seguro", "Ligar para Cliente X"]
+    for a in atrasadas:
+        t = create_instance(Tarefa, {
+            "titulo": a,
+            "descricao": "Deveria ter sido feito dias atrás.",
+            "status": "Pendente",
+            "prioridade": "Alta",
+            "fixado": True,
+            "data_criacao": now - timedelta(days=10),
+            "prazo": now - timedelta(days=random.randint(2, 5)) # Venceu há 2-5 dias
+        }, user_id)
+        db.add(t)
+
+    # Cenário C: Time Strategist (Pânico / Dia Cheio)
+    # Muitas tarefas para "Hoje" ou "Amanhã"
+    for i in range(8):
+        t = create_instance(Tarefa, {
+            "titulo": f"Tarefa do Dia Cheio {i+1}",
+            "descricao": "Parte do teste de sobrecarga.",
+            "status": "Pendente",
+            "prioridade": random.choice(["Média", "Alta"]),
+            "fixado": False,
+            "data_criacao": now - timedelta(hours=5),
+            "prazo": now.replace(hour=23, minute=59) # Vence hoje
+        }, user_id)
+        db.add(t)
+
+    # Cenário D: Priority Alchemist (Tarefas Estagnadas/Zombie)
+    # Criadas há muito tempo (>15 dias), Alta Prioridade, ainda Pendentes.
+    estagnadas = ["Ler Livro Clean Code", "Arrumar Garagem", "Fazer Backup Fotos", "Atualizar Currículo"]
+    for e in estagnadas:
+        t = create_instance(Tarefa, {
+            "titulo": e,
+            "descricao": "Tarefa que estou procrastinando.",
+            "status": "Pendente",
+            "prioridade": "Alta", # Inflação de prioridade
+            "fixado": False,
+            "data_criacao": now - timedelta(days=random.randint(20, 45)), # Criada há 20-45 dias
+            "prazo": None # Sem prazo definido ("Algum dia")
+        }, user_id)
+        db.add(t)
+
+    # Cenário E: Flow Architect (Vácuo / Semana Livre)
+    # Não criamos tarefas para a data (Hoje + 10 dias) até (Hoje + 15 dias)
+    # Para garantir o vácuo, criamos tarefas ANTES e DEPOIS desse período.
+    
+    # Filler Antes (Hoje + 3 até Hoje + 8)
+    for _ in range(5):
+        dt = now + timedelta(days=random.randint(3, 8))
+        t = create_instance(Tarefa, {
+            "titulo": f"Tarefa Futura {fake.bs()}",
+            "status": "Pendente",
+            "prioridade": "Baixa",
+            "data_criacao": now,
+            "prazo": dt
+        }, user_id)
+        db.add(t)
+
+    # Filler Depois (Hoje + 16 em diante)
+    for _ in range(5):
+        dt = now + timedelta(days=random.randint(16, 25))
+        t = create_instance(Tarefa, {
+            "titulo": f"Tarefa Longe {fake.bs()}",
+            "status": "Pendente",
+            "prioridade": "Média",
+            "data_criacao": now,
+            "prazo": dt
+        }, user_id)
+        db.add(t)
+        
     db.commit()
-    print("   ✅ Registros OK.")
+    print("   ✅ Registros OK (Cenários de IA criados).")
 
 def create_financas(user_id):
     """
