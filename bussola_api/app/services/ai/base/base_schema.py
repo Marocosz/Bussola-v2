@@ -68,8 +68,8 @@ class SuggestionType(str, Enum):
             return cls.TIP
         
         # Fallback Seguro
-        # logger.debug(f"[Schema] Type normalizado: '{v}' -> 'suggestion'") # Pode comentar para limpar log
         return cls.SUGGESTION
+
 class SeverityLevel(str, Enum):
     LOW = "low"
     MEDIUM = "medium"
@@ -130,13 +130,14 @@ class AtomicSuggestion(BaseModel):
         default_factory=lambda: str(uuid.uuid4()),
         description="Identificador único (UUID) para controle de estado no frontend."
     )
-    domain: Literal["nutri", "coach"] = Field(
+    # [ATUALIZADO] Adicionamos 'agenda' para agrupar os agentes de produtividade
+    domain: Literal["nutri", "coach", "agenda"] = Field(
         ..., 
-        description="O domínio de origem da sugestão."
+        description="O domínio de origem da sugestão (Categoria)."
     )
     agent_source: str = Field(
         ..., 
-        description="Nome do agente que gerou (ex: 'meal_detective')."
+        description="Nome do agente especialista que gerou (ex: 'flow_architect')."
     )
     
     type: SuggestionType = Field(
@@ -151,7 +152,7 @@ class AtomicSuggestion(BaseModel):
     
     title: str = Field(
         ..., 
-        description="Título curto e direto (ex: 'Baixa Proteína')."
+        description="Título curto e direto (ex: 'Semana Livre')."
     )
     content: str = Field(
         ..., 
@@ -163,7 +164,7 @@ class AtomicSuggestion(BaseModel):
     )
     related_entity_id: Optional[int] = Field(
         None, 
-        description="ID do banco de dados relacionado (ex: ID da Refeição ou Plano)."
+        description="ID do banco de dados relacionado (ex: ID da Tarefa)."
     )
     actionable: bool = Field(
         False, 
@@ -185,18 +186,17 @@ class AtomicSuggestion(BaseModel):
         return SeverityLevel.from_string(v)
 
     class Config:
-        # Importante: Serializa os Enums como seus valores string ("warning") 
-        # e não como objetos python, facilitando para o Frontend.
+        # Importante: Serializa os Enums como seus valores string
         use_enum_values = True
         json_schema_extra = {
             "example": {
                 "id": "123e4567-e89b-12d3-a456-426614174000",
-                "domain": "nutri",
-                "agent_source": "meal_detective",
-                "type": "warning",
-                "severity": "high",
-                "title": "Jantar Pesado",
-                "content": "Seu jantar contém **80g de gordura**...",
+                "domain": "agenda",
+                "agent_source": "flow_architect",
+                "type": "tip",
+                "severity": "medium",
+                "title": "Semana Livre",
+                "content": "Você não tem tarefas agendadas...",
                 "action": None,
                 "actionable": False
             }
