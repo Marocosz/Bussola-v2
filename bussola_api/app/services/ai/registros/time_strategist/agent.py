@@ -7,9 +7,9 @@ from app.services.ai.base.post_processor import PostProcessor
 from app.services.ai.base.cache import ai_cache
 from app.services.ai.base.base_schema import AtomicSuggestion
 
-from app.services.ai.agenda.context import AgendaContext
-from app.services.ai.agenda.time_strategist.schema import TimeStrategistContext
-from app.services.ai.agenda.time_strategist.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
+from app.services.ai.registros.context import RegistrosContext
+from app.services.ai.registros.time_strategist.schema import TimeStrategistContext
+from app.services.ai.registros.time_strategist.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
 
 logger = logging.getLogger(__name__)
 
@@ -17,11 +17,11 @@ class TimeStrategistAgent:
     """
     Agente Especialista: Curto Prazo, Prazos e Viabilidade Imediata.
     """
-    DOMAIN = "agenda"
+    DOMAIN = "registros"
     AGENT_NAME = "time_strategist"
 
     @classmethod
-    async def run(cls, global_context: AgendaContext) -> List[AtomicSuggestion]:
+    async def run(cls, global_context: RegistrosContext) -> List[AtomicSuggestion]:
         # 1. Lógica de Filtragem (Python-side filtering)
         # Não gastamos tokens enviando tarefas do mês que vem para este agente.
         

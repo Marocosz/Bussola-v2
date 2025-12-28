@@ -8,6 +8,7 @@ import { GrupoModal } from './components/GrupoModal';
 import { ViewAnotacaoModal } from './components/ViewAnotacaoModal';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmDialogContext';
+import { AiAssistant } from '../../components/AiAssistant'; // <--- 1. Import Adicionado
 import './styles.css';
 
 export function Registros() {
@@ -17,7 +18,7 @@ export function Registros() {
 
     // Hooks de Contexto
     const { addToast } = useToast();
-    const dialogConfirm = useConfirm(); // Renomeado para evitar conflito com window.confirm
+    const dialogConfirm = useConfirm(); 
 
     // UI State - Modais
     const [notaModalOpen, setNotaModalOpen] = useState(false);
@@ -154,10 +155,8 @@ export function Registros() {
     };
 
     const handleDeleteGrupo = async (grupoId, e) => {
-        // Importante: Parar a propagação para não fechar o dropdown antes da hora
         e.stopPropagation();
         
-        // 1. Chama o Dialog Customizado
         const isConfirmed = await dialogConfirm({
             title: 'Excluir Grupo?',
             description: 'Todas as anotações deste grupo serão movidas para "Indefinido". Esta ação não pode ser desfeita.',
@@ -169,22 +168,15 @@ export function Registros() {
 
         try {
             await deleteGrupo(grupoId);
-            
-            // 2. Toast de Sucesso
             addToast({ 
                 type: 'success', 
                 title: 'Grupo excluído', 
                 description: 'O grupo foi removido com sucesso.' 
             });
-
-            // 3. Resetar filtro se necessário
             if (filtroGrupo !== 'Todos') setFiltroGrupo('Todos');
-            
-            // 4. Atualizar lista (silenciosamente)
             fetchData(true); 
         } catch (error) {
             console.error(error);
-            // Toast de Erro
             addToast({ 
                 type: 'error', 
                 title: 'Erro', 
@@ -224,7 +216,7 @@ export function Registros() {
 
                 {/* 1. COLUNA ESQUERDA: CADERNO */}
                 <div className="registros-column column-anotacoes">
-
+                    {/* ... (mantido igual) ... */}
                     <div className="column-header-flex">
                         <h2>CADERNO</h2>
                         <div className="header-actions-group">
@@ -371,7 +363,6 @@ export function Registros() {
                         <h2>TAREFAS</h2>
 
                         <div className="header-actions-group">
-                            {/* --- DROPDOWN FILTRO DE PRIORIDADE --- */}
                             <div className="custom-dropdown-wrapper">
                                 <button
                                     className={`dropdown-trigger-btn ${filtroPrioridade !== 'Todas' ? 'active' : ''}`}
@@ -478,6 +469,9 @@ export function Registros() {
                 existingGroups={grupos}
             />
             <ViewAnotacaoModal active={viewModalOpen} closeModal={() => setViewModalOpen(false)} nota={viewingNota} onEdit={handleEditNota} />
+
+            {/* AI Assistant Integrado (Contexto Registros) */}
+            <AiAssistant context="registros" /> 
         </div>
     );
 }

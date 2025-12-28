@@ -7,9 +7,9 @@ from app.services.ai.base.post_processor import PostProcessor
 from app.services.ai.base.cache import ai_cache
 from app.services.ai.base.base_schema import AtomicSuggestion
 
-from app.services.ai.agenda.context import AgendaContext
-from app.services.ai.agenda.flow_architect.schema import FlowArchitectContext
-from app.services.ai.agenda.flow_architect.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
+from app.services.ai.registros.context import RegistrosContext
+from app.services.ai.registros.flow_architect.schema import FlowArchitectContext
+from app.services.ai.registros.flow_architect.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
 
 logger = logging.getLogger(__name__)
 
@@ -17,11 +17,11 @@ class FlowArchitectAgent:
     """
     Agente Especialista: Visão de Longo Prazo e Fluxo.
     """
-    DOMAIN = "agenda" # Novo domínio! Lembre de adicionar ícone no Front se precisar
+    DOMAIN = "registros" # Novo domínio! Lembre de adicionar ícone no Front se precisar
     AGENT_NAME = "flow_architect"
 
     @classmethod
-    async def run(cls, global_context: AgendaContext) -> List[AtomicSuggestion]:
+    async def run(cls, global_context: RegistrosContext) -> List[AtomicSuggestion]:
         # 1. Filtragem Inteligente (Context Mapping)
         # O Flow Architect não precisa saber a "Hora Atual" exata (regra das 18h), 
         # ele só precisa das datas e das tarefas.

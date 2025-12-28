@@ -131,7 +131,7 @@ class AtomicSuggestion(BaseModel):
         description="Identificador único (UUID) para controle de estado no frontend."
     )
     # [ATUALIZADO] Adicionamos 'agenda' para agrupar os agentes de produtividade
-    domain: Literal["nutri", "coach", "agenda"] = Field(
+    domain: Literal["nutri", "coach", "registros"] = Field(
         ..., 
         description="O domínio de origem da sugestão (Categoria)."
     )

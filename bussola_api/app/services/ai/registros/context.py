@@ -23,7 +23,7 @@ class TaskItemContext(BaseModel):
     # Campo opcional para categorização (ex: 'trabalho', 'pessoal')
     categoria: Optional[str] = "geral"
 
-class AgendaContext(BaseModel):
+class RegistrosContext(BaseModel):
     """
     O Contexto Global da Agenda.
     Fundamental para o 'Time Strategist' e 'Flow Architect' entenderem o TEMPO.

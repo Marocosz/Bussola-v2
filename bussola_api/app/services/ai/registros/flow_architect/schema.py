@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import List
-from app.services.ai.agenda.context import TaskItemContext
+from app.services.ai.registros.context import TaskItemContext
 
 class FlowArchitectContext(BaseModel):
     """

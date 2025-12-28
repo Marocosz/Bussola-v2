@@ -5,7 +5,7 @@ from typing import List, Annotated, TypedDict
 from langgraph.graph import StateGraph, END
 
 # Import Models
-from app.services.ai.registros.context import registrosContext
+from app.services.ai.registros.context import RegistrosContext
 from app.services.ai.base.base_schema import AtomicSuggestion
 
 # --- IMPORTS DOS AGENTES (Descomente à medida que criá-los) ---
@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------
 # 1. STATE (O Estado Compartilhado do Graph)
 # ------------------------------------------------------------------------------
-class registrosState(TypedDict):
-    context: registrosContext
+class RegistrosState(TypedDict):
+    context: RegistrosContext
     # Annotated com operator.add permite que os agentes "somem" listas em vez de sobrescrever
     suggestions: Annotated[List[AtomicSuggestion], operator.add]
 
@@ -28,11 +28,11 @@ class registrosState(TypedDict):
 # 2. NODES (Os Executores)
 # ------------------------------------------------------------------------------
 
-# async def run_time_strategist(state: registrosState):
+# async def run_time_strategist(state: RegistrosState):
 #     # Implementação futura
 #     return {"suggestions": []}
 
-async def run_flow_architect(state: registrosState):
+async def run_flow_architect(state: RegistrosState):
     """Executa o Visionário de Longo Prazo"""
     try:
         # Passamos o contexto completo, o agente filtra o que precisa
@@ -42,17 +42,17 @@ async def run_flow_architect(state: registrosState):
         logger.error(f"[Orchestrator] Erro no Flow Architect: {e}")
         return {"suggestions": []}
 
-# async def run_priority_alchemist(state: registrosState):
+# async def run_priority_alchemist(state: RegistrosState):
 #     return {"suggestions": []}
 
-# async def run_task_breaker(state: registrosState):
+# async def run_task_breaker(state: RegistrosState):
 #     return {"suggestions": []}
 
 # ------------------------------------------------------------------------------
 # 3. GRAPH BUILDER
 # ------------------------------------------------------------------------------
-def build_registros_graph():
-    workflow = StateGraph(registrosState)
+def build_agenda_graph():
+    workflow = StateGraph(RegistrosState)
     
     # Adicionando Nós (Futuramente descomente os outros)
     # workflow.add_node("time_strategist", run_time_strategist)
@@ -74,15 +74,15 @@ def build_registros_graph():
     
     return workflow.compile()
 
-registros_graph = build_registros_graph()
+agenda_graph = build_agenda_graph()
 
-class registrosOrchestrator:
+class RegistrosOrchestrator:
     """
-    Fachada única para chamar toda a inteligência da registros.
+    Fachada única para chamar toda a inteligência da Agenda.
     """
     @staticmethod
-    async def analyze(context: registrosContext) -> List[AtomicSuggestion]:
-        logger.info(f"Iniciando registrosOrchestrator para UserID: {context.user_id}")
+    async def analyze(context: RegistrosContext) -> List[AtomicSuggestion]:
+        logger.info(f"Iniciando RegistrosOrchestrator para UserID: {context.user_id}")
         
         initial_state = {
             "context": context, 
@@ -91,7 +91,7 @@ class registrosOrchestrator:
         
         try:
             # Invoca o Graph
-            final_state = await registros_graph.ainvoke(initial_state)
+            final_state = await agenda_graph.ainvoke(initial_state)
             
             # Ordenação de Inteligência: Críticos primeiro, depois High, Medium, Low
             def severity_key(s):
@@ -103,5 +103,5 @@ class registrosOrchestrator:
             return sorted_suggestions
             
         except Exception as e:
-            logger.critical(f"Erro CATÁSTROFICO no registrosOrchestrator: {e}", exc_info=True)
+            logger.critical(f"Erro CATÁSTROFICO no RegistrosOrchestrator: {e}", exc_info=True)
             return []

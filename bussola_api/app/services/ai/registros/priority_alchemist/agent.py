@@ -7,9 +7,9 @@ from app.services.ai.base.post_processor import PostProcessor
 from app.services.ai.base.cache import ai_cache
 from app.services.ai.base.base_schema import AtomicSuggestion
 
-from app.services.ai.agenda.context import AgendaContext
-from app.services.ai.agenda.priority_alchemist.schema import PriorityAlchemistContext
-from app.services.ai.agenda.priority_alchemist.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
+from app.services.ai.registros.context import RegistrosContext
+from app.services.ai.registros.priority_alchemist.schema import PriorityAlchemistContext
+from app.services.ai.registros.priority_alchemist.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
 
 logger = logging.getLogger(__name__)
 
@@ -17,11 +17,11 @@ class PriorityAlchemistAgent:
     """
     Agente Especialista: Priorização e Limpeza de Backlog.
     """
-    DOMAIN = "agenda"
+    DOMAIN = "registros"
     AGENT_NAME = "priority_alchemist"
 
     @classmethod
-    async def run(cls, global_context: AgendaContext) -> List[AtomicSuggestion]:
+    async def run(cls, global_context: RegistrosContext) -> List[AtomicSuggestion]:
         # 1. Filtros Python (Calcula Idade da Tarefa)
         estagnadas = []
         alta_prioridade = []

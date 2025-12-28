@@ -7,9 +7,9 @@ from app.services.ai.base.post_processor import PostProcessor
 from app.services.ai.base.cache import ai_cache
 from app.services.ai.base.base_schema import AtomicSuggestion
 
-from app.services.ai.agenda.context import AgendaContext
-from app.services.ai.agenda.task_breaker.schema import TaskBreakerContext
-from app.services.ai.agenda.task_breaker.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
+from app.services.ai.registros.context import RegistrosContext
+from app.services.ai.registros.task_breaker.schema import TaskBreakerContext
+from app.services.ai.registros.task_breaker.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ class TaskBreakerAgent:
     """
     Agente Especialista: Clareza, Semântica e Quebra de Tarefas.
     """
-    DOMAIN = "agenda"
+    DOMAIN = "registros"
     AGENT_NAME = "task_breaker"
 
     # Lista básica de verbos para filtro heurístico (evita chamar IA se já tiver verbo)
@@ -28,7 +28,7 @@ class TaskBreakerAgent:
     ]
 
     @classmethod
-    async def run(cls, global_context: AgendaContext) -> List[AtomicSuggestion]:
+    async def run(cls, global_context: RegistrosContext) -> List[AtomicSuggestion]:
         # 1. Filtros Python (Heurísticas de Clareza)
         candidatas = []
         

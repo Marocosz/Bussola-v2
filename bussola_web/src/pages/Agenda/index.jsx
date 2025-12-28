@@ -4,8 +4,9 @@ import { CompromissoCard } from './components/CompromissoCard';
 import { AgendaModal } from './components/AgendaModal';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmDialogContext';
-import { AiAssistant } from '../../components/AiAssistant'; // <--- Importado
 import './styles.css';
+
+// Removido o import do AiAssistant aqui!
 
 export function Agenda() {
     const [data, setData] = useState(null);
@@ -13,7 +14,6 @@ export function Agenda() {
     const [modalOpen, setModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     
-    // Hooks de Contexto
     const { addToast } = useToast();
     const dialogConfirm = useConfirm();
     
@@ -22,11 +22,7 @@ export function Agenda() {
     const [openMonths, setOpenMonths] = useState(() => {
         const savedState = localStorage.getItem('@Bussola:agenda_accordions');
         if (savedState) {
-            try {
-                return JSON.parse(savedState);
-            } catch (e) {
-                console.error("Erro ao ler localStorage", e);
-            }
+            try { return JSON.parse(savedState); } catch (e) { }
         }
         return {};
     });
@@ -74,7 +70,6 @@ export function Agenda() {
 
     const handleDayLeave = () => setTooltip({ ...tooltip, visible: false });
 
-    // Componente simples de Loading interno
     const LoadingState = () => (
         <div className="loading-state-internal" style={{ padding: '2rem', textAlign: 'center', color: 'var(--cor-texto-secundario)' }}>
             <i className="fa-solid fa-circle-notch fa-spin" style={{ fontSize: '1.5rem', marginBottom: '10px', color: 'var(--cor-azul-primario)' }}></i>
@@ -93,7 +88,6 @@ export function Agenda() {
             </div>
 
             <div className="layout-grid-custom agenda-layout">
-                {/* Coluna da Esquerda: Lista */}
                 <div className="agenda-column">
                     <div className="column-header-flex">
                         <h2>Compromissos</h2>
@@ -134,7 +128,6 @@ export function Agenda() {
                     )}
                 </div>
 
-                {/* Coluna da Direita: Calendário */}
                 <div className="agenda-column">
                     <div className="column-header-flex">
                         <h2>Calendário</h2>
@@ -152,7 +145,6 @@ export function Agenda() {
                                         </div>
                                     );
                                 }
-
                                 let cardClasses = 'dia-card';
                                 if (item.is_today) cardClasses += ' today';
                                 if (item.is_padding) cardClasses += ' dia-padding';
@@ -190,9 +182,6 @@ export function Agenda() {
                 onUpdate={fetchData}
                 editingData={editingItem}
             />
-
-            {/* AI Assistant Integrado (Contexto Agenda) */}
-            <AiAssistant context="agenda" />
         </div>
     );
 }
