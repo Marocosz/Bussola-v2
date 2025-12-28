@@ -13,6 +13,9 @@ export const AiAssistant = ({ context }) => {
   const [insight, setInsight] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0); 
   
+  // Novo State: Mostra a hora da última atualização (ex: "14:30")
+  const [lastUpdateDisplay, setLastUpdateDisplay] = useState(null);
+
   // Smart Pos: x='left'|'right', y='up'|'down'
   const [smartPos, setSmartPos] = useState({ x: 'right', y: 'up' });
 
@@ -26,6 +29,15 @@ export const AiAssistant = ({ context }) => {
   const offsetRef = useRef({ x: 0, y: 0 });
   const requestRef = useRef(null); 
 
+  // Helper: Formata Timestamp para Hora:Minuto
+  const formatTimestamp = (ts) => {
+    if (!ts) return null;
+    const date = new Date(parseInt(ts));
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
   useEffect(() => {
     const savedData = localStorage.getItem(`ai_insight_${context}`);
     const lastUpdate = localStorage.getItem(`ai_last_update_${context}`);
@@ -34,19 +46,25 @@ export const AiAssistant = ({ context }) => {
       try {
         const parsedData = JSON.parse(savedData);
         setInsight(parsedData);
-        // Se for resposta antiga (sem suggestions) ou System, reseta
+        
+        // Validação básica de formato antigo
         if (!parsedData.suggestions && !parsedData.titulo) {
-           // Formato inválido ou antigo
+           // Formato inválido ou antigo, poderia limpar se quisesse
         }
       } catch (e) {
         console.error("Erro ao ler cache local da IA", e);
       }
     }
 
-    if (lastUpdate && !DISABLE_COOLDOWN) {
-      const diff = Date.now() - parseInt(lastUpdate);
-      if (diff < COOLDOWN_MS) {
-        setTimeLeft(COOLDOWN_MS - diff);
+    if (lastUpdate) {
+      // Define a hora visual da última atualização
+      setLastUpdateDisplay(formatTimestamp(lastUpdate));
+
+      if (!DISABLE_COOLDOWN) {
+        const diff = Date.now() - parseInt(lastUpdate);
+        if (diff < COOLDOWN_MS) {
+          setTimeLeft(COOLDOWN_MS - diff);
+        }
       }
     }
     
@@ -68,14 +86,15 @@ export const AiAssistant = ({ context }) => {
 
     setLoading(true);
     try {
-      // O backend agora retorna { suggestions: [...] }
       const data = await aiService.getInsight(context);
       setInsight(data);
       
-      // Salva no LocalStorage
-      localStorage.setItem(`ai_insight_${context}`, JSON.stringify(data));
       const now = Date.now();
+      localStorage.setItem(`ai_insight_${context}`, JSON.stringify(data));
       localStorage.setItem(`ai_last_update_${context}`, now.toString());
+      
+      // Atualiza o display de hora imediatamente
+      setLastUpdateDisplay(formatTimestamp(now));
       
       if (!DISABLE_COOLDOWN) setTimeLeft(COOLDOWN_MS);
       else setTimeLeft(0);
@@ -158,13 +177,13 @@ export const AiAssistant = ({ context }) => {
     }
   };
 
-const getTypeIcon = (type) => {
+  const getTypeIcon = (type) => {
     switch(type) {
       case 'critical': return 'fa-circle-exclamation';
-      case 'error': return 'fa-bug'; // Novo
+      case 'error': return 'fa-bug';
       case 'warning': return 'fa-triangle-exclamation';
       case 'praise': 
-      case 'compliment': return 'fa-trophy'; // Novo mapeamento
+      case 'compliment': return 'fa-trophy';
       case 'tip': return 'fa-lightbulb';
       case 'suggestion': return 'fa-shuffle';
       default: return 'fa-info-circle';
@@ -172,12 +191,10 @@ const getTypeIcon = (type) => {
   };
 
   const getAgentLabel = (agentSource) => {
-    // Formata nomes técnicos: meal_detective -> Meal Detective
     if (!agentSource) return 'Agente';
     return agentSource.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
-  // Renderiza texto com negrito simples (Markdown **bold**)
   const renderFormattedText = (text) => {
     if (!text) return null;
     const parts = text.split(/(\*\*.*?\*\*)/g);
@@ -189,31 +206,7 @@ const getTypeIcon = (type) => {
     });
   };
 
-  const renderAction = (action) => {
-    if (!action) return null;
-    
-    let label = "Ver Detalhes";
-    let icon = "fa-arrow-right";
-
-    if (action.kind === 'swap') { label = "Aplicar Troca"; icon = "fa-rotate"; }
-    if (action.kind === 'add') { label = "Adicionar"; icon = "fa-plus"; }
-    if (action.kind === 'remove') { label = "Remover"; icon = "fa-trash"; }
-    if (action.kind === 'adjust') { label = "Ajustar"; icon = "fa-sliders"; }
-    // Novo tipo aceito
-    if (action.kind === 'progression') { label = "Evoluir"; icon = "fa-chart-line"; } 
-    if (action.kind === 'info') { label = "Entendi"; icon = "fa-check"; }
-
-    return (
-        <button className="ai-card-action-btn">
-            <i className={`fa-solid ${icon}`}></i>
-            <span>{label}</span>
-        </button>
-    );
-  };
-
   const positionClass = `pos-${smartPos.x}-${smartPos.y}`;
-
-  // Verifica se tem dados válidos
   const hasSuggestions = insight && insight.suggestions && insight.suggestions.length > 0;
 
   return (
@@ -229,15 +222,29 @@ const getTypeIcon = (type) => {
             onMouseDown={(e) => e.stopPropagation()} 
         >
             <div className="ai-glass-card">
+            
+            {/* --- HEADER ATUALIZADO --- */}
             <div className="ai-glass-header">
                 <div className="ai-agent-identity">
-                <div className="ai-agent-icon">
-                    <i className="fa-solid fa-brain"></i>
-                </div>
-                <div className="ai-agent-info">
-                    <span className="ai-agent-name">Performance Head</span>
-                    <span className="ai-agent-status">{loading ? 'Analisando...' : 'Online'}</span>
-                </div>
+                    <div className="ai-agent-icon">
+                        <i className="fa-solid fa-brain"></i>
+                    </div>
+                    <div className="ai-agent-info">
+                        <span className="ai-agent-name">Performance Head</span>
+                        
+                        <div className="ai-status-wrapper">
+                            <span className="ai-agent-status">
+                                {loading ? 'Sincronizando...' : 'Online'}
+                            </span>
+                            
+                            {/* Badge de última atualização */}
+                            {!loading && lastUpdateDisplay && (
+                                <span className="ai-last-update-badge">
+                                    <i className="fa-regular fa-clock"></i> {lastUpdateDisplay}
+                                </span>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
                 <button 
@@ -289,9 +296,7 @@ const getTypeIcon = (type) => {
                                         {getAgentLabel(item.agent_source)}
                                     </span>
                                 </div>
-                                <div className="ai-card-severity">
-                                    {/* Bolinha indicadora de severidade */}
-                                </div>
+                                <div className="ai-card-severity"></div>
                             </div>
 
                             <div className="ai-card-content">
@@ -306,14 +311,13 @@ const getTypeIcon = (type) => {
                                     {renderFormattedText(item.content)}
                                 </p>
 
-                                {item.actionable && item.action && (
+                                {/* Removido o botão de ação. Mantido apenas o texto se houver Value */}
+                                {item.action && item.action.value && (
                                     <div className="ai-card-footer">
-                                        {renderAction(item.action)}
-                                        {item.action.value && (
-                                            <span className="ai-action-value">
-                                                {item.action.target} ➝ <b>{item.action.value}</b>
-                                            </span>
-                                        )}
+                                        <span className="ai-action-value">
+                                            <i className="fa-solid fa-arrow-right-long" style={{marginRight: '8px', opacity: 0.7}}></i>
+                                            {item.action.target} ➝ <b>{item.action.value}</b>
+                                        </span>
                                     </div>
                                 )}
                             </div>
@@ -329,7 +333,6 @@ const getTypeIcon = (type) => {
                 </div>
                 )}
                 
-                {/* Fallback para caso retorne lista vazia */}
                 {insight && insight.suggestions && insight.suggestions.length === 0 && (
                      <div className="ai-empty-state">
                         <i className="fa-regular fa-thumbs-up"></i>

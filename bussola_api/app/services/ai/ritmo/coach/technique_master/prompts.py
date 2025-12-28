@@ -15,7 +15,7 @@ Sua missão é dar "Cues" (Dicas de Ouro) de execução para os exercícios prin
 "content": "**Atenção à Lombar:**\\n- Contraia o abdômen.\\n- Mantenha a coluna neutra."
 
 **EXEMPLO ERRADO (NÃO FAÇA):**
-"content": [{"dica": "Contraia o abdômen"}]
+"content": [{{ "dica": "Contraia o abdômen" }}]
 
 **FORMATO (JSON ARRAY):**
 [

@@ -38,13 +38,13 @@ class ActionKind(str, Enum):
         return cls.INFO
 
 class SuggestionType(str, Enum):
-    WARNING = "warning"       # Amarelo
-    TIP = "tip"               # Azul
-    SUGGESTION = "suggestion" # Roxo
-    PRAISE = "praise"         # Verde
-    CRITICAL = "critical"     # Vermelho (Borda Grossa)
-    ERROR = "error"           # Vermelho (Bug)
-    COMPLIMENT = "compliment" # Verde (Elogio)
+    WARNING = "warning"
+    TIP = "tip"
+    SUGGESTION = "suggestion"
+    PRAISE = "praise"
+    CRITICAL = "critical"
+    ERROR = "error"
+    COMPLIMENT = "compliment"
 
     @classmethod
     def from_string(cls, value: str):
@@ -54,17 +54,22 @@ class SuggestionType(str, Enum):
         except ValueError:
             pass
 
-        # Semantic Matching
+        # Semantic Matching Atualizado
         if "critic" in v or "fatal" in v or "urgent" in v: return cls.CRITICAL
         if "warn" in v or "alert" in v or "danger" in v: return cls.WARNING
         if "error" in v or "fail" in v or "bug" in v: return cls.ERROR
-        if "praise" in v or "good" in v or "great" in v or "compliment" in v: return cls.PRAISE
-        if "tip" in v or "hint" in v or "idea" in v: return cls.TIP
+        
+        # Mapeamento para Elogios
+        if "praise" in v or "good" in v or "great" in v or "compliment" in v or "ok" in v: 
+            return cls.PRAISE
+            
+        # Mapeamento para Dicas/Informações
+        if "tip" in v or "hint" in v or "idea" in v or "info" in v: 
+            return cls.TIP
         
         # Fallback Seguro
-        logger.warning(f"[Schema] Type IA desconhecido '{v}'. Normalizando para 'suggestion'.")
+        # logger.debug(f"[Schema] Type normalizado: '{v}' -> 'suggestion'") # Pode comentar para limpar log
         return cls.SUGGESTION
-
 class SeverityLevel(str, Enum):
     LOW = "low"
     MEDIUM = "medium"
