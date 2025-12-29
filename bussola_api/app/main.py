@@ -61,10 +61,12 @@ app = FastAPI(
     title=settings.PROJECT_NAME,
     # Define a URL onde o JSON do OpenAPI (Swagger) será servido
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
-    # [DOCUMENTAÇÃO] Desativamos as interfaces padrões (Swagger UI e ReDoc)
-    # para permitir a injeção manual da interface do Scalar na rota /docs.
-    docs_url=None,
-    redoc_url=None
+    
+    # [DOCUMENTAÇÃO PADRÃO] 
+    # Mantemos o Swagger UI ativo na rota padrão (/docs) e o ReDoc em (/redoc)
+    # para testes rápidos e compatibilidade.
+    docs_url="/docs",
+    redoc_url="/redoc"
 )
 
 # --------------------------------------------------------------------------------------
@@ -87,15 +89,15 @@ if settings.BACKEND_CORS_ORIGINS:
     )
 
 # --------------------------------------------------------------------------------------
-# DOCUMENTAÇÃO DA API (SCALAR)
+# DOCUMENTAÇÃO ALTERNATIVA (SCALAR)
 # --------------------------------------------------------------------------------------
-# Substitui o Swagger UI padrão por uma interface mais moderna (Scalar).
-# Esta rota serve um HTML estático que carrega o script do Scalar via CDN
-# e aponta para o arquivo openapi.json gerado automaticamente pelo FastAPI.
-@app.get("/docs", include_in_schema=False)
+# Adiciona uma rota separada (/scalar) para servir a interface moderna do Scalar.
+# Ela consome o mesmo 'openapi.json' que o Swagger, mas oferece uma UX diferente.
+@app.get("/scalar", include_in_schema=False)
 async def scalar_html():
     """
     Renderiza a documentação da API utilizando a interface Scalar.
+    Acessível em: http://localhost:8000/scalar
     """
     openapi_url = f"{settings.API_V1_STR}/openapi.json"
     
@@ -103,7 +105,7 @@ async def scalar_html():
         <!doctype html>
         <html>
           <head>
-            <title>Bússola V2 - API Reference</title>
+            <title>Bússola V2 - Scalar Docs</title>
             <meta charset="utf-8" />
             <meta
               name="viewport"
