@@ -108,3 +108,12 @@ Importante:
 - Não polua o código com comentários desnecessários
 
 Agora vou te enviar o arquivo:
+
+
+
+-----------------------------------------------------------------------------
+
+
+Prompt de markdown:
+
+REGRA DE ENTREGA: Para que eu consiga copiar o arquivo sem erros, envolva TODA a sua resposta (do início ao fim) dentro de um bloco de código delimitado por 4 crases (````). Não renderize o Markdown, apenas mostre o texto bruto (raw) dentro desse bloco.
