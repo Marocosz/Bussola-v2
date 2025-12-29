@@ -21,7 +21,8 @@ COMUNICAÇÃO:
 =======================================================================================
 """
 
-from sqlalchemy import Column, Integer, String, Float, DateTime, Date, ForeignKey, func
+# [MODIFICADO] Adicionado 'Boolean' aos imports
+from sqlalchemy import Column, Integer, String, Float, DateTime, Date, ForeignKey, func, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from app.db.base_class import Base
@@ -86,6 +87,12 @@ class Transacao(Base):
     
     # Agrupador: Permite editar todas as ocorrências de uma transação recorrente de uma vez.
     id_grupo_recorrencia = Column(String(100), nullable=True, index=True)
+
+    # [NOVO] Flag de Encerramento (Solicitado em 2025-12-29):
+    # Se True, indica que a série foi interrompida pelo usuário.
+    # Itens 'Efetivados' com esta flag = Histórico (aparecem como encerrados).
+    # Itens 'Pendentes' são deletados pela lógica de encerramento.
+    recorrencia_encerrada = Column(Boolean, default=False)
 
     # [SEGURANÇA / PERFORMANCE]
     # O user_id aqui é redundante (já existe em Categoria), mas é vital para performance.

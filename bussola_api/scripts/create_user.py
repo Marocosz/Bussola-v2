@@ -61,7 +61,7 @@ def create_admin_user():
     # 1. PARSE DE ARGUMENTOS
     # ----------------------------------------------------------------------------------
     # Permite automação (ex: em scripts de deploy) usando:
-    # python create_admin.py --email admin@exemplo.com --password 123
+    # python scripts/create_user.py --email ditanixplayer@gmail.com --password asddsa
     parser = argparse.ArgumentParser(description="Criar usuário Super Admin para o Bússola API")
     parser.add_argument("--email", type=str, help="E-mail do administrador")
     parser.add_argument("--password", type=str, help="Senha do administrador")

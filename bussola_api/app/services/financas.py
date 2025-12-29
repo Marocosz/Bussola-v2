@@ -116,14 +116,14 @@ class FinancasService:
         """
         WORKER DE PROJEÇÃO: Gera lançamentos futuros baseados em regras de recorrência.
         
-        Lógica:
-        1. Identifica todos os grupos de recorrência (id_grupo_recorrencia) do usuário.
-        2. Verifica a ÚLTIMA transação lançada de cada grupo.
-        3. Se a última transação já passou (está no passado), gera as próximas até alcançar a data atual.
-        
-        Isso garante que ao abrir o app no dia 05, as contas que venceram dia 01, 02, 03 e 04 sejam criadas.
+        [ATUALIZADO] Horizonte de Previsão:
+        O sistema agora projeta transações até 'Hoje + 2 meses'.
+        Isso garante que, ao chegar no fim do mês, o usuário já consiga ver 
+        as contas do mês seguinte no Dashboard.
         """
-        today_date = datetime.now().date()
+        today = datetime.now().date()
+        # Horizonte de 2 meses para frente
+        horizonte_limite = today + relativedelta(months=2)
 
         # Otimização: Busca apenas IDs de grupos que são 'recorrente' ou 'parcelada'
         grupos = db.query(Transacao.id_grupo_recorrencia).filter(
@@ -146,8 +146,12 @@ class FinancasService:
             
             if not ultima: continue
 
-            # Se já estamos projetados até o futuro, pula
-            if ultima.data.date() > today_date:
+            # [CHECK DE ENCERRAMENTO] Se o usuário encerrou, não gera mais nada.
+            if ultima.recorrencia_encerrada:
+                continue
+
+            # Se já estamos projetados até o horizonte limite, não precisa criar mais
+            if ultima.data.date() >= horizonte_limite:
                 continue
 
             # CASO A: RECORRÊNCIA INFINITA (Assinaturas, Aluguel, Salário)
@@ -160,8 +164,8 @@ class FinancasService:
                 elif frequencia == 'mensal': proximo_vencimento += relativedelta(months=1)
                 elif frequencia == 'anual': proximo_vencimento += relativedelta(years=1)
 
-                # Loop de "Catch-up": Gera todas as pendências até hoje
-                while proximo_vencimento.date() <= today_date:
+                # Loop de "Catch-up": Gera todas as pendências até o HORIZONTE
+                while proximo_vencimento.date() <= horizonte_limite:
                     nova = Transacao(
                         descricao=ultima.descricao, valor=ultima.valor, data=proximo_vencimento,
                         categoria_id=ultima.categoria_id, tipo_recorrencia='recorrente',
@@ -181,7 +185,8 @@ class FinancasService:
                 prox_parcela = ultima.parcela_atual + 1
                 prox_vencimento = ultima.data + relativedelta(months=1)
 
-                while prox_vencimento.date() <= today_date and prox_parcela <= ultima.total_parcelas:
+                # Gera enquanto estiver dentro do horizonte E não estourar o limite de parcelas
+                while prox_vencimento.date() <= horizonte_limite and prox_parcela <= ultima.total_parcelas:
                     nova = Transacao(
                         descricao=ultima.descricao, valor=ultima.valor, data=prox_vencimento,
                         categoria_id=ultima.categoria_id, tipo_recorrencia='parcelada',
@@ -287,6 +292,57 @@ class FinancasService:
             "icones_disponiveis": ICONES_DISPONIVEIS,
             "cores_disponiveis": self.gerar_paleta_cores()
         }
+        
+    def encerrar_recorrencia(self, db: Session, transacao_id: int, user_id: int):
+        """
+        [LÓGICA REFINADA] Encerra uma série financeira (Recorrente ou Parcelada).
+        
+        Ação 1: Remove lançamentos PENDENTES (Futuro). Limpa a agenda.
+        Ação 2: Mantém lançamentos EFETIVADOS (Passado), mas marca a flag
+                `recorrencia_encerrada = True`.
+                
+        Resultado:
+        - O histórico continua visível no frontend como parte da série.
+        - O worker `gerar_transacoes_futuras` ignora essa série, parando cobranças.
+        """
+        # 1. Localiza a transação alvo para pegar o Grupo ID
+        alvo = db.query(Transacao).filter(
+            Transacao.id == transacao_id, 
+            Transacao.user_id == user_id
+        ).first()
+
+        if not alvo:
+            return {"error": "Transação não encontrada", "code": 404}
+        
+        if not alvo.id_grupo_recorrencia:
+            return {"error": "Esta transação não possui recorrência ativa.", "code": 400}
+
+        grupo_id = alvo.id_grupo_recorrencia
+
+        # 2. Deleta o futuro (Pendentes)
+        # Apagamos apenas o que não foi pago ainda.
+        deletadas = db.query(Transacao).filter(
+            Transacao.id_grupo_recorrencia == grupo_id,
+            Transacao.user_id == user_id,
+            Transacao.status == 'Pendente'
+        ).delete()
+
+        # 3. Encerra o passado (Efetivadas)
+        # Mantém o registro (não muda para pontual), mas sinaliza o fim.
+        atualizadas = db.query(Transacao).filter(
+            Transacao.id_grupo_recorrencia == grupo_id,
+            Transacao.user_id == user_id,
+            Transacao.status == 'Efetivada'
+        ).update({
+            "recorrencia_encerrada": True
+        })
+
+        db.commit()
+        return {
+            "status": "success", 
+            "message": "Série encerrada. Histórico pago foi mantido.",
+            "futuras_removidas": deletadas
+        }
 
     # ----------------------------------------------------------------------------------
     # LÓGICA DE CRIAÇÃO (FACTORY)
@@ -296,7 +352,14 @@ class FinancasService:
         # CASO 1: Transação Simples
         if dados.tipo_recorrencia == 'pontual':
             nova = Transacao(**dados.model_dump(), user_id=user_id)
-            if not dados.status: nova.status = 'Pendente'
+            
+            # [CORREÇÃO - 2025] 
+            # Como o Schema define status='Pendente' como default, 'dados.status'
+            # sempre vem preenchido. O check 'if not dados.status' falhava.
+            # Lógica: Se é pontual E (está vazio OU é Pendente), força EFETIVADA.
+            if not dados.status or dados.status == 'Pendente': 
+                nova.status = 'Efetivada'
+            
             db.add(nova)
             db.commit()
             db.refresh(nova)
@@ -351,6 +414,8 @@ class FinancasService:
             grupo_id = uuid.uuid4().hex
             nova = Transacao(**dados.model_dump(), user_id=user_id)
             nova.id_grupo_recorrencia = grupo_id
+            # Recorrentes continuam nascendo Pendentes por padrão (contas futuras)
+            if not dados.status: nova.status = 'Pendente'
             db.add(nova)
             db.commit()
             return nova

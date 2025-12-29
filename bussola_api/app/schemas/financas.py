@@ -88,6 +88,10 @@ class TransacaoBase(BaseModel):
     parcela_atual: Optional[int] = None
     total_parcelas: Optional[int] = None
     frequencia: Optional[Frequencia] = None
+    
+    # [NOVO] Flag para indicar se a série foi encerrada manualmente pelo usuário
+    # Isso permite que o front mostre "Encerrado" mas mantenha o histórico.
+    recorrencia_encerrada: Optional[bool] = False
 
 class TransacaoCreate(TransacaoBase):
     pass
@@ -98,6 +102,8 @@ class TransacaoUpdate(BaseModel):
     data: Optional[datetime] = None
     categoria_id: Optional[int] = None
     status: Optional[StatusTransacao] = None
+    # Permite atualizar a flag via endpoint se necessário, embora a função específica faça isso
+    recorrencia_encerrada: Optional[bool] = None
 
 class TransacaoResponse(TransacaoBase):
     id: int

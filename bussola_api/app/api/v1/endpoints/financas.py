@@ -112,11 +112,12 @@ def delete_transacao(
     current_user = Depends(deps.get_current_user)
 ):
     """
-    Exclui uma transação.
+    Exclui uma transação COMPLETAMENTE.
     
     Regra de Recorrência:
         Se a transação faz parte de um grupo (parcelada/recorrente), TODAS as transações
         desse grupo são excluídas em cascata para manter a integridade contábil.
+        OBS: Para apenas "Encerrar" mantendo histórico, use o endpoint /encerrar-recorrencia.
     """
     transacao = db.query(Transacao).filter(Transacao.id == id, Transacao.user_id == current_user.id).first()
     if not transacao:
@@ -134,6 +135,28 @@ def delete_transacao(
     
     db.commit()
     return {"status": "success"}
+
+@router.patch("/transacoes/{id}/encerrar-recorrencia")
+def stop_recurrence(
+    id: int,
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_user)
+):
+    """
+    [LÓGICA REFINADA - 2025]
+    Encerra uma série financeira (Recorrente ou Parcelada).
+    
+    Comportamento:
+    1. Itens PENDENTES (Futuro): São excluídos (limpa a agenda).
+    2. Itens EFETIVADOS (Passado): São mantidos e marcados com `recorrencia_encerrada=True`.
+       Isso permite visualizá-los no histórico como "Encerrados" sem gerar novas cobranças.
+    """
+    resultado = financas_service.encerrar_recorrencia(db, id, current_user.id)
+    
+    if "error" in resultado:
+        raise HTTPException(status_code=resultado["code"], detail=resultado["error"])
+    
+    return resultado
 
 # --------------------------------------------------------------------------------------
 # CATEGORIAS (CRUD)

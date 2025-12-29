@@ -225,6 +225,12 @@ export const deleteCategoria = async (id: number) => {
     return response.data;
 };
 
+export const stopRecorrencia = async (id: number) => {
+    // Chama a rota PATCH criada no backend para encerrar assinatura/parcelamento
+    const response = await api.patch(`/financas/transacoes/${id}/encerrar-recorrencia`);
+    return response.data;
+};
+
 // ==========================================================
 // 5. MÓDULO PANORAMA (B.I. / Métricas)
 // ==========================================================

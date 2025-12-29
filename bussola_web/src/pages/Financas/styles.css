@@ -309,6 +309,13 @@
     border-left: 4px solid var(--cor-borda);
 }
 
+/* --- ESTILO PARA SÉRIE ENCERRADA (NOVO) --- */
+.financas-scope .transacao-card.card-encerrado {
+    border-left-color: var(--cor-texto-secundario) !important; /* Borda Cinza */
+    background-color: rgba(120, 120, 120, 0.05); /* Fundo levemente escurecido */
+    opacity: 0.85; /* Leve transparência para indicar histórico */
+}
+
 .financas-scope .transacao-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -363,6 +370,7 @@
     gap: 0.4rem;
 }
 
+/* --- BADGES (NOVO INCLUÍDO) --- */
 .financas-scope .badge-parcela,
 .financas-scope .badge-recorrente {
     background: var(--cor-fundo);
@@ -371,6 +379,21 @@
     font-size: 0.75rem;
     border: 1px solid var(--cor-borda);
     color: var(--cor-texto-secundario);
+}
+
+/* Badge específica para Encerrado */
+.financas-scope .badge-encerrado {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444; /* Vermelho suave */
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .financas-scope .transacao-valor {
@@ -387,6 +410,11 @@
 
 .financas-scope .transacao-valor.receita {
     color: var(--cor-verde-sucesso);
+}
+
+/* Se estiver encerrado, o valor fica mais apagado */
+.financas-scope .card-encerrado .transacao-valor {
+    filter: grayscale(0.6);
 }
 
 .financas-scope .transacao-footer {
@@ -491,6 +519,15 @@
     background-color: var(--cor-vermelho-delete) !important;
     border-color: var(--cor-vermelho-delete) !important;
     color: #fff !important;
+}
+
+/* Se desabilitado (ex: encerrado) */
+.financas-scope .btn-action-icon:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: transparent !important;
+    border-color: var(--cor-borda) !important;
+    color: var(--cor-texto-secundario) !important;
 }
 
 /* ============================================= */

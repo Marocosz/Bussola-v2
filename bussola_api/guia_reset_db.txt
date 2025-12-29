@@ -1,5 +1,5 @@
 # 1. Apague o banco atual (se existir) para começar limpo
-rm bussola.db
+rm data/bussola.db
 
 # 2. Apague versões antigas de migração para evitar conflitos
 rm alembic/versions/*.py
