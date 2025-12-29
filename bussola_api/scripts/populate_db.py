@@ -168,7 +168,6 @@ def create_registros(user_id):
     now = datetime.now()
 
     # Cenário A: Task Breaker (Tarefas Vagas e Sem Verbo)
-    # Títulos curtos, sem descrição, sem subtarefas.
     vagas = ["Projeto", "Reunião", "TCC", "Viagem", "Reforma", "Festa", "Mudar de Casa"]
     for v in vagas:
         t = create_instance(Tarefa, {
@@ -197,7 +196,6 @@ def create_registros(user_id):
         db.add(t)
 
     # Cenário C: Time Strategist (Pânico / Dia Cheio)
-    # Muitas tarefas para "Hoje" ou "Amanhã"
     for i in range(8):
         t = create_instance(Tarefa, {
             "titulo": f"Tarefa do Dia Cheio {i+1}",
@@ -211,7 +209,6 @@ def create_registros(user_id):
         db.add(t)
 
     # Cenário D: Priority Alchemist (Tarefas Estagnadas/Zombie)
-    # Criadas há muito tempo (>15 dias), Alta Prioridade, ainda Pendentes.
     estagnadas = ["Ler Livro Clean Code", "Arrumar Garagem", "Fazer Backup Fotos", "Atualizar Currículo"]
     for e in estagnadas:
         t = create_instance(Tarefa, {
@@ -226,9 +223,6 @@ def create_registros(user_id):
         db.add(t)
 
     # Cenário E: Flow Architect (Vácuo / Semana Livre)
-    # Não criamos tarefas para a data (Hoje + 10 dias) até (Hoje + 15 dias)
-    # Para garantir o vácuo, criamos tarefas ANTES e DEPOIS desse período.
-    
     # Filler Antes (Hoje + 3 até Hoje + 8)
     for _ in range(5):
         dt = now + timedelta(days=random.randint(3, 8))
@@ -259,23 +253,32 @@ def create_registros(user_id):
 def create_financas(user_id):
     """
     Popula o módulo Financeiro.
-    Cria cenários complexos: Pontuais, Parcelados e Assinaturas (Recorrentes).
+    Cria cenários complexos com cobertura completa de status:
+    - Pontuais (Pagas e Pendentes)
+    - Parceladas Ativas (Passado e Futuro)
+    - Parceladas Finalizadas (Tudo pago)
+    - Recorrentes Ativas (Normal)
+    - Recorrentes Canceladas (Histórico Zumbi - flag encerrada)
     """
     print("💰 Populando Finanças (Transações Complexas)...")
     
-    # 1. Categorias Padrão
+    # 1. Categorias Padrão (Com Ícones e Cores reais da UI)
     cats_config = [
-        ("Salário", "receita", "fa-money-bill", "#10b981"),
-        ("Freelance", "receita", "fa-laptop", "#3b82f6"),
-        ("Investimentos", "receita", "fa-chart-line", "#8b5cf6"),
-        ("Alimentação", "despesa", "fa-utensils", "#ef4444"),
-        ("Moradia", "despesa", "fa-house", "#f97316"),
-        ("Transporte", "despesa", "fa-car", "#eab308"),
-        ("Lazer", "despesa", "fa-gamepad", "#8b5cf6"),
-        ("Assinaturas", "despesa", "fa-credit-card", "#6366f1"),
-        ("Saúde", "despesa", "fa-heart-pulse", "#ec4899"),
-        ("Eletrônicos", "despesa", "fa-plug", "#6366f1"),
-        ("Educação", "despesa", "fa-graduation-cap", "#14b8a6"),
+        # Receitas
+        ("Salário", "receita", "fa-solid fa-money-bill", "#10b981"),
+        ("Freelance", "receita", "fa-solid fa-laptop", "#3b82f6"),
+        ("Investimentos", "receita", "fa-solid fa-chart-line", "#8b5cf6"),
+        
+        # Despesas
+        ("Alimentação", "despesa", "fa-solid fa-utensils", "#ef4444"),
+        ("Mercado", "despesa", "fa-solid fa-cart-shopping", "#f97316"),
+        ("Moradia", "despesa", "fa-solid fa-house", "#f97316"),
+        ("Transporte", "despesa", "fa-solid fa-car", "#eab308"),
+        ("Lazer", "despesa", "fa-solid fa-gamepad", "#8b5cf6"),
+        ("Assinaturas", "despesa", "fa-solid fa-credit-card", "#6366f1"),
+        ("Saúde", "despesa", "fa-solid fa-pills", "#ec4899"),
+        ("Eletrônicos", "despesa", "fa-solid fa-plug", "#6366f1"),
+        ("Educação", "despesa", "fa-solid fa-graduation-cap", "#14b8a6"),
     ]
     
     cats_objs = {}
@@ -294,16 +297,24 @@ def create_financas(user_id):
     cats_rec = [c for c in cats_objs.values() if c.tipo == 'receita']
     cats_desp = [c for c in cats_objs.values() if c.tipo == 'despesa']
     
-    # 2. Transações PONTUAIS (150 itens espalhados em 8 meses)
+    # 2. Transações PONTUAIS (Mistura de Efetivadas e Pendentes)
     print("   ... Gerando transações pontuais")
-    for _ in range(150):
-        is_rec = random.random() < 0.3 # 30% Receita, 70% Despesa
+    for _ in range(120):
+        is_rec = random.random() < 0.25 # 25% Receita
         cat = random.choice(cats_rec) if is_rec else random.choice(cats_desp)
         
-        dt = fake.date_time_between(start_date='-6M', end_date='+2M')
-        # Lógica temporal: Se data < hoje -> Efetivada, senão -> Pendente
-        status = "Efetivada" if dt < datetime.now() else "Pendente"
-        valor = random.uniform(200, 2000) if is_rec else random.uniform(15, 500)
+        # Datas de -4 meses até +1 mês
+        dt = fake.date_time_between(start_date='-4M', end_date='+1M')
+        
+        # Regra de status: Passado = Efetivada, Futuro = Pendente
+        # Mas adicionamos 10% de chance de algo no passado estar "Esquecido/Pendente"
+        status = "Efetivada"
+        if dt > datetime.now():
+            status = "Pendente"
+        elif random.random() < 0.1: 
+            status = "Pendente" # Esqueceu de pagar
+
+        valor = random.uniform(200, 5000) if is_rec else random.uniform(15, 600)
         
         trans = create_instance(Transacao, {
             "descricao": f"{cat.nome} - {fake.word().capitalize()}",
@@ -311,32 +322,30 @@ def create_financas(user_id):
             "data": dt,
             "categoria_id": cat.id,
             "tipo_recorrencia": "pontual",
-            "status": status
+            "status": status,
+            "recorrencia_encerrada": False
         }, user_id)
         db.add(trans)
 
-    # 3. Transações RECORRENTES (Gera histórico de 12 meses)
-    # Simula o comportamento do worker de projeção
-    print("   ... Gerando assinaturas e fixos")
-    recorrencias = [
+    # 3. Transações RECORRENTES (Assinaturas)
+    
+    # A) Assinaturas ATIVAS (Gera histórico passado e futuro próximo)
+    print("   ... Gerando assinaturas ativas")
+    recorrencias_ativas = [
         ("Netflix Premium", "Assinaturas", 55.90, "despesa"),
-        ("Spotify Family", "Assinaturas", 34.90, "despesa"),
         ("Academia Smart", "Saúde", 129.90, "despesa"),
-        ("Aluguel Apt", "Moradia", 2200.00, "despesa"),
-        ("Internet Fibra", "Moradia", 149.90, "despesa"),
-        ("Salário Mensal", "Salário", 5500.00, "receita"),
-        ("Rendimentos CDI", "Investimentos", 120.50, "receita")
+        ("Aluguel", "Moradia", 2200.00, "despesa"),
+        ("Salário Mensal", "Salário", 6500.00, "receita")
     ]
 
-    for desc_base, cat_nome, valor, tipo in recorrencias:
+    for desc_base, cat_nome, valor, tipo in recorrencias_ativas:
         grupo_id = uuid.uuid4().hex
-        cat = cats_objs.get(cat_nome)
-        if not cat: continue 
-
-        start_date = fake.date_time_between(start_date='-8M', end_date='-7M')
+        cat = cats_objs.get(cat_nome) or cats_objs.get("Outros")
         
-        # Gera 12 meses consecutivos
-        for i in range(12):
+        # Começou há 6 meses, vai até +2 meses (worker projection simulada)
+        start_date = fake.date_time_between(start_date='-6M', end_date='-5M')
+        
+        for i in range(9): # 6 passados + 3 futuros
             data_venc = start_date + relativedelta(months=i)
             status = "Efetivada" if data_venc < datetime.now() else "Pendente"
             
@@ -348,37 +357,71 @@ def create_financas(user_id):
                 "tipo_recorrencia": "recorrente",
                 "frequencia": "mensal",
                 "id_grupo_recorrencia": grupo_id,
-                "status": status
+                "status": status,
+                "recorrencia_encerrada": False
             }, user_id)
             db.add(trans)
 
-    # 4. Transações PARCELADAS (Compras grandes divididas)
-    print("   ... Gerando compras parceladas")
-    parcelados = [
-        ("Macbook Air", "Eletrônicos", 8500.00, 10),
-        ("Curso Python Pro", "Educação", 1200.00, 4),
-        ("Revisão Carro", "Transporte", 1800.00, 3),
+    # B) Assinaturas CANCELADAS (Cenário Zumbi)
+    # Assinou por 4 meses e cancelou. Só deve ter histórico passado com flag True.
+    print("   ... Gerando assinaturas canceladas (Zumbi)")
+    recorrencias_canceladas = [
+        ("Curso Inglês (Cancelado)", "Educação", 250.00),
+        ("Spotify (Cancelado)", "Assinaturas", 29.90)
     ]
 
-    for desc_base, cat_nome, valor_total, qtd_parcelas in parcelados:
+    for desc_base, cat_nome, valor in recorrencias_canceladas:
         grupo_id = uuid.uuid4().hex
-        cat = cats_objs.get(cat_nome) or cats_objs.get("Lazer")
+        cat = cats_objs.get(cat_nome)
         
+        # Começou há 8 meses, durou 4 meses
+        start_date = fake.date_time_between(start_date='-8M', end_date='-7M')
+        
+        for i in range(4):
+            data_venc = start_date + relativedelta(months=i)
+            # Todas no passado, efetivadas, mas MARCADAS como encerradas
+            trans = create_instance(Transacao, {
+                "descricao": desc_base,
+                "valor": valor,
+                "data": data_venc,
+                "categoria_id": cat.id,
+                "tipo_recorrencia": "recorrente",
+                "frequencia": "mensal",
+                "id_grupo_recorrencia": grupo_id,
+                "status": "Efetivada",
+                "recorrencia_encerrada": True # <--- AQUI ESTÁ O TRUQUE
+            }, user_id)
+            db.add(trans)
+
+    # 4. Transações PARCELADAS
+    
+    # A) Parceladas ATIVAS (Meio do caminho)
+    print("   ... Gerando parcelamentos ativos")
+    parcelados_ativos = [
+        ("Macbook Air", "Eletrônicos", 8500.00, 10), # Ainda pagando
+        ("Viagem Férias", "Lazer", 4200.00, 12),     # Ainda pagando
+    ]
+
+    for desc_base, cat_nome, valor_total, qtd_parcelas in parcelados_ativos:
+        grupo_id = uuid.uuid4().hex
+        cat = cats_objs.get(cat_nome)
+        
+        # Lógica de Centavos (Mesma do Service)
         valor_parcela = round(valor_total / qtd_parcelas, 2)
-        start_date = fake.date_time_between(start_date='-5M', end_date='-2M')
+        diferenca = round(valor_total - (valor_parcela * qtd_parcelas), 2)
+        
+        # Começou há uns 3-4 meses (então tem pagas e pendentes)
+        start_date = datetime.now() - relativedelta(months=3)
 
         for i in range(1, qtd_parcelas + 1):
             data_venc = start_date + relativedelta(months=i-1)
             status = "Efetivada" if data_venc < datetime.now() else "Pendente"
             
-            # Ajuste de centavos na primeira parcela
             valor_final = valor_parcela
-            if i == 1:
-                diff = round(valor_total - (valor_parcela * qtd_parcelas), 2)
-                valor_final += diff
+            if i == 1: valor_final += diferenca # Ajuste na primeira
 
             trans = create_instance(Transacao, {
-                "descricao": f"{desc_base} ({i}/{qtd_parcelas})",
+                "descricao": f"{desc_base}",
                 "valor": valor_final,
                 "data": data_venc,
                 "categoria_id": cat.id,
@@ -386,7 +429,48 @@ def create_financas(user_id):
                 "parcela_atual": i,
                 "total_parcelas": qtd_parcelas,
                 "id_grupo_recorrencia": grupo_id,
-                "status": status
+                "status": status,
+                "valor_total_parcelamento": valor_total, # Importante para UX
+                "recorrencia_encerrada": False
+            }, user_id)
+            db.add(trans)
+
+    # B) Parceladas FINALIZADAS (Histórico completo pago)
+    print("   ... Gerando parcelamentos finalizados")
+    parcelados_fim = [
+        ("Celular Antigo", "Eletrônicos", 2500.00, 5),
+        ("IPVA 2024", "Transporte", 1500.00, 3)
+    ]
+
+    for desc_base, cat_nome, valor_total, qtd_parcelas in parcelados_fim:
+        grupo_id = uuid.uuid4().hex
+        cat = cats_objs.get(cat_nome)
+        
+        valor_parcela = round(valor_total / qtd_parcelas, 2)
+        diferenca = round(valor_total - (valor_parcela * qtd_parcelas), 2)
+        
+        # Terminou há 2 meses
+        end_date = datetime.now() - relativedelta(months=2)
+        start_date = end_date - relativedelta(months=qtd_parcelas)
+
+        for i in range(1, qtd_parcelas + 1):
+            data_venc = start_date + relativedelta(months=i-1)
+            
+            valor_final = valor_parcela
+            if i == 1: valor_final += diferenca
+
+            trans = create_instance(Transacao, {
+                "descricao": f"{desc_base}",
+                "valor": valor_final,
+                "data": data_venc,
+                "categoria_id": cat.id,
+                "tipo_recorrencia": "parcelada",
+                "parcela_atual": i,
+                "total_parcelas": qtd_parcelas,
+                "id_grupo_recorrencia": grupo_id,
+                "status": "Efetivada", # Tudo pago
+                "valor_total_parcelamento": valor_total,
+                "recorrencia_encerrada": False # Não foi cancelada, foi concluída
             }, user_id)
             db.add(trans)
         

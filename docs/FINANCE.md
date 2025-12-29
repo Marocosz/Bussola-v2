@@ -104,29 +104,41 @@ db.delete(cat)
 
 ---
 
-### 4. UX e Comportamento das Features
+## 🎨 UX e Comportamento das Features
 
-Para garantir consistência contábil, o sistema adota comportamentos específicos ao Editar ou Excluir transações complexas.
+Para garantir consistência contábil e uma boa experiência, o sistema adota comportamentos específicos ao interagir com transações complexas.
 
-#### A. Encerrando Assinaturas e Parcelamentos
-Quando o usuário clica em "Excluir" numa transação recorrente ou parcelada, o sistema entende que ele deseja **Interromper a série** (Stop), e não apagar o passado.
+### A. Encerrando Assinaturas e Parcelamentos
+Quando o usuário clica em **Excluir** numa transação recorrente ou parcelada, o sistema entende que ele deseja **Interromper a série (Stop)**, e não apagar o passado.
 
-1.  **Futuro (Pendentes):** Todas as transações futuras que ainda não foram pagas são **excluídas**. (Limpa a agenda).
-2.  **Passado (Efetivadas/Pendentes antigas):** Todas as transações passadas são mantidas, mas marcadas com uma flag `recorrencia_encerrada`.
-3.  **Segurança ("Zumbi Logic"):** A flag de encerramento é aplicada em **todo** o histórico restante do grupo. Isso impede que o "Worker de Projeção" encontre uma transação antiga "viva" e tente recriar a assinatura cancelada acidentalmente.
+1.  **Limpeza do Futuro:** Todas as transações futuras (Status: *Pendente*) são excluídas imediatamente para limpar a agenda.
+2.  **Preservação do Passado:** As transações já realizadas (*Efetivadas*) ou vencidas são mantidas no banco.
+3.  **Segurança ("Zumbi Logic"):** Uma flag `recorrencia_encerrada` é aplicada em **todo** o histórico restante do grupo. Isso impede que o *Worker de Projeção* encontre uma transação antiga "viva" e tente recriar a assinatura cancelada acidentalmente.
 
-*Visualmente:* Os cards antigos ficam com a borda cinza, indicando que pertencem a uma série inativa.
+> [!CAUTION]
+> **Feedback Visual:** Os cards de séries encerradas permanecem na lista para histórico, mas recebem uma **borda cinza** e uma etiqueta "Encerrada", indicando que não geram mais cobranças.
 
-#### B. Editando Valores (Cascata vs Unidade)
-O sistema é inteligente ao diferenciar "Contratos Fixos" de "Assinaturas Variáveis":
+### B. Editando Valores (Cascata vs Unidade)
+O sistema diferencia "Contratos Fixos" de "Assinaturas Variáveis" na hora da edição:
 
-* **Recorrentes (Ex: Netflix):** Se você editar o valor, descrição ou categoria da mensalidade atual, o sistema pergunta se você quer aplicar a mudança **para todas as futuras**. Isso é útil para reajustes de preço de assinatura.
-* **Parceladas (Ex: TV em 10x):** Se você editar uma parcela específica, **apenas ela muda**. O sistema entende que parcelamentos são contratos de valor fixo. Se você adiantou uma parcela com desconto, isso não deve alterar o valor das parcelas seguintes.
-* **Pontuais:** A edição afeta apenas o registro selecionado.
+* 🔄 **Recorrentes (Ex: Netflix):** Se você editar o valor da mensalidade atual, a mudança é propagada **para todas as futuras**. Isso facilita reajustes de planos.
+* 🔒 **Parceladas (Ex: TV em 10x):** A edição afeta **apenas a parcela atual**. O sistema entende que o parcelamento é um contrato fixo; se você adiantou uma parcela com desconto, isso não deve alterar o valor das seguintes.
+* 🎯 **Pontuais:** A edição é isolada e afeta apenas o registro selecionado.
 
-#### C. Proteção de Dados
-* **Imutabilidade de Tipo:** Não é possível transformar uma transação "Recorrente" em "Pontual" via edição. Isso quebraria a lógica de agrupamento.
-* **Fuso Horário:** O sistema exibe as datas respeitando o fuso horário local do navegador do usuário, garantindo que uma conta que vence dia 05 não apareça como dia 04 devido a diferenças de UTC.
+### C. Proteção de Dados
+* **Imutabilidade de Tipo:** Por segurança, não é possível transformar uma transação "Recorrente" em "Pontual" via edição. Isso quebraria a lógica de agrupamento e projeção.
+* **Fuso Horário Local:** O sistema armazena datas em UTC, mas exibe respeitando o fuso horário do navegador. Isso garante que uma conta que vence dia 05 não apareça como dia 04 devido a diferenças de horas.
+
+---
+
+## 📸 Prints do Design
+
+Abaixo, uma visualização da interface do módulo financeiro em ação.
+
+<div align="center">
+  <img src="docs/images/finance_1.png" alt="Dashboard Geral de Finanças" width="48%">
+  <img src="docs/images/finance_2.png" alt="Detalhe de Transações e Categorias" width="48%">
+</div>
 
 ---
 

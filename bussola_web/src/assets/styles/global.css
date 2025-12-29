@@ -568,3 +568,35 @@ a {
     height: 100%;
     object-fit: cover;
 }
+
+
+/* ======================================================= */
+/* RESET GLOBAL DE AUTOFILL (Remove fundo amarelo/azul)    */
+/* ======================================================= */
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+    /* TRUQUE 1: Box Shadow Interno
+       Cria uma sombra interna maciça da cor do seu fundo para tampar o amarelo.
+       Troque 'var(--cor-fundo)' pela cor de fundo exata dos seus inputs.
+    */
+    -webkit-box-shadow: 0 0 0px 1000px var(--cor-fundo) inset !important;
+
+    /* TRUQUE 2: Cor do Texto
+       O navegador costuma forçar o texto para preto. Isso força a sua cor.
+    */
+    -webkit-text-fill-color: var(--cor-texto-principal) !important;
+
+    /* TRUQUE 3: Transição Infinita (O melhor para fundos transparentes)
+       Diz ao navegador para demorar 99999 segundos para aplicar a cor amarela.
+       Isso mantém o fundo original visível.
+    */
+    transition: background-color 99999s ease-in-out 0s;
+}
