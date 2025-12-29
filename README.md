@@ -36,17 +36,44 @@ O **Bússola V2** atua como um sistema operacional pessoal, dividido em núcleos
 # Índice
 
 - [Índice](#índice)
-- [Tecnologias Usadas](#tecnologias-usadas)
+  - [🗺️ Roadmap](#️-roadmap)
+    - [✅ Concluído (Fase 1: Fundação)](#-concluído-fase-1-fundação)
+    - [🚧 Em Desenvolvimento (Fase 2: Inteligência \& Infra)](#-em-desenvolvimento-fase-2-inteligência--infra)
+    - [🔭 Futuro (Fase 3: Expansão)](#-futuro-fase-3-expansão)
+- [🛠️ Tecnologias Usadas](#️-tecnologias-usadas)
   - [🎨 Frontend (SPA)](#-frontend-spa)
   - [⚙️ Backend \& Dados](#️-backend--dados)
   - [🤖 Inteligência Artificial (Agentic Workflow)](#-inteligência-artificial-agentic-workflow)
 - [📂Estrutura](#estrutura)
-- [Diagrama de Entidade-Relacionamento (ERD)](#diagrama-de-entidade-relacionamento-erd)
+- [📐 Diagrama de Entidade-Relacionamento (ERD)](#-diagrama-de-entidade-relacionamento-erd)
 - [📚 Documentação da API](#-documentação-da-api)
 
 ---
 
-# Tecnologias Usadas
+## 🗺️ Roadmap
+
+O desenvolvimento do Bússola V2 é contínuo, evoluindo de um sistema de gestão pessoal para um ecossistema inteligente. Abaixo, o status atual e os planos futuros:
+
+### ✅ Concluído (Fase 1: Fundação)
+- [x] **Core da Arquitetura:** Estrutura Monorepo (FastAPI + React) e configuração de ambiente.
+- [x] **Segurança:** Autenticação JWT, Hashing de senhas e proteção de rotas (CORS/Middlewares).
+- [x] **Camada de Dados:** Modelagem relacional complexa (SQLAlchemy) e Migrações (Alembic).
+- [x] **Módulos Essenciais:** Implementação funcional de *Finanças* (Fluxo de Caixa), *Ritmo* (Treino/Dieta) e *Registros* (Tarefas).
+- [x] **Documentação:** Integração automática com Scalar e Swagger UI.
+
+### 🚧 Em Desenvolvimento (Fase 2: Inteligência & Infra)
+- [ ] **Dockerização:** Containerização completa da aplicação (Backend, Frontend, Redis, Banco) via Docker Compose para fácil deploy.
+- [ ] **Agentes de IA Avançados:** Refinamento dos agentes *Nutri* e *Task Breaker* utilizando LangGraph para fluxos de decisão complexos.
+- [ ] **Memória de Longo Prazo (RAG):** Implementação de Vector Database para que a IA "lembre" de conversas e dados passados do usuário.
+
+### 🔭 Futuro (Fase 3: Expansão)
+- [ ] **Mobile Experience:** Adaptação da interface para PWA (Progressive Web App) ou versão nativa (React Native).
+- [ ] **Interface de Voz:** Integração com Whisper para registrar gastos e tarefas via comando de voz.
+- [ ] **Gamificação:** Sistema de XP e níveis baseado no cumprimento de metas financeiras e de saúde.
+
+---
+
+# 🛠️ Tecnologias Usadas
 
 O projeto foi construído sobre uma arquitetura moderna, utilizando bibliotecas de ponta para garantir performance, reatividade e inteligência.
 
@@ -137,7 +164,9 @@ Bussola-v2/
 └── 📁 docs/                  # Documentação e Imagens
 ```
 
-# Diagrama de Entidade-Relacionamento (ERD)
+---
+
+# 📐 Diagrama de Entidade-Relacionamento (ERD)
 
 > O diagrama abaixo ilustra a estrutura do banco de dados, evidenciando o modelo *User-Centric*, onde todas as funcionalidades (Finanças, Saúde, Produtividade) orbitam em torno da entidade Usuário para garantir a privacidade e isolamento dos dados (*Multi-tenancy*).
 
@@ -337,6 +366,8 @@ erDiagram
     RitmoDietaConfig ||--o{ RitmoRefeicao : "agrupa"
     RitmoRefeicao ||--o{ RitmoAlimentoItem : "lista"
 ```
+
+---
 
 # 📚 Documentação da API
 
