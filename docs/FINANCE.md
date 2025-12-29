@@ -1,6 +1,6 @@
-﻿# 💰 Módulo Finanças
+﻿# 💰 Módulo Provisões
 
-O módulo **Finanças** é o motor contábil do **Bússola V2**. Ele não apenas registra gastos, mas projeta o futuro financeiro do usuário através de um sistema inteligente de recorrências e parcelamentos.
+O módulo **Provisões** é o motor contábil do **Bússola V2**. Ele não apenas registra gastos, mas projeta o futuro financeiro do usuário através de um sistema inteligente de recorrências e parcelamentos.
 
 > [!TIP]
 > **Objetivo:** Oferecer controle total sobre o Fluxo de Caixa, permitindo visão de passado (histórico), presente (saldo atual) e futuro (contas a pagar/receber geradas automaticamente).
@@ -136,7 +136,7 @@ O sistema diferencia "Contratos Fixos" de "Assinaturas Variáveis" na hora da ed
 Abaixo, uma visualização da interface do módulo financeiro em ação.
 
 <div align="center">
-  <img src="images/finance_1.png" alt="Dashboard Geral de Finanças" width="48%">
+  <img src="images/finance_1.png" alt="Dashboard Geral de Provisões" width="48%">
   <img src="images/finance_2.png" alt="Detalhe de Transações e Categorias" width="48%">
 </div>
 
