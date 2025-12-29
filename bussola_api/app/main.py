@@ -36,6 +36,7 @@ load_dotenv()
 # -------------------------------------
 
 from fastapi import FastAPI
+from fastapi.responses import HTMLResponse # Necessário para servir o HTML do Scalar
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
@@ -59,7 +60,11 @@ base.Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title=settings.PROJECT_NAME,
     # Define a URL onde o JSON do OpenAPI (Swagger) será servido
-    openapi_url=f"{settings.API_V1_STR}/openapi.json"
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    # [DOCUMENTAÇÃO] Desativamos as interfaces padrões (Swagger UI e ReDoc)
+    # para permitir a injeção manual da interface do Scalar na rota /docs.
+    docs_url=None,
+    redoc_url=None
 )
 
 # --------------------------------------------------------------------------------------
@@ -80,6 +85,43 @@ if settings.BACKEND_CORS_ORIGINS:
         # Permite todos os headers
         allow_headers=["*"],
     )
+
+# --------------------------------------------------------------------------------------
+# DOCUMENTAÇÃO DA API (SCALAR)
+# --------------------------------------------------------------------------------------
+# Substitui o Swagger UI padrão por uma interface mais moderna (Scalar).
+# Esta rota serve um HTML estático que carrega o script do Scalar via CDN
+# e aponta para o arquivo openapi.json gerado automaticamente pelo FastAPI.
+@app.get("/docs", include_in_schema=False)
+async def scalar_html():
+    """
+    Renderiza a documentação da API utilizando a interface Scalar.
+    """
+    openapi_url = f"{settings.API_V1_STR}/openapi.json"
+    
+    return HTMLResponse(f"""
+        <!doctype html>
+        <html>
+          <head>
+            <title>Bússola V2 - API Reference</title>
+            <meta charset="utf-8" />
+            <meta
+              name="viewport"
+              content="width=device-width, initial-scale=1" />
+            <style>
+              body {{
+                margin: 0;
+              }}
+            </style>
+          </head>
+          <body>
+            <script
+              id="api-reference"
+              data-url="{openapi_url}"></script>
+            <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+          </body>
+        </html>
+    """)
 
 # --------------------------------------------------------------------------------------
 # REGISTRO DE ROTAS
