@@ -5,20 +5,20 @@
   <br>
   <br>
 
-  <img src="[https://img.shields.io/github/repo-size/Marocosz/bussola-v2?style=for-the-badge](https://img.shields.io/github/repo-size/Marocosz/bussola-v2?style=for-the-badge)" alt="Repo Size">
-  <img src="[https://img.shields.io/github/languages/count/Marocosz/bussola-v2?style=for-the-badge](https://img.shields.io/github/languages/count/Marocosz/bussola-v2?style=for-the-badge)" alt="Language Count">
-  <img src="[https://img.shields.io/badge/license-AGPL%20v3-blue?style=for-the-badge](https://img.shields.io/badge/license-AGPL%20v3-blue?style=for-the-badge)" alt="License">
+  <img src="https://img.shields.io/github/repo-size/Marocosz/bussola-v2?style=for-the-badge" alt="Repo Size">
+  <img src="https://img.shields.io/github/languages/count/Marocosz/bussola-v2?style=for-the-badge" alt="Language Count">
+  <img src="https://img.shields.io/badge/license-AGPL%20v3-blue?style=for-the-badge" alt="License">
 
   <br>
   
-  <img src="[https://img.shields.io/github/forks/Marocosz/bussola-v2?style=for-the-badge](https://img.shields.io/github/forks/Marocosz/bussola-v2?style=for-the-badge)" alt="Forks">
-  <img src="[https://img.shields.io/github/issues/Marocosz/bussola-v2?style=for-the-badge](https://img.shields.io/github/issues/Marocosz/bussola-v2?style=for-the-badge)" alt="Open Issues">
-  <img src="[https://img.shields.io/github/issues-pr/Marocosz/bussola-v2?style=for-the-badge](https://img.shields.io/github/issues-pr/Marocosz/bussola-v2?style=for-the-badge)" alt="Pull Requests">
+  <img src="https://img.shields.io/github/forks/Marocosz/bussola-v2?style=for-the-badge" alt="Forks">
+  <img src="https://img.shields.io/github/issues/Marocosz/bussola-v2?style=for-the-badge" alt="Open Issues">
+  <img src="https://img.shields.io/github/issues-pr/Marocosz/bussola-v2?style=for-the-badge" alt="Pull Requests">
   
   <br>
 
-  <img src="[https://img.shields.io/github/v/release/Marocosz/bussola-v2?style=for-the-badge](https://img.shields.io/github/v/release/Marocosz/bussola-v2?style=for-the-badge)" alt="Latest Release">
-  <img src="[https://img.shields.io/github/downloads/Marocosz/bussola-v2/total?style=for-the-badge](https://img.shields.io/github/downloads/Marocosz/bussola-v2/total?style=for-the-badge)" alt="Total Downloads">
+  <img src="https://img.shields.io/github/v/release/Marocosz/bussola-v2?style=for-the-badge" alt="Latest Release">
+  <img src="https://img.shields.io/github/downloads/Marocosz/bussola-v2/total?style=for-the-badge" alt="Total Downloads">
 
 </div>
 
@@ -26,7 +26,10 @@
 
 O **Bússola V2** é a resposta definitiva para a fragmentação da vida moderna. Projetado como um **Sistema Operacional Pessoal**, ele elimina a necessidade de alternar entre múltiplos aplicativos desconexos (planilhas financeiras, apps de treino, notas soltas e agendas), unificando todos os aspectos vitais da sua rotina em uma única plataforma inteligente e segura.
 
-Atuando como um hub central de dados, o sistema oferece uma visão de 360º sobre sua performance pessoal. Ele cruza informações de **Finanças** e **Saúde** para gerar *insights*, utiliza **Inteligência Artificial** para otimizar sua rotina e fornece um **Panorama** em tempo real com métricas decisivas para o seu dia a dia. Seja para gerenciar o fluxo de caixa, monitorar a dieta ou blindar senhas sensíveis, o Bússola V2 coloca você no controle total, transformando dados brutos em clareza mental e ação.
+> [!TIP]
+> Atuando como um hub central de dados, o sistema oferece uma visão de 360º sobre sua performance pessoal. Ele cruza informações de **Finanças** e **Saúde** para gerar *insights*, utiliza **Inteligência Artificial** para otimizar sua rotina e fornece um **Panorama** em tempo real com métricas decisivas para o seu dia a dia.
+
+Seja para gerenciar o fluxo de caixa, monitorar a dieta ou blindar senhas sensíveis, o Bússola V2 coloca você no controle total, transformando dados brutos em clareza mental e ação.
 
 # Índice
 
@@ -82,10 +85,10 @@ O projeto foi construído sobre uma **arquitetura moderna**, utilizando bibliote
 Interface reativa construída com **React 19**, focada em visualização de dados e edição de conteúdo.
 
 <div style="display: inline_block"><br>
-  <img align="center" alt="React" src="[https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)" />
-  <img align="center" alt="Vite" src="[https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)" />
-  <img align="center" alt="Chart.js" src="[https://img.shields.io/badge/Chart.js-F5788D?style=for-the-badge&logo=chart.js&logoColor=white](https://img.shields.io/badge/Chart.js-F5788D?style=for-the-badge&logo=chart.js&logoColor=white)" />
-  <img align="center" alt="Router" src="[https://img.shields.io/badge/React_Router-CA4245?style=for-the-badge&logo=react-router&logoColor=white](https://img.shields.io/badge/React_Router-CA4245?style=for-the-badge&logo=react-router&logoColor=white)" />
+  <img align="center" alt="React" src="https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" />
+  <img align="center" alt="Vite" src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" />
+  <img align="center" alt="Chart.js" src="https://img.shields.io/badge/Chart.js-F5788D?style=for-the-badge&logo=chart.js&logoColor=white" />
+  <img align="center" alt="Router" src="https://img.shields.io/badge/React_Router-CA4245?style=for-the-badge&logo=react-router&logoColor=white" />
 </div>
 
 <br>
@@ -99,11 +102,11 @@ Interface reativa construída com **React 19**, focada em visualização de dado
 API assíncrona robusta capaz de processamento pesado de dados e cache.
 
 <div style="display: inline_block"><br>
-  <img align="center" alt="Python" src="[https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)" />
-  <img align="center" alt="FastAPI" src="[https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)" />
-  <img align="center" alt="Pandas" src="[https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white](https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white)" />
-  <img align="center" alt="Redis" src="[https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)" />
-  <img align="center" alt="SQLAlchemy" src="[https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white](https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white)" />
+  <img align="center" alt="Python" src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" />
+  <img align="center" alt="FastAPI" src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" />
+  <img align="center" alt="Pandas" src="https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white" />
+  <img align="center" alt="Redis" src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" />
+  <img align="center" alt="SQLAlchemy" src="https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white" />
 </div>
 
 <br>
@@ -118,10 +121,10 @@ API assíncrona robusta capaz de processamento pesado de dados e cache.
 O diferencial do projeto: uma arquitetura de **múltiplos agentes orquestrados**.
 
 <div style="display: inline_block"><br>
-  <img align="center" alt="LangChain" src="[https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white](https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white)" />
-  <img align="center" alt="LangGraph" src="[https://img.shields.io/badge/LangGraph-FF9900?style=for-the-badge&logoColor=black](https://img.shields.io/badge/LangGraph-FF9900?style=for-the-badge&logoColor=black)" />
-  <img align="center" alt="Google Gemini" src="[https://img.shields.io/badge/Google_AI-4285F4?style=for-the-badge&logo=google&logoColor=white](https://img.shields.io/badge/Google_AI-4285F4?style=for-the-badge&logo=google&logoColor=white)" />
-  <img align="center" alt="Groq" src="[https://img.shields.io/badge/Groq-F55036?style=for-the-badge&logoColor=white](https://img.shields.io/badge/Groq-F55036?style=for-the-badge&logoColor=white)" />
+  <img align="center" alt="LangChain" src="https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white" />
+  <img align="center" alt="LangGraph" src="https://img.shields.io/badge/LangGraph-FF9900?style=for-the-badge&logoColor=black" />
+  <img align="center" alt="Google Gemini" src="https://img.shields.io/badge/Google_AI-4285F4?style=for-the-badge&logo=google&logoColor=white" />
+  <img align="center" alt="Groq" src="https://img.shields.io/badge/Groq-F55036?style=for-the-badge&logoColor=white" />
 </div>
 
 <br>
@@ -134,7 +137,8 @@ O diferencial do projeto: uma arquitetura de **múltiplos agentes orquestrados**
 
 # 📂Estrutura
 
->O projeto segue uma arquitetura de **Monorepo**, dividindo claramente as responsabilidades entre a API de dados (`Backend`) e a interface do usuário (`Frontend`).
+> [!NOTE]
+> O projeto segue uma arquitetura de **Monorepo**, dividindo claramente as responsabilidades entre a API de dados (`Backend`) e a interface do usuário (`Frontend`).
 
 ```text
 Bussola-v2/
@@ -187,6 +191,7 @@ O **Bússola V2** é composto por subsistemas independentes que conversam entre 
 
 # 📐 Diagrama de Entidade-Relacionamento (ERD)
 
+> [!IMPORTANT]
 > O diagrama abaixo ilustra a estrutura do banco de dados, evidenciando o modelo **User-Centric**, onde todas as funcionalidades (Finanças, Saúde, Produtividade) orbitam em torno da entidade `User` para garantir a privacidade e isolamento dos dados (`Multi-tenancy`).
 
 ```mermaid
@@ -398,6 +403,7 @@ O `backend` do **Bússola V2** gera automaticamente a documentação de todos os
 | **Swagger UI** (Clássico) | [`/docs`](http://localhost:8000/docs) | 🧪 **Testes & Debug:** Interface padrão do `FastAPI`. Ideal para executar requisições rápidas ("Try it out") e testar validações de erro. |
 | **ReDoc** | [`/redoc`](http://localhost:8000/redoc) | 📖 **Leitura Técnica:** Layout focado em leitura de documentação estática, excelente para entender a estrutura dos `schemas JSON` e modelos de dados. |
 
+> [!TIP]
 > **Nota:** Para importar a coleção no **Postman** ou **Insomnia**, utilize o `JSON` bruto disponível em:  
 > [`http://localhost:8000/api/v1/openapi.json`](http://localhost:8000/api/v1/openapi.json)
 
@@ -424,8 +430,8 @@ Se você encontrar algum *bug*, tiver alguma dúvida técnica sobre o código ou
 Adoraria ouvir seu *feedback* e me conectar com outros desenvolvedores e entusiastas de tecnologia. Você pode me encontrar nas seguintes plataformas:
 
 - **Desenvolvido por:** `Marcos Rodrigues`
-- 💼 **LinkedIn:** [`https://www.linkedin.com/in/marcosrodriguesptc`]([https://www.linkedin.com/in/marcosrodriguesptc/](https://www.linkedin.com/in/marcosrodriguesptc/))
-- 🐙 **GitHub:** [`https://github.com/Marocosz`]([https://github.com/Marocosz](https://github.com/Marocosz))
+- 💼 **LinkedIn:** [https://www.linkedin.com/in/marcosrodriguesptc](https://www.linkedin.com/in/marcosrodriguesptc/)
+- 🐙 **GitHub:** [https://github.com/Marocosz](https://github.com/Marocosz)
 - 📧 **Email:** `marcosrodriguesepro@gmail.com`
 
 Sinta-se à vontade para se conectar!
