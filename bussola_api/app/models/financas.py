@@ -21,7 +21,6 @@ COMUNICAÇÃO:
 =======================================================================================
 """
 
-# [MODIFICADO] Adicionado 'Boolean' aos imports
 from sqlalchemy import Column, Integer, String, Float, DateTime, Date, ForeignKey, func, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
@@ -47,14 +46,13 @@ class Categoria(Base):
     icone = Column(String(50), nullable=True)
     cor = Column(String(7), nullable=True, default="#ffffff")
 
-    # [SEGURANÇA] Garante que categorias são privadas por usuário.
+    # Garante que categorias são privadas por usuário.
     user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     user = relationship("User", back_populates="categorias_financas")
 
     # Relacionamentos
     transacoes = relationship('Transacao', back_populates='categoria', lazy=True)
-    # Cascade delete: Se apagar a categoria, apaga o histórico agregado, mas as transações (acima)
-    # podem ficar órfãs dependendo da configuração do banco (aqui o default é set null ou restrict).
+    # Cascade delete: Se apagar a categoria, apaga o histórico agregado.
     historico_gastos = relationship('HistoricoGastoMensal', back_populates='categoria', cascade="all, delete-orphan")
 
 class Transacao(Base):
@@ -67,36 +65,30 @@ class Transacao(Base):
     descricao = Column(String(200), nullable=False)
     valor = Column(Float, nullable=False)
     
-    # [DECISÃO TÉCNICA] Uso de Lambda no default:
-    # 'default=datetime.now' executaria apenas no boot do servidor.
-    # 'default=lambda: ...' executa a função no momento da inserção (INSERT),
-    # garantindo o timestamp correto da transação.
+    # Uso de Lambda no default executa a função no momento da inserção (INSERT)
     data = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     
     categoria_id = Column(Integer, ForeignKey('categoria.id'), nullable=False)
     
-    # Controle de Recorrência:
-    # 'pontual', 'fixa', 'parcelada'. Define lógica de projeção futura.
+    # Controle de Recorrência: 'pontual', 'recorrente', 'parcelada'.
     tipo_recorrencia = Column(String(50), nullable=False, default='pontual')
     status = Column(String(50), nullable=False, default='Pendente')
     
     # Campos exclusivos para parcelamento
     parcela_atual = Column(Integer, nullable=True)
     total_parcelas = Column(Integer, nullable=True)
+    
+    # Armazena o valor total da compra original para exibição correta no frontend
+    valor_total_parcelamento = Column(Float, nullable=True)
+    
     frequencia = Column(String(50), nullable=True)
     
     # Agrupador: Permite editar todas as ocorrências de uma transação recorrente de uma vez.
     id_grupo_recorrencia = Column(String(100), nullable=True, index=True)
 
-    # [NOVO] Flag de Encerramento (Solicitado em 2025-12-29):
-    # Se True, indica que a série foi interrompida pelo usuário.
-    # Itens 'Efetivados' com esta flag = Histórico (aparecem como encerrados).
-    # Itens 'Pendentes' são deletados pela lógica de encerramento.
+    # Flag para indicar se a série foi interrompida pelo usuário.
     recorrencia_encerrada = Column(Boolean, default=False)
 
-    # [SEGURANÇA / PERFORMANCE]
-    # O user_id aqui é redundante (já existe em Categoria), mas é vital para performance.
-    # Permite buscar "todas as transações do usuário X" sem fazer JOIN com Categoria.
     user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     user = relationship("User", back_populates="transacoes")
 
@@ -105,15 +97,14 @@ class Transacao(Base):
 class HistoricoGastoMensal(Base):
     """
     Tabela de Cache/Agregação.
-    Armazena o total gasto por categoria em um mês específico para evitar
-    recalcular somatórios pesados toda vez que o Dashboard é aberto.
+    Armazena o total gasto por categoria em um mês específico.
     """
     __tablename__ = 'historico_gasto_mensal'
 
     id = Column(Integer, primary_key=True)
     total_gasto = Column(Float, nullable=False, default=0.0)
     
-    # Define o mês/ano de competência (ex: 2023-10-01 representa Outubro/23)
+    # Define o mês/ano de competência
     data_referencia = Column(Date, nullable=False, index=True)
     
     categoria_id = Column(Integer, ForeignKey('categoria.id'), nullable=False)

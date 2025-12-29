@@ -244,6 +244,8 @@ erDiagram
         float valor
         string tipo_recorrencia
         string status
+        float valor_total_parcelamento
+        boolean recorrencia_encerrada
     }
 
     HistoricoGastoMensal {
@@ -419,7 +421,11 @@ Um agradecimento especial a todas as fantásticas tecnologias e comunidades *ope
 
 ## Dúvidas, Bugs ou Sugestões?
 
-Se você encontrar algum *bug*, tiver alguma dúvida técnica sobre o código ou uma sugestão de melhoria, a melhor forma de entrar em contato é **abrindo uma Issue** diretamente no repositório do **GitHub**. Isso ajuda a manter tudo organizado e visível para todos.
+Este projeto foi desenvolvido com base nas **minhas necessidades pessoais** e fluxos de trabalho. Por isso, é natural que algumas funcionalidades esperadas em apps comerciais de finanças ou saúde não estejam presentes, ou que existam lógicas que não se apliquem a todos.
+
+Se você encontrar algum *bug*, notar a falta de alguma feature essencial (como um campo específico no financeiro, uma métrica de saúde, etc.) ou tiver sugestões de melhoria, **eu quero saber!** Como não sou especialista em contabilidade ou administração, o feedback da comunidade é vital para tornar o Bússola mais robusto para todos.
+
+A melhor forma de contribuir é **abrindo uma Issue** diretamente no repositório do **GitHub**. Isso ajuda a manter tudo organizado e visível.
 
 - **[➡️ Abrir uma Issue no GitHub](https://github.com/Marocosz/Bussola-v2/issues)**
 

@@ -12,9 +12,9 @@ PARTE DO SISTEMA:
 =======================================================================================
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import Optional, List
-from datetime import datetime, date
+from datetime import datetime
 from enum import Enum
 
 # --------------------------------------------------------------------------------------
@@ -87,10 +87,10 @@ class TransacaoBase(BaseModel):
     # Campos para lógica de parcelamento/recorrência
     parcela_atual: Optional[int] = None
     total_parcelas: Optional[int] = None
+    valor_total_parcelamento: Optional[float] = None # Campo para exibir o valor cheio no front
     frequencia: Optional[Frequencia] = None
     
-    # [NOVO] Flag para indicar se a série foi encerrada manualmente pelo usuário
-    # Isso permite que o front mostre "Encerrado" mas mantenha o histórico.
+    # Flag para indicar se a série foi encerrada manualmente pelo usuário
     recorrencia_encerrada: Optional[bool] = False
 
 class TransacaoCreate(TransacaoBase):
@@ -102,7 +102,6 @@ class TransacaoUpdate(BaseModel):
     data: Optional[datetime] = None
     categoria_id: Optional[int] = None
     status: Optional[StatusTransacao] = None
-    # Permite atualizar a flag via endpoint se necessário, embora a função específica faça isso
     recorrencia_encerrada: Optional[bool] = None
 
 class TransacaoResponse(TransacaoBase):
@@ -121,7 +120,7 @@ class FinancasDashboardResponse(BaseModel):
     categorias_despesa: List[CategoriaResponse]
     categorias_receita: List[CategoriaResponse]
     
-    # Transações agrupadas por mês (ex: "Janeiro/2025") para facilitar a listagem
+    # Transações agrupadas por mês
     transacoes_pontuais: dict[str, List[TransacaoResponse]] 
     transacoes_recorrentes: dict[str, List[TransacaoResponse]]
     

@@ -34,6 +34,8 @@ Ao criar uma compra parcelada (ex: "Notebook em 10x"), o sistema não cria apena
 
 > [!IMPORTANT]
 > **Algoritmo de Centavos:** O sistema trata dízimas financeiras automaticamente. Se uma compra de R$ 100,00 for dividida em 3x, o sistema não divide simplesmente por 3 (o que daria 33.333...). Ele ajusta a diferença na **primeira parcela**.
+> 
+> Além disso, o sistema armazena o `valor_total_parcelamento` em cada registro, permitindo que o Frontend exiba "Total: R$ 100,00" de forma precisa, sem erros de soma de ponto flutuante.
 
 ```python
 # Trecho de: app/services/financas.py -> criar_transacao
@@ -48,36 +50,31 @@ for i in range(1, qtd_parcelas + 1):
     if i == 1:
         valor_desta += diferenca
     
-    # ... lógica de criação da transação ...
+    # ... O valor_total_parcelamento é salvo em cada linha para referência visual
 ```
-*Resultado:* Parcela 1 = R$ 33,34 | Parcela 2 = R$ 33,33 | Parcela 3 = R$ 33,33. Total = R$ 100,00.
+*Resultado:* Parcela 1 = R$ 33,34 | Parcela 2 = R$ 33,33 | Parcela 3 = R$ 33,33. Total Visual = R$ 100,00.
 
 #### C. Recorrência Infinita (Subscriptions)
 Para contas fixas (Netflix, Aluguel, Salário), o sistema cria a primeira transação e marca com um `id_grupo_recorrencia`. O resto é gerenciado pelo **Worker de Projeção**.
 
 ---
 
-### 2. Worker de Projeção Futura ("Catch-up")
+### 2. Worker de Projeção Futura ("Horizonte de Previsão")
 
-O Bússola V2 possui um mecanismo passivo que verifica, toda vez que o dashboard é carregado, se existem contas recorrentes que "venceram" desde o último acesso.
+O Bússola V2 possui um mecanismo passivo que roda toda vez que o dashboard é carregado.
 
 > [!NOTE]
-> Se o usuário não acessar o sistema por 3 meses, ao fazer login, o sistema identificará a lacuna temporal e gerará automaticamente as 3 mensalidades de "Netflix" pendentes para manter o saldo correto.
+> **Regra do Horizonte:** O sistema garante que existam transações criadas até **2 meses no futuro**. Isso evita a "cegueira financeira", permitindo que o usuário veja as contas que vencerão no início do próximo mês, mesmo que ainda esteja no dia 29 do mês atual.
 
 ```python
 # Trecho de: app/services/financas.py -> gerar_transacoes_futuras
 
-# Se a última transação conhecida já passou (está no passado)
-if ultima.data.date() <= today_date:
-    
-    # Loop de "Catch-up": Gera pendências até alcançar a data de hoje
-    while proximo_vencimento.date() <= today_date:
-        nova = Transacao(..., status='Pendente') # Cria como pendente
-        db.add(nova)
-        
-        # Avança o tempo baseado na frequência (Semanal/Mensal/Anual)
-        if frequencia == 'mensal': 
-            proximo_vencimento += relativedelta(months=1)
+horizonte_limite = today + relativedelta(months=2)
+
+# Loop de "Catch-up": Gera pendências até alcançar o horizonte de 2 meses
+while proximo_vencimento.date() <= horizonte_limite:
+    nova = Transacao(..., status='Pendente') 
+    db.add(nova)
 ```
 
 ---
@@ -105,20 +102,31 @@ if transacoes:
 db.delete(cat)
 ```
 
-> [!WARNING]
-> **Concorrência (Race Condition):** A criação da categoria "Indefinida" é protegida por um bloco `try/except IntegrityError` para evitar que duas requisições simultâneas tentem criar a mesma categoria de sistema, o que causaria erro 500 no banco.
-
 ---
 
-### 4. Dashboard e Agregação
+### 4. UX e Comportamento das Features
 
-O endpoint `GET /` do módulo financeiro não retorna apenas linhas de banco de dados. Ele retorna uma **ViewModel** completa pronta para gráficos.
+Para garantir consistência contábil, o sistema adota comportamentos específicos ao Editar ou Excluir transações complexas.
 
-1.  **Separação Temporal:** As transações são agrupadas em dicionários por Mês/Ano (ex: `"Janeiro/2025": [...]`) para facilitar a renderização de listas no Frontend.
-2.  **Cálculo On-the-fly:**
-    * `total_mes`: Soma apenas transações dentro do mês vigente.
-    * `total_historico`: Soma todo o histórico da categoria.
-    * `media_valor`: Ticket médio de gasto naquela categoria.
+#### A. Encerrando Assinaturas e Parcelamentos
+Quando o usuário clica em "Excluir" numa transação recorrente ou parcelada, o sistema entende que ele deseja **Interromper a série** (Stop), e não apagar o passado.
+
+1.  **Futuro (Pendentes):** Todas as transações futuras que ainda não foram pagas são **excluídas**. (Limpa a agenda).
+2.  **Passado (Efetivadas/Pendentes antigas):** Todas as transações passadas são mantidas, mas marcadas com uma flag `recorrencia_encerrada`.
+3.  **Segurança ("Zumbi Logic"):** A flag de encerramento é aplicada em **todo** o histórico restante do grupo. Isso impede que o "Worker de Projeção" encontre uma transação antiga "viva" e tente recriar a assinatura cancelada acidentalmente.
+
+*Visualmente:* Os cards antigos ficam com a borda cinza, indicando que pertencem a uma série inativa.
+
+#### B. Editando Valores (Cascata vs Unidade)
+O sistema é inteligente ao diferenciar "Contratos Fixos" de "Assinaturas Variáveis":
+
+* **Recorrentes (Ex: Netflix):** Se você editar o valor, descrição ou categoria da mensalidade atual, o sistema pergunta se você quer aplicar a mudança **para todas as futuras**. Isso é útil para reajustes de preço de assinatura.
+* **Parceladas (Ex: TV em 10x):** Se você editar uma parcela específica, **apenas ela muda**. O sistema entende que parcelamentos são contratos de valor fixo. Se você adiantou uma parcela com desconto, isso não deve alterar o valor das parcelas seguintes.
+* **Pontuais:** A edição afeta apenas o registro selecionado.
+
+#### C. Proteção de Dados
+* **Imutabilidade de Tipo:** Não é possível transformar uma transação "Recorrente" em "Pontual" via edição. Isso quebraria a lógica de agrupamento.
+* **Fuso Horário:** O sistema exibe as datas respeitando o fuso horário local do navegador do usuário, garantindo que uma conta que vence dia 05 não apareça como dia 04 devido a diferenças de UTC.
 
 ---
 
@@ -126,9 +134,11 @@ O endpoint `GET /` do módulo financeiro não retorna apenas linhas de banco de 
 
 ### `Transacao`
 A unidade atômica financeira.
-- **id_grupo_recorrencia** (Indexado): O elo que une parcelas ou recorrências. Permite editar/excluir todas as parcelas de uma compra de uma só vez.
+- **id_grupo_recorrencia** (Indexado): O elo que une parcelas ou recorrências.
+- **valor_total_parcelamento**: Guarda o valor original da compra para exibição correta no histórico.
+- **recorrencia_encerrada**: Flag de segurança que indica se a série foi cancelada.
 - **status**: `Pendente` (padrão para futuras) ou `Efetivada`.
-- **data**: Usa `datetime` com timezone UTC.
+- **data**: Usa `datetime` com timezone UTC (convertido no front).
 
 ### `Categoria`
 Agrupador lógico.
@@ -142,10 +152,11 @@ Agrupador lógico.
 ### Transações
 | Método | Rota | Descrição |
 | :--- | :--- | :--- |
-| `POST` | `/transacoes` | Cria transação. Se parcelada, cria N registros. |
-| `PUT` | `/transacoes/{id}` | Edita uma transação específica. |
+| `POST` | `/transacoes` | Cria transação. Se parcelada, cria N registros e projeta valores. |
+| `PUT` | `/transacoes/{id}` | Edita uma transação. Se recorrente, propaga para futuras. |
+| `PATCH`| `/transacoes/{id}/encerrar-recorrencia` | Encerra uma série: apaga futuro, blinda passado. |
 | `PUT` | `/transacoes/{id}/toggle-status` | Alterna entre Pendente/Efetivada (Quick Action). |
-| `DELETE` | `/transacoes/{id}` | Deleta. Se for recorrente, deleta o grupo todo. |
+| `DELETE` | `/transacoes/{id}` | Deleta transação pontual permanentemente. |
 
 ### Categorias
 | Método | Rota | Descrição |
@@ -157,4 +168,4 @@ Agrupador lógico.
 ### Dashboard
 | Método | Rota | Descrição |
 | :--- | :--- | :--- |
-| `GET` | `/` | Retorna JSON complexo com totais, listas agrupadas e metadados. |
+| `GET` | `/` | Retorna JSON complexo com totais, listas agrupadas por mês e metadados. |

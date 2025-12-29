@@ -1,8 +1,8 @@
 """Reset tables
 
-Revision ID: 6c6787afc11d
+Revision ID: 64e6cf94607c
 Revises: 
-Create Date: 2025-12-29 18:30:57.934163
+Create Date: 2025-12-29 19:02:34.719021
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '6c6787afc11d'
+revision: str = '64e6cf94607c'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -208,6 +208,7 @@ def upgrade() -> None:
     sa.Column('status', sa.String(length=50), nullable=False),
     sa.Column('parcela_atual', sa.Integer(), nullable=True),
     sa.Column('total_parcelas', sa.Integer(), nullable=True),
+    sa.Column('valor_total_parcelamento', sa.Float(), nullable=True),
     sa.Column('frequencia', sa.String(length=50), nullable=True),
     sa.Column('id_grupo_recorrencia', sa.String(length=100), nullable=True),
     sa.Column('recorrencia_encerrada', sa.Boolean(), nullable=True),
