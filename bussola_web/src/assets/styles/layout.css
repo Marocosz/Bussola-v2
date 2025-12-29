@@ -35,6 +35,14 @@ main.container {
 }
 
 /* --- Logo e Marca --- */
+
+.nav-brand {
+    display: flex;        /* Torna o container do logo flexível */
+    align-items: center;  /* Centraliza verticalmente a imagem dentro do link */
+    height: 100%;         /* Garante consistência de altura */
+    text-decoration: none;
+}
+
 .nav-logo {
     height: 50px;
     width: auto;
