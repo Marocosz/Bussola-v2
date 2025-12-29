@@ -7,7 +7,7 @@
 
   <img src="https://img.shields.io/github/repo-size/Marocosz/bussola-v2?style=for-the-badge" alt="Repo Size">
   <img src="https://img.shields.io/github/languages/count/Marocosz/bussola-v2?style=for-the-badge" alt="Language Count">
-  <img src="https://img.shields.io/github/license/Marocosz/bussola-v2?style=for-the-badge" alt="License">
+<img src="https://img.shields.io/badge/license-AGPL%20v3-blue?style=for-the-badge" alt="License">
 
   <br>
   
