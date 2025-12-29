@@ -42,6 +42,7 @@ O **Bússola V2** atua como um sistema operacional pessoal, dividido em núcleos
   - [🤖 Inteligência Artificial (Agentic Workflow)](#-inteligência-artificial-agentic-workflow)
 - [📂Estrutura](#estrutura)
 - [Diagrama de Entidade-Relacionamento (ERD)](#diagrama-de-entidade-relacionamento-erd)
+- [📚 Documentação da API](#-documentação-da-api)
 
 ---
 
@@ -335,3 +336,17 @@ erDiagram
     %% Ritmo - Estrutura de Dieta
     RitmoDietaConfig ||--o{ RitmoRefeicao : "agrupa"
     RitmoRefeicao ||--o{ RitmoAlimentoItem : "lista"
+```
+
+# 📚 Documentação da API
+
+O backend do Bússola V2 gera automaticamente a documentação de todos os endpoints seguindo o padrão **OpenAPI**. Você pode escolher a interface que melhor se adapta ao seu fluxo de trabalho:
+
+| Interface | Rota Local | Melhor uso para... |
+| :--- | :--- | :--- |
+| **Scalar** (Moderno) | [`/scalar`](http://localhost:8000/scalar) | ✨ **Visualização & Consumo:** Design moderno (Dark Mode), busca rápida (`Ctrl+K`) e gera exemplos de código prontos (cURL, Python, JS) para cada rota. |
+| **Swagger UI** (Clássico) | [`/docs`](http://localhost:8000/docs) | 🧪 **Testes & Debug:** Interface padrão do FastAPI. Ideal para executar requisições rápidas ("Try it out") e testar validações de erro. |
+| **ReDoc** | [`/redoc`](http://localhost:8000/redoc) | 📖 **Leitura Técnica:** Layout focado em leitura de documentação estática, excelente para entender a estrutura dos schemas JSON e modelos de dados. |
+
+> **Nota:** Para importar a coleção no **Postman** ou **Insomnia**, utilize o JSON bruto disponível em:  
+> [`http://localhost:8000/api/v1/openapi.json`](http://localhost:8000/api/v1/openapi.json)
