@@ -136,8 +136,8 @@ O sistema diferencia "Contratos Fixos" de "Assinaturas Variáveis" na hora da ed
 Abaixo, uma visualização da interface do módulo financeiro em ação.
 
 <div align="center">
-  <img src="docs/images/finance_1.png" alt="Dashboard Geral de Finanças" width="48%">
-  <img src="docs/images/finance_2.png" alt="Detalhe de Transações e Categorias" width="48%">
+  <img src="images/finance_1.png" alt="Dashboard Geral de Finanças" width="48%">
+  <img src="images/finance_2.png" alt="Detalhe de Transações e Categorias" width="48%">
 </div>
 
 ---
