@@ -74,6 +74,7 @@ O desenvolvimento do **Bússola V2** é contínuo, evoluindo de um sistema de ge
 - [ ] **Gamificação:** Sistema de **XP** e níveis baseado no cumprimento de metas financeiras e de saúde.
 - [ ] **Postgre:** Implementar BD `PostgreSQL` no modo **SaaS**.
 - [ ] **Dockerização:** Containerização completa da aplicação (`Backend`, `Frontend`, `Redis`, `Banco`) via `Docker Compose` para fácil deploy.
+- [ ] **Padronização:** Padronizar nomes de arquivos/variáveis de todo projeto.
 
 ---
 
