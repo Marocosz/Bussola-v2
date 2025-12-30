@@ -1693,3 +1693,40 @@
     pointer-events: none;
     z-index: 2;
 }
+
+/* ================================================================= */
+/* FIX FINAL: SCROLLBAR DO DROPDOWN (CORES EXPLÍCITAS)               */
+/* ================================================================= */
+
+/* 1. Alvo: A lista de grupos no menu principal */
+.registros-scope .dropdown-scroll-area {
+    /* Suporte para Firefox (que não usa -webkit) */
+    scrollbar-width: thin;
+    scrollbar-color: var(--cor-borda) var(--cor-card-principal);
+}
+
+/* 2. Suporte para Chrome/Edge/Brave (Webkit) */
+.registros-scope .dropdown-scroll-area::-webkit-scrollbar {
+    width: 6px !important;            /* Largura fina */
+    height: 6px !important;
+    display: block !important;        /* Força aparecer */
+    background: var(--cor-card-principal) !important; /* Pinta o fundo da barra da mesma cor do menu */
+}
+
+/* O "trilho" por onde a barra corre */
+.registros-scope .dropdown-scroll-area::-webkit-scrollbar-track {
+    background: var(--cor-card-principal) !important; /* Fundo escuro igual ao menu */
+    border-radius: 4px;
+}
+
+/* O "polegar" (a barra que você arrasta) */
+.registros-scope .dropdown-scroll-area::-webkit-scrollbar-thumb {
+    background-color: var(--cor-borda) !important;    /* Cor cinza do tema */
+    border-radius: 4px !important;
+    border: 1px solid var(--cor-card-principal) !important; /* Cria um pequeno espaçamento visual */
+}
+
+/* Hover na barra para feedback visual */
+.registros-scope .dropdown-scroll-area::-webkit-scrollbar-thumb:hover {
+    background-color: var(--cor-texto-secundario) !important;
+}

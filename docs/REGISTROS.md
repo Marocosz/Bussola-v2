@@ -125,8 +125,9 @@ Ao marcar um item "Pai" como concluído na árvore de subtarefas, o sistema ente
 A interface combina funcionalidade densa com respiro visual.
 
 <div align="center">
-  <img src="docs/images/registros_1.png" alt="Visão Geral do Caderno e Tarefas" width="48%">
-  <img src="docs/images/registros_2.png" alt="Modal de Edição de Notas" width="48%">
+  <img src="images/registros_1.png" alt="Visão Geral do Caderno e Tarefas" width="48%">
+  <img src="images/registros_2.png" alt="Modal de Edição de Notas" width="48%">
+  <img src="images/registros_2.png" alt="Modal de Edição de Notas" width="100%">
 </div>
 
 ---
