@@ -3,7 +3,8 @@ import { getPanoramaData, getCategoryHistory } from '../../services/api';
 import { KpiCard } from './components/KpiCard';
 import { ProvisoesModal, RoteiroModal, RegistrosModal } from './components/PanoramaModals';
 import { useToast } from '../../context/ToastContext';
-import { useConfirm } from '../../context/ConfirmDialogContext'; // <--- Import adicionado para padronização
+import { useConfirm } from '../../context/ConfirmDialogContext'; 
+import { CustomSelect } from '../../components/CustomSelect'; // Reaproveitando componente
 import './styles.css';
 
 import {
@@ -20,7 +21,16 @@ ChartJS.register(
 export function Panorama() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [periodo, setPeriodo] = useState('Mensal'); 
+    
+    // Filtros de Período
+    const [periodLength, setPeriodLength] = useState(1); // 1=Mensal, 3=Trimestral, 6=Semestral
+    const [selectedRangeStart, setSelectedRangeStart] = useState(new Date().getMonth() + 1); // Mês 1-12
+    const [viewYear, setViewYear] = useState(new Date().getFullYear());
+    
+    // Modo Privacidade
+    const [privacyMode, setPrivacyMode] = useState(() => {
+        return localStorage.getItem('panorama_privacy') === 'true';
+    });
     
     // Gráfico dinâmico
     const [selectedCategory, setSelectedCategory] = useState('');
@@ -31,26 +41,35 @@ export function Panorama() {
     const [modalRoteiroOpen, setModalRoteiroOpen] = useState(false);
     const [modalRegistrosOpen, setModalRegistrosOpen] = useState(false);
 
-    // Hooks de Contexto (Padronizados)
+    // Hooks de Contexto
     const { addToast } = useToast();
-    const dialogConfirm = useConfirm(); // Hook disponível para uso futuro
+    const dialogConfirm = useConfirm(); 
 
-    const fetchCategoryHistory = async (id, currentPeriod) => {
+    // Toggle Privacy
+    const togglePrivacy = () => {
+        const newState = !privacyMode;
+        setPrivacyMode(newState);
+        localStorage.setItem('panorama_privacy', newState);
+    };
+
+    const fetchCategoryHistory = async (id) => {
         try {
-            const history = await getCategoryHistory(id, currentPeriod);
+            // Nota: O endpoint de histórico ainda usa lógica padrão de 6 meses
+            const history = await getCategoryHistory(id);
             setDynamicChartData(history);
         } catch (error) { 
             console.error("Erro ao buscar histórico da categoria:", error);
-            // Toast de erro (Feedback visual)
             addToast({ type: 'warning', title: 'Atenção', description: 'Não foi possível carregar o histórico detalhado.' });
         }
     };
 
+    // Chamada principal API
     useEffect(() => {
         async function loadData() {
             setLoading(true);
             try {
-                const result = await getPanoramaData(periodo); 
+                // Passamos os parâmetros numéricos agora
+                const result = await getPanoramaData(selectedRangeStart, viewYear, periodLength); 
                 setData(result);
                 
                 if (result.categorias_para_filtro.length > 0) {
@@ -61,7 +80,7 @@ export function Panorama() {
                         targetId = result.categorias_para_filtro[0].id;
                         setSelectedCategory(targetId);
                     }
-                    await fetchCategoryHistory(targetId, periodo);
+                    await fetchCategoryHistory(targetId);
                 }
             } catch (error) {
                 console.error("Erro", error);
@@ -72,12 +91,36 @@ export function Panorama() {
         }
         loadData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [periodo]);
+    }, [selectedRangeStart, viewYear, periodLength]);
 
     const handleCategoryChange = (e) => {
         const id = e.target.value;
         setSelectedCategory(id);
-        fetchCategoryHistory(id, periodo);
+        fetchCategoryHistory(id);
+    };
+
+    // --- GERADOR DE OPÇÕES PARA O DROPDOWN DE PERÍODO ---
+    const getPeriodOptions = () => {
+        const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+        const options = [];
+
+        // Loop para gerar opções válidas (que cabem no ano)
+        // Ex: Se trimestral (3), só pode ir até Outubro (10), pois 10+11+12.
+        for (let i = 0; i <= 12 - periodLength; i++) {
+            const startMonthIndex = i; // 0-based
+            let label = "";
+
+            if (periodLength === 1) {
+                label = meses[startMonthIndex];
+            } else if (periodLength === 3) {
+                label = `${meses[startMonthIndex].substring(0,3)} - ${meses[startMonthIndex+2].substring(0,3)}`;
+            } else if (periodLength === 6) {
+                label = `${meses[startMonthIndex].substring(0,3)} - ${meses[startMonthIndex+5].substring(0,3)}`;
+            }
+
+            options.push({ value: startMonthIndex + 1, label: label }); // value 1-based for API
+        }
+        return options;
     };
 
     if (loading && !data) return (
@@ -133,13 +176,13 @@ export function Panorama() {
     const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
     const currentDay = Math.max(1, today.getDate());
     
+    // Projeção simples baseada na média diária (só faz sentido se estivermos vendo o mês atual)
     const mediaGastoDiario = despesaTotal / currentDay;
     const despesaProjetada = mediaGastoDiario * daysInMonth;
     const statusProjecao = despesaProjetada > receitaTotal ? 'danger' : 'safe';
 
-    const weekLabels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-    const weekDistribution = [0.12, 0.11, 0.14, 0.13, 0.25, 0.15, 0.10]; 
-    const weeklySpendData = weekDistribution.map(pct => despesaTotal * pct);
+    const weekLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const weeklySpendData = data.gasto_semanal.data; // Dados reais do backend agora
 
     // ==========================================
     // CONFIGURAÇÃO DOS GRÁFICOS
@@ -206,11 +249,11 @@ export function Panorama() {
     const weeklyPatternData = {
         labels: weekLabels,
         datasets: [{
-            label: 'Gasto Médio (Est.)',
+            label: 'Total Gasto (R$)',
             data: weeklySpendData,
             backgroundColor: (ctx) => {
                 const value = ctx.raw;
-                const max = Math.max(...weeklySpendData);
+                const max = Math.max(...weeklySpendData, 1); // Evita divisão por zero
                 const opacity = 0.3 + (value / max) * 0.7; 
                 return `rgba(245, 158, 11, ${opacity})`;
             },
@@ -220,7 +263,7 @@ export function Panorama() {
 
     const dynamicDataConfig = dynamicChartData ? {
         labels: dynamicChartData.labels,
-        datasets: [{ label: `Evolução (${periodo})`, data: dynamicChartData.data, borderColor: '#4A6DFF', backgroundColor: 'rgba(74, 109, 255, 0.1)', fill: true, tension: 0.4, pointRadius: 4 }]
+        datasets: [{ label: `Evolução Histórica`, data: dynamicChartData.data, borderColor: '#4A6DFF', backgroundColor: 'rgba(74, 109, 255, 0.1)', fill: true, tension: 0.4, pointRadius: 4 }]
     } : null;
 
     return (
@@ -239,11 +282,36 @@ export function Panorama() {
                 {/* 1. KPIS GERAIS */}
                 <div className="panel-section">
                     <div className="panel-header">
-                        <h2>Indicadores Chave</h2>
-                        <div className="period-selector">
-                            {['Mensal', 'Trimestral', 'Semestral'].map(p => (
-                                <button key={p} className={periodo === p ? 'active' : ''} onClick={() => setPeriodo(p)}>{p}</button>
-                            ))}
+                        <div style={{display:'flex', alignItems:'center', gap:'15px'}}>
+                            <h2>Indicadores Chave</h2>
+                            <button className={`btn-privacy-toggle ${privacyMode ? 'active' : ''}`} onClick={togglePrivacy} title={privacyMode ? "Mostrar valores" : "Ocultar valores"}>
+                                <i className={`fa-solid ${privacyMode ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                            </button>
+                        </div>
+                        
+                        <div className="period-controls-group">
+                            <div className="period-type-selector">
+                                <button className={periodLength === 1 ? 'active' : ''} onClick={() => setPeriodLength(1)}>Mensal</button>
+                                <button className={periodLength === 3 ? 'active' : ''} onClick={() => setPeriodLength(3)}>Trimestral</button>
+                                <button className={periodLength === 6 ? 'active' : ''} onClick={() => setPeriodLength(6)}>Semestral</button>
+                            </div>
+                            
+                            {/* Dropdown Lógico baseado no tipo */}
+                            <div className="period-dropdown-wrapper" style={{width: '200px'}}>
+                                <CustomSelect 
+                                    name="periodRange" 
+                                    value={selectedRangeStart} 
+                                    options={getPeriodOptions()} 
+                                    onChange={(e) => setSelectedRangeStart(parseInt(e.target.value))} 
+                                />
+                            </div>
+
+                            {/* Seletor de Ano Simples */}
+                            <div className="year-selector">
+                                <button onClick={() => setViewYear(prev => prev - 1)}><i className="fa-solid fa-chevron-left"></i></button>
+                                <span>{viewYear}</span>
+                                <button onClick={() => setViewYear(prev => prev + 1)}><i className="fa-solid fa-chevron-right"></i></button>
+                            </div>
                         </div>
                     </div>
                     
@@ -251,9 +319,9 @@ export function Panorama() {
                         <div className="kpi-group">
                             <span className="group-label">Finanças</span>
                             <div className="kpi-row finance-row">
-                                <KpiCard iconClass="fa-solid fa-arrow-up" value={fmt(kpis.receita_mes)} label="Receita" type="receita" />
-                                <KpiCard iconClass="fa-solid fa-arrow-down" value={fmt(kpis.despesa_mes)} label="Despesa" type="despesa" />
-                                <KpiCard iconClass="fa-solid fa-scale-balanced" value={fmt(kpis.balanco_mes)} label="Balanço" type={kpis.balanco_mes >= 0 ? 'receita' : 'despesa'} />
+                                <KpiCard iconClass="fa-solid fa-arrow-up" value={fmt(kpis.receita_mes)} label="Receita" type="receita" isPrivacy={privacyMode} />
+                                <KpiCard iconClass="fa-solid fa-arrow-down" value={fmt(kpis.despesa_mes)} label="Despesa" type="despesa" isPrivacy={privacyMode} />
+                                <KpiCard iconClass="fa-solid fa-scale-balanced" value={fmt(kpis.balanco_mes)} label="Balanço" type={kpis.balanco_mes >= 0 ? 'receita' : 'despesa'} isPrivacy={privacyMode} />
                             </div>
                         </div>
                         <div className="divider-vertical"></div>
@@ -318,7 +386,7 @@ export function Panorama() {
                     {/* A. FLUXO DE CAIXA + ACUMULADO */}
                     <div className="chart-wrapper" style={{ gridColumn: 'span 8' }}>
                         <div className="chart-header"><h3>Fluxo de Caixa & Acumulado</h3></div>
-                        <div className="chart-body">
+                        <div className={`chart-body ${privacyMode ? 'privacy-blur' : ''}`}>
                             <Bar data={evolucaoData} options={{ maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'top' } } }} />
                         </div>
                     </div>
@@ -326,7 +394,7 @@ export function Panorama() {
                     {/* B. VELOCÍMETRO (GAUGE) */}
                     <div className="chart-wrapper" style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                         <div className="chart-header" style={{ width: '100%' }}><h3>Taxa de Poupança</h3></div>
-                        <div className="chart-body" style={{ height: '200px', width: '100%', position: 'relative', display: 'flex', justifyContent: 'center' }}>
+                        <div className={`chart-body ${privacyMode ? 'privacy-blur' : ''}`} style={{ height: '200px', width: '100%', position: 'relative', display: 'flex', justifyContent: 'center' }}>
                             <Doughnut data={gaugeData} options={{ maintainAspectRatio: false, rotation: -90, circumference: 180, plugins: { legend: { display: false }, tooltip: { enabled: false } } }} />
                             <div style={{ position: 'absolute', bottom: '20%', textAlign: 'center' }}>
                                 <span style={{ fontSize: '2rem', fontWeight: 'bold', color: corPoupanca }}>{taxaPoupanca.toFixed(1)}%</span>
@@ -343,7 +411,7 @@ export function Panorama() {
                                 {statusProjecao === 'danger' ? 'ALERTA: Risco de fechar no negativo' : 'Ritmo Seguro'}
                             </span>
                         </div>
-                        <div className="chart-body">
+                        <div className={`chart-body ${privacyMode ? 'privacy-blur' : ''}`}>
                             <Bar 
                                 data={projecaoData} 
                                 options={{ 
@@ -361,7 +429,7 @@ export function Panorama() {
                         <div className="chart-header">
                             <h3>Padrão Semanal de Gastos</h3>
                         </div>
-                        <div className="chart-body">
+                        <div className={`chart-body ${privacyMode ? 'privacy-blur' : ''}`}>
                             <Bar 
                                 data={weeklyPatternData} 
                                 options={{ 
@@ -379,7 +447,7 @@ export function Panorama() {
                     {/* E. DISTRIBUIÇÃO DE GASTOS */}
                     <div className="chart-wrapper" style={{ gridColumn: 'span 4' }}>
                         <div className="chart-header"><h3>Gastos por Categoria</h3></div>
-                        <div className="chart-body">
+                        <div className={`chart-body ${privacyMode ? 'privacy-blur' : ''}`}>
                             <Doughnut data={roscaGastosData} options={{ maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 11 } } } } }} />
                         </div>
                     </div>
@@ -424,7 +492,7 @@ export function Panorama() {
                                 {data.categorias_para_filtro.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                             </select>
                         </div>
-                        <div className="chart-body" style={{ height: '300px' }}>
+                        <div className={`chart-body ${privacyMode ? 'privacy-blur' : ''}`} style={{ height: '300px' }}>
                             {dynamicDataConfig && <Line data={dynamicDataConfig} options={{ maintainAspectRatio: false }} />}
                         </div>
                     </div>

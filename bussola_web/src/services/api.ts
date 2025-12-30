@@ -258,8 +258,15 @@ export interface PanoramaData {
     categorias_para_filtro: Categoria[];
 }
 
-export const getPanoramaData = async (period: string = 'Mensal'): Promise<PanoramaData> => {
-    const response = await api.get(`/panorama/?period=${period}`);
+export const getPanoramaData = async (month: number, year: number, periodLength: number) => {
+    // Agora enviamos month, year e period_length como números na query string
+    const response = await api.get('/panorama/', {
+        params: {
+            month: month,
+            year: year,
+            period_length: periodLength // O Backend espera snake_case
+        }
+    });
     return response.data;
 };
 

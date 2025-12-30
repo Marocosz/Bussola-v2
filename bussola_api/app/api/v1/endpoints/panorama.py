@@ -24,9 +24,9 @@ COMUNICAÇÃO:
 =======================================================================================
 """
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from app.api import deps
 from app.schemas.panorama import PanoramaResponse, ProvisaoItem, RoteiroItem, RegistroItem
 from app.services.panorama import panorama_service
@@ -39,7 +39,9 @@ router = APIRouter()
 
 @router.get("/", response_model=PanoramaResponse)
 def get_panorama(
-    period: str = "Mensal",
+    month: Optional[int] = Query(None, description="Mês de início (1-12)"),
+    year: Optional[int] = Query(None, description="Ano de referência"),
+    period_length: int = Query(1, description="Duração do período em meses (1=Mensal, 3=Trimestral, 6=Semestral)"),
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):
@@ -47,16 +49,23 @@ def get_panorama(
     Retorna o payload mestre do Dashboard.
     
     Funcionalidade:
-        Consolida Finanças, Agenda, Tarefas e Saúde do Cofre em uma única resposta
-        para renderização inicial da Home.
+        Consolida Finanças, Agenda, Tarefas e Saúde do Cofre em uma única resposta.
         
-    Filtros:
-        - period: Define a janela de tempo dos cálculos ('Mensal', 'Trimestral', 'Semestral').
+    Filtros (Novos):
+        - month: Mês de início da análise. Se não informado, usa o mês atual.
+        - year: Ano da análise. Se não informado, usa o ano atual.
+        - period_length: Define quantos meses a frente calcular (1, 3 ou 6).
     
     Segurança:
         O `current_user.id` é passado obrigatoriamente para garantir isolamento de dados.
     """
-    return panorama_service.get_dashboard_data(db, current_user.id, period=period)
+    return panorama_service.get_dashboard_data(
+        db, 
+        current_user.id, 
+        month=month, 
+        year=year, 
+        period_length=period_length
+    )
 
 # --------------------------------------------------------------------------------------
 # ENDPOINTS PARA MODAIS (LAZY LOADING / DRILL-DOWN)

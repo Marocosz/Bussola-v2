@@ -39,14 +39,13 @@ from app.models.cofre import Segredo
 
 class PanoramaService:
     
-    def get_dashboard_data(self, db: Session, user_id: int, period: str = 'Mensal'):
+    def get_dashboard_data(self, db: Session, user_id: int, month: int = None, year: int = None, period_length: int = 1):
         """
         Gera o payload principal do Dashboard (Home/Panorama).
         
-        Lógica Temporal:
-            Calcula o intervalo de datas (start_date até end_date) dinamicamente
-            com base no filtro escolhido pelo usuário (Mensal, Trimestral, Semestral).
-            O 'end_date' é sempre o início do mês seguinte para cobrir o mês atual inteiro.
+        Lógica Temporal (Atualizada):
+            Recebe mês/ano de início e a duração do período (1, 3 ou 6 meses).
+            Se não fornecido, usa o mês/ano atual como padrão.
 
         Segurança (Multi-tenancy):
             Todas as sub-queries aplicam estritamente o filtro `user_id`, garantindo
@@ -54,31 +53,26 @@ class PanoramaService:
         """
         today = datetime.now()
         
-        # Define o range de datas baseado no filtro
-        end_date = (today.replace(day=1) + relativedelta(months=1)).replace(hour=0, minute=0, second=0)
-        
-        if period == 'Trimestral':
-            # Retrocede 3 meses a partir do fim do mês atual
-            start_date = (end_date - relativedelta(months=3))
-        elif period == 'Semestral':
-            # Retrocede 6 meses a partir do fim do mês atual
-            start_date = (end_date - relativedelta(months=6))
-        else: # Mensal (Padrão)
-            start_date = today.replace(day=1, hour=0, minute=0, second=0)
+        # Define Data de Início
+        if month and year:
+            start_date = datetime(year, month, 1)
+        else:
+            start_date = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            
+        # Define Data de Fim (Start + Duração)
+        # Ex: Se start=Jan e length=3 (Trimestral) -> End=Abril 1st (Jan+3 meses)
+        end_date = start_date + relativedelta(months=period_length)
 
         # ==============================================================================
         # 1. BLOCO DE FINANÇAS
         # ==============================================================================
         # Regra de Negócio: Consideramos 'Efetivadas' E 'Pendentes'.
-        # Isso garante que o usuário veja o orçamento TOTAL do período, incluindo
-        # contas recorrentes ou parceladas que vencem no futuro próximo.
         
         receita = db.query(func.sum(Transacao.valor)).join(Categoria).filter(
             Categoria.tipo == 'receita', 
             Transacao.user_id == user_id, # [SEGURANÇA] Isolamento de dados
             Transacao.data >= start_date, 
             Transacao.data < end_date
-            # Filtro de status removido para incluir previsões
         ).scalar() or 0.0
 
         despesa = db.query(func.sum(Transacao.valor)).join(Categoria).filter(
@@ -86,38 +80,34 @@ class PanoramaService:
             Transacao.user_id == user_id, # [SEGURANÇA]
             Transacao.data >= start_date, 
             Transacao.data < end_date
-            # Filtro de status removido para incluir previsões
         ).scalar() or 0.0
 
         # ==============================================================================
         # 2. BLOCO DE AGENDA (Compromissos)
         # ==============================================================================
-        # Regra de Negócio:
-        # - Realizados: Passado + Status diferente de Cancelado.
-        # - Pendentes: Futuro (a partir de agora) até o fim do filtro.
-        # - Perdidos: Passado + Status 'Pendente' (Usuário esqueceu de marcar como feito).
         
         # Realizados
         comp_realizados = db.query(func.count(Compromisso.id)).filter(
             Compromisso.user_id == user_id,
             Compromisso.data_hora >= start_date, 
-            Compromisso.data_hora < today,
+            Compromisso.data_hora < today, # Realizados são sempre no passado relativo a hoje
             Compromisso.status != 'Cancelado' 
         ).scalar() or 0
 
-        # Pendentes (Futuros na janela selecionada)
+        # Pendentes (Futuros na janela selecionada ou "Agora" se a janela incluir hoje)
+        # Ajuste: Pendentes dentro da janela de análise selecionada
         comp_pendentes = db.query(func.count(Compromisso.id)).filter(
             Compromisso.user_id == user_id,
-            Compromisso.data_hora >= today,
+            Compromisso.data_hora >= start_date, # Dentro da janela
             Compromisso.data_hora < end_date,
-            Compromisso.status != 'Cancelado'
+            Compromisso.status == 'Pendente' # Status específico
         ).scalar() or 0
 
-        # Perdidos (Passados não concluídos)
+        # Perdidos (Passados não concluídos na janela)
         comp_perdidos = db.query(func.count(Compromisso.id)).filter(
             Compromisso.user_id == user_id,
             Compromisso.data_hora >= start_date,
-            Compromisso.data_hora < today,
+            Compromisso.data_hora < today, # Já passou de hoje
             Compromisso.status == 'Pendente' 
         ).scalar() or 0
         
@@ -148,8 +138,7 @@ class PanoramaService:
             Anotacao.data_criacao < end_date
         ).scalar() or 0
         
-        # Tarefas Pendentes: Agrupadas por Prioridade (Crítica, Alta, Média, Baixa).
-        # Útil para matriz de Eisenhower ou análise de urgência.
+        # Tarefas Pendentes
         tarefas_stats = db.query(
             Tarefa.prioridade, 
             func.count(Tarefa.id)
@@ -169,10 +158,7 @@ class PanoramaService:
             "baixa": t_dict.get('Baixa', 0)
         }
         
-        # Tarefas Concluídas: KPI de entrega.
-        # Regra complexa (OR):
-        # 1. Tarefa tem data_conclusao E ela cai no período.
-        # 2. OU Tarefa não tem data_conclusao (legado), então usamos data_criacao como proxy.
+        # Tarefas Concluídas
         total_tarefas_concluidas = db.query(func.count(Tarefa.id)).filter(
             Tarefa.user_id == user_id,
             Tarefa.status == 'Concluído',
@@ -185,8 +171,6 @@ class PanoramaService:
         # ==============================================================================
         # 4. BLOCO DO COFRE (Segurança de Senhas)
         # ==============================================================================
-        # Regra: Analisa a validade dos segredos (Cartões, tokens) comparando com hoje.
-        # O try/except garante que falhas na tabela de segredos não quebrem o dashboard inteiro.
         try:
             chaves_ativas = db.query(func.count(Segredo.id)).filter(
                 Segredo.user_id == user_id,
@@ -207,7 +191,7 @@ class PanoramaService:
         kpis = {
             "receita_mes": receita,
             "despesa_mes": despesa,
-            "balanco_mes": receita - despesa, # Saldo líquido do período
+            "balanco_mes": receita - despesa, 
             "compromissos_realizados": comp_realizados,
             "compromissos_pendentes": comp_pendentes,
             "compromissos_perdidos": comp_perdidos,
@@ -224,7 +208,6 @@ class PanoramaService:
         # ==============================================================================
         
         # Gráfico de Rosca (Donut): Gastos por Categoria
-        # Inclui Pendentes e Efetivadas para visão completa do orçamento.
         gastos_cat = db.query(Categoria.nome, Categoria.cor, func.sum(Transacao.valor))\
             .join(Transacao).filter(
                 Categoria.tipo == 'despesa',
@@ -233,12 +216,12 @@ class PanoramaService:
                 Transacao.data < end_date
             ).group_by(Categoria.id).all()
         
-        # Separação de listas para bibliotecas de charts (Chart.js / ApexCharts)
         rosca_labels = [g[0] for g in gastos_cat]
         rosca_colors = [g[1] for g in gastos_cat]
         rosca_data = [g[2] for g in gastos_cat]
 
-        # Gráfico de Linha: Evolução Financeira (Últimos 6 meses fixos)
+        # Gráfico de Linha: Evolução Financeira (Últimos 6 meses fixos relativos a hoje, ou adaptável)
+        # Mantendo últimos 6 meses a partir de HOJE para dar contexto histórico geral
         evolucao_labels, evol_rec, evol_desp = [], [], []
         
         for i in range(5, -1, -1):
@@ -264,9 +247,29 @@ class PanoramaService:
             evol_rec.append(r)
             evol_desp.append(d)
 
-        # Gráfico de Barras: Gasto Semanal (Placeholder de estrutura)
+        # Gráfico de Barras: Gasto Semanal (Média Real)
+        # Lógica: Agrupa todas as despesas do período pelo dia da semana
+        # Python: 0=Segunda, 6=Domingo. ChartJS (nosso label): 0=Dom, 1=Seg...
+        semanal_map = {0: 0.0, 1: 0.0, 2: 0.0, 3: 0.0, 4: 0.0, 5: 0.0, 6: 0.0}
+        
+        todas_despesas = db.query(Transacao.data, Transacao.valor).join(Categoria).filter(
+            Categoria.tipo == 'despesa',
+            Transacao.user_id == user_id,
+            Transacao.data >= start_date,
+            Transacao.data < end_date
+        ).all()
+
+        for t in todas_despesas:
+            # weekday(): 0=Seg, 6=Dom
+            dia_semana_py = t.data.weekday()
+            
+            # Conversão para formato [Dom, Seg, Ter...]
+            # Se py=6(Dom) -> map=0. Se py=0(Seg) -> map=1
+            idx_chart = 0 if dia_semana_py == 6 else dia_semana_py + 1
+            semanal_map[idx_chart] += t.valor
+
         semanal_labels = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
-        semanal_data = [0, 0, 0, 0, 0, 0, 0]
+        semanal_data = [semanal_map[i] for i in range(7)]
         
         # Categorias auxiliares para filtros no frontend
         cats_filtro = db.query(Categoria).filter(
@@ -302,10 +305,7 @@ class PanoramaService:
         
         resultado = []
         for t in transacoes:
-            # Formatação do tipo para exibição amigável
             tipo = "Pontual"
-            
-            # [CORREÇÃO] Verifica corretamente o tipo_recorrencia
             if t.tipo_recorrencia == 'recorrente':
                 tipo = "Recorrente"
             elif t.tipo_recorrencia == 'parcelada':
@@ -387,10 +387,6 @@ class PanoramaService:
     def get_category_history(self, db: Session, category_id: int, user_id: int):
         """
         Dados para o gráfico "Sparkline" (minigráfico) de cada categoria.
-        
-        Segurança:
-            Verifica explicitamente se a categoria pertence ao usuário antes de buscar
-            o histórico, prevenindo enumeração ou acesso a dados de outros usuários.
         """
         labels = []
         data = []

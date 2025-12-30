@@ -1,6 +1,6 @@
 import React from 'react';
 
-export function KpiCard({ iconClass, value, label, type, subtext }) {
+export function KpiCard({ iconClass, value, label, type, subtext, isPrivacy = false }) {
     const getColorStyle = () => {
         switch(type) {
             case 'receita': return { bg: 'rgba(39, 174, 96, 0.15)', color: '#27ae60' }; 
@@ -20,7 +20,8 @@ export function KpiCard({ iconClass, value, label, type, subtext }) {
                 <i className={iconClass}></i>
             </div>
             <div className="kpi-content">
-                <span className="kpi-value-text">{value}</span>
+                {/* Aplica blur apenas no valor se o modo privacidade estiver ativo */}
+                <span className={`kpi-value-text ${isPrivacy ? 'privacy-blur' : ''}`}>{value}</span>
                 <span className="kpi-label-text">{label}</span>
                 {subtext && <span className="kpi-subtext">{subtext}</span>}
             </div>

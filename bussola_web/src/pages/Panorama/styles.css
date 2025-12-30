@@ -103,30 +103,122 @@
     margin: 0;
 }
 
-.period-selector {
+/* --- NOVOS CONTROLES DE PERÍODO E PRIVACIDADE --- */
+
+.period-controls-group {
     display: flex;
-    background: var(--cor-fundo);
+    align-items: center;
+    gap: 12px;
+}
+
+.period-type-selector {
+    display: flex;
+    background-color: var(--cor-fundo);
     padding: 4px;
     border-radius: 8px;
     border: 1px solid var(--cor-borda);
 }
 
-.period-selector button {
-    background: transparent;
-    border: none;
-    padding: 8px 16px;
-    font-size: 0.9rem;
-    color: var(--cor-texto-secundario);
-    cursor: pointer;
+.period-type-selector button {
+    padding: 6px 14px;
     border-radius: 6px;
-    transition: all 0.2s;
+    border: none;
+    background: transparent;
+    color: var(--cor-texto-secundario);
+    font-size: 0.85rem;
+    cursor: pointer;
     font-weight: 500;
+    transition: all 0.2s;
 }
 
-.period-selector button.active {
-    background: var(--cor-azul-primario);
-    color: white;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+.period-type-selector button.active {
+    background-color: var(--cor-card-principal);
+    color: var(--cor-azul-primario);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    font-weight: 600;
+}
+
+.period-dropdown-wrapper {
+    min-width: 180px;
+}
+
+/* Seletor de Ano */
+.year-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--cor-fundo);
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    padding: 0 8px;
+    height: 38px;
+}
+
+.year-selector button {
+    background: transparent;
+    border: none;
+    color: var(--cor-texto-secundario);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 100%;
+}
+
+.year-selector button:hover {
+    color: var(--cor-azul-primario);
+}
+
+.year-selector span {
+    font-weight: 600;
+    color: var(--cor-texto-principal);
+    font-size: 0.9rem;
+    min-width: 45px;
+    text-align: center;
+}
+
+/* Botão de Privacidade (Olho) */
+.btn-privacy-toggle {
+    background: transparent;
+    border: 1px solid var(--cor-borda);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--cor-texto-secundario);
+    transition: all 0.2s;
+}
+
+.btn-privacy-toggle:hover, .btn-privacy-toggle.active {
+    background-color: var(--cor-fundo-hover);
+    color: var(--cor-azul-primario);
+    border-color: var(--cor-azul-primario);
+}
+
+/* CLASSE DE BLUR (PRIVACIDADE) - CORRIGIDA 
+   Adicionamos margin negativa e padding positivo para expandir a área de pintura
+   e evitar que o blur seja cortado nas bordas.
+*/
+.privacy-blur {
+    filter: blur(6px);
+    transition: filter 0.3s ease;
+    user-select: none;
+    cursor: default;
+    
+    /* Correção do corte (clipping) */
+    overflow: visible !important;
+    margin: -5px;  /* Puxa as bordas para fora */
+    padding: 5px;  /* Empurra o conteúdo para dentro, criando espaço para o blur */
+    display: block; /* Garante que o padding funcione corretamente */
+}
+
+.privacy-blur:hover {
+    filter: blur(0);
 }
 
 /* --- GRID PRINCIPAL --- */
@@ -241,12 +333,16 @@
     background-color: transparent !important;
 }
 
+/* Correção no Container de Conteúdo KPI 
+   Removido overflow: hidden para permitir que o blur ultrapasse a caixa
+*/
 .kpi-content {
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: visible; /* Alterado de hidden para visible */
     flex: 1;
     align-self: center;
+    min-width: 0; /* Garante que o flexbox ainda respeite limites de largura */
 }
 
 .kpi-value-text {
@@ -257,6 +353,12 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* Quando o blur está ativo, removemos o overflow hidden do texto também */
+.kpi-value-text.privacy-blur {
+    overflow: visible !important;
+    text-overflow: clip;
 }
 
 .kpi-label-text {
@@ -482,6 +584,23 @@
 
     .panel-header {
         margin: 0 0 1.5rem 0;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .period-controls-group {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+    
+    .period-type-selector {
+        flex: 1;
+        justify-content: center;
+    }
+    
+    .period-dropdown-wrapper {
+        flex: 1;
     }
 
     .kpi-group {
@@ -630,7 +749,6 @@
     display: flex;
     flex-direction: column;
     background: var(--cor-fundo);
-    /* AQUI ESTAVA O PROBLEMA: Faltava gap: 0 para evitar qualquer espaço do flexbox */
     gap: 0 !important; 
 }
 
@@ -639,11 +757,7 @@
 /* ============================ */
 .table-filter-bar {
     padding: 1.2rem 2rem 1.2rem 2rem;
-    /* Reduzido padding inferior para 0.5rem */
-
-    /* ALTERAÇÃO IMPORTANTE: Fundo igual ao do Header da Tabela */
     background: var(--cor-card-secundario);
-
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -672,7 +786,6 @@
 
 .filter-pill {
     background: var(--cor-card-principal);
-    /* Contraste no header escuro */
     border: 1px solid var(--cor-borda);
     padding: 6px 16px;
     border-radius: 8px;
@@ -727,7 +840,6 @@
     flex: 1;
     overflow: hidden;
     min-height: 0;
-    /* Fundo do container da tabela volta ao normal */
     background: var(--cor-card-principal);
 }
 
@@ -735,7 +847,6 @@
     flex-shrink: 0;
     padding-top: 6px;
     padding-right: 6px;
-    /* Fundo igual ao do filtro para continuidade */
     background: var(--cor-card-secundario);
 }
 
@@ -749,14 +860,11 @@
     background: var(--cor-card-secundario);
     color: var(--cor-texto-secundario);
     padding: 0.5rem 2rem 1rem 2rem;
-    /* Menos padding superior */
     text-align: left;
     font-weight: 600;
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-
-    /* Borda apenas embaixo */
     border-bottom: 1px solid var(--cor-borda);
     border-top: none;
 }
