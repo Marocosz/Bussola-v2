@@ -600,3 +600,26 @@ select:-webkit-autofill:focus {
     */
     transition: background-color 99999s ease-in-out 0s;
 }
+
+/* ======================================================= */
+/* RESET DE VALIDAÇÃO (Remove borda vermelha nativa)       */
+/* ======================================================= */
+
+/* Remove o estilo padrão de 'invalido' que o navegador aplica 
+   em campos required vazios */
+input:required:invalid, 
+select:required:invalid, 
+textarea:required:invalid {
+    box-shadow: none !important;
+    outline: none !important;
+    /* Força a borda a ser a cor padrão do seu tema */
+    border: 1px solid var(--cor-borda) !important; 
+}
+
+/* Opcional: Remove o foco vermelho também, se houver */
+input:focus:invalid, 
+select:focus:invalid, 
+textarea:focus:invalid {
+    box-shadow: none !important;
+    border-color: var(--cor-azul-primario) !important; /* Ou a cor de foco normal */
+}

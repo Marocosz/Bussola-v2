@@ -69,23 +69,24 @@ class PanoramaService:
         # ==============================================================================
         # 1. BLOCO DE FINANÇAS
         # ==============================================================================
-        # Regra de Negócio: Consideramos apenas transações 'Efetivadas' para o cálculo 
-        # de fluxo de caixa (KPIs). Transações pendentes são previsões, não realidade atual.
+        # Regra de Negócio: Consideramos 'Efetivadas' E 'Pendentes'.
+        # Isso garante que o usuário veja o orçamento TOTAL do período, incluindo
+        # contas recorrentes ou parceladas que vencem no futuro próximo.
         
         receita = db.query(func.sum(Transacao.valor)).join(Categoria).filter(
             Categoria.tipo == 'receita', 
             Transacao.user_id == user_id, # [SEGURANÇA] Isolamento de dados
             Transacao.data >= start_date, 
-            Transacao.data < end_date,
-            Transacao.status == 'Efetivada'
+            Transacao.data < end_date
+            # Filtro de status removido para incluir previsões
         ).scalar() or 0.0
 
         despesa = db.query(func.sum(Transacao.valor)).join(Categoria).filter(
             Categoria.tipo == 'despesa',
             Transacao.user_id == user_id, # [SEGURANÇA]
             Transacao.data >= start_date, 
-            Transacao.data < end_date,
-            Transacao.status == 'Efetivada'
+            Transacao.data < end_date
+            # Filtro de status removido para incluir previsões
         ).scalar() or 0.0
 
         # ==============================================================================
@@ -222,14 +223,14 @@ class PanoramaService:
         # 5. GERAÇÃO DE GRÁFICOS (Aggregation Layer)
         # ==============================================================================
         
-        # Gráfico de Rosca (Donut): Gastos Efetivados por Categoria
+        # Gráfico de Rosca (Donut): Gastos por Categoria
+        # Inclui Pendentes e Efetivadas para visão completa do orçamento.
         gastos_cat = db.query(Categoria.nome, Categoria.cor, func.sum(Transacao.valor))\
             .join(Transacao).filter(
                 Categoria.tipo == 'despesa',
                 Transacao.user_id == user_id,
                 Transacao.data >= start_date,
-                Transacao.data < end_date,
-                Transacao.status == 'Efetivada'
+                Transacao.data < end_date
             ).group_by(Categoria.id).all()
         
         # Separação de listas para bibliotecas de charts (Chart.js / ApexCharts)
@@ -251,13 +252,13 @@ class PanoramaService:
             r = db.query(func.sum(Transacao.valor)).join(Categoria).filter(
                 Categoria.tipo == 'receita', 
                 Transacao.user_id == user_id,
-                Transacao.data >= ini, Transacao.data < fim, Transacao.status == 'Efetivada'
+                Transacao.data >= ini, Transacao.data < fim
             ).scalar() or 0.0
             
             d = db.query(func.sum(Transacao.valor)).join(Categoria).filter(
                 Categoria.tipo == 'despesa', 
                 Transacao.user_id == user_id,
-                Transacao.data >= ini, Transacao.data < fim, Transacao.status == 'Efetivada'
+                Transacao.data >= ini, Transacao.data < fim
             ).scalar() or 0.0
             
             evol_rec.append(r)
@@ -303,9 +304,11 @@ class PanoramaService:
         for t in transacoes:
             # Formatação do tipo para exibição amigável
             tipo = "Pontual"
-            if hasattr(t, 'recorrente') and t.recorrente:
+            
+            # [CORREÇÃO] Verifica corretamente o tipo_recorrencia
+            if t.tipo_recorrencia == 'recorrente':
                 tipo = "Recorrente"
-            elif hasattr(t, 'parcela_atual') and t.parcela_atual:
+            elif t.tipo_recorrencia == 'parcelada':
                 tipo = f"Parcela {t.parcela_atual}/{t.total_parcelas}"
             
             resultado.append({
@@ -411,8 +414,8 @@ class PanoramaService:
                 Transacao.categoria_id == category_id,
                 Transacao.user_id == user_id,
                 Transacao.data >= ini,
-                Transacao.data < fim,
-                Transacao.status == 'Efetivada'
+                Transacao.data < fim
+                # Sem filtro de status para incluir previsões da categoria
             ).scalar() or 0.0
             
             data.append(total)
