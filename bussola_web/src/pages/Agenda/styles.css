@@ -17,7 +17,6 @@
 .layout-grid-custom.agenda-layout {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    /* Duas colunas iguais */
     gap: 0;
     align-items: stretch;
 }
@@ -32,7 +31,6 @@
     padding: 0 1.2rem;
 }
 
-/* Mensagem de lista vazia */
 .empty-list-msg {
     text-align: center;
     padding: 2rem;
@@ -118,6 +116,10 @@
     z-index: 2;
 }
 
+.header-left-aligned {
+    justify-content: space-between !important; 
+}
+
 .column-header-flex:hover {
     background-color: var(--cor-card-principal);
     box-shadow: inset 0 -2px 0 var(--cor-azul-primario);
@@ -137,40 +139,102 @@
     color: var(--cor-texto-principal);
 }
 
-/* --- REGRAS ESPECÍFICAS PARA AGENDA (.agenda-layout) --- */
 .agenda-layout .column-header-flex {
-    justify-content: center;
     min-height: 60px;
-}
-
-.agenda-layout .column-header-flex h2 {
-    text-align: center;
-}
-
-/* Botão "Adicionar": Posicionamento absoluto dentro do Header */
-.agenda-layout .column-header-flex .btn-primary {
-    position: absolute;
-    right: 1.5rem;
-    font-size: 0.8rem;
-    padding: 4px 12px;
-    min-height: 30px;
 }
 
 .agenda-column:last-child .column-header-flex {
     margin-bottom: 0.5rem !important;
 }
 
-/* [NOVO] Estilo para Navegação do Calendário */
+.header-actions-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.header-search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.header-search-input {
+    height: 32px !important;
+    width: 180px;
+    padding-left: 30px;
+    padding-right: 10px;
+    font-size: 0.85rem;
+    border: 1px solid var(--cor-borda);
+    background-color: var(--cor-fundo);
+    color: var(--cor-texto-principal);
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.header-search-input:focus {
+    border-color: var(--cor-azul-primario);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    width: 200px;
+}
+
+.header-search-icon {
+    position: absolute;
+    left: 10px;
+    color: var(--cor-texto-secundario);
+    font-size: 0.8rem;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.btn-filter-sort {
+    background: transparent;
+    border: 1px solid var(--cor-borda);
+    color: var(--cor-texto-secundario);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+.btn-filter-sort:hover {
+    background: var(--cor-fundo-hover);
+    color: var(--cor-azul-primario);
+    border-color: var(--cor-azul-primario);
+}
+
+.btn-filter-sort:active {
+    transform: translateY(1px);
+}
+
+.small-btn {
+    padding: 0 14px;
+    font-size: 0.85rem;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 8px;
+}
+
+/* Navegação do Calendário */
 .calendar-nav-header {
     display: flex;
-    justify-content: center;
+    justify-content: center !important; 
     gap: 1.5rem;
     position: relative;
 }
 
 .calendar-title-nav {
-    min-width: 150px; /* Evita pulo quando muda mês */
-    text-transform: capitalize !important; /* Título do Mês em maiúsculo na primeira letra */
+    min-width: 150px; 
+    text-transform: capitalize !important; 
+    text-align: center;
 }
 
 .btn-nav-arrow {
@@ -197,11 +261,8 @@
 /* 4. AJUSTE PARA 2 COLUNAS CONECTADAS (FIX)     */
 /* ============================================= */
 
-/* 1. Coluna Esquerda: Trazemos para FRENTE (Z-Index maior) */
 .agenda-column:first-child {
     padding-left: 0;
-
-    /* [FIX] IMPORTANTE: Garante que o botão seja clicável */
     position: relative;
     z-index: 10;
 }
@@ -212,11 +273,9 @@
     border-radius: 12px 0 0 12px;
 }
 
-/* 2. Coluna Direita: Fica na camada de BAIXO */
 .agenda-column:last-child {
     padding-right: 0;
     z-index: 1;
-    /* Menor que a esquerda */
 }
 
 .agenda-column:last-child .column-header-flex {
@@ -273,7 +332,6 @@
     transition: color 0.2s;
 }
 
-/* [NOVO] Wrapper da direita */
 .month-header-right {
     display: flex;
     align-items: center;
@@ -290,7 +348,6 @@
     transform: rotate(180deg);
 }
 
-/* Animação do Accordion */
 .accordion-wrapper {
     display: grid;
     grid-template-rows: 0fr;
@@ -311,16 +368,12 @@
     padding-bottom: 0;
 }
 
-/* GRID PRINCIPAL DE COMPROMISSOS */
 .compromissos-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    /* Duas colunas */
     gap: 1rem;
-    /* Espaço entre os cards */
 }
 
-/* Lógica para card solitário na última linha */
 .compromissos-grid>.compromisso-card-modern:last-child:nth-child(odd) {
     grid-column: span 2;
 }
@@ -401,19 +454,17 @@
     text-transform: capitalize;
 }
 
-/* --- Botões de Ação (Hover Effect) --- */
 .top-actions {
     display: flex;
     gap: 8px;
-    opacity: 0; /* Oculto por padrão */
+    opacity: 0; 
     transition: opacity 0.2s ease;
 }
 
 .compromisso-card-modern:hover .top-actions {
-    opacity: 1; /* Visível no hover */
+    opacity: 1; 
 }
 
-/* Mobile: Sempre visível */
 @media (max-width: 768px) {
     .top-actions {
         opacity: 1 !important;
@@ -667,8 +718,6 @@
     }
 }
 
-/* --- INPUTS E FORMULÁRIOS --- */
-
 .form-row {
     display: flex;
     gap: 1rem;
@@ -725,7 +774,6 @@ textarea.form-input {
 /* ============================================= */
 
 .month-divider {
-    /* [ALTERADO] Ocultamos o divisor padrão pois criamos o header customizado */
     display: none; 
 }
 
@@ -842,6 +890,7 @@ textarea.form-input {
     width: 250px;
     pointer-events: none;
     transition: opacity 0.2s ease;
+    will-change: top, left, opacity; /* [OPTIMIZATION] Ajuda no desempenho de renderização */
 }
 
 .tooltip.visible {

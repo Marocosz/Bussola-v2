@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { getAgendaDashboard } from '../../services/api';
 import { CompromissoCard } from './components/CompromissoCard';
 import { AgendaModal } from './components/AgendaModal';
@@ -6,7 +6,58 @@ import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmDialogContext';
 import './styles.css';
 
-// Removido o import do AiAssistant aqui!
+// --- SUB-COMPONENTES MEMOIZADOS (PERFORMANCE FIX) ---
+
+// 1. Componente de Dia do Calendário (Evita re-render ao passar o mouse)
+const CalendarDay = React.memo(({ item, onHover, onLeave }) => {
+    let cardClasses = 'dia-card';
+    if (item.is_today) cardClasses += ' today';
+    if (item.is_padding) cardClasses += ' dia-padding';
+    if (!item.is_padding && item.compromissos?.length > 0) cardClasses += ' has-compromissos';
+
+    return (
+        <div
+            className={cardClasses}
+            onMouseEnter={(e) => !item.is_padding && onHover(e, item.compromissos)}
+            onMouseLeave={onLeave}
+        >
+            <span className="dia-numero">{item.day_number}</span>
+            <span className="dia-semana">{item.weekday_short}</span>
+            <div className={`compromisso-indicator ${item.compromissos?.length > 0 && !item.is_padding ? '' : 'no-event'}`}></div>
+        </div>
+    );
+});
+
+// 2. Componente de Grupo de Mês (Lista Esquerda)
+const MonthGroup = React.memo(({ mes, comps, isOpen, onToggle, onUpdate, onEdit }) => {
+    return (
+        <div className="month-group">
+            <h3 className={`month-header ${isOpen ? 'active' : ''}`} onClick={() => onToggle(mes)}>
+                <span className="month-title-text">{mes}</span>
+                <div className="month-header-right">
+                    <span style={{ fontSize: '0.75rem', fontWeight: '400', opacity: 0.6 }}>
+                        {comps.length} {comps.length === 1 ? 'COMPROMISSO' : 'COMPROMISSOS'}
+                    </span>
+                    <i className={`fa-solid fa-chevron-down ${isOpen ? 'rotate' : ''}`}></i>
+                </div>
+            </h3>
+            
+            <div className={`accordion-wrapper ${isOpen ? 'open' : ''}`}>
+                <div className="accordion-inner">
+                    <div className="month-content">
+                        <div className="compromissos-grid">
+                            {comps.map(comp => (
+                                <CompromissoCard key={comp.id} comp={comp} onUpdate={onUpdate} onEdit={onEdit} />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+});
+
+// --- COMPONENTE PRINCIPAL ---
 
 export function Agenda() {
     const [data, setData] = useState(null);
@@ -14,8 +65,9 @@ export function Agenda() {
     const [modalOpen, setModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     
-    // [NOVO] Estado para controlar o mês visualizado no calendário
     const [viewDate, setViewDate] = useState(new Date());
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortOrder, setSortOrder] = useState('asc'); 
 
     const { addToast } = useToast();
     const dialogConfirm = useConfirm();
@@ -34,19 +86,17 @@ export function Agenda() {
         localStorage.setItem('@Bussola:agenda_accordions', JSON.stringify(openMonths));
     }, [openMonths]);
 
-    const fetchData = async () => {
+    const fetchData = async (silent = false) => {
         try {
-            setLoading(true);
-            // [ALTERADO] Passamos o mês e ano do estado viewDate para a API
-            // Nota: getMonth() retorna 0-11, a API espera 1-12.
+            if (!silent) setLoading(true);
+            
             const month = viewDate.getMonth() + 1;
             const year = viewDate.getFullYear();
 
-            // Assume que sua função de serviço aceita (mes, ano)
             const result = await getAgendaDashboard(month, year); 
             setData(result);
             
-            if (result.compromissos_por_mes && Object.keys(result.compromissos_por_mes).length > 0) {
+            if (!silent && result.compromissos_por_mes && Object.keys(result.compromissos_por_mes).length > 0) {
                 const firstMonth = Object.keys(result.compromissos_por_mes)[0];
                 setOpenMonths(prev => {
                     if (Object.keys(prev).length === 0) return { [firstMonth]: true };
@@ -57,18 +107,28 @@ export function Agenda() {
             console.error(err);
             addToast({ type: 'error', title: 'Erro', description: 'Não foi possível carregar a agenda.' });
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
     };
 
-    // [NOVO] Dispara o fetch sempre que o usuário mudar o mês
-    useEffect(() => { fetchData(); }, [viewDate]);
+    useEffect(() => { 
+        fetchData(data !== null); 
+    }, [viewDate]);
 
-    const toggleAccordion = (key) => setOpenMonths(prev => ({ ...prev, [key]: !prev[key] }));
+    // [OPTIMIZATION] useCallback garante que a função não seja recriada a cada render
+    // Isso permite que o React.memo dos filhos funcione.
+    const toggleAccordion = useCallback((key) => {
+        setOpenMonths(prev => ({ ...prev, [key]: !prev[key] }));
+    }, []);
+
     const handleNew = () => { setEditingItem(null); setModalOpen(true); };
-    const handleEdit = (item) => { setEditingItem(item); setModalOpen(true); };
+    const handleEdit = useCallback((item) => { setEditingItem(item); setModalOpen(true); }, []);
+    
+    // Função para passar para o CompromissoCard (que deve chamar fetchData)
+    const handleUpdate = useCallback(() => fetchData(true), [viewDate]); 
 
-    const handleDayHover = (e, compromissos) => {
+    // [OPTIMIZATION] Handlers de Hover otimizados
+    const handleDayHover = useCallback((e, compromissos) => {
         if (!compromissos || compromissos.length === 0) return;
         const rect = e.target.getBoundingClientRect();
         setTooltip({
@@ -77,31 +137,22 @@ export function Agenda() {
             y: rect.bottom + window.scrollY + 5,
             compromissos
         });
-    };
+    }, []);
 
-    const handleDayLeave = () => setTooltip({ ...tooltip, visible: false });
+    const handleDayLeave = useCallback(() => {
+        setTooltip(prev => ({ ...prev, visible: false }));
+    }, []);
 
-    // [NOVO] Handlers de Navegação do Calendário
-    const handlePrevMonth = () => {
-        setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
-    };
+    const handlePrevMonth = () => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
+    const handleNextMonth = () => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
 
-    const handleNextMonth = () => {
-        setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
-    };
+    const formatMonthTitle = (date) => date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
-    // [NOVO] Formatador de nome de mês para o título (Ex: Janeiro 2025)
-    const formatMonthTitle = (date) => {
-        return date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-    };
-
-    // [NOVO] Filtra apenas os dias do primeiro grid (Mês Atual) para renderizar
-    const getCurrentMonthDays = () => {
+    // Memoiza o cálculo dos dias para não rodar a cada tooltip hover
+    const currentMonthDays = useMemo(() => {
         if (!data || !data.calendar_days) return [];
-        
         const days = [];
         let dividersFound = 0;
-
         for (const item of data.calendar_days) {
             if (item.type === 'month_divider') {
                 dividersFound++;
@@ -111,7 +162,31 @@ export function Agenda() {
             days.push(item);
         }
         return days;
-    };
+    }, [data]); // Só recalcula se 'data' mudar
+
+    // Memoiza o processamento da lista
+    const processedData = useMemo(() => {
+        if (!data || !data.compromissos_por_mes) return {};
+
+        const filtered = {};
+        Object.entries(data.compromissos_por_mes).forEach(([mes, items]) => {
+            const matches = items.filter(item => 
+                item.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (item.local && item.local.toLowerCase().includes(searchTerm.toLowerCase()))
+            );
+            if (matches.length > 0) filtered[mes] = matches;
+        });
+
+        const sortedKeys = Object.keys(filtered);
+        if (sortOrder === 'desc') sortedKeys.reverse();
+
+        const sortedObj = {};
+        sortedKeys.forEach(key => { sortedObj[key] = filtered[key]; });
+
+        return sortedObj;
+    }, [data, searchTerm, sortOrder]);
+
+    const hasData = Object.keys(processedData).length > 0;
 
     const LoadingState = () => (
         <div className="loading-state-internal" style={{ padding: '2rem', textAlign: 'center', color: 'var(--cor-texto-secundario)' }}>
@@ -132,55 +207,61 @@ export function Agenda() {
 
             <div className="layout-grid-custom agenda-layout">
                 <div className="agenda-column">
-                    <div className="column-header-flex">
+                    <div className="column-header-flex header-left-aligned">
                         <h2>Compromissos</h2>
-                        <button className="btn-primary" onClick={handleNew}>
-                            <i className="fa-solid fa-plus"></i> Adicionar
-                        </button>
+                        
+                        <div className="header-actions-group">
+                            <div className="header-search-wrapper">
+                                <i className="fa-solid fa-magnifying-glass header-search-icon"></i>
+                                <input 
+                                    type="text" 
+                                    placeholder="Buscar..." 
+                                    value={searchTerm}
+                                    onChange={e => setSearchTerm(e.target.value)}
+                                    className="header-search-input"
+                                />
+                            </div>
+
+                            <button
+                                className="btn-filter-sort"
+                                onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                                title={sortOrder === 'desc' ? "Mais antigos primeiro" : "Mais recentes primeiro"}
+                            >
+                                <i className={`fa-solid fa-arrow-${sortOrder === 'desc' ? 'up-wide-short' : 'down-wide-short'}`}></i>
+                            </button>
+
+                            <button className="btn-primary small-btn" onClick={handleNew}>
+                                <i className="fa-solid fa-plus"></i> Adicionar
+                            </button>
+                        </div>
                     </div>
 
-                    {loading ? (
+                    {loading && !data ? (
                         <LoadingState />
                     ) : (
                         <>
-                            {data && Object.keys(data.compromissos_por_mes).length > 0 ? (
-                                Object.entries(data.compromissos_por_mes).map(([mes, comps]) => (
-                                    <div className="month-group" key={mes}>
-                                        <h3 className={`month-header ${openMonths[mes] ? 'active' : ''}`} onClick={() => toggleAccordion(mes)}>
-                                            {/* Título do Mês (Esquerda) */}
-                                            <span className="month-title-text">{mes}</span>
-                                            
-                                            {/* Info e Ícone (Direita) */}
-                                            <div className="month-header-right">
-                                                <span style={{ fontSize: '0.75rem', fontWeight: '400', opacity: 0.6 }}>
-                                                    {comps.length} {comps.length === 1 ? 'COMPROMISSO' : 'COMPROMISSOS'}
-                                                </span>
-                                                <i className={`fa-solid fa-chevron-down ${openMonths[mes] ? 'rotate' : ''}`}></i>
-                                            </div>
-                                        </h3>
-                                        
-                                        <div className={`accordion-wrapper ${openMonths[mes] ? 'open' : ''}`}>
-                                            <div className="accordion-inner">
-                                                <div className="month-content">
-                                                    <div className="compromissos-grid">
-                                                        {comps.map(comp => (
-                                                            <CompromissoCard key={comp.id} comp={comp} onUpdate={fetchData} onEdit={handleEdit} />
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                            {hasData ? (
+                                Object.entries(processedData).map(([mes, comps]) => (
+                                    <MonthGroup 
+                                        key={mes}
+                                        mes={mes}
+                                        comps={comps}
+                                        isOpen={!!openMonths[mes]}
+                                        onToggle={toggleAccordion}
+                                        onUpdate={handleUpdate}
+                                        onEdit={handleEdit}
+                                    />
                                 ))
                             ) : (
-                                <p className="empty-list-msg">Nenhum compromisso agendado.</p>
+                                <p className="empty-list-msg">
+                                    {searchTerm ? 'Nenhum compromisso encontrado.' : 'Nenhum compromisso agendado.'}
+                                </p>
                             )}
                         </>
                     )}
                 </div>
 
                 <div className="agenda-column">
-                    {/* Header do Calendário com Navegação */}
                     <div className="column-header-flex calendar-nav-header">
                         <button className="btn-nav-arrow" onClick={handlePrevMonth}>
                             <i className="fa-solid fa-chevron-left"></i>
@@ -193,31 +274,16 @@ export function Agenda() {
                         </button>
                     </div>
 
-                    {loading ? (
-                        <LoadingState />
-                    ) : (
-                        <div className="dias-grid">
-                            {getCurrentMonthDays().map((item, idx) => {
-                                let cardClasses = 'dia-card';
-                                if (item.is_today) cardClasses += ' today';
-                                if (item.is_padding) cardClasses += ' dia-padding';
-                                if (!item.is_padding && item.compromissos?.length > 0) cardClasses += ' has-compromissos';
-
-                                return (
-                                    <div
-                                        className={cardClasses}
-                                        key={idx}
-                                        onMouseEnter={(e) => !item.is_padding && handleDayHover(e, item.compromissos)}
-                                        onMouseLeave={handleDayLeave}
-                                    >
-                                        <span className="dia-numero">{item.day_number}</span>
-                                        <span className="dia-semana">{item.weekday_short}</span>
-                                        <div className={`compromisso-indicator ${item.compromissos?.length > 0 && !item.is_padding ? '' : 'no-event'}`}></div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
+                    <div className="dias-grid">
+                        {currentMonthDays.map((item, idx) => (
+                            <CalendarDay 
+                                key={idx} 
+                                item={item} 
+                                onHover={handleDayHover} 
+                                onLeave={handleDayLeave} 
+                            />
+                        ))}
+                    </div>
                 </div>
             </div>
 
@@ -232,7 +298,7 @@ export function Agenda() {
             <AgendaModal
                 active={modalOpen}
                 closeModal={() => setModalOpen(false)}
-                onUpdate={fetchData}
+                onUpdate={() => fetchData(true)}
                 editingData={editingItem}
             />
         </div>
