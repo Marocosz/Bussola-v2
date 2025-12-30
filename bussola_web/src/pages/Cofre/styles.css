@@ -13,7 +13,6 @@
     padding: 0 1rem;
     display: flex;
     flex-direction: column;
-    /* Gap 0 para que o header e a tabela fiquem grudados */
     gap: 0; 
 }
 
@@ -73,35 +72,27 @@
 }
 
 /* ============================================= */
-/* 3. HEADER DA SEÇÃO (ESTILO ABA IGUAL FINANÇAS) */
+/* 3. HEADER DA SEÇÃO                            */
 /* ============================================= */
 
 .cofre-scope .section-header-flex {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    
-    /* Estilo Base (Cinza Escuro) */
     background-color: var(--cor-card-secundario);
     padding: 1rem 1.5rem;
-    
-    /* Bordas: Arredonda só em cima */
     border: 1px solid var(--cor-borda);
-    border-bottom: 1px solid var(--cor-borda); /* Mantém borda sutil */
+    border-bottom: 1px solid var(--cor-borda);
     border-radius: 16px 16px 0 0;
-    
-    /* Transições para o Hover */
     transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
     position: relative;
     z-index: 2;
 }
 
-/* EFEITO HOVER (IGUAL AO DAS OUTRAS PÁGINAS) */
 .cofre-scope .section-header-flex:hover {
     background-color: var(--cor-card-principal);
-    /* A linha azul na parte inferior */
     box-shadow: inset 0 -2px 0 var(--cor-azul-primario);
-    border-bottom-color: transparent; /* Remove a borda cinza para dar destaque a azul */
+    border-bottom-color: transparent;
 }
 
 .cofre-scope .section-header-flex h2 {
@@ -118,7 +109,6 @@
     color: var(--cor-texto-principal);
 }
 
-/* Botão de Adicionar no Header */
 .cofre-scope .section-header-flex .btn-primary {
     font-size: 0.85rem;
     padding: 6px 16px;
@@ -129,17 +119,14 @@
 }
 
 /* ============================================= */
-/* 4. CONTAINER DA TABELA (GRUDADO NO HEADER)    */
+/* 4. CONTAINER DA TABELA                        */
 /* ============================================= */
 
 .cofre-scope .table-container {
     background-color: var(--cor-card-principal);
-    
-    /* Bordas: Arredonda só embaixo */
     border: 1px solid var(--cor-borda);
-    border-top: none; /* Remove borda superior para conectar com o header */
+    border-top: none;
     border-radius: 0 0 16px 16px;
-    
     overflow: hidden;
     box-shadow: 0 4px 20px rgba(0,0,0,0.05);
     position: relative;
@@ -158,9 +145,7 @@
     border-bottom: 1px solid var(--cor-borda);
 }
 
-/* Header da Tabela (Interno) */
 .cofre-scope .data-table th {
-    /* Fundo sutilmente diferente ou transparente se preferir */
     background-color: rgba(255, 255, 255, 0.02);
     color: var(--cor-texto-secundario);
     font-weight: 600;
@@ -183,15 +168,36 @@
     background-color: var(--cor-fundo-hover);
 }
 
-/* Colunas Específicas */
+/* Coluna Notas Interativa */
 .cofre-scope .column-notas {
     max-width: 300px;
+    cursor: pointer; /* Indica clicável */
+}
+
+.cofre-scope .notes-preview {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     color: var(--cor-texto-secundario);
     font-style: italic;
     font-size: 0.9rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.cofre-scope .notes-preview:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--cor-texto-principal);
+}
+
+.cofre-scope .notes-expand-icon {
+    font-size: 0.75rem;
+    opacity: 0.6;
 }
 
 .cofre-scope .service-tag {
@@ -204,7 +210,6 @@
     display: inline-block;
 }
 
-/* Estado Vazio */
 .cofre-scope .empty-state-cell {
     text-align: center;
     padding: 5rem 2rem !important;
@@ -248,7 +253,8 @@
     border-color: var(--cor-texto-secundario);
 }
 
-.cofre-scope .btn-copy-secret:hover {
+/* Botão Olho (Ver) */
+.cofre-scope .btn-view-secret:hover {
     color: var(--cor-azul-primario);
     background: rgba(59, 130, 246, 0.1);
     border-color: var(--cor-azul-primario);
@@ -267,36 +273,97 @@
 }
 
 /* ============================================= */
-/* 6. MODAIS E INPUTS (SCOPED)                   */
+/* 6. MODAIS E INPUTS (NOVOS ESTILOS)            */
 /* ============================================= */
 
-/* Reutilizando estrutura padrão de modal, mas com scope */
-.cofre-scope .secret-input-wrapper {
-    position: relative;
+/* Input Travado (Locked) no Modal de Edição */
+.cofre-scope .locked-input-wrapper {
     display: flex;
     align-items: center;
-    width: 100%;
-}
-
-.cofre-scope .secret-input-wrapper input {
-    padding-right: 40px; 
-    width: 100%;
-}
-
-.cofre-scope .secret-input-wrapper .btn-reveal {
-    position: absolute;
-    right: 8px;
-    background: transparent;
-    border: none;
-    color: var(--cor-texto-secundario);
+    justify-content: space-between;
+    background-color: var(--cor-fundo-hover);
+    border: 1px dashed var(--cor-borda);
+    border-radius: 8px;
+    padding: 0 10px;
+    height: 45px;
     cursor: pointer;
-    padding: 5px;
+    transition: all 0.2s;
+}
+
+.cofre-scope .locked-input-wrapper:hover {
+    border-color: var(--cor-texto-secundario);
+    background-color: rgba(255,255,255,0.05);
+}
+
+.cofre-scope .fake-input-locked {
     display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--cor-texto-secundario);
+    font-size: 0.9rem;
+}
+
+/* Modal de Ver Senha */
+.cofre-scope .secret-display-box {
+    border: 1px solid var(--cor-borda);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
     align-items: center;
 }
 
-.cofre-scope .secret-input-wrapper .btn-reveal:hover {
-    color: var(--cor-azul-primario);
+.cofre-scope .secret-field {
+    font-family: 'Courier New', monospace;
+    font-size: 1.4rem;
+    letter-spacing: 2px;
+    word-break: break-all;
+    text-align: center;
+    color: var(--cor-texto-principal);
+    background-color: var(--cor-card-secundario);
+    padding: 1rem;
+    border-radius: 8px;
+    width: 100%;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cofre-scope .text-masked {
+    color: var(--cor-texto-secundario);
+    opacity: 0.5;
+}
+
+.cofre-scope .secret-actions {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+    justify-content: center;
+}
+
+.cofre-scope .secret-actions button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 40px;
+}
+
+/* Modal de Notas Completas */
+.cofre-scope .notes-full-view {
+    white-space: pre-wrap;
+    line-height: 1.6;
+    color: var(--cor-texto-principal);
+    background-color: var(--cor-fundo);
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--cor-borda);
+    max-height: 60vh;
+    overflow-y: auto;
 }
 
 /* Responsividade */
@@ -325,6 +392,8 @@
     }
     
     .cofre-scope .column-notas {
-        display: none; /* Oculta notas no mobile para economizar espaço */
+        /* No mobile ainda pode ser útil clicar pra ver, então não escondemos, 
+           mas limitamos ainda mais o tamanho */
+        max-width: 100px; 
     }
 }

@@ -1,19 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { getSegredos, getSegredoValor, deleteSegredo } from '../../services/api';
+import { getSegredos, deleteSegredo } from '../../services/api'; // Removemos getSegredoValor daqui
 import { SegredoModal } from './components/SegredoModal';
+import { ViewSecretModal } from './components/ViewSecretModal'; // Novo Import
+import { ViewNotesModal } from './components/ViewNotesModal';   // Novo Import
 import { useToast } from '../../context/ToastContext';
-import { useConfirm } from '../../context/ConfirmDialogContext'; // <--- O IMPORT TEM QUE ESTAR AQUI
+import { useConfirm } from '../../context/ConfirmDialogContext';
 import './styles.css';
 
 export function Cofre() {
     const [segredos, setSegredos] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [modalOpen, setModalOpen] = useState(false);
+    
+    // Estados dos Modais
+    const [createModalOpen, setCreateModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     
-    // Hooks do Contexto
+    const [viewSecretItem, setViewSecretItem] = useState(null); // Para modal de ver senha
+    const [viewNotesItem, setViewNotesItem] = useState(null);   // Para modal de ver notas
+    
     const { addToast } = useToast();
-    const dialogConfirm = useConfirm(); // Mudei o nome da variável para garantir que não confunda com o nativo
+    const dialogConfirm = useConfirm();
 
     const fetchData = async () => {
         try {
@@ -29,37 +35,30 @@ export function Cofre() {
 
     useEffect(() => { fetchData(); }, []);
 
-    const handleCopy = async (id) => {
-        try {
-            const res = await getSegredoValor(id);
-            if (res.valor) {
-                await navigator.clipboard.writeText(res.valor);
-                addToast({type:'success', title:'Copiado!', description:'Chave copiada para a área de transferência.'});
-            }
-        } catch {
-            addToast({type:'error', title:'Erro', description:'Não foi possível obter a chave.'});
+    // Handler para abrir visualização de senha (com confirmação de segurança)
+    const handleViewSecret = async (segredo) => {
+        // Camada de Segurança Extra: Confirmação antes de chamar API
+        const isConfirmed = await dialogConfirm({
+            title: 'Visualizar Credencial?',
+            description: 'Você está prestes a acessar uma informação sensível. Certifique-se de que ninguém está olhando.',
+            confirmLabel: 'Visualizar',
+            variant: 'info' // Azul para informação/acesso
+        });
+
+        if (isConfirmed) {
+            setViewSecretItem(segredo);
         }
     };
 
     const handleDelete = async (id) => {
-        console.log("Tentando abrir dialog customizado..."); // <--- OLHE NO CONSOLE (F12)
-
-        // Usando a nossa função customizada (dialogConfirm)
         const isConfirmed = await dialogConfirm({
             title: 'Excluir Segredo?',
             description: 'Esta ação removerá permanentemente a chave. Deseja continuar?',
             confirmLabel: 'Sim, Excluir',
-            cancelLabel: 'Cancelar',
             variant: 'danger'
         });
 
-        // Se o usuário clicar em Cancelar ou fechar, isConfirmed será false
-        if (!isConfirmed) {
-            console.log("Cancelado pelo usuário.");
-            return;
-        }
-
-        console.log("Confirmado! Deletando...");
+        if (!isConfirmed) return;
 
         try {
             await deleteSegredo(id);
@@ -70,8 +69,8 @@ export function Cofre() {
         }
     };
 
-    const handleNew = () => { setEditingItem(null); setModalOpen(true); };
-    const handleEdit = (item) => { setEditingItem(item); setModalOpen(true); };
+    const handleNew = () => { setEditingItem(null); setCreateModalOpen(true); };
+    const handleEdit = (item) => { setEditingItem(item); setCreateModalOpen(true); };
 
     const fmtDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR') : 'Não expira';
 
@@ -122,15 +121,27 @@ export function Cofre() {
                                             <td>
                                                 {segredo.servico ? <span className="service-tag">{segredo.servico}</span> : '-'}
                                             </td>
-                                            <td className="column-notas">{segredo.notas || '-'}</td>
+                                            
+                                            {/* Coluna Notas Clicável */}
+                                            <td className="column-notas" onClick={() => { if(segredo.notas) setViewNotesItem(segredo); }}>
+                                                {segredo.notas ? (
+                                                    <div className="notes-preview">
+                                                        {segredo.notas}
+                                                        <i className="fa-solid fa-expand notes-expand-icon"></i>
+                                                    </div>
+                                                ) : '-'}
+                                            </td>
+                                            
                                             <td style={{ color: segredo.data_expiracao ? 'var(--cor-laranja-aviso)' : 'inherit' }}>
                                                 {fmtDate(segredo.data_expiracao)}
                                             </td>
                                             <td>
                                                 <div className="action-buttons" style={{justifyContent: 'flex-end'}}>
-                                                    <button className="btn-action-icon btn-copy-secret" onClick={() => handleCopy(segredo.id)} title="Copiar Chave">
-                                                        <i className="fa-regular fa-copy"></i>
+                                                    {/* Botão Ver Senha (Eye) substitui Copiar */}
+                                                    <button className="btn-action-icon btn-view-secret" onClick={() => handleViewSecret(segredo)} title="Ver/Copiar Senha">
+                                                        <i className="fa-solid fa-eye"></i>
                                                     </button>
+                                                    
                                                     <button className="btn-action-icon btn-edit-segredo" onClick={() => handleEdit(segredo)} title="Editar">
                                                         <i className="fa-solid fa-pencil"></i>
                                                     </button>
@@ -155,12 +166,29 @@ export function Cofre() {
                 </div>
             </div>
 
+            {/* Modais */}
             <SegredoModal 
-                active={modalOpen} 
-                closeModal={() => setModalOpen(false)} 
+                active={createModalOpen} 
+                closeModal={() => setCreateModalOpen(false)} 
                 onUpdate={fetchData} 
                 editingData={editingItem} 
             />
+
+            {viewSecretItem && (
+                <ViewSecretModal 
+                    segredoId={viewSecretItem.id} 
+                    titulo={viewSecretItem.titulo} 
+                    onClose={() => setViewSecretItem(null)} 
+                />
+            )}
+
+            {viewNotesItem && (
+                <ViewNotesModal 
+                    notas={viewNotesItem.notas} 
+                    titulo={viewNotesItem.titulo}
+                    onClose={() => setViewNotesItem(null)} 
+                />
+            )}
         </div>
     );
 }

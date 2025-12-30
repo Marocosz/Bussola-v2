@@ -112,7 +112,14 @@ class CofreService:
         if dados.servico is not None: segredo.servico = dados.servico
         if dados.notas is not None: segredo.notas = dados.notas
         
-        # Lógica para tratar campos opcionais (Date) via Pydantic
+        # [CORREÇÃO] Se o usuário enviou um novo valor, criptografa e salva
+        if dados.valor is not None:
+             if cipher_suite:
+                 segredo.valor_criptografado = cipher_suite.encrypt(dados.valor.encode()).decode()
+             else:
+                 raise Exception("Erro de configuração: Chave de criptografia ausente.")
+
+        # Lógica de data
         if dados.model_fields_set and 'data_expiracao' in dados.model_dump(exclude_unset=True):
              segredo.data_expiracao = dados.data_expiracao
         elif dados.data_expiracao is not None:

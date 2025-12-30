@@ -38,6 +38,7 @@ class SegredoUpdate(BaseModel):
     servico: Optional[str] = None
     notas: Optional[str] = None
     data_expiracao: Optional[date] = None
+    valor: Optional[str]
 
 class SegredoResponse(SegredoBase):
     """
