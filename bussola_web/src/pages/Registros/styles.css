@@ -1655,3 +1655,41 @@
         transform: scale(1) translateY(0);
     }
 }
+
+/* ============================================= */
+/* 11. BUSCA NO HEADER (AJUSTE DE ALTURA)        */
+/* ============================================= */
+.registros-scope .header-search-wrapper {
+    position: relative;
+    margin-right: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.registros-scope .header-search-input {
+    height: 36px !important; /* Força 36px para igualar ao dropdown */
+    width: 200px;
+    padding-left: 34px;      /* Espaço para o ícone */
+    padding-right: 10px;
+    font-size: 0.85rem;
+    border: 1px solid var(--cor-borda);
+    background-color: var(--cor-fundo);
+    color: var(--cor-texto-principal);
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.registros-scope .header-search-input:focus {
+    border-color: var(--cor-azul-primario);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.registros-scope .header-search-icon {
+    position: absolute;
+    left: 10px;
+    color: var(--cor-texto-secundario);
+    font-size: 0.8rem;
+    pointer-events: none;
+    z-index: 2;
+}

@@ -8,7 +8,7 @@ import { GrupoModal } from './components/GrupoModal';
 import { ViewAnotacaoModal } from './components/ViewAnotacaoModal';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmDialogContext';
-import { AiAssistant } from '../../components/AiAssistant'; // <--- 1. Import Adicionado
+import { AiAssistant } from '../../components/AiAssistant';
 import './styles.css';
 
 export function Registros() {
@@ -18,7 +18,7 @@ export function Registros() {
 
     // Hooks de Contexto
     const { addToast } = useToast();
-    const dialogConfirm = useConfirm(); 
+    const dialogConfirm = useConfirm();
 
     // UI State - Modais
     const [notaModalOpen, setNotaModalOpen] = useState(false);
@@ -34,6 +34,10 @@ export function Registros() {
     // UI State - Filtros e Accordions (Esquerda - Grupos)
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [filtroGrupo, setFiltroGrupo] = useState('Todos');
+
+    // [NOVO - PONTO 2] Estado para busca textual
+    const [searchTerm, setSearchTerm] = useState('');
+
     const [openGroups, setOpenGroups] = useState(() => {
         const savedState = localStorage.getItem('@Bussola:registros_accordions');
         if (savedState) {
@@ -82,6 +86,17 @@ export function Registros() {
         }
 
         allNotes.forEach(nota => {
+            // [NOVO - PONTO 2] Filtro de Busca Textual
+            if (searchTerm) {
+                const term = searchTerm.toLowerCase();
+                const matchTitle = nota.titulo?.toLowerCase().includes(term);
+                // Remove tags HTML para buscar no conteúdo
+                const rawContent = nota.conteudo?.replace(/<[^>]+>/g, ' ').toLowerCase() || '';
+                const matchContent = rawContent.includes(term);
+
+                if (!matchTitle && !matchContent) return; // Pula se não der match
+            }
+
             const grupoNome = nota.grupo?.nome || 'Indefinido';
             if (filtroGrupo !== 'Todos' && grupoNome !== filtroGrupo) return;
             if (!grouped[grupoNome]) grouped[grupoNome] = [];
@@ -91,7 +106,14 @@ export function Registros() {
     };
 
     const groupedNotes = data ? processDataByGroup() : {};
-    const fixadas = data?.anotacoes_fixadas || [];
+
+    // Aplica busca também nas fixadas
+    const fixadas = (data?.anotacoes_fixadas || []).filter(nota => {
+        if (!searchTerm) return true;
+        const term = searchTerm.toLowerCase();
+        const rawContent = nota.conteudo?.replace(/<[^>]+>/g, ' ').toLowerCase() || '';
+        return nota.titulo?.toLowerCase().includes(term) || rawContent.includes(term);
+    });
 
     const fixadasFiltered = filtroGrupo === 'Todos'
         ? fixadas
@@ -156,7 +178,7 @@ export function Registros() {
 
     const handleDeleteGrupo = async (grupoId, e) => {
         e.stopPropagation();
-        
+
         const isConfirmed = await dialogConfirm({
             title: 'Excluir Grupo?',
             description: 'Todas as anotações deste grupo serão movidas para "Indefinido". Esta ação não pode ser desfeita.',
@@ -168,19 +190,19 @@ export function Registros() {
 
         try {
             await deleteGrupo(grupoId);
-            addToast({ 
-                type: 'success', 
-                title: 'Grupo excluído', 
-                description: 'O grupo foi removido com sucesso.' 
+            addToast({
+                type: 'success',
+                title: 'Grupo excluído',
+                description: 'O grupo foi removido com sucesso.'
             });
             if (filtroGrupo !== 'Todos') setFiltroGrupo('Todos');
-            fetchData(true); 
+            fetchData(true);
         } catch (error) {
             console.error(error);
-            addToast({ 
-                type: 'error', 
-                title: 'Erro', 
-                description: 'Não foi possível excluir o grupo.' 
+            addToast({
+                type: 'error',
+                title: 'Erro',
+                description: 'Não foi possível excluir o grupo.'
             });
         }
     };
@@ -216,10 +238,21 @@ export function Registros() {
 
                 {/* 1. COLUNA ESQUERDA: CADERNO */}
                 <div className="registros-column column-anotacoes">
-                    {/* ... (mantido igual) ... */}
                     <div className="column-header-flex">
                         <h2>CADERNO</h2>
                         <div className="header-actions-group">
+
+                            <div className="header-search-wrapper">
+                                <i className="fa-solid fa-magnifying-glass header-search-icon"></i>
+                                <input
+                                    type="text"
+                                    placeholder="Buscar..."
+                                    value={searchTerm}
+                                    onChange={e => setSearchTerm(e.target.value)}
+                                    className="header-search-input"
+                                />
+                            </div>
+
                             <div className="custom-dropdown-wrapper">
                                 <button
                                     className={`dropdown-trigger-btn ${filtroGrupo !== 'Todos' ? 'active' : ''}`}
@@ -269,6 +302,8 @@ export function Registros() {
                             </button>
                         </div>
                     </div>
+
+                    {/* [ALTERADO] A div antiga de busca foi removida daqui */}
 
                     <div className="column-scroll-content">
                         {loading ? (
@@ -349,7 +384,7 @@ export function Registros() {
                                 {fixadasFiltered.length === 0 && Object.keys(groupedNotes).length === 0 && (
                                     <div className="empty-state">
                                         <i className="fa-regular fa-folder-open"></i>
-                                        <p>Nenhuma anotação neste grupo.</p>
+                                        <p>{searchTerm ? 'Nenhuma anotação encontrada.' : 'Nenhuma anotação neste grupo.'}</p>
                                     </div>
                                 )}
                             </>
@@ -461,17 +496,17 @@ export function Registros() {
             {/* MODAIS */}
             <AnotacaoModal active={notaModalOpen} closeModal={() => setNotaModalOpen(false)} onUpdate={() => fetchData(true)} editingData={editingNota} gruposDisponiveis={grupos} />
             <TarefaModal active={tarefaModalOpen} closeModal={() => setTarefaModalOpen(false)} onUpdate={() => fetchData(true)} editingData={editingTarefa} />
-            <GrupoModal 
-                active={grupoModalOpen} 
-                closeModal={() => setGrupoModalOpen(false)} 
-                onUpdate={() => fetchData(true)} 
-                editingData={editingGrupo} 
+            <GrupoModal
+                active={grupoModalOpen}
+                closeModal={() => setGrupoModalOpen(false)}
+                onUpdate={() => fetchData(true)}
+                editingData={editingGrupo}
                 existingGroups={grupos}
             />
             <ViewAnotacaoModal active={viewModalOpen} closeModal={() => setViewModalOpen(false)} nota={viewingNota} onEdit={handleEditNota} />
 
             {/* AI Assistant Integrado (Contexto Registros) */}
-            <AiAssistant context="registros" /> 
+            <AiAssistant context="registros" />
         </div>
     );
 }

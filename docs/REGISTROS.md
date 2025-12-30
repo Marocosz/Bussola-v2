@@ -3,26 +3,35 @@
 O módulo **Registros** atua como o **"Segundo Cérebro"** do usuário no Bússola V2. Ele unifica a gestão de conhecimento (Anotações/Wiki Pessoal) e a gestão de execução (Tarefas/To-Do List) em um único fluxo de produtividade.
 
 > [!TIP]
-> **Objetivo:** Capturar ideias rapidamente, organizar informações em contextos (Grupos) e estruturar planos de ação complexos através de tarefas hierárquicas.
+> **Objetivo:** Capturar ideias rapidamente, organizar informações em contextos (Grupos), recuperar dados via busca instantânea e estruturar planos de ação complexos através de tarefas hierárquicas.
 
 ---
 
 ## 📂 Arquitetura e Arquivos
 
-O módulo segue a arquitetura de **Camadas** padrão do sistema, com forte ênfase em recursividade para as tarefas:
+O módulo segue a arquitetura de **Camadas** padrão do sistema, com forte ênfase em recursividade para as tarefas e processamento no Frontend para a busca:
 
 | Camada | Arquivo | Responsabilidade |
 | :--- | :--- | :--- |
 | **Controller** | `app/api/endpoints/registros.py` | Rotas de API, validação de payload e tratamento de erros HTTP. |
 | **Service** | `app/services/registros.py` | **Lógica Complexa.** Gerencia a recursividade de subtarefas e regras de grupos. |
 | **Model** | `app/models/registros.py` | Tabelas `anotacao`, `grupo`, `tarefa` e `subtarefa` (Auto-relacionamento). |
-| **Schema** | `app/schemas/registros.py` | DTOs com suporte a tipos recursivos (`ForwardRef`) para árvores de tarefas. |
+| **Frontend** | `src/pages/Registros/index.jsx` | Lógica de UI, filtros locais, busca textual e gerenciamento de modais. |
+| **Estilos** | `src/pages/Registros/styles.css` | Design System específico do módulo (Cards, Accordions, Modais). |
 
 ---
 
 ## 🧠 Lógica de Negócio e Funcionalidades
 
-### 1. Gestão de Tarefas Recursivas (Árvore de Execução)
+### 1. Busca Textual Inteligente (Client-Side)
+
+Para garantir velocidade instantânea na recuperação de informações, o módulo implementa um motor de busca local no Frontend.
+
+* **Filtro Híbrido:** A busca varre tanto o **Título** quanto o **Conteúdo** das anotações.
+* **Sanitização de HTML:** Como as notas são salvas em *Rich Text* (HTML), o algoritmo de busca remove automaticamente todas as tags (`<p>`, `<strong>`, etc.) antes de comparar os termos. Isso impede que uma busca por "div" retorne todas as notas do sistema, focando apenas no texto legível pelo humano.
+* **Escopo Global:** A busca ignora o filtro de grupos visual, varrendo todas as notas carregadas (incluindo fixadas) para garantir que nada seja perdido.
+
+### 2. Gestão de Tarefas Recursivas (Árvore de Execução)
 
 Diferente de listas "To-Do" simples, o Bússola V2 implementa uma estrutura de **Árvore de Subtarefas**. Uma tarefa pode ter subtarefas, que por sua vez podem ter outras subtarefas, infinitamente.
 
@@ -51,7 +60,7 @@ Ao editar uma tarefa complexa, a sincronização de "mover nós", "deletar nós"
 
 ---
 
-### 2. Gestão de Conhecimento (Anotações)
+### 3. Gestão de Conhecimento (Anotações)
 
 As anotações funcionam como um *Wiki Pessoal*, suportando edição de texto rico (HTML via React Quill) e anexos de links.
 
@@ -64,7 +73,7 @@ Notas importantes podem ser fixadas. O endpoint de Dashboard (`GET /`) já retor
 
 ---
 
-### 3. Dashboard e Inteligência de Dados
+### 4. Dashboard e Inteligência de Dados
 
 O serviço de registros não apenas lista dados, ele os organiza temporalmente e por prioridade para o Dashboard.
 
@@ -86,31 +95,34 @@ ordenacao_prioridade = case(
 
 ---
 
-## 🎨 UX e Comportamento das Features
+## 🎨 UX, UI e Design System
 
-O módulo foi desenhado para ser fluido e perdoar erros do usuário, mantendo a integridade dos dados.
+O design do módulo foi refinado para oferecer clareza visual e feedback tátil, utilizando uma paleta de cores moderna e sombras progressivas.
 
-### A. Feedback Visual de Progresso
-Nos cards de tarefas, o sistema calcula visualmente a % de conclusão baseada na árvore de subtarefas.
-* Se uma tarefa tem 10 subtarefas e você marca 5, o card mostra uma barra de progresso em **50%**.
-* Se completar 100%, a barra fica verde e o card muda de estilo visualmente.
+### A. Cards de Anotação (Caderno)
+* **Visualização Compacta:** Os cards exibem um resumo do conteúdo com `overflow hidden` e `text-overflow ellipsis` para manter a grade alinhada.
+* **Identidade do Grupo:** Cada card possui uma borda lateral grossa (`border-left: 6px`) na cor do grupo ao qual pertence, permitindo identificação visual rápida (scanning) sem ler o nome do grupo.
+* **Feedback de Hover:** Ao passar o mouse, o card eleva-se levemente (`translateY(-4px)`) e a sombra se intensifica, convidando ao clique.
+* **Ações Contextuais:** Botões de fixar e links externos aparecem ou mudam de cor dinamicamente para reduzir poluição visual quando não estão em foco.
 
-### B. Cascata de Conclusão (Smart Toggle)
+### B. Cards de Tarefa (Execução)
+* **Indicadores de Prioridade:** Badges coloridas (Crítica/Vermelho, Alta/Laranja, Média/Azul, Baixa/Verde) com fundo translúcido para rápida triagem.
+* **Alertas de Prazo:** O card detecta automaticamente datas passadas, alterando a cor da tag de prazo e a borda do card para vermelho, sinalizando urgência.
+* **Barra de Progresso:** Uma barra visual calcula a % de conclusão baseada nos checkboxes das subtarefas filhas, oferecendo gratificação visual ao completar etapas.
+
+### C. Navegação e Layout
+* **Accordions Suaves:** Os grupos de anotações e a lista de tarefas concluídas utilizam accordions com animação de altura e opacidade para não sobrecarregar a tela com informações desnecessárias.
+* **Headers Conectados:** O design utiliza cabeçalhos de coluna unificados visualmente com o corpo do conteúdo, criando uma sensação de "aplicativo desktop" robusto.
+* **Modais Híbridos:** Modais utilizam `backdrop-filter: blur` para manter o foco no conteúdo editado, enquanto o resto da interface fica suavemente desfocado.
+
+### D. Cascata de Conclusão (Smart Toggle)
 Ao marcar um item "Pai" como concluído na árvore de subtarefas, o sistema entende a intenção do usuário e **marca automaticamente todos os filhos** como concluídos. O inverso também ocorre (desmarcar o pai desmarca os filhos).
-
-### C. Confirmação de Exclusão
-* **Notas e Tarefas:** A exclusão é **permanente e destrutiva**. O sistema exibe um modal de confirmação (Dialog) vermelho alertando que a ação não pode ser desfeita. No caso de tarefas, avisa que todas as subtarefas também sumirão.
-* **Grupos:** O modal é explicativo, informando que excluir o grupo **não apaga as notas**, apenas as desorganiza (move para Indefinido).
-
-### D. Edição e Visualização
-* **Links:** O sistema detecta URLs anexadas e cria botões clicáveis no rodapé da nota ou no modal de visualização.
-* **Rich Text:** O editor preserva formatação (negrito, listas, itálico), permitindo criar documentos estruturados e não apenas texto plano.
 
 ---
 
 ## 📸 Prints do Design
 
-Abaixo, a interface de produtividade em ação.
+A interface combina funcionalidade densa com respiro visual.
 
 <div align="center">
   <img src="docs/images/registros_1.png" alt="Visão Geral do Caderno e Tarefas" width="48%">

@@ -100,19 +100,33 @@ export function TarefaCard({ tarefa, onUpdate, onEdit }) {
     const confirm = useConfirm(); 
     const isConcluido = tarefa.status === 'Concluído';
 
+    // [NOVO - ADD SUBTAREFA NA RAIZ]
+    const [isAddingRoot, setIsAddingRoot] = useState(false);
+    const [newRootTitle, setNewRootTitle] = useState("");
+
+    const handleAddRoot = async () => {
+        if (!newRootTitle.trim()) return;
+        try {
+            // parent_id = null (Raiz)
+            await addSubtarefa(tarefa.id, newRootTitle, null); 
+            onUpdate();
+            setNewRootTitle("");
+            setIsAddingRoot(false);
+        } catch (error) {
+            console.error(error);
+            addToast({ type: 'error', title: 'Erro', description: 'Erro ao adicionar etapa.' });
+        }
+    };
+
     const handleCheck = async () => {
         const novoStatus = isConcluido ? 'Pendente' : 'Concluído';
         try {
             await updateTarefaStatus(tarefa.id, novoStatus);
-            
-            // --- ADICIONEI OS TOASTS AQUI ---
             if (novoStatus === 'Concluído') {
                 addToast({ type: 'success', title: 'Concluído!', description: 'Tarefa marcada como feita.' });
             } else {
                 addToast({ type: 'info', title: 'Reaberta', description: 'Tarefa voltou para pendentes.' });
             }
-            // --------------------------------
-
             onUpdate();
         } catch (error) { 
             console.error(error);
@@ -206,36 +220,88 @@ export function TarefaCard({ tarefa, onUpdate, onEdit }) {
                 </div>
             </div>
 
-            {progressData.total > 0 && (
-                <div className="subtarefas-container">
-                    <div className="progresso-header">
-                        <span className="progresso-title">Progresso</span>
-                        <span className="progress-text">{progressData.percent}%</span>
+            {/* Renderiza CONTAINER SE tiver subtarefas OU se estiver adicionando */}
+            <div className="subtarefas-container" style={{ display: (progressData.total > 0 || isAddingRoot) ? 'block' : 'block' }}>
+                
+                {progressData.total > 0 && (
+                    <>
+                        <div className="progresso-header">
+                            <span className="progresso-title">Progresso</span>
+                            <span className="progress-text">{progressData.percent}%</span>
+                        </div>
+                        
+                        <div className="progress-bar-bg">
+                            <div 
+                                className="progress-bar-fill" 
+                                style={{
+                                    width: `${progressData.percent}%`, 
+                                    backgroundColor: progressData.percent === 100 ? 'var(--cor-verde-sucesso)' : ''
+                                }}
+                            ></div>
+                        </div>
+                        
+                        <div className="subtarefas-list">
+                            {tarefa.subtarefas && tarefa.subtarefas.map(sub => (
+                                <SubtaskItem 
+                                    key={sub.id} 
+                                    sub={sub} 
+                                    tarefaId={tarefa.id}
+                                    onToggle={handleToggleSub} 
+                                    onUpdate={onUpdate}
+                                />
+                            ))}
+                        </div>
+                    </>
+                )}
+
+                {/* AREA DE QUICK ADD NA RAIZ */}
+                {isAddingRoot ? (
+                    <div style={{ marginTop: '10px', display:'flex', gap:'5px' }}>
+                        <input 
+                            className="form-input" 
+                            style={{ height: '32px', fontSize: '0.9rem', padding: '0 8px', borderRadius:'6px' }}
+                            value={newRootTitle}
+                            onChange={e => setNewRootTitle(e.target.value)}
+                            placeholder="Nova etapa..."
+                            onKeyDown={e => e.key === 'Enter' && handleAddRoot()}
+                            autoFocus
+                        />
+                        <button 
+                            onClick={handleAddRoot}
+                            style={{ background: 'var(--cor-azul-primario)', color:'white', border:'none', borderRadius:'6px', width:'32px', height:'32px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}
+                        >
+                            <i className="fa-solid fa-check"></i>
+                        </button>
+                        <button 
+                            onClick={() => setIsAddingRoot(false)}
+                            style={{ background: 'var(--cor-fundo-hover)', color:'var(--cor-texto-secundario)', border:'none', borderRadius:'6px', width:'32px', height:'32px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}
+                        >
+                            <i className="fa-solid fa-xmark"></i>
+                        </button>
                     </div>
-                    
-                    <div className="progress-bar-bg">
-                        <div 
-                            className="progress-bar-fill" 
-                            style={{
-                                width: `${progressData.percent}%`, 
-                                backgroundColor: progressData.percent === 100 ? 'var(--cor-verde-sucesso)' : ''
-                            }}
-                        ></div>
+                ) : (
+                    // Botão discreto para adicionar, sempre visível no final
+                    <div 
+                        onClick={() => setIsAddingRoot(true)}
+                        style={{ 
+                            marginTop: progressData.total > 0 ? '8px' : '0px',
+                            padding: '4px 0',
+                            cursor: 'pointer', 
+                            color: 'var(--cor-texto-secundario)', 
+                            fontSize: '0.85rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            opacity: 0.7,
+                            transition: 'opacity 0.2s'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.opacity = 1}
+                        onMouseLeave={e => e.currentTarget.style.opacity = 0.7}
+                    >
+                        <i className="fa-solid fa-plus"></i> Adicionar etapa
                     </div>
-                    
-                    <div className="subtarefas-list">
-                        {tarefa.subtarefas && tarefa.subtarefas.map(sub => (
-                            <SubtaskItem 
-                                key={sub.id} 
-                                sub={sub} 
-                                tarefaId={tarefa.id}
-                                onToggle={handleToggleSub} 
-                                onUpdate={onUpdate}
-                            />
-                        ))}
-                    </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 }

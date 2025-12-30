@@ -354,15 +354,20 @@ class RegistrosService:
         fixadas = db.query(Anotacao).filter(Anotacao.fixado == True, Anotacao.user_id == user_id).all()
         nao_fixadas = db.query(Anotacao).filter(Anotacao.fixado == False, Anotacao.user_id == user_id).order_by(Anotacao.data_criacao.desc()).all()
         
+        # [CORREÇÃO PONTO 1] Formatação de data robusta (Locale-safe)
+        meses_pt = [
+            '', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ]
+        
         por_mes = {}
         for nota in nao_fixadas:
-            # Formatação manual de data para garantir PT-BR independente do locale do servidor
-            mes_ano = nota.data_criacao.strftime("%B %Y").capitalize()
-            meses_pt = {'January': 'Janeiro', 'February': 'Fevereiro', 'March': 'Março', 'April': 'Abril', 'May': 'Maio', 'June': 'Junho', 'July': 'Julho', 'August': 'Agosto', 'September': 'Setembro', 'October': 'Outubro', 'November': 'Novembro', 'December': 'Dezembro'}
-            for eng, pt in meses_pt.items():
-                if eng in mes_ano:
-                    mes_ano = mes_ano.replace(eng, pt)
-                    break
+            # Extrai mês e ano diretamente do objeto datetime (Inteiros)
+            # Evita strftime dependente de locale do SO
+            nome_mes = meses_pt[nota.data_criacao.month]
+            ano = nota.data_criacao.year
+            mes_ano = f"{nome_mes} {ano}"
+            
             if mes_ano not in por_mes: por_mes[mes_ano] = []
             por_mes[mes_ano].append(nota)
 
