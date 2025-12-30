@@ -25,8 +25,9 @@ COMUNICAÇÃO:
 =======================================================================================
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from typing import Optional
 from app.api import deps
 from app.schemas.agenda import AgendaDashboardResponse, CompromissoCreate, CompromissoUpdate, CompromissoResponse
 from app.services.agenda import agenda_service
@@ -39,6 +40,8 @@ router = APIRouter()
 
 @router.get("/", response_model=AgendaDashboardResponse)
 def get_agenda(
+    mes: Optional[int] = Query(None, ge=1, le=12, description="Mês para visualização (1-12)"),
+    ano: Optional[int] = Query(None, ge=2000, le=2100, description="Ano para visualização"),
     db: Session = Depends(deps.get_db), 
     current_user = Depends(deps.get_current_user)
 ):
@@ -49,11 +52,16 @@ def get_agenda(
         Fornecer todos os dados necessários para renderizar o calendário mensal e 
         a lista de compromissos em uma única requisição.
 
+    Melhorias (v2):
+        - Aceita parâmetros `mes` e `ano` opcionais para permitir navegação no histórico
+          ou planejamento futuro (remove limitação de 15 dias).
+        - Se não informados, assume o mês atual.
+
     Segurança:
         Passa explicitamente o `current_user.id` para o serviço, garantindo que
         o usuário veja apenas os seus próprios compromissos.
     """
-    return agenda_service.get_dashboard(db, current_user.id)
+    return agenda_service.get_dashboard(db, current_user.id, mes, ano)
 
 # --------------------------------------------------------------------------------------
 # ROTAS DE ESCRITA (CREATE, UPDATE, DELETE)

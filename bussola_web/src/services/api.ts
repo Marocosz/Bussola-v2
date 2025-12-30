@@ -471,8 +471,14 @@ export interface AgendaDashboard {
     calendar_days: CalendarDay[];
 }
 
-export const getAgendaDashboard = async (): Promise<AgendaDashboard> => {
-    const response = await api.get('/agenda/');
+export const getAgendaDashboard = async (mes: number | string, ano: number | string) => {
+    // Definimos params como 'any' ou um objeto chave-valor para evitar erro de "propriedade não existe"
+    const params: any = {}; 
+
+    if (mes) params.mes = mes;
+    if (ano) params.ano = ano;
+
+    const response = await api.get('/agenda/', { params });
     return response.data;
 };
 

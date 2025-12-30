@@ -158,7 +158,39 @@
 
 .agenda-column:last-child .column-header-flex {
     margin-bottom: 0.5rem !important;
-    /* Era 1.5rem. Ajuste esse valor conforme seu gosto */
+}
+
+/* [NOVO] Estilo para Navegação do Calendário */
+.calendar-nav-header {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    position: relative;
+}
+
+.calendar-title-nav {
+    min-width: 150px; /* Evita pulo quando muda mês */
+    text-transform: capitalize !important; /* Título do Mês em maiúsculo na primeira letra */
+}
+
+.btn-nav-arrow {
+    background: transparent;
+    border: 1px solid var(--cor-borda);
+    color: var(--cor-texto-secundario);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-nav-arrow:hover {
+    background-color: var(--cor-fundo-hover);
+    color: var(--cor-azul-primario);
+    border-color: var(--cor-azul-primario);
 }
 
 /* ============================================= */
@@ -219,18 +251,34 @@
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
-    font-size: 0.85rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--cor-texto-secundario);
     transition: all 0.2s;
 }
 
 .month-header:hover,
 .month-header.active {
-    color: var(--cor-azul-primario);
     border-bottom-color: var(--cor-azul-primario) !important;
+}
+
+.month-header:hover .month-title-text,
+.month-header.active .month-title-text {
+    color: var(--cor-azul-primario);
+}
+
+.month-title-text {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--cor-texto-secundario);
+    transition: color 0.2s;
+}
+
+/* [NOVO] Wrapper da direita */
+.month-header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--cor-texto-secundario);
 }
 
 .month-header i {
@@ -677,19 +725,8 @@ textarea.form-input {
 /* ============================================= */
 
 .month-divider {
-    grid-column: 1 / -1;
-    width: 100%;
-    margin-top: 1.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid var(--cor-borda);
-}
-
-.month-divider h2 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--cor-texto-principal);
-    margin: 0;
-    text-transform: uppercase;
+    /* [ALTERADO] Ocultamos o divisor padrão pois criamos o header customizado */
+    display: none; 
 }
 
 .dias-grid {

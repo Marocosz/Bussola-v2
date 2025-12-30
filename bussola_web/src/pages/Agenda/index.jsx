@@ -14,6 +14,9 @@ export function Agenda() {
     const [modalOpen, setModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     
+    // [NOVO] Estado para controlar o mês visualizado no calendário
+    const [viewDate, setViewDate] = useState(new Date());
+
     const { addToast } = useToast();
     const dialogConfirm = useConfirm();
     
@@ -33,7 +36,14 @@ export function Agenda() {
 
     const fetchData = async () => {
         try {
-            const result = await getAgendaDashboard();
+            setLoading(true);
+            // [ALTERADO] Passamos o mês e ano do estado viewDate para a API
+            // Nota: getMonth() retorna 0-11, a API espera 1-12.
+            const month = viewDate.getMonth() + 1;
+            const year = viewDate.getFullYear();
+
+            // Assume que sua função de serviço aceita (mes, ano)
+            const result = await getAgendaDashboard(month, year); 
             setData(result);
             
             if (result.compromissos_por_mes && Object.keys(result.compromissos_por_mes).length > 0) {
@@ -51,7 +61,8 @@ export function Agenda() {
         }
     };
 
-    useEffect(() => { fetchData(); }, []);
+    // [NOVO] Dispara o fetch sempre que o usuário mudar o mês
+    useEffect(() => { fetchData(); }, [viewDate]);
 
     const toggleAccordion = (key) => setOpenMonths(prev => ({ ...prev, [key]: !prev[key] }));
     const handleNew = () => { setEditingItem(null); setModalOpen(true); };
@@ -69,6 +80,38 @@ export function Agenda() {
     };
 
     const handleDayLeave = () => setTooltip({ ...tooltip, visible: false });
+
+    // [NOVO] Handlers de Navegação do Calendário
+    const handlePrevMonth = () => {
+        setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
+    };
+
+    const handleNextMonth = () => {
+        setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
+    };
+
+    // [NOVO] Formatador de nome de mês para o título (Ex: Janeiro 2025)
+    const formatMonthTitle = (date) => {
+        return date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    };
+
+    // [NOVO] Filtra apenas os dias do primeiro grid (Mês Atual) para renderizar
+    const getCurrentMonthDays = () => {
+        if (!data || !data.calendar_days) return [];
+        
+        const days = [];
+        let dividersFound = 0;
+
+        for (const item of data.calendar_days) {
+            if (item.type === 'month_divider') {
+                dividersFound++;
+                if (dividersFound > 1) break; 
+                continue; 
+            }
+            days.push(item);
+        }
+        return days;
+    };
 
     const LoadingState = () => (
         <div className="loading-state-internal" style={{ padding: '2rem', textAlign: 'center', color: 'var(--cor-texto-secundario)' }}>
@@ -104,8 +147,16 @@ export function Agenda() {
                                 Object.entries(data.compromissos_por_mes).map(([mes, comps]) => (
                                     <div className="month-group" key={mes}>
                                         <h3 className={`month-header ${openMonths[mes] ? 'active' : ''}`} onClick={() => toggleAccordion(mes)}>
-                                            <span>{mes}</span>
-                                            <i className={`fa-solid fa-chevron-down ${openMonths[mes] ? 'rotate' : ''}`}></i>
+                                            {/* Título do Mês (Esquerda) */}
+                                            <span className="month-title-text">{mes}</span>
+                                            
+                                            {/* Info e Ícone (Direita) */}
+                                            <div className="month-header-right">
+                                                <span style={{ fontSize: '0.75rem', fontWeight: '400', opacity: 0.6 }}>
+                                                    {comps.length} {comps.length === 1 ? 'COMPROMISSO' : 'COMPROMISSOS'}
+                                                </span>
+                                                <i className={`fa-solid fa-chevron-down ${openMonths[mes] ? 'rotate' : ''}`}></i>
+                                            </div>
                                         </h3>
                                         
                                         <div className={`accordion-wrapper ${openMonths[mes] ? 'open' : ''}`}>
@@ -129,22 +180,24 @@ export function Agenda() {
                 </div>
 
                 <div className="agenda-column">
-                    <div className="column-header-flex">
-                        <h2>Calendário</h2>
+                    {/* Header do Calendário com Navegação */}
+                    <div className="column-header-flex calendar-nav-header">
+                        <button className="btn-nav-arrow" onClick={handlePrevMonth}>
+                            <i className="fa-solid fa-chevron-left"></i>
+                        </button>
+                        
+                        <h2 className="calendar-title-nav">{formatMonthTitle(viewDate)}</h2>
+                        
+                        <button className="btn-nav-arrow" onClick={handleNextMonth}>
+                            <i className="fa-solid fa-chevron-right"></i>
+                        </button>
                     </div>
 
                     {loading ? (
                         <LoadingState />
                     ) : (
                         <div className="dias-grid">
-                            {data && data.calendar_days.map((item, idx) => {
-                                if (item.type === 'month_divider') {
-                                    return (
-                                        <div className="month-divider" key={idx}>
-                                            <h2>{item.month_name} {item.year}</h2>
-                                        </div>
-                                    );
-                                }
+                            {getCurrentMonthDays().map((item, idx) => {
                                 let cardClasses = 'dia-card';
                                 if (item.is_today) cardClasses += ' today';
                                 if (item.is_padding) cardClasses += ' dia-padding';

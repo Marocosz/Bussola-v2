@@ -317,7 +317,7 @@ export function Registros() {
                                                 <span><i className="fa-solid fa-thumbtack"></i> Fixados</span>
                                             </div>
                                             <div className="header-meta">
-                                                <span className="count-text">{fixadasFiltered.length} {fixadasFiltered.length === 1 ? 'nota' : 'notas'}</span>
+                                                <span style={{ fontSize: '0.75rem', fontWeight: '400', opacity: 0.6 }}>{fixadasFiltered.length} {fixadasFiltered.length === 1 ? 'NOTA' : 'NOTAS'}</span>
                                                 <i className={`fa-solid fa-chevron-down ${openGroups['fixados'] ? 'rotate' : ''}`}></i>
                                             </div>
                                         </h3>
@@ -355,7 +355,7 @@ export function Registros() {
                                                     <span>{grupoNome}</span>
                                                 </div>
                                                 <div className="header-meta">
-                                                    <span className="count-text">{notas.length} {notas.length === 1 ? 'nota' : 'notas'}</span>
+                                                    <span style={{ fontSize: '0.75rem', fontWeight: '400', opacity: 0.6 }}>{notas.length} {notas.length === 1 ? 'NOTA' : 'NOTAS'}</span>
                                                     <i className={`fa-solid fa-chevron-down ${isOpen ? 'rotate' : ''}`}></i>
                                                 </div>
                                             </h3>

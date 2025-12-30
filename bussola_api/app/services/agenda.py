@@ -20,6 +20,10 @@ COMUNICAÇÃO:
     - Utilizado por: app.api.endpoints.agenda.
     - Dependências: datetime, dateutil (cálculos de datas).
 
+MELHORIAS IMPLEMENTADAS (v2):
+    - [FIX] Performance O(1) no grid: Uso de Dicionário em vez de Lista para buscar eventos do dia.
+    - [FIX] Histórico: Removida limitação de 15 dias. Grid calculado dinamicamente com base em Ano/Mês.
+    - [FIX] Timezone/Data: Lógica aprimorada para comparação de "Hoje" usando date() e não datetime().
 =======================================================================================
 """
 
@@ -39,14 +43,13 @@ except:
 
 class AgendaService:
 
-    def _generate_month_grid(self, year: int, month: int, todos: list, agora: datetime):
+    def _generate_month_grid(self, year: int, month: int, map_compromissos: dict, agora: datetime):
         """
         Gera a estrutura de dias para renderização do grid de calendário no frontend.
         
-        Regras de Exibição:
-        1. O grid deve ser sempre completo (Domingo a Sábado).
-        2. Dias do mês anterior ou posterior que preenchem a semana devem ser incluídos,
-           mas marcados como 'is_padding=True' para diferenciação visual (cinza/desativado).
+        Otimização de Performance (N+1 Fix):
+        - Recebe um dicionário `map_compromissos` onde a chave é `date` e o valor é a lista de eventos.
+        - Isso elimina a necessidade de iterar a lista inteira de compromissos para cada dia do grid.
         
         Retorno:
             Lista de dicionários contendo metadados do dia e resumo dos compromissos.
@@ -57,7 +60,6 @@ class AgendaService:
         last_date_of_month = (first_date_of_month + relativedelta(months=1)) - timedelta(days=1)
 
         # 2. Calcular o início do Grid (Domingo anterior ou o próprio dia 1)
-        # Aritmética modular para encontrar quantos dias voltar até o último domingo
         days_to_retreat = (first_date_of_month.weekday() + 1) % 7
         grid_start_date = first_date_of_month - timedelta(days=days_to_retreat)
 
@@ -75,10 +77,10 @@ class AgendaService:
             # Regra de Visualização: Padding se o mês não for o alvo
             is_padding = (iter_date.month != month)
 
-            # Filtra compromissos do dia específico na lista carregada em memória
-            comps = [c for c in todos if c.data_hora.date() == iter_date]
+            # [OTIMIZAÇÃO] Busca direta no dicionário (O(1)) em vez de filtrar lista (O(N))
+            comps = map_compromissos.get(iter_date, [])
             
-            # Minificação de dados para o tooltip do calendário (performance)
+            # Minificação de dados para o tooltip do calendário
             comps_json = [{"titulo": c.titulo, "hora": c.data_hora.strftime("%H:%M")} for c in comps]
             
             # Índice para nome da semana (0=Dom ... 6=Sáb)
@@ -88,7 +90,7 @@ class AgendaService:
                 "type": "day",
                 "day_number": str(iter_date.day),
                 "weekday_short": dias_semana_curto[w_idx],
-                "is_today": (iter_date == agora.date()),
+                "is_today": (iter_date == agora.date()), # Comparação segura date vs date
                 "is_padding": is_padding, 
                 "compromissos": comps_json
             })
@@ -97,33 +99,48 @@ class AgendaService:
             
         return grid_days
     
-    def get_dashboard(self, db: Session, user_id: int):
+    def get_dashboard(self, db: Session, user_id: int, mes: int = None, ano: int = None):
         """
         Monta o painel principal da agenda.
         
-        Estratégia de Performance:
-        Realiza uma única consulta (query) abrangente no banco de dados para buscar
-        todos os compromissos relevantes (passado recente + futuro). O processamento
-        de agrupamento e geração de grid é feito em memória (Python), evitando o problema N+1.
+        Melhorias:
+        - Aceita `mes` e `ano` opcionais para permitir navegação no histórico/futuro.
+        - Filtra no banco apenas os dados relevantes para a visualização solicitada (Range Query).
         """
-        agora = datetime.now()
+        agora = datetime.now() # Hora do servidor (Recomendado configurar servidor em UTC e converter no front ou usar pytz)
         
-        # Define janela de busca com margem de segurança (paddings do início do mês)
-        inicio_busca = agora.replace(day=1) - timedelta(days=15)
+        # 1. Definição do Mês de Referência (Navegação)
+        if mes and ano:
+            ref_date = datetime(ano, mes, 1)
+        else:
+            ref_date = agora.replace(day=1)
+
+        # 2. Definição do Range de Busca Inteligente (Evita Full Scan)
+        # Queremos mostrar o Mês de Referência e o Próximo Mês.
+        # Precisamos incluir paddings: vamos pegar de 15 dias antes do mês ref até 15 dias depois do próximo mês.
         
+        data_inicio_range = ref_date - timedelta(days=15)
+        
+        prox_mes_ref = ref_date + relativedelta(months=1)
+        data_fim_range = (prox_mes_ref + relativedelta(months=1)) + timedelta(days=15)
+
         # [SEGURANÇA / MULTI-TENANT] 
-        # Garante que apenas dados do usuário solicitante sejam retornados.
+        # Busca otimizada por período
         todos = db.query(Compromisso).filter(
             Compromisso.user_id == user_id,
-            Compromisso.data_hora >= inicio_busca
+            Compromisso.data_hora >= data_inicio_range,
+            Compromisso.data_hora <= data_fim_range
         ).order_by(Compromisso.data_hora.asc()).all()
 
-        # Estrutura para a Lista Lateral (Agrupada por Mês)
+        # 3. Processamento em Memória (O(N))
         por_mes = defaultdict(list)
+        map_compromissos_por_data = defaultdict(list) # Estrutura auxiliar para o Grid O(1)
+
         meses_pt = {1:"Janeiro", 2:"Fevereiro", 3:"Março", 4:"Abril", 5:"Maio", 6:"Junho",
                     7:"Julho", 8:"Agosto", 9:"Setembro", 10:"Outubro", 11:"Novembro", 12:"Dezembro"}
         
-        inicio_mes_real = agora.replace(day=1, hour=0, minute=0, second=0)
+        # Data de corte para a lista lateral (exibir apenas do mês de referência em diante)
+        inicio_lista_lateral = ref_date.replace(hour=0, minute=0, second=0, microsecond=0)
         
         for comp in todos:
             # REGRA DE NEGÓCIO: Atualização de Status
@@ -132,34 +149,35 @@ class AgendaService:
                 comp.status = 'Perdido'
                 db.add(comp)
             
-            # Filtro de Exibição da Lista Lateral:
-            # Mostra apenas compromissos do mês atual em diante.
-            if comp.data_hora >= inicio_mes_real:
+            # Popula dicionário otimizado para o grid (chave = data pura)
+            map_compromissos_por_data[comp.data_hora.date()].append(comp)
+
+            # Popula lista lateral (apenas se estiver dentro ou após o mês de referência)
+            if comp.data_hora >= inicio_lista_lateral:
                 key = f"{meses_pt[comp.data_hora.month]}/{comp.data_hora.year}"
                 por_mes[key].append(comp)
         
         # Persiste alterações de status (Perdido)
         db.commit()
 
-        # Geração do Grid de Calendário (Mês Atual + Próximo)
+        # 4. Geração do Grid de Calendário (Mês Referência + Próximo)
         calendar_days = []
         
-        # 1. Mês Atual
+        # Mês Referência (Solicitado ou Atual)
         calendar_days.append({
             "type": "month_divider",
-            "month_name": meses_pt[agora.month],
-            "year": agora.year
+            "month_name": meses_pt[ref_date.month],
+            "year": ref_date.year
         })
-        calendar_days.extend(self._generate_month_grid(agora.year, agora.month, todos, agora))
+        calendar_days.extend(self._generate_month_grid(ref_date.year, ref_date.month, map_compromissos_por_data, agora))
 
-        # 2. Próximo Mês
-        prox = agora + relativedelta(months=1)
+        # Próximo Mês
         calendar_days.append({
             "type": "month_divider",
-            "month_name": meses_pt[prox.month],
-            "year": prox.year
+            "month_name": meses_pt[prox_mes_ref.month],
+            "year": prox_mes_ref.year
         })
-        calendar_days.extend(self._generate_month_grid(prox.year, prox.month, todos, agora))
+        calendar_days.extend(self._generate_month_grid(prox_mes_ref.year, prox_mes_ref.month, map_compromissos_por_data, agora))
 
         return {
             "compromissos_por_mes": por_mes,
