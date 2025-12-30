@@ -156,15 +156,15 @@ Nenhum sistema é 100% invulnerável. Esta seção detalha francamente os vetore
 ## 📱 Screenshots (Interface de Segurança)
 
 ### 1. Lista Segura (Dados Ocultos)
-![Lista de Segredos](https://via.placeholder.com/800x400?text=Lista+Segura+-+Senhas+Ocultas)
+![Lista de Segredos](images/cofre_1.png)
 *A listagem exibe apenas metadados. Nenhuma senha é trafegada nesta tela.*
 
 ### 2. Modal de Visualização (Protegido)
-![Modal Ver Senha](https://via.placeholder.com/800x400?text=Modal+Ver+Senha+-+Mascarado+e+Timer)
+![Modal Ver Senha](images/cofre_2.png)
 *Senha mascarada por padrão, botão de revelar opcional e timer de auto-destruição do clipboard.*
 
 ### 3. Edição Travada (Prevenção de Erros)
-![Edição Travada](https://via.placeholder.com/800x400?text=Modal+Edicao+-+Campo+Senha+Bloqueado)
+![Edição Travada](images/cofre_3.png)
 *O campo de senha exige um "Destravamento" explícito para ser alterado.*
 
 ---
