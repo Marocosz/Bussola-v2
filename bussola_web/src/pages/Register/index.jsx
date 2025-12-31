@@ -3,8 +3,9 @@ import { useToast } from '../../context/ToastContext';
 import { useSystem } from '../../context/SystemContext';
 import { registerUser } from '../../services/api'; 
 import { useNavigate, Link, Navigate } from 'react-router-dom';
+import zxcvbn from 'zxcvbn'; // Biblioteca de força de senha
 
-import '../Login/styles.css'; // Reutiliza estilo do Login
+import '../Login/styles.css'; 
 import loginImageLight from '../../assets/images/loginimage1.svg';
 import loginImageDark from '../../assets/images/loginimage1-dark.svg';
 import logoBussola from '../../assets/images/bussola.svg';
@@ -15,6 +16,10 @@ export function Register() {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    
+    // Estado para força da senha
+    const [passwordScore, setPasswordScore] = useState(null);
+    const [passwordFeedback, setPasswordFeedback] = useState('');
 
     const { addToast } = useToast();
     const { canRegister, loading: systemLoading, isSelfHosted } = useSystem();
@@ -22,8 +27,28 @@ export function Register() {
 
     if (systemLoading) return <div className="loading-screen">Carregando...</div>;
 
-    // Se registro fechado, volta pro login
     if (!canRegister) return <Navigate to="/login" />;
+
+    const handlePasswordChange = (e) => {
+        const val = e.target.value;
+        setPassword(val);
+        if (val) {
+            const result = zxcvbn(val);
+            setPasswordScore(result.score); // 0 a 4
+            // Tradução simples do feedback
+            const messages = [
+                "Muito fraca (Use frases ou palavras aleatórias)",
+                "Fraca (Adicione números e símbolos)",
+                "Média (Pode melhorar)",
+                "Forte",
+                "Muito Forte"
+            ];
+            setPasswordFeedback(messages[result.score]);
+        } else {
+            setPasswordScore(null);
+            setPasswordFeedback('');
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -33,8 +58,8 @@ export function Register() {
             return;
         }
 
-        if (password.length < 6) {
-            addToast({ type: 'warning', title: 'Senha Curta', description: 'A senha deve ter pelo menos 6 caracteres.' });
+        if (passwordScore !== null && passwordScore < 2) {
+            addToast({ type: 'warning', title: 'Senha Fraca', description: 'Por favor, crie uma senha mais forte para sua segurança.' });
             return;
         }
 
@@ -47,7 +72,6 @@ export function Register() {
                 full_name: fullName
             });
 
-            // Lógica de Redirecionamento SaaS vs Self-Hosted
             if (isSelfHosted) {
                 addToast({
                     type: 'success',
@@ -56,7 +80,6 @@ export function Register() {
                 });
                 navigate('/login');
             } else {
-                // No SaaS, precisamos que ele veja a página pedindo para olhar o e-mail
                 navigate('/register-success');
             }
 
@@ -66,6 +89,18 @@ export function Register() {
             addToast({ type: 'error', title: 'Erro no Registro', description: msg });
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Helper para cor da barra
+    const getStrengthColor = () => {
+        switch (passwordScore) {
+            case 0: return '#ef4444'; // Vermelho
+            case 1: return '#f97316'; // Laranja
+            case 2: return '#eab308'; // Amarelo
+            case 3: return '#84cc16'; // Verde claro
+            case 4: return '#10b981'; // Verde forte
+            default: return '#e5e7eb';
         }
     };
 
@@ -120,10 +155,28 @@ export function Register() {
                                 type="password"
                                 className="form-input"
                                 value={password}
-                                onChange={(e) => setPassword(e.target.value)}
+                                onChange={handlePasswordChange}
                                 required
-                                placeholder="Mínimo 6 caracteres"
+                                placeholder="Crie uma senha forte"
                             />
+                            
+                            {/* BARRA DE FORÇA DA SENHA */}
+                            {password && (
+                                <div className="password-strength-container">
+                                    <div className="strength-bar-bg">
+                                        <div 
+                                            className="strength-bar-fill" 
+                                            style={{ 
+                                                width: `${(passwordScore + 1) * 20}%`,
+                                                backgroundColor: getStrengthColor() 
+                                            }}
+                                        ></div>
+                                    </div>
+                                    <span className="strength-text" style={{ color: getStrengthColor() }}>
+                                        {passwordFeedback}
+                                    </span>
+                                </div>
+                            )}
                         </div>
 
                         <div className="form-group">
@@ -136,6 +189,14 @@ export function Register() {
                                 required
                                 placeholder="Repita a senha"
                             />
+                        </div>
+
+                        {/* DICA DE SEGURANÇA */}
+                        <div className="security-tip-box">
+                            <i className="fas fa-lock"></i>
+                            <p>
+                                <strong>Dica de Segurança:</strong> Use frases longas (ex: "Cavalo-Azul-Corre-Rapido") ou misture letras, números e símbolos. Evite datas de nascimento.
+                            </p>
                         </div>
 
                         <button type="submit" className="submit-button" disabled={loading} style={{ width: '100%', marginTop: '10px' }}>

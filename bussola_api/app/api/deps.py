@@ -30,6 +30,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
+import redis
 
 from app.core import security
 from app.core.config import settings
@@ -42,6 +43,9 @@ from app.schemas.token import TokenPayload
 reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/login/access-token"
 )
+
+# Conexão Global com Redis (Connection Pool)
+redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
 
 def get_db() -> Generator:
     """
@@ -68,20 +72,37 @@ def get_current_user(session: SessionDep, token: TokenDep) -> User:
 
     Regras de Negócio e Segurança:
     1. Valida a assinatura do JWT usando a SECRET_KEY.
-    2. Converte o 'sub' do token para buscar o usuário no banco.
-    3. Garante que o usuário ainda existe no banco.
-    4. Garante que o usuário está ATIVO (bloqueia acesso de usuários banidos/inativos
+    2. [NOVO] Verifica se o token está na BLACKLIST do Redis (Logout).
+    3. Converte o 'sub' do token para buscar o usuário no banco.
+    4. Garante que o usuário ainda existe no banco.
+    5. Garante que o usuário está ATIVO (bloqueia acesso de usuários banidos/inativos
        mesmo que possuam um token válido).
 
     Retorna:
         User: Instância do usuário autenticado.
     """
+    
+    # [CHECK BLACKLIST] Se o token foi revogado, nega acesso instantaneamente.
+    if redis_client.exists(f"blacklist:{token}"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Sessão revogada. Faça login novamente.",
+        )
+
     try:
         # Decodifica e valida assinatura/expiração do token
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
         token_data = TokenPayload(**payload)
+        
+        # [CHECK TYPE] Garante que é um Access Token, não Refresh
+        if payload.get("type") != "access":
+             raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Tipo de token inválido para acesso.",
+            )
+
     except (JWTError, ValidationError):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

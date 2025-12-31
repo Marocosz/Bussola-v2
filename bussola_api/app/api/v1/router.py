@@ -50,7 +50,7 @@ api_router = APIRouter()
 # Auth / Login
 # Prefixo definido como "/login" para compatibilidade semântica com OAuth2 e Frontend.
 # Endpoint final resultante: /api/v1/login/access-token
-api_router.include_router(auth.router, prefix="/login", tags=["login"])
+api_router.include_router(auth.router, prefix="/auth", tags=["login"])
 
 # Módulos de Domínio (Funcionalidades principais)
 api_router.include_router(home.router, prefix="/home", tags=["home"])

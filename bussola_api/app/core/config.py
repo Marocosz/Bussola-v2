@@ -55,8 +55,12 @@ class Settings(BaseSettings):
     # SECRET_KEY: Assinatura de tokens JWT e sessões. Comprometimento permite forjar identidade.
     SECRET_KEY: str
     
-    # Tempo de vida do token. 8 dias é um padrão longo para conveniência em Apps Mobile/Web.
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
+    # Tempo de vida do token de acesso (curto).
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15 # Reduzido para segurança, pois agora temos refresh.
+    
+    # Tempo de vida do Refresh Token (longo).
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7 # 7 dias padrão SaaS. Pode ser 30 para Self-Hosted.
+
     ALGORITHM: str = "HS256"
 
     # ENCRYPTION_KEY: Chave simétrica para criptografar dados sensíveis no banco (Data at Rest).
@@ -100,6 +104,19 @@ class Settings(BaseSettings):
     
     # Controle de acesso para novos usuários. Importante para instâncias privadas.
     ENABLE_PUBLIC_REGISTRATION: bool = True 
+
+    # [NOVO] Política de Rate Limiting Dinâmica
+    @property
+    def RATE_LIMIT_STRATEGY(self) -> str:
+        """
+        Retorna a string de configuração do SlowAPI baseada no modo de deploy.
+        
+        - SAAS: Rígido (5/minuto) para evitar brute force em ambiente público.
+        - SELF_HOSTED: Relaxado (100/minuto) para evitar bloqueio acidental do dono.
+        """
+        if self.DEPLOYMENT_MODE == "SAAS":
+            return "5/minute"
+        return "100/minute"
 
     # ----------------------------------------------------------------------------------
     # CONFIGURAÇÃO DE E-MAIL (SMTP)

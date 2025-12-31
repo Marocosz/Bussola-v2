@@ -13,7 +13,7 @@ import axios from 'axios';
 // ==========================================================
 
 const api = axios.create({
-    baseURL: 'http://127.0.0.1:8000/api/v1', // Ajuste se necessário
+    baseURL: 'http://127.0.0.1:8000/api/v1', 
 });
 
 // [INTERCEPTOR DE REQUISIÇÃO]
@@ -25,65 +25,144 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+// Controle de Concorrência para Refresh Token
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+    failedQueue.forEach(prom => {
+        if (error) {
+            prom.reject(error);
+        } else {
+            prom.resolve(token);
+        }
+    });
+    failedQueue = [];
+};
+
+// Helper de Logout
+const handleLogout = () => {
+    localStorage.removeItem('@Bussola:token');
+    localStorage.removeItem('@Bussola:refresh_token');
+    localStorage.removeItem('@Bussola:user');
+    window.location.href = '/login';
+};
+
 // [INTERCEPTOR DE RESPOSTA]
 api.interceptors.response.use(
     (response) => response,
-    (error) => {
-        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-            // Se o erro for "E-mail não verificado", não desloga, apenas retorna erro
-            if (error.response.data?.detail?.includes("verificado")) {
-                 return Promise.reject(error);
+    async (error) => {
+        const originalRequest = error.config;
+
+        // 1. Filtra erros que NÃO devem disparar refresh
+        // Se o erro for "E-mail não verificado" ou login falhou, rejeita direto.
+        if (error.response?.data?.detail?.includes("verificado") || 
+            error.response?.data?.detail?.includes("incorretos")) {
+             return Promise.reject(error);
+        }
+
+        // 2. Lógica de Refresh Token (Apenas para 401 genérico)
+        if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url.includes('/auth/refresh')) {
+            
+            if (isRefreshing) {
+                // Se já tem alguém renovando, entra na fila
+                return new Promise(function(resolve, reject) {
+                    failedQueue.push({ resolve, reject });
+                }).then(token => {
+                    originalRequest.headers['Authorization'] = 'Bearer ' + token;
+                    return api(originalRequest);
+                }).catch(err => {
+                    return Promise.reject(err);
+                });
             }
 
-            console.warn("Sessão inválida ou expirada. Redirecionando para login...");
-            localStorage.removeItem('@Bussola:token');
-            localStorage.removeItem('@Bussola:user');
-            window.location.href = '/login';
+            originalRequest._retry = true;
+            isRefreshing = true;
+
+            const refreshToken = localStorage.getItem('@Bussola:refresh_token');
+
+            if (!refreshToken) {
+                handleLogout();
+                return Promise.reject(error);
+            }
+
+            try {
+                // Chama a rota de renovação
+                const response = await api.post('/auth/refresh', { refresh_token: refreshToken });
+                
+                const { access_token, refresh_token: newRefreshToken } = response.data;
+
+                localStorage.setItem('@Bussola:token', access_token);
+                // Opcional: Se o back retornar novo refresh, atualiza. Se não, mantém o antigo.
+                if (newRefreshToken) {
+                    localStorage.setItem('@Bussola:refresh_token', newRefreshToken);
+                }
+
+                api.defaults.headers.Authorization = `Bearer ${access_token}`;
+                originalRequest.headers['Authorization'] = `Bearer ${access_token}`;
+
+                processQueue(null, access_token);
+                isRefreshing = false;
+
+                return api(originalRequest);
+
+            } catch (refreshError) {
+                processQueue(refreshError, null);
+                isRefreshing = false;
+                handleLogout();
+                return Promise.reject(refreshError);
+            }
         }
+
         return Promise.reject(error);
     }
 );
 
 // ==========================================================
-// 2. MÓDULO AUTH (LOGIN & REGISTRO) - [ATUALIZADO]
+// 2. MÓDULO AUTH (LOGIN & REGISTRO)
 // ==========================================================
 
-// Login Local
 export const loginUser = async (formData: FormData) => {
-    // O FastAPI OAuth2 espera Form Data, não JSON
-    const response = await api.post('/login/access-token', formData);
+    // Atenção: Agora a rota é /auth/access-token
+    const response = await api.post('/auth/access-token', formData);
     return response.data;
 };
 
-// [NOVO] Login com Google
 export const loginGoogle = async (token: string) => {
-    // Envia o token do Google para o backend fazer o Account Linking
-    const response = await api.post('/login/google', { token });
+    const response = await api.post('/auth/google', { token });
     return response.data;
 };
 
-// [NOVO] Verifica o Token de Email
+export const logoutSession = async () => {
+    const refreshToken = localStorage.getItem('@Bussola:refresh_token');
+    const config = refreshToken ? { headers: { 'X-Refresh-Token': refreshToken } } : {};
+    
+    try {
+        await api.post('/auth/logout', {}, config);
+    } catch (error) {
+        console.warn("Erro logout:", error);
+    }
+};
+
 export const verifyUserEmail = async (token: string, email: string) => {
-    // Envia via Query Params conforme definido no backend
     const response = await api.post(`/users/verify-email?token=${token}&email=${email}`);
     return response.data;
 };
 
-// Solicita recuperação de senha
 export const requestPasswordRecovery = async (email: string) => {
-    const response = await api.post(`/login/password-recovery/${email}`);
+    const response = await api.post(`/auth/password-recovery/${email}`);
     return response.data;
 };
 
-// Reseta a senha
 export const resetPassword = async (token: string, newPassword: string) => {
-    const response = await api.post('/login/reset-password', {
+    const response = await api.post('/auth/reset-password', {
         token,
         new_password: newPassword
     });
     return response.data;
 };
 
+// ... (Mantenha o restante dos módulos Home, Finanças, etc. intactos)
 // ==========================================================
 // 3. MÓDULO HOME
 // ==========================================================

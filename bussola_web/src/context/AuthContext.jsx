@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import api, { updateUser } from '../services/api';
+import api, { updateUser, logoutSession } from '../services/api';
 
 export const AuthContext = createContext();
 
@@ -21,7 +21,10 @@ export const AuthProvider = ({ children }) => {
                     setAuthenticated(true);
                 } catch (error) {
                     console.error("Token inválido ou expirado:", error);
-                    logout();
+                    // Não chamamos logout() aqui para evitar loop com o interceptor
+                    localStorage.removeItem('@Bussola:token');
+                    localStorage.removeItem('@Bussola:refresh_token');
+                    setAuthenticated(false);
                 }
             }
             setLoading(false);
@@ -36,10 +39,13 @@ export const AuthProvider = ({ children }) => {
             formData.append('username', email);
             formData.append('password', password);
 
-            const response = await api.post('/login/access-token', formData);
-            const { access_token } = response.data;
+            const response = await api.post('/auth/access-token', formData);
+            const { access_token, refresh_token } = response.data;
 
+            // Salva AMBOS os tokens
             localStorage.setItem('@Bussola:token', access_token);
+            localStorage.setItem('@Bussola:refresh_token', refresh_token);
+            
             api.defaults.headers.Authorization = `Bearer ${access_token}`;
 
             const userResponse = await api.get('/users/me');
@@ -49,16 +55,22 @@ export const AuthProvider = ({ children }) => {
             return { success: true };
         } catch (error) {
             console.error("Erro no login:", error);
-            return { success: false, message: "Email ou senha incorretos." };
+            // Verifica rate limit (429) ou erro de credencial
+            if (error.response?.status === 429) {
+                return { success: false, message: "Muitas tentativas. Tente novamente em alguns minutos." };
+            }
+            return { success: false, message: error.response?.data?.detail || "Email ou senha incorretos." };
         }
     };
 
     const loginGoogle = async (googleToken) => {
         try {
-            const response = await api.post('/login/google', { token: googleToken });
-            const { access_token } = response.data;
+            const response = await api.post('/auth/google', { token: googleToken });
+            const { access_token, refresh_token } = response.data;
 
             localStorage.setItem('@Bussola:token', access_token);
+            localStorage.setItem('@Bussola:refresh_token', refresh_token);
+            
             api.defaults.headers.Authorization = `Bearer ${access_token}`;
 
             const userResponse = await api.get('/users/me');
@@ -73,7 +85,6 @@ export const AuthProvider = ({ children }) => {
     };
 
     // Função para atualizar os dados do usuário no estado global
-    // Isso dispara o re-render na Home graças ao setUser
     const updateUserData = async (data) => {
         try {
             const updatedUser = await updateUser(data);
@@ -81,12 +92,16 @@ export const AuthProvider = ({ children }) => {
             return { success: true };
         } catch (error) {
             console.error("Erro ao atualizar usuário:", error);
-            return { success: false };
+            return { success: false, message: error.response?.data?.detail };
         }
     };
 
-    const logout = () => {
+    const logout = async () => {
+        // Tenta notificar o servidor para invalidar o refresh token (Blacklist)
+        await logoutSession();
+
         localStorage.removeItem('@Bussola:token');
+        localStorage.removeItem('@Bussola:refresh_token');
         api.defaults.headers.Authorization = undefined;
         setUser(null);
         setAuthenticated(false);

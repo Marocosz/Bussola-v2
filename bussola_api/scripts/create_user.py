@@ -61,7 +61,7 @@ def create_admin_user():
     # 1. PARSE DE ARGUMENTOS
     # ----------------------------------------------------------------------------------
     # Permite automação (ex: em scripts de deploy) usando:
-    # python scripts/create_user.py --email ditanixplayer@gmail.com --password asddsa
+    # python scripts/create_user.py --email ditanixplayer@gmail.com --password 'M8r03!hc'
     parser = argparse.ArgumentParser(description="Criar usuário Super Admin para o Bússola API")
     parser.add_argument("--email", type=str, help="E-mail do administrador")
     parser.add_argument("--password", type=str, help="Senha do administrador")
@@ -106,11 +106,13 @@ def create_admin_user():
             # REGRA DE NEGÓCIO: PROMOÇÃO
             # Se o usuário existe mas é comum, permite transformá-lo em Admin
             # sem precisar deletar e criar de novo (preserva dados vinculados).
+            # [ATUALIZAÇÃO]: Também garante que ele seja Verificado e Premium.
             if not user.is_superuser:
                 promote = input("Este usuário existe mas não é Admin. Deseja torná-lo Admin? (s/n): ")
                 if promote.lower() == 's':
                     user.is_superuser = True
                     user.is_premium = True
+                    user.is_verified = True # Garante acesso imediato
                     db.commit()
                     print("✅ Usuário promovido a Admin com sucesso!")
             return
@@ -133,7 +135,13 @@ def create_admin_user():
             # --- DADOS DO PLANO ---
             # Em instalações Self-Hosted, o admin recebe o plano máximo por padrão.
             is_premium=True,
-            plan_status="lifetime_admin"
+            plan_status="lifetime_admin",
+
+            # --- [ATUALIZADO] NOVAS FLAGS DE SEGURANÇA ---
+            # is_verified: True -> Admin criado via CLI é confiável, pula verificação de email.
+            is_verified=True,
+            # auth_provider: 'local' -> Define que a origem é script/senha, não Google.
+            auth_provider="local"
         )
         
         db.add(new_user)

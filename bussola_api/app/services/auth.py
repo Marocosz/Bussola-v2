@@ -25,7 +25,7 @@ COMUNICAÇÃO:
 =======================================================================================
 """
 
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 import httpx 
@@ -38,6 +38,7 @@ from app.schemas.token import Token
 from app.core import security
 from app.core.config import settings
 from app.utils.email import send_password_reset_email
+from app.api.deps import redis_client # Import do Redis
 
 class AuthService:
     """
@@ -46,6 +47,17 @@ class AuthService:
     """
     def __init__(self, session: Session):
         self.session = session
+
+    def _create_tokens(self, user_id: int) -> Token:
+        """Helper interno para gerar o par de tokens."""
+        access_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        refresh_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        
+        return Token(
+            access_token=security.create_access_token(user_id, expires_delta=access_expires),
+            refresh_token=security.create_refresh_token(user_id, expires_delta=refresh_expires),
+            token_type="bearer",
+        )
 
     # ----------------------------------------------------------------------------------
     # AUTENTICAÇÃO LOCAL (LOGIN)
@@ -60,7 +72,7 @@ class AuthService:
         3. No modo SAAS, exige que o e-mail tenha sido verificado antes de logar.
 
         Retorna:
-            Token: Objeto contendo o access_token JWT e o tipo (Bearer).
+            Token: Objeto contendo o access_token, refresh_token e tipo.
         """
         # 1. Busca Usuário
         user = self.session.query(User).filter(User.email == email).first()
@@ -77,22 +89,14 @@ class AuthService:
             raise HTTPException(status_code=400, detail="Usuário inativo.")
 
         # 4. REGRA DE DEPLOY (SAAS vs SELF-HOSTED)
-        # Se for SaaS (comercial), obrigamos a verificação de e-mail para evitar spam/bots.
-        # No Self-Hosted (uso pessoal), essa verificação é relaxada.
         if settings.DEPLOYMENT_MODE == "SAAS" and not user.is_verified:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, 
                 detail="Seu e-mail ainda não foi verificado. Verifique sua caixa de entrada."
             )
 
-        # 5. Gera e Retorna o Token JWT
-        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        return Token(
-            access_token=security.create_access_token(
-                user.id, expires_delta=access_token_expires
-            ),
-            token_type="bearer",
-        )
+        # 5. Gera e Retorna os Tokens
+        return self._create_tokens(user.id)
 
     # ----------------------------------------------------------------------------------
     # AUTENTICAÇÃO SOCIAL (GOOGLE OAUTH)
@@ -100,20 +104,9 @@ class AuthService:
     async def authenticate_google(self, google_token: str) -> Token:
         """
         Realiza login ou cadastro via Google.
-        
-        Fluxo Lógico:
-        1. Valida o token recebido do frontend diretamente na API do Google.
-        2. Account Linking: 
-           - Se o e-mail não existe: Cria novo usuário.
-           - Se o e-mail já existe: Vincula a conta Google ao usuário existente.
-        
-        Integração Externa:
-           - Serviço: Google UserInfo API (googleapis.com)
-           - Objetivo: Garantir que o token não foi forjado e obter dados do perfil.
         """
         
         # 1. VALIDAÇÃO EXTERNA
-        # Chama a API do Google para garantir a legitimidade do token.
         google_user_info = None
         async with httpx.AsyncClient() as client:
             try:
@@ -128,21 +121,23 @@ class AuthService:
                 print(f"Erro conexão Google: {e}")
                 raise HTTPException(status_code=400, detail="Falha ao conectar com o Google.")
         
-        # Extração de dados do perfil Google
         email = google_user_info.get("email")
-        google_sub = google_user_info.get("sub") # ID único imutável do usuário no Google
+        google_sub = google_user_info.get("sub") 
         name = google_user_info.get("name")
         picture = google_user_info.get("picture")
 
         if not email:
              raise HTTPException(status_code=400, detail="Google não retornou o e-mail.")
+        
+        # [NOVO] Verifica se o email é verificado no Google
+        if not google_user_info.get("email_verified"):
+             raise HTTPException(status_code=400, detail="O e-mail do Google não está verificado.")
 
-        # 2. GESTÃO DO USUÁRIO (Criação ou Vínculo)
+        # 2. GESTÃO DO USUÁRIO
         user = self.session.query(User).filter(User.email == email).first()
 
         if not user:
             # CASO A: Novo Usuário
-            # Cria a conta já verificada, pois o Google garante o e-mail.
             user = User(
                 email=email,
                 full_name=name,
@@ -151,29 +146,23 @@ class AuthService:
                 provider_id=google_sub,
                 is_verified=True, 
                 is_active=True,
-                hashed_password=None # Google users não têm senha local inicialmente
+                hashed_password=None
             )
             self.session.add(user)
             self.session.commit()
             self.session.refresh(user)
         else:
-            # CASO B: Usuário Existente (Account Linking)
-            # Atualiza informações faltantes e marca como verificado/híbrido.
+            # CASO B: Usuário Existente
             updated = False
-            
-            # Se o usuário confirmou via Google, o e-mail é válido.
             if not user.is_verified:
                 user.is_verified = True
                 updated = True
             
-            # Vincula o ID do Google para logins futuros mais seguros
             if not user.provider_id:
                 user.provider_id = google_sub
-                # Se já tinha senha (hashed_password), vira 'hybrid', senão 'google'
                 user.auth_provider = "hybrid" if user.hashed_password else "google"
                 updated = True
             
-            # Atualiza avatar se não existir
             if not user.avatar_url and picture:
                 user.avatar_url = picture
                 updated = True
@@ -186,14 +175,59 @@ class AuthService:
         if not user.is_active:
             raise HTTPException(status_code=400, detail="Usuário inativo.")
 
-        # 3. GERAÇÃO DE TOKEN
-        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        return Token(
-            access_token=security.create_access_token(
-                user.id, expires_delta=access_token_expires
-            ),
-            token_type="bearer",
-        )
+        # 3. GERAÇÃO DE TOKENS
+        return self._create_tokens(user.id)
+
+    # ----------------------------------------------------------------------------------
+    # REFRESH TOKEN FLOW (RENOVAÇÃO)
+    # ----------------------------------------------------------------------------------
+    def refresh_token(self, refresh_token: str) -> Token:
+        """
+        Valida o Refresh Token e emite um novo par Access/Refresh.
+        """
+        # Checa Blacklist
+        if redis_client.exists(f"blacklist:{refresh_token}"):
+            raise HTTPException(status_code=401, detail="Refresh token revogado.")
+
+        try:
+            payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            
+            if payload.get("type") != "refresh":
+                raise HTTPException(status_code=401, detail="Token inválido (não é refresh).")
+                
+            user_id = payload.get("sub")
+            if not user_id:
+                raise HTTPException(status_code=401, detail="Token inválido.")
+                
+        except (JWTError, ValueError):
+            raise HTTPException(status_code=401, detail="Refresh token expirado ou inválido.")
+
+        # Opcional: Rotacionar o Refresh Token (Segurança Máxima)
+        # Queimamos o anterior e emitimos um novo.
+        self.logout(refresh_token) # Revoga o atual
+        
+        return self._create_tokens(int(user_id))
+
+    # ----------------------------------------------------------------------------------
+    # LOGOUT (REVOGAÇÃO)
+    # ----------------------------------------------------------------------------------
+    def logout(self, token: str) -> None:
+        """
+        Adiciona o token à Blacklist do Redis até sua expiração natural.
+        """
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            # Calcula tempo restante de vida (TTL)
+            exp_timestamp = payload.get("exp")
+            now_timestamp = datetime.now(timezone.utc).timestamp()
+            ttl = int(exp_timestamp - now_timestamp)
+            
+            if ttl > 0:
+                redis_client.setex(f"blacklist:{token}", ttl, "revoked")
+                
+        except Exception:
+            # Se token já inválido, ignora erro
+            pass
 
     # ----------------------------------------------------------------------------------
     # REGISTRO DE USUÁRIO (SIGN UP)
@@ -210,9 +244,7 @@ class AuthService:
         """
         user_count = self.session.query(User).count()
         
-        # Verifica flag global de permissão de registros
         if not settings.ENABLE_PUBLIC_REGISTRATION:
-            # Se já existe admin (user_count > 0), bloqueia novos registros
             if user_count > 0:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -226,17 +258,12 @@ class AuthService:
                 detail="Este e-mail já está cadastrado no sistema.",
             )
         
-        # REGRA DO PRIMEIRO ADMIN (Self-Hosted)
         is_saas = (settings.DEPLOYMENT_MODE == "SAAS")
-        # Se não for SaaS e for o usuário 0, vira Admin.
         is_admin = (not is_saas and user_count == 0)
-        
-        # No Self-Hosted, o admin já nasce verificado para não travar o setup.
         should_be_verified = not is_saas or is_admin
 
         db_user = User(
             email=user_in.email,
-            # Criptografia obrigatória antes de salvar
             hashed_password=security.get_password_hash(user_in.password),
             full_name=user_in.full_name,
             is_active=True,
@@ -257,25 +284,17 @@ class AuthService:
     async def recover_password(self, email: str) -> str:
         """
         Inicia o fluxo de recuperação de senha.
-        
-        Estratégia Self-Hosted vs SaaS:
-        - Se o SMTP (email) estiver configurado, envia o link por email.
-        - Se estiver em modo LOCAL/DEV e sem email, imprime o link no console do servidor
-          para permitir testes sem configurar SMTP.
         """
         user = self.session.query(User).filter(User.email == email).first()
 
-        # Segurança: Retorna mensagem genérica para evitar enumeração de usuários
         if not user:
             return "Se o email estiver cadastrado, as instruções foram enviadas."
 
-        # Token de curta duração (15 min) específico para reset
         password_reset_expires = timedelta(minutes=15)
         reset_token = security.create_access_token(
             user.id, expires_delta=password_reset_expires
         )
         
-        # Tenta enviar e-mail se configurado
         if settings.EMAILS_ENABLED:
             try:
                 await send_password_reset_email(email_to=user.email, token=reset_token)
@@ -283,8 +302,6 @@ class AuthService:
             except Exception as e:
                 print(f"Erro SMTP: {e}")
         
-        # FALLBACK PARA DESENVOLVIMENTO / SELF-HOSTED SEM EMAIL
-        # Mostra o link no terminal para o admin conseguir recuperar
         if settings.DEPLOYMENT_MODE == "SELF_HOSTED":
             print("\n" + "="*60)
             print(f"RECUPERAÇÃO DE SENHA (SELF-HOSTED) PARA: {user.email}")
@@ -305,7 +322,6 @@ class AuthService:
         Finaliza a troca de senha usando um token válido.
         """
         try:
-            # Decodifica e valida expiração do token
             decoded_token = jwt.decode(
                 payload.token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
             )
@@ -322,7 +338,6 @@ class AuthService:
         if not user.is_active:
             raise HTTPException(status_code=400, detail="Usuário inativo")
             
-        # Atualiza a senha com novo hash
         user.hashed_password = security.get_password_hash(payload.new_password)
         self.session.add(user)
         self.session.commit()

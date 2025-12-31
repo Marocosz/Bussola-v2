@@ -42,7 +42,7 @@ ALGORITHM = settings.ALGORITHM
 
 def create_access_token(subject: Union[str, Any], expires_delta: timedelta = None) -> str:
     """
-    Gera um Token JWT assinado para autenticação Stateless.
+    Gera um Token JWT assinado para autenticação Stateless (Curta Duração).
 
     Por que existe:
         Permite que o cliente mantenha a sessão ativa sem que o servidor precise manter
@@ -65,10 +65,25 @@ def create_access_token(subject: Union[str, Any], expires_delta: timedelta = Non
     # Monta o payload (Claims)
     # 'exp': Expiration Time (Segurança: tokens devem morrer eventualmente)
     # 'sub': Subject (Quem é o dono do token)
-    to_encode = {"exp": expire, "sub": str(subject)}
+    # 'type': 'access' (Diferenciação explícita)
+    to_encode = {"exp": expire, "sub": str(subject), "type": "access"}
     
     # Assina o token usando a chave privada (SECRET_KEY)
     # Isso garante integridade: se o payload for alterado pelo cliente, a assinatura será inválida.
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def create_refresh_token(subject: Union[str, Any], expires_delta: timedelta = None) -> str:
+    """
+    Gera um Token de Atualização (Longa Duração).
+    Usado apenas na rota /refresh para obter um novo access token.
+    """
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    
+    to_encode = {"exp": expire, "sub": str(subject), "type": "refresh"}
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 

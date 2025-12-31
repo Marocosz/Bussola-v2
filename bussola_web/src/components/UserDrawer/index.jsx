@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '../../context/ToastContext';
 import { CitySelector } from '../CitySelector';
-import { getNewsTopics } from '../../services/api'; // [NOVO] Import da API
+import { getNewsTopics } from '../../services/api'; 
+import zxcvbn from 'zxcvbn'; // Importando lib de força de senha
 import './styles.css';
 
 export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
@@ -16,10 +17,12 @@ export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
     const [newsPrefs, setNewsPrefs] = useState([]);
     const [isSaving, setIsSaving] = useState(false);
 
-    // [NOVO] Estado para armazenar os tópicos vindos do backend
+    // Estados para força da senha (Nova Senha)
+    const [passwordScore, setPasswordScore] = useState(null);
+    const [passwordFeedback, setPasswordFeedback] = useState('');
+
     const [availableTopics, setAvailableTopics] = useState([]);
 
-    // Busca tópicos ao carregar o componente (apenas uma vez)
     useEffect(() => {
         async function loadTopics() {
             try {
@@ -27,7 +30,6 @@ export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
                 if (topics && topics.length > 0) {
                     setAvailableTopics(topics);
                 } else {
-                    // Fallback visual caso a API falhe, para não ficar vazio
                     setAvailableTopics([
                         { id: 'tech', label: 'Tecnologia' },
                         { id: 'finance', label: 'Finanças' }
@@ -40,7 +42,6 @@ export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
         loadTopics();
     }, []);
 
-    // Reinicia os estados do formulário
     useEffect(() => {
         if (user && isOpen) {
             setEditName(user.full_name || '');
@@ -49,11 +50,46 @@ export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
             setNewsPrefs(user.news_preferences || ['tech']);
             setEditPassword('');
             setCurrentPassword('');
+            setPasswordScore(null);
+            setPasswordFeedback('');
         }
     }, [user, isOpen]);
 
     const hasPasswordSet = user?.auth_provider === 'local' || user?.auth_provider === 'hybrid';
     const isGoogleOnly = user?.auth_provider === 'google' && !hasPasswordSet;
+
+    // Handler para mudança de senha com feedback visual
+    const handlePasswordChange = (e) => {
+        const val = e.target.value;
+        setEditPassword(val);
+        if (val) {
+            const result = zxcvbn(val);
+            setPasswordScore(result.score); // 0 a 4
+            const messages = [
+                "Muito fraca",
+                "Fraca",
+                "Média",
+                "Forte",
+                "Muito Forte"
+            ];
+            setPasswordFeedback(messages[result.score]);
+        } else {
+            setPasswordScore(null);
+            setPasswordFeedback('');
+        }
+    };
+
+    // Helper para cor da barra
+    const getStrengthColor = () => {
+        switch (passwordScore) {
+            case 0: return '#ef4444'; // Vermelho
+            case 1: return '#f97316'; // Laranja
+            case 2: return '#eab308'; // Amarelo
+            case 3: return '#84cc16'; // Verde claro
+            case 4: return '#10b981'; // Verde forte
+            default: return '#e5e7eb';
+        }
+    };
 
     const handleTopicToggle = (topicId) => {
         if (newsPrefs.includes(topicId)) {
@@ -68,6 +104,12 @@ export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
     };
 
     const handleSaveAccount = async () => {
+        // Validação de senha fraca antes de salvar
+        if (editPassword && passwordScore !== null && passwordScore < 2) {
+            addToast({ type: 'warning', title: 'Senha Fraca', description: 'Por favor, escolha uma senha mais forte.' });
+            return;
+        }
+
         setIsSaving(true);
         
         const updatePayload = {
@@ -145,7 +187,6 @@ export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
 
                         <div className="form-group">
                             <label>Interesses de Notícias</label>
-                            {/* Renderização dinâmica */}
                             <div className="tags-container">
                                 {availableTopics.map(topic => (
                                     <span 
@@ -201,8 +242,26 @@ export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
                                     type="password" 
                                     placeholder={hasPasswordSet ? "Deixe vazio para manter a atual" : "Crie uma senha segura"} 
                                     value={editPassword} 
-                                    onChange={e => setEditPassword(e.target.value)} 
+                                    onChange={handlePasswordChange} 
                                 />
+                                
+                                {/* BARRA DE FORÇA DA SENHA */}
+                                {editPassword && (
+                                    <div className="drawer-password-strength">
+                                        <div className="strength-bar-bg">
+                                            <div 
+                                                className="strength-bar-fill" 
+                                                style={{ 
+                                                    width: `${(passwordScore + 1) * 20}%`,
+                                                    backgroundColor: getStrengthColor() 
+                                                }}
+                                            ></div>
+                                        </div>
+                                        <span className="strength-text" style={{ color: getStrengthColor() }}>
+                                            {passwordFeedback}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

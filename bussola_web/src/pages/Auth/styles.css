@@ -1,5 +1,5 @@
 /* ==========================================================
-   AUTH.CSS - Estilos para Esqueci Senha e Resetar Senha
+   AUTH.CSS - Estilos para Login, Registro, Esqueci Senha, etc.
    ========================================================== */
 
 /* CONTAINER GERAL (Centraliza tudo na tela) */
@@ -9,20 +9,20 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: var(--cor-fundo); /* Respeita o tema do sistema */
+    background-color: var(--cor-fundo-principal); /* Ajustado para variável padrão */
     padding: 1.5rem;
     transition: background-color 0.3s ease;
 }
 
 /* CARTÃO DE AUTH */
 .auth-card {
-    background-color: var(--cor-card-principal);
+    background-color: var(--cor-fundo-card); /* Ajustado para variável padrão */
     width: 100%;
     max-width: 440px; /* Largura ideal para leitura */
     padding: 2.5rem;
     border-radius: 16px;
-    border: 1px solid var(--cor-borda);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2); /* Sombra elegante */
+    border: 1px solid var(--cor-borda-suave);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
     display: flex;
     flex-direction: column;
     gap: 2rem;
@@ -76,15 +76,15 @@
 }
 
 .form-input {
-    background-color: var(--cor-fundo); /* Fundo um pouco mais escuro que o card */
-    border: 1px solid var(--cor-borda);
+    background-color: var(--cor-fundo-principal);
+    border: 1px solid var(--cor-borda-suave);
     border-radius: 8px;
     padding: 12px 16px;
     font-size: 1rem;
     color: var(--cor-texto-principal);
     transition: all 0.2s ease;
     width: 100%;
-    box-sizing: border-box; /* Garante que o padding não estoure a largura */
+    box-sizing: border-box;
 }
 
 .form-input:focus {
@@ -93,7 +93,7 @@
     box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15); /* Glow azul suave */
 }
 
-/* ESTADOS DE VALIDAÇÃO (Opcional) */
+/* ESTADOS DE VALIDAÇÃO */
 .form-input:invalid:not(:placeholder-shown) {
     border-color: #ef4444;
 }
@@ -116,7 +116,7 @@
 }
 
 .btn-primary:hover:not(:disabled) {
-    background-color: var(--cor-azul-hover, #4338ca); /* Fallback se a variável não existir */
+    filter: brightness(1.1);
     transform: translateY(-1px);
 }
 
@@ -129,12 +129,11 @@
     cursor: not-allowed;
 }
 
-/* Utilitário para botão ocupar 100% da largura */
 .btn-primary.full-width {
     width: 100%;
 }
 
-/* MENSAGEM DE SUCESSO (Tela de "Email Enviado") */
+/* MENSAGEM DE SUCESSO */
 .auth-success-message {
     text-align: center;
     padding: 1rem 0;
@@ -156,7 +155,7 @@
     margin: 0.2rem 0;
 }
 
-/* RODAPÉ DO CARD (Link de voltar) */
+/* RODAPÉ DO CARD */
 .auth-footer {
     text-align: center;
     margin-top: -0.5rem;
@@ -180,6 +179,60 @@
 .text-muted {
     font-size: 0.8rem !important;
     opacity: 0.8;
+}
+
+/* ==========================================================
+   NOVOS ESTILOS ADICIONADOS (Feature de Força de Senha)
+   ========================================================== */
+
+/* Barra de Progresso da Senha */
+.password-strength-container {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.strength-bar-bg {
+    width: 100%;
+    height: 6px;
+    background-color: var(--cor-borda-suave); /* Fundo cinza da barra */
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.strength-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    /* Animação suave ao digitar */
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.strength-text {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: right; /* Feedback alinhado à direita */
+}
+
+/* Box de Dica de Segurança (Register) */
+.security-tip-box {
+    background-color: rgba(59, 130, 246, 0.08); /* Azul bem claro */
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 0.85rem;
+    color: var(--cor-texto-secundario);
+    line-height: 1.4;
+    text-align: left;
+}
+
+.security-tip-box i {
+    color: var(--cor-azul-primario);
+    margin-top: 3px;
 }
 
 /* ANIMAÇÕES */
@@ -206,16 +259,16 @@
         gap: 1.5rem;
         border: none;
         box-shadow: none;
-        background: transparent; /* No mobile fica clean */
+        background: transparent;
     }
     
     .auth-container {
-        background-color: var(--cor-fundo); /* Garante fundo no mobile */
-        align-items: flex-start; /* Joga conteúdo mais pro topo */
+        background-color: var(--cor-fundo-principal);
+        align-items: flex-start;
         padding-top: 3rem;
     }
 
     .form-input {
-        background-color: var(--cor-card-principal); /* Destaca input no mobile */
+        background-color: var(--cor-fundo-card);
     }
 }
