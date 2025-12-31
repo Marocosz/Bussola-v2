@@ -106,7 +106,7 @@ A segurança dos dados é garantida no nível da aplicação. Todas as operaçõ
 
 ---
 
-## 🔑 4. Gestão de Sessão, Tokens e Limites (New)
+## 🔑 4. Gestão de Sessão, Tokens e Limites
 
 O sistema evoluiu de um modelo puramente *stateless* para um modelo híbrido robusto, utilizando **Dual Tokens (Access + Refresh)** e **Redis** para segurança avançada.
 
@@ -170,14 +170,43 @@ O modelo de dados implementa `cascade="all, delete-orphan"` em todos os relacion
 
 ## 📧 6. Fluxos de E-mail e Recuperação
 
-O sistema de mensageria é utilizado para validação de identidade, não apenas notificações.
+O sistema de mensageria é utilizado para validação de identidade e é processado de forma assíncrona.
+
+### Processamento Assíncrono (Background Tasks)
+O envio de e-mails (Registro e Reset) utiliza `BackgroundTasks` do FastAPI.
+* **Benefício:** A API retorna a resposta "Usuário criado" ou "Email enviado" instantaneamente, sem travar a interface enquanto conecta ao servidor SMTP.
 
 ### Esqueci Minha Senha
-1.  Usuário solicita reset.
-2.  Backend gera um token JWT específico com validade curta (15 minutos).
-3.  Envia link único por e-mail.
-4.  Ao clicar, o frontend valida o token e permite definir nova senha.
-5.  O token é invalidado após o uso ou expiração.
+1.  Backend gera um token JWT específico com validade curta (15 minutos).
+2.  Envia link único por e-mail.
+3.  O token é invalidado após o uso ou expiração.
+
+---
+
+## 🧹 7. Rotinas de Manutenção e Anti-Squatting
+
+Para manter a higiene do banco de dados e evitar o sequestro de e-mails (Email Squatting), o sistema implementa scripts de manutenção.
+
+### Limpeza de Contas "Zumbis"
+Em ambientes SaaS, usuários podem se cadastrar com e-mails errados ou de terceiros e nunca verificar a conta. Isso bloquearia o e-mail legítimo para sempre.
+
+* **Solução:** Script `scripts/cleanup_users.py`.
+* **Regra:** Apaga usuários que atendem a `is_verified=False` **E** `created_at > 24 horas`.
+* **Automação:** Deve ser executado via Cron Job ou Celery Beat diariamente.
+
+---
+
+## 🚦 8. Referência de Erros de Segurança
+
+O sistema utiliza códigos HTTP padrão para comunicar estados de segurança específicos:
+
+| Código | Significado | Cenário no Bússola V2 |
+| :--- | :--- | :--- |
+| **400** | Bad Request | Dados inválidos, E-mail já existe, Senha atual incorreta. |
+| **401** | Unauthorized | Token Expirado, Token Revogado (Logout), E-mail não verificado. |
+| **403** | Forbidden | Token Inválido (Assinatura ruim), Tentativa de acesso a recurso admin. |
+| **404** | Not Found | Usuário não encontrado (usado para evitar enumeração em alguns casos). |
+| **429** | Too Many Requests | Rate Limit excedido (Muitas tentativas de login/registro). |
 
 ---
 
@@ -193,7 +222,7 @@ O sistema de mensageria é utilizado para validação de identidade, não apenas
 
 ---
 
-## 🧩 7. Resumo da Stack de Segurança
+## 🧩 9. Resumo da Stack de Segurança
 
 | Componente | Tecnologia / Biblioteca | Função |
 | :--- | :--- | :--- |
@@ -203,6 +232,7 @@ O sistema de mensageria é utilizado para validação de identidade, não apenas
 | **Hashing** | `passlib[bcrypt]` | Criptografia irreversível de senhas. |
 | **Validação Senha** | `zxcvbn` (Front) | Análise de entropia e feedback visual de força de senha. |
 | **Validação Dados** | `pydantic` | Sanitização rigorosa de entradas (Schemas) para prevenir Injection. |
+| **Background Tasks** | `Starlette BackgroundTasks` | Envio de e-mails sem bloquear a requisição HTTP. |
 | **CORS** | `fastapi.middleware.cors` | Proteção contra execução de scripts de origens não autorizadas. |
 | **Google Auth** | `google-auth` / `httpx` | Validação server-side de tokens OIDC. |
 
