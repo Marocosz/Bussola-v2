@@ -25,11 +25,10 @@ COMUNICAÇÃO:
 =======================================================================================
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status, BackgroundTasks # [CORREÇÃO] Adicionado BackgroundTasks
+from fastapi import HTTPException, status, BackgroundTasks
 import httpx 
-import secrets
 from jose import jwt, JWTError
 
 from app.models.user import User
@@ -37,9 +36,9 @@ from app.schemas.user import UserCreate, NewPassword
 from app.schemas.token import Token
 from app.core import security
 from app.core.config import settings
-# [CORREÇÃO] Adicionado send_account_verification_email
 from app.utils.email import send_password_reset_email, send_account_verification_email
-from app.api.deps import redis_client # Import do Redis
+from app.api.deps import redis_client
+from app.core.timezone import now_utc # [NOVO]
 
 class AuthService:
     """
@@ -220,7 +219,7 @@ class AuthService:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
             # Calcula tempo restante de vida (TTL)
             exp_timestamp = payload.get("exp")
-            now_timestamp = datetime.now(timezone.utc).timestamp()
+            now_timestamp = now_utc().timestamp() # [CORREÇÃO]
             ttl = int(exp_timestamp - now_timestamp)
             
             if ttl > 0:

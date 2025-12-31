@@ -23,11 +23,12 @@ COMUNICAÇÃO:
 =======================================================================================
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from typing import Any, Union
 from jose import jwt
 from passlib.context import CryptContext
 from app.core.config import settings
+from app.core.timezone import now_utc # [NOVO] Import padronizado
 
 # --------------------------------------------------------------------------------------
 # CONFIGURAÇÃO DE HASHING
@@ -58,9 +59,9 @@ def create_access_token(subject: Union[str, Any], expires_delta: timedelta = Non
     
     # Define expiração em UTC para evitar inconsistências de fuso horário entre servidor/cliente
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = now_utc() + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = now_utc() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     
     # Monta o payload (Claims)
     # 'exp': Expiration Time (Segurança: tokens devem morrer eventualmente)
@@ -79,9 +80,9 @@ def create_refresh_token(subject: Union[str, Any], expires_delta: timedelta = No
     Usado apenas na rota /refresh para obter um novo access token.
     """
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = now_utc() + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        expire = now_utc() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     
     to_encode = {"exp": expire, "sub": str(subject), "type": "refresh"}
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)

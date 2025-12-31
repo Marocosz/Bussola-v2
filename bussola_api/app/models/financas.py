@@ -23,8 +23,8 @@ COMUNICAÇÃO:
 
 from sqlalchemy import Column, Integer, String, Float, DateTime, Date, ForeignKey, func, Boolean
 from sqlalchemy.orm import relationship
-from datetime import datetime, timezone
 from app.db.base_class import Base
+from app.core.timezone import now_utc # [NOVO]
 
 class Categoria(Base):
     """
@@ -66,7 +66,8 @@ class Transacao(Base):
     valor = Column(Float, nullable=False)
     
     # Uso de Lambda no default executa a função no momento da inserção (INSERT)
-    data = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    # [CORREÇÃO] Usando now_utc da autoridade de tempo
+    data = Column(DateTime, nullable=False, default=now_utc)
     
     categoria_id = Column(Integer, ForeignKey('categoria.id'), nullable=False)
     

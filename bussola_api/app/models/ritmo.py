@@ -23,8 +23,8 @@ COMUNICAÇÃO:
 
 from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
-from datetime import datetime
 from app.db.base_class import Base
+from app.core.timezone import now_utc # [NOVO]
 
 # ==========================================================
 # 1. TABELA DE BIO-DADOS (Corpo & Metas)
@@ -62,7 +62,7 @@ class RitmoBio(Base):
     meta_gordura = Column(Float)
     meta_agua = Column(Float) 
     
-    data_registro = Column(DateTime, default=datetime.utcnow)
+    data_registro = Column(DateTime, default=now_utc) # [CORREÇÃO]
 
     user = relationship("User", back_populates="ritmo_bios")
 
@@ -83,7 +83,7 @@ class RitmoPlanoTreino(Base):
     nome = Column(String) 
     # Define qual ficha o app deve mostrar na Home. Apenas um deve ser True por user.
     ativo = Column(Boolean, default=False) 
-    data_criacao = Column(DateTime, default=datetime.utcnow)
+    data_criacao = Column(DateTime, default=now_utc) # [CORREÇÃO]
 
     # Cascade Delete: Apagar o plano remove toda a árvore de dias e exercícios.
     dias = relationship("RitmoDiaTreino", back_populates="plano", cascade="all, delete-orphan")

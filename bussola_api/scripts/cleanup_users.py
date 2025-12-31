@@ -4,7 +4,7 @@ DESCRIÇÃO: Remove contas não verificadas expiradas (criadas há +24h).
 """
 import sys
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from sqlalchemy import text
 
 # Setup de diretório para importar o app
@@ -14,13 +14,13 @@ sys.path.append(parent_dir)
 
 from app.db.session import SessionLocal
 from app.models.user import User
+from app.core.timezone import now_utc # [NOVO]
 
 def cleanup_unverified_users():
     db = SessionLocal()
     try:
         # Define o tempo limite (ex: 24 horas atrás)
-        # Se usar UTC no banco, use datetime.now(timezone.utc)
-        threshold = datetime.now() - timedelta(hours=24)
+        threshold = now_utc() - timedelta(hours=24) # [CORREÇÃO]
         
         print(f"🔍 Buscando usuários não verificados antes de {threshold}...")
 

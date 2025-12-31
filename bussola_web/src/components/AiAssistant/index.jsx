@@ -174,7 +174,8 @@ export const AiAssistant = ({ context }) => {
     switch (domain) {
       case 'nutri': return 'fa-apple-whole';
       case 'coach': return 'fa-dumbbell';
-      case 'registros': return 'fa-list-check'; // [ATUALIZADO] Ícone de Tarefas
+      case 'registros': return 'fa-list-check'; 
+      case 'roteiro': return 'fa-calendar-day'; // [NOVO] Ícone para Agenda AI
       default: return 'fa-robot';
     }
   };
@@ -183,7 +184,8 @@ export const AiAssistant = ({ context }) => {
       switch (domain) {
           case 'nutri': return 'Nutrição';
           case 'coach': return 'Treino';
-          case 'registros': return 'Gestão'; // [ATUALIZADO] Label para Registros
+          case 'registros': return 'Gestão'; 
+          case 'roteiro': return 'Agenda AI'; // [NOVO] Label para Agenda AI
           default: return 'AI';
       }
   };

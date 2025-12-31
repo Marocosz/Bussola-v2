@@ -22,8 +22,8 @@ COMUNICAÇÃO:
 
 from sqlalchemy import Column, Integer, String, Boolean, Text, DateTime, ForeignKey, Enum
 from sqlalchemy.orm import relationship, backref
-from datetime import datetime
 from app.db.base_class import Base
+from app.core.timezone import now_utc # [NOVO]
 import enum
 
 # Enum para garantir consistência de status no banco e no código
@@ -61,7 +61,7 @@ class Anotacao(Base):
     
     # Dashboard: Notas fixadas aparecem no topo ou na home.
     fixado = Column(Boolean, default=False)
-    data_criacao = Column(DateTime, default=datetime.utcnow)
+    data_criacao = Column(DateTime, default=now_utc) # [CORREÇÃO]
     
     grupo_id = Column(Integer, ForeignKey('grupo_anotacao.id'), nullable=True)
     grupo = relationship("GrupoAnotacao", back_populates="anotacoes")
@@ -102,7 +102,7 @@ class Tarefa(Base):
     status = Column(String(50), default=StatusTarefa.PENDENTE.value)
     fixado = Column(Boolean, default=False)
     
-    data_criacao = Column(DateTime, default=datetime.utcnow)
+    data_criacao = Column(DateTime, default=now_utc) # [CORREÇÃO]
     data_conclusao = Column(DateTime, nullable=True)
 
     # [SEGURANÇA] Vínculo com Usuário

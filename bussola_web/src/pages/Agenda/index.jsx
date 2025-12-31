@@ -4,6 +4,7 @@ import { CompromissoCard } from './components/CompromissoCard';
 import { AgendaModal } from './components/AgendaModal';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmDialogContext';
+import { AiAssistant } from '../../components/AiAssistant'; // [NOVO] Import da IA
 import './styles.css';
 
 // --- SUB-COMPONENTES MEMOIZADOS (PERFORMANCE FIX) ---
@@ -301,6 +302,9 @@ export function Agenda() {
                 onUpdate={() => fetchData(true)}
                 editingData={editingItem}
             />
+
+            {/* AI Assistant Integrado (Contexto Roteiro) */}
+            <AiAssistant context="roteiro" />
         </div>
     );
 }

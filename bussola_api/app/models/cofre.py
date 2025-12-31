@@ -24,8 +24,8 @@ COMUNICAÇÃO:
 
 from sqlalchemy import Column, Integer, String, Text, Date, ForeignKey
 from sqlalchemy.orm import relationship
-from datetime import datetime
 from app.db.base_class import Base
+from app.core.timezone import now_utc # [NOVO]
 
 class Segredo(Base):
     __tablename__ = 'segredo'
@@ -36,7 +36,7 @@ class Segredo(Base):
     notas = Column(Text, nullable=True)
     
     # Auditoria básica de criação e validade (ex: validade de cartão de crédito)
-    data_criacao = Column(Date, default=datetime.utcnow)
+    data_criacao = Column(Date, default=now_utc) # [CORREÇÃO] Usando now_utc
     data_expiracao = Column(Date, nullable=True)
 
     # [SEGURANÇA E ARQUITETURA]

@@ -31,6 +31,7 @@ from typing import Optional
 from app.api import deps
 from app.schemas.agenda import AgendaDashboardResponse, CompromissoCreate, CompromissoUpdate, CompromissoResponse
 from app.services.agenda import agenda_service
+from app.core.timezone import PROJECT_TIMEZONE, to_utc # [NOVO] Import da Autoridade de Tempo
 
 router = APIRouter()
 
@@ -82,6 +83,19 @@ def create_compromisso(
     Retorno:
         - O objeto Compromisso criado com seu ID gerado.
     """
+    # [CORREÇÃO FUSO HORÁRIO]
+    # O Frontend envia a data 'naive' (sem fuso), mas assumindo que é o horário local (Brasil).
+    # Precisamos converter para UTC antes de passar para o Service salvar no banco.
+    if dados.data_hora:
+        # 1. Localize: Dizemos "Isso aqui é Hora Brasil"
+        if dados.data_hora.tzinfo is None:
+            data_brasil = PROJECT_TIMEZONE.localize(dados.data_hora)
+        else:
+            data_brasil = dados.data_hora # Já veio com fuso
+
+        # 2. Convert to UTC: O banco fala UTC
+        dados.data_hora = to_utc(data_brasil)
+
     # Delega a criação para o serviço, vinculando ao ID do usuário logado
     return agenda_service.create(db, dados, current_user.id)
 
@@ -99,6 +113,14 @@ def update_compromisso(
         O serviço verificará se o 'id' do compromisso pertence ao 'current_user.id'.
         Se tentar alterar o compromisso de outro usuário, a ação será bloqueada/ignorada.
     """
+    # [CORREÇÃO FUSO HORÁRIO] Mesma lógica do Create
+    if dados.data_hora:
+        if dados.data_hora.tzinfo is None:
+            data_brasil = PROJECT_TIMEZONE.localize(dados.data_hora)
+        else:
+            data_brasil = dados.data_hora
+        dados.data_hora = to_utc(data_brasil)
+
     return agenda_service.update(db, id, dados, current_user.id)
 
 @router.patch("/{id}/toggle-status")

@@ -30,11 +30,12 @@ import httpx
 import feedparser
 import redis.asyncio as redis
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Optional, Dict, Any
 
 from app.core.config import settings
+from app.core.timezone import now_utc # [NOVO]
 
 # --------------------------------------------------------------------------------------
 # CONFIGURAÇÃO DE CURADORIA DE NOTÍCIAS
@@ -320,9 +321,9 @@ class ExternalDataService:
                         # Normalização de data (RSS é caótico com datas)
                         pub_date = getattr(entry, 'published_parsed', None)
                         if pub_date:
-                            dt_object = datetime(*pub_date[:6]).replace(tzinfo=timezone.utc)
+                            dt_object = datetime(*pub_date[:6]).replace(tzinfo=now_utc().tzinfo) # [CORREÇÃO]
                         else:
-                            dt_object = datetime.now(timezone.utc)
+                            dt_object = now_utc()
                         
                         articles.append({
                             'title': entry.title, 
