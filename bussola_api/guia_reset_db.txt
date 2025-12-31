@@ -12,3 +12,9 @@ alembic upgrade head
 
 # 5
 uvicorn app.main:app --reload
+
+# 6
+python scripts/create_user.py --email ditanixplayer@gmail.com --password 'M8r03!hc'
+
+# 7
+python scripts/populate_db.py

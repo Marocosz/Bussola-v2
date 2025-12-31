@@ -21,7 +21,7 @@ COMUNICAÇÃO:
 =======================================================================================
 """
 
-from sqlalchemy import Boolean, Column, Integer, String, JSON
+from sqlalchemy import Boolean, Column, Integer, String, JSON, DateTime, func
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
 
@@ -30,6 +30,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # [AUTENTICAÇÃO HÍBRIDA]
     # 'hashed_password' é nullable porque usuários que logam via Google/Facebook

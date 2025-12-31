@@ -27,7 +27,7 @@ COMUNICAÇÃO:
 
 from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, BackgroundTasks # [CORREÇÃO] Adicionado BackgroundTasks
 import httpx 
 import secrets
 from jose import jwt, JWTError
@@ -37,7 +37,8 @@ from app.schemas.user import UserCreate, NewPassword
 from app.schemas.token import Token
 from app.core import security
 from app.core.config import settings
-from app.utils.email import send_password_reset_email
+# [CORREÇÃO] Adicionado send_account_verification_email
+from app.utils.email import send_password_reset_email, send_account_verification_email
 from app.api.deps import redis_client # Import do Redis
 
 class AuthService:
@@ -232,7 +233,8 @@ class AuthService:
     # ----------------------------------------------------------------------------------
     # REGISTRO DE USUÁRIO (SIGN UP)
     # ----------------------------------------------------------------------------------
-    def register_user(self, user_in: UserCreate) -> User:
+    # [CORREÇÃO] Adicionado parâmetro background_tasks
+    def register_user(self, user_in: UserCreate, background_tasks: BackgroundTasks = None) -> User:
         """
         Cria uma nova conta no sistema.
 
@@ -275,6 +277,19 @@ class AuthService:
         self.session.add(db_user)
         self.session.commit()
         self.session.refresh(db_user)
+
+        # [CORREÇÃO] Lógica de disparo de e-mail assíncrono
+        if is_saas and not should_be_verified and background_tasks:
+            verify_token = security.create_access_token(
+                subject=db_user.id, 
+                expires_delta=timedelta(hours=24)
+            )
+            
+            background_tasks.add_task(
+                send_account_verification_email,
+                email_to=user_in.email, 
+                token=verify_token
+            )
         
         return db_user
 

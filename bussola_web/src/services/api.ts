@@ -773,7 +773,7 @@ export const adminCreateUser = async (userData: CreateUserDTO) => {
 };
 
 export const registerUser = async (userData: any) => {
-    const response = await api.post('/users/open', userData);
+    const response = await api.post('/auth/register', userData);
     return response.data;
 };
 
