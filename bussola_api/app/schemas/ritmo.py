@@ -30,7 +30,12 @@ class BioBase(BaseModel):
     objetivo: str
 
 class BioCreate(BioBase):
-    pass 
+    # [NOVO] Campos opcionais para override manual das metas
+    meta_proteina: Optional[float] = None
+    meta_carbo: Optional[float] = None
+    meta_gordura: Optional[float] = None
+    meta_agua: Optional[float] = None
+    gasto_calorico_total: Optional[float] = None
 
 class BioResponse(BioBase):
     id: int
@@ -63,7 +68,8 @@ class ExercicioItemBase(BaseModel):
     observacao: Optional[str] = None
 
 class ExercicioItemCreate(ExercicioItemBase):
-    pass
+    # [CORREÇÃO]: Aceita ID para Update Inteligente
+    id: Optional[int] = None
 
 class ExercicioItemResponse(ExercicioItemBase):
     id: int
@@ -77,6 +83,8 @@ class DiaTreinoBase(BaseModel):
     ordem: int
 
 class DiaTreinoCreate(DiaTreinoBase):
+    # [CORREÇÃO]: Aceita ID para Update Inteligente
+    id: Optional[int] = None
     exercicios: Optional[List[ExercicioItemCreate]] = []
 
 class DiaTreinoResponse(DiaTreinoBase):
@@ -117,7 +125,8 @@ class AlimentoItemBase(BaseModel):
     gordura: float
 
 class AlimentoItemCreate(AlimentoItemBase):
-    pass
+    # [CORREÇÃO]: Aceita ID para Update Inteligente
+    id: Optional[int] = None
 
 class AlimentoItemResponse(AlimentoItemBase):
     id: int
@@ -131,6 +140,8 @@ class RefeicaoBase(BaseModel):
     ordem: int
 
 class RefeicaoCreate(RefeicaoBase):
+    # [CORREÇÃO]: Aceita ID para Update Inteligente
+    id: Optional[int] = None
     alimentos: Optional[List[AlimentoItemCreate]] = []
 
 class RefeicaoResponse(RefeicaoBase):

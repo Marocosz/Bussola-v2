@@ -54,61 +54,47 @@ class RitmoService:
     def create_bio(db: Session, user_id: int, bio_in: BioCreate):
         """
         Registra uma nova avaliação física e executa o motor de cálculo nutricional.
-        
-        LÓGICA DE NEGÓCIO (CÁLCULO AUTOMÁTICO):
-        1. TMB (Taxa Metabólica Basal): Usa a fórmula de Harris-Benedict Revisada.
-        2. GET (Gasto Energético Total): Multiplica TMB pelo nível de atividade.
-        3. Objetivo: Ajusta o GET aplicando déficit (para secar) ou superávit (para massa).
-        4. Macros: Define Proteína e Gordura por kg corporal e joga o resto em Carboidratos.
-        
-        
-
-        Retorno:
-            O objeto RitmoBio persistido com todos os campos calculados preenchidos.
+        Permite override manual das metas se fornecidas no payload.
         """
         
         # 1. Cálculo da TMB (Fórmula de Harris-Benedict Revisada)
-        # Diferenciação biológica obrigatória para precisão.
         if bio_in.genero.upper() == 'M':
             tmb = 88.36 + (13.4 * bio_in.peso) + (4.8 * bio_in.altura) - (5.7 * bio_in.idade)
         else:
             tmb = 447.6 + (9.2 * bio_in.peso) + (3.1 * bio_in.altura) - (4.3 * bio_in.idade)
 
-        # 2. Definição do Fator de Atividade (Multiplicador do TMB)
-        fatores = {
-            'sedentario': 1.2,
-            'leve': 1.375,
-            'moderado': 1.55,
-            'alto': 1.725,
-            'atleta': 1.9
-        }
+        # 2. Definição do Fator de Atividade
+        fatores = {'sedentario': 1.2, 'leve': 1.375, 'moderado': 1.55, 'alto': 1.725, 'atleta': 1.9}
         fator = fatores.get(bio_in.nivel_atividade, 1.2)
         get_basal = tmb * fator
 
-        # 3. Ajuste pelo Objetivo (Regra de Negócio)
-        gasto_total_alvo = get_basal
+        # 3. Ajuste pelo Objetivo (Sugestão do Sistema)
+        gasto_total_sugestao = get_basal
         if bio_in.objetivo == 'perda_peso':
-            gasto_total_alvo -= 500  # Déficit padrão conservador (safe range)
+            gasto_total_sugestao -= 500
         elif bio_in.objetivo == 'ganho_massa':
-            gasto_total_alvo += 300  # Superávit leve para evitar ganho excessivo de gordura
+            gasto_total_sugestao += 300
 
-        # 4. Distribuição de Macros (Estratégia Flexível)
-        # Regra: Proteína e Gordura são essenciais e fixos por KG. Carbo é energético e variável.
-        meta_proteina = bio_in.peso * 2.0  # 2g/kg (Padrão hipertrofia)
-        meta_gordura = bio_in.peso * 1.0   # 1g/kg (Saúde hormonal)
+        # 4. Distribuição de Macros (Sugestão do Sistema)
+        meta_prot_sugestao = bio_in.peso * 2.0
+        meta_gord_sugestao = bio_in.peso * 1.0
         
-        # Conversão para Calorias (Prot/Carb = 4kcal, Gord = 9kcal)
-        calorias_prot_gord = (meta_proteina * 4) + (meta_gordura * 9)
-        calorias_restantes = gasto_total_alvo - calorias_prot_gord
-        
-        # Garante que não haja carbo negativo em dietas muito restritivas
+        calorias_prot_gord = (meta_prot_sugestao * 4) + (meta_gord_sugestao * 9)
+        calorias_restantes = gasto_total_sugestao - calorias_prot_gord
         if calorias_restantes < 0: calorias_restantes = 0
-        meta_carbo = calorias_restantes / 4
+        meta_carb_sugestao = calorias_restantes / 4
 
-        # 5. Meta de Hidratação (45ml por kg - levemente acima da média de 35ml para ativos)
-        meta_agua = bio_in.peso * 0.045 
+        meta_agua_sugestao = bio_in.peso * 0.045 
 
-        # Persistência dos Dados Calculados (Snapshot)
+        # 5. Aplicação Final (Override se o usuário enviou customizado)
+        # Se o campo veio no payload (não é None), usa ele. Senão usa a sugestão.
+        final_gasto = bio_in.gasto_calorico_total if bio_in.gasto_calorico_total is not None else gasto_total_sugestao
+        final_prot = bio_in.meta_proteina if bio_in.meta_proteina is not None else meta_prot_sugestao
+        final_carb = bio_in.meta_carbo if bio_in.meta_carbo is not None else meta_carb_sugestao
+        final_gord = bio_in.meta_gordura if bio_in.meta_gordura is not None else meta_gord_sugestao
+        final_agua = bio_in.meta_agua if bio_in.meta_agua is not None else meta_agua_sugestao
+
+        # Persistência
         db_obj = RitmoBio(
             user_id=user_id,
             peso=bio_in.peso,
@@ -118,13 +104,13 @@ class RitmoService:
             bf_estimado=bio_in.bf_estimado,
             nivel_atividade=bio_in.nivel_atividade,
             objetivo=bio_in.objetivo,
-            # Arredondamentos para UI limpa
+            
             tmb=round(tmb, 2),
-            gasto_calorico_total=round(gasto_total_alvo, 2),
-            meta_proteina=round(meta_proteina, 1),
-            meta_carbo=round(meta_carbo, 1),
-            meta_gordura=round(meta_gordura, 1),
-            meta_agua=round(meta_agua, 1)
+            gasto_calorico_total=round(final_gasto, 2),
+            meta_proteina=round(final_prot, 1),
+            meta_carbo=round(final_carb, 1),
+            meta_gordura=round(final_gord, 1),
+            meta_agua=round(final_agua, 1)
         )
         
         db.add(db_obj)
@@ -142,7 +128,6 @@ class RitmoService:
 
     @staticmethod
     def get_plano_ativo(db: Session, user_id: int):
-        """Retorna o plano marcado como 'ativo' (o que aparece no Dashboard)."""
         return db.query(RitmoPlanoTreino).filter(
             RitmoPlanoTreino.user_id == user_id, 
             RitmoPlanoTreino.ativo == True
@@ -150,13 +135,6 @@ class RitmoService:
 
     @staticmethod
     def create_plano_completo(db: Session, user_id: int, plano_in: PlanoTreinoCreate):
-        """
-        Cria um plano de treino com toda a sua árvore de dependências (Dias -> Exercícios).
-        
-        Regra de Negócio:
-            Se o novo plano for 'ativo', desativa automaticamente todos os outros planos
-            do usuário para manter a consistência de "apenas 1 plano vigente".
-        """
         if plano_in.ativo:
             RitmoService._desativar_outros_planos(db, user_id)
 
@@ -169,7 +147,6 @@ class RitmoService:
         db.commit()
         db.refresh(db_plano)
 
-        # Delega a criação dos filhos para função auxiliar
         RitmoService._adicionar_dias_plano(db, db_plano.id, plano_in.dias)
 
         db.refresh(db_plano)
@@ -178,14 +155,9 @@ class RitmoService:
     @staticmethod
     def update_plano_completo(db: Session, user_id: int, plano_id: int, plano_in: PlanoTreinoCreate):
         """
-        Atualiza um plano existente.
-        
-        ESTRATÉGIA DE ATUALIZAÇÃO (DESTRUTIVA):
-        Para simplificar a lógica de diff (saber qual exercício mudou, qual dia foi removido),
-        removemos TODOS os dias e exercícios antigos e recriamos do zero baseados no payload.
-        Isso garante integridade total da estrutura.
+        Atualiza um plano existente usando Reconciliação (Smart Diff).
+        Preserva IDs de dias e exercícios para manter histórico.
         """
-        # [SEGURANÇA] Filtra por user_id
         db_plano = db.query(RitmoPlanoTreino).filter(
             RitmoPlanoTreino.id == plano_id, 
             RitmoPlanoTreino.user_id == user_id
@@ -194,30 +166,104 @@ class RitmoService:
         if not db_plano:
             return None
 
-        if plano_in.ativo:
+        if plano_in.ativo and not db_plano.ativo:
             RitmoService._desativar_outros_planos(db, user_id)
 
         db_plano.nome = plano_in.nome
         db_plano.ativo = plano_in.ativo
 
-        # Limpeza da estrutura antiga (Cascade delete cuidará dos exercícios se configurado, 
-        # mas deletamos os dias explicitamente para garantir).
-        for dia in list(db_plano.dias):
-            db.delete(dia)
-        
-        db.flush() # Aplica as deleções antes de inserir novos
+        # Reconciliação de DIAS
+        # Mapa dos itens atuais no banco
+        dias_existentes = {dia.id: dia for dia in db_plano.dias}
+        ids_dias_processados = []
 
-        RitmoService._adicionar_dias_plano(db, db_plano.id, plano_in.dias)
+        for dia_in in plano_in.dias:
+            if dia_in.id and dia_in.id in dias_existentes:
+                # UPDATE DIA
+                db_dia = dias_existentes[dia_in.id]
+                db_dia.nome = dia_in.nome
+                db_dia.ordem = dia_in.ordem
+                ids_dias_processados.append(dia_in.id)
+                
+                # Reconcilia Exercícios (Recursivo)
+                RitmoService._reconciliar_exercicios(db, db_dia, dia_in.exercicios)
+            else:
+                # CREATE DIA
+                novo_dia = RitmoDiaTreino(
+                    plano_id=db_plano.id,
+                    nome=dia_in.nome,
+                    ordem=dia_in.ordem
+                )
+                db.add(novo_dia)
+                db.commit()
+                db.refresh(novo_dia)
+                
+                # Adiciona exercícios do novo dia
+                for ex_in in dia_in.exercicios:
+                    novo_ex = RitmoExercicioItem(
+                        dia_treino_id=novo_dia.id,
+                        nome_exercicio=ex_in.nome_exercicio,
+                        api_id=ex_in.api_id,
+                        grupo_muscular=ex_in.grupo_muscular,
+                        series=ex_in.series,
+                        repeticoes_min=ex_in.repeticoes_min,
+                        repeticoes_max=ex_in.repeticoes_max,
+                        descanso_segundos=ex_in.descanso_segundos,
+                        observacao=ex_in.observacao
+                    )
+                    db.add(novo_ex)
+
+        # DELETE ORPHANS (Dias que sumiram)
+        for dia_id, dia_obj in dias_existentes.items():
+            if dia_id not in ids_dias_processados:
+                db.delete(dia_obj)
 
         db.commit()
         db.refresh(db_plano)
         return db_plano
 
     @staticmethod
+    def _reconciliar_exercicios(db: Session, db_dia: RitmoDiaTreino, exercicios_in: list):
+        """Helper para diff inteligente de exercícios."""
+        ex_existentes = {ex.id: ex for ex in db_dia.exercicios}
+        ids_ex_processados = []
+
+        for ex_in in exercicios_in:
+            if ex_in.id and ex_in.id in ex_existentes:
+                # UPDATE
+                db_ex = ex_existentes[ex_in.id]
+                db_ex.nome_exercicio = ex_in.nome_exercicio
+                db_ex.api_id = ex_in.api_id
+                db_ex.grupo_muscular = ex_in.grupo_muscular
+                db_ex.series = ex_in.series
+                db_ex.repeticoes_min = ex_in.repeticoes_min
+                db_ex.repeticoes_max = ex_in.repeticoes_max
+                db_ex.descanso_segundos = ex_in.descanso_segundos
+                db_ex.observacao = ex_in.observacao
+                ids_ex_processados.append(ex_in.id)
+            else:
+                # CREATE
+                novo_ex = RitmoExercicioItem(
+                    dia_treino_id=db_dia.id,
+                    nome_exercicio=ex_in.nome_exercicio,
+                    api_id=ex_in.api_id,
+                    grupo_muscular=ex_in.grupo_muscular,
+                    series=ex_in.series,
+                    repeticoes_min=ex_in.repeticoes_min,
+                    repeticoes_max=ex_in.repeticoes_max,
+                    descanso_segundos=ex_in.descanso_segundos,
+                    observacao=ex_in.observacao
+                )
+                db.add(novo_ex)
+        
+        # DELETE
+        for ex_id, ex_obj in ex_existentes.items():
+            if ex_id not in ids_ex_processados:
+                db.delete(ex_obj)
+
+    @staticmethod
     def _adicionar_dias_plano(db: Session, plano_id: int, dias_in: list):
-        """
-        Helper privado para persistir a hierarquia Dia -> Exercícios.
-        """
+        # ... (Mantido igual para criação inicial) ...
         for dia_in in dias_in:
             db_dia = RitmoDiaTreino(
                 plano_id=plano_id,
@@ -232,7 +278,7 @@ class RitmoService:
                 db_ex = RitmoExercicioItem(
                     dia_treino_id=db_dia.id,
                     nome_exercicio=ex_in.nome_exercicio,
-                    api_id=ex_in.api_id, # Link opcional com API externa de exercícios
+                    api_id=ex_in.api_id, 
                     grupo_muscular=ex_in.grupo_muscular,
                     series=ex_in.series,
                     repeticoes_min=ex_in.repeticoes_min,
@@ -246,7 +292,6 @@ class RitmoService:
 
     @staticmethod
     def toggle_plano_ativo(db: Session, user_id: int, plano_id: int):
-        """Alterna qual plano é o principal, garantindo unicidade."""
         RitmoService._desativar_outros_planos(db, user_id)
         plano = db.query(RitmoPlanoTreino).filter(RitmoPlanoTreino.id == plano_id, RitmoPlanoTreino.user_id == user_id).first()
         if plano:
@@ -266,7 +311,6 @@ class RitmoService:
 
     @staticmethod
     def _desativar_outros_planos(db: Session, user_id: int):
-        """Helper para manter a regra de 'apenas um ativo'."""
         planos_ativos = db.query(RitmoPlanoTreino).filter(
             RitmoPlanoTreino.user_id == user_id, 
             RitmoPlanoTreino.ativo == True
@@ -292,9 +336,6 @@ class RitmoService:
 
     @staticmethod
     def create_dieta_completa(db: Session, user_id: int, dieta_in: DietaConfigCreate):
-        """
-        Cria uma dieta completa e calcula o total calórico automaticamente.
-        """
         if dieta_in.ativo:
             RitmoService._desativar_outras_dietas(db, user_id)
 
@@ -302,16 +343,14 @@ class RitmoService:
             user_id=user_id,
             nome=dieta_in.nome,
             ativo=dieta_in.ativo,
-            calorias_calculadas=0 # Será atualizado após inserir alimentos
+            calorias_calculadas=0 
         )
         db.add(db_dieta)
         db.commit()
         db.refresh(db_dieta)
 
-        # Insere alimentos e recebe o somatório calórico
         total_calorias = RitmoService._adicionar_refeicoes_dieta(db, db_dieta.id, dieta_in.refeicoes)
 
-        # Cache do total na tabela pai para evitar queries pesadas na leitura
         db_dieta.calorias_calculadas = total_calorias
         db.commit()
         db.refresh(db_dieta)
@@ -320,7 +359,7 @@ class RitmoService:
     @staticmethod
     def update_dieta_completa(db: Session, user_id: int, dieta_id: int, dieta_in: DietaConfigCreate):
         """
-        Atualiza dieta usando a mesma estratégia destrutiva (Apaga Refeições -> Recria).
+        Atualiza dieta preservando IDs (Smart Diff).
         """
         db_dieta = db.query(RitmoDietaConfig).filter(
             RitmoDietaConfig.id == dieta_id, 
@@ -330,25 +369,102 @@ class RitmoService:
         if not db_dieta:
             return None
 
-        if dieta_in.ativo:
+        if dieta_in.ativo and not db_dieta.ativo:
             RitmoService._desativar_outras_dietas(db, user_id)
 
         db_dieta.nome = dieta_in.nome
         db_dieta.ativo = dieta_in.ativo
 
-        # Remove estrutura antiga
-        for ref in list(db_dieta.refeicoes):
-            db.delete(ref)
-        
-        db.flush()
+        # Reconciliação Refeições
+        ref_existentes = {r.id: r for r in db_dieta.refeicoes}
+        ids_ref_processados = []
+        total_calorias_acumulado = 0
 
-        # Recria estrutura nova e recalcula calorias
-        total_calorias = RitmoService._adicionar_refeicoes_dieta(db, db_dieta.id, dieta_in.refeicoes)
+        for ref_in in dieta_in.refeicoes:
+            if ref_in.id and ref_in.id in ref_existentes:
+                # UPDATE
+                db_ref = ref_existentes[ref_in.id]
+                db_ref.nome = ref_in.nome
+                db_ref.ordem = ref_in.ordem
+                ids_ref_processados.append(ref_in.id)
+                
+                calorias_ref = RitmoService._reconciliar_alimentos(db, db_ref, ref_in.alimentos)
+                total_calorias_acumulado += calorias_ref
+            else:
+                # CREATE
+                nova_ref = RitmoRefeicao(
+                    dieta_id=db_dieta.id,
+                    nome=ref_in.nome,
+                    ordem=ref_in.ordem
+                )
+                db.add(nova_ref)
+                db.commit()
+                db.refresh(nova_ref)
+                
+                for ali_in in ref_in.alimentos:
+                    novo_ali = RitmoAlimentoItem(
+                        refeicao_id=nova_ref.id,
+                        nome=ali_in.nome,
+                        quantidade=ali_in.quantidade,
+                        unidade=ali_in.unidade,
+                        calorias=ali_in.calorias,
+                        proteina=ali_in.proteina,
+                        carbo=ali_in.carbo,
+                        gordura=ali_in.gordura
+                    )
+                    db.add(novo_ali)
+                    total_calorias_acumulado += ali_in.calorias
 
-        db_dieta.calorias_calculadas = total_calorias
+        # DELETE ORPHANS
+        for ref_id, ref_obj in ref_existentes.items():
+            if ref_id not in ids_ref_processados:
+                db.delete(ref_obj)
+
+        db_dieta.calorias_calculadas = total_calorias_acumulado
         db.commit()
         db.refresh(db_dieta)
         return db_dieta
+
+    @staticmethod
+    def _reconciliar_alimentos(db: Session, db_ref: RitmoRefeicao, alimentos_in: list) -> float:
+        ali_existentes = {a.id: a for a in db_ref.alimentos}
+        ids_ali_proc = []
+        soma_calorias = 0
+
+        for ali_in in alimentos_in:
+            soma_calorias += ali_in.calorias
+            
+            if ali_in.id and ali_in.id in ali_existentes:
+                # UPDATE
+                db_ali = ali_existentes[ali_in.id]
+                db_ali.nome = ali_in.nome
+                db_ali.quantidade = ali_in.quantidade
+                db_ali.unidade = ali_in.unidade
+                db_ali.calorias = ali_in.calorias
+                db_ali.proteina = ali_in.proteina
+                db_ali.carbo = ali_in.carbo
+                db_ali.gordura = ali_in.gordura
+                ids_ali_proc.append(ali_in.id)
+            else:
+                # CREATE
+                novo = RitmoAlimentoItem(
+                    refeicao_id=db_ref.id,
+                    nome=ali_in.nome,
+                    quantidade=ali_in.quantidade,
+                    unidade=ali_in.unidade,
+                    calorias=ali_in.calorias,
+                    proteina=ali_in.proteina,
+                    carbo=ali_in.carbo,
+                    gordura=ali_in.gordura
+                )
+                db.add(novo)
+        
+        # DELETE
+        for ali_id, ali_obj in ali_existentes.items():
+            if ali_id not in ids_ali_proc:
+                db.delete(ali_obj)
+        
+        return soma_calorias
 
     @staticmethod
     def _adicionar_refeicoes_dieta(db: Session, dieta_id: int, refeicoes_in: list):
@@ -382,6 +498,7 @@ class RitmoService:
             db.commit()
         return total_calorias
 
+    # ... (Resto dos métodos: toggle_dieta_ativa, delete_dieta, _desativar_outras_dietas, get_volume_semanal, search_taco_foods mantidos iguais) ...
     @staticmethod
     def toggle_dieta_ativa(db: Session, user_id: int, dieta_id: int):
         RitmoService._desativar_outras_dietas(db, user_id)
@@ -413,10 +530,6 @@ class RitmoService:
         
     @staticmethod
     def get_volume_semanal(db: Session, user_id: int):
-        """
-        Analisa o plano ATIVO e soma as séries por grupo muscular.
-        Retorna: Dict { 'Peito': 12, 'Costas': 16 ... }
-        """
         plano = db.query(RitmoPlanoTreino).filter(
             RitmoPlanoTreino.user_id == user_id, 
             RitmoPlanoTreino.ativo == True
@@ -426,7 +539,6 @@ class RitmoService:
             return {}
 
         volume = {}
-        # Itera sobre a estrutura ORM em memória (evita queries N+1 complexas)
         for dia in plano.dias:
             for ex in dia.exercicios:
                 grupo = ex.grupo_muscular or "Outros"
@@ -435,13 +547,6 @@ class RitmoService:
 
     @staticmethod
     def search_taco_foods(query: str):
-        """
-        Busca alimentos na Tabela TACO (Tabela Brasileira de Composição de Alimentos).
-        
-        Integração Externa (Arquivo Local):
-            Lê o arquivo 'taco.json' localizado em settings.DATA_DIR.
-            Não usa banco de dados para evitar poluição com dados estáticos de terceiros.
-        """
         file_path = os.path.join(settings.DATA_DIR, "taco.json")
         
         if not os.path.exists(file_path):
@@ -458,7 +563,6 @@ class RitmoService:
         query_norm = query.lower()
         results = []
         
-        # Busca linear simples no JSON (Suficiente para < 1000 itens)
         for item in taco_data:
             nome_alimento = item.get("nome", "")
             if query_norm in nome_alimento.lower():
@@ -472,8 +576,6 @@ class RitmoService:
                     "carbo_100g": comp.get("carboidrato") or 0,
                     "gordura_100g": comp.get("lipideos") or 0,
                 })
-            
-            # Limita resultados para performance do frontend
             if len(results) >= 20:
                 break
         

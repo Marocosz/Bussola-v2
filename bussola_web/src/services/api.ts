@@ -521,13 +521,13 @@ export interface BioData {
     genero: string;
     nivel_atividade: string;
     objetivo: string;
-    bf_estimado?: number;
+    bf_estimado?: number | null;
     tmb?: number;
-    gasto_calorico_total?: number;
-    meta_proteina?: number;
-    meta_carbo?: number;
-    meta_gordura?: number;
-    meta_agua?: number;
+    gasto_calorico_total?: number | null;
+    meta_proteina?: number | null;
+    meta_carbo?: number | null;
+    meta_gordura?: number | null;
+    meta_agua?: number | null;
 }
 
 export const getBioData = async (): Promise<any> => {

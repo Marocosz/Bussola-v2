@@ -93,7 +93,7 @@ O payload mestre retornado ao frontend.
 *Visão unificada com o novo seletor de datas avançado, botão de privacidade e KPIs.*
 
 ### 2. Drill-down (Modais de Detalhe)
-![Modal de Detalhes](https://via.placeholder.com/800x400?text=Modal+de+Provisoes+-+Tabela+Detalhada)
+![Modal de Detalhes](images/panorama_2.png)
 *Exemplo de "Drill-down": Ao clicar no card "Provisões", o sistema carrega uma tabela completa com filtros e ordenação sem sair da tela principal.*
 
 ---
