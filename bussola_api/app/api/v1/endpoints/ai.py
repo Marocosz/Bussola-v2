@@ -6,27 +6,32 @@ ARQUIVO: ai.py (Endpoints de Inteligência Artificial)
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import Any, List, Dict
 from datetime import datetime, timedelta, time
 import locale
+import pytz 
 
 # Imports Existentes
 from app.api import deps
-# [NOVO] Import da Autoridade de Tempo para padronização
+# Import da Autoridade de Tempo para padronização
 from app.core.timezone import to_local, now_local, now_utc 
 
+# Serviços e Orchestrators Existentes
 from app.services.ritmo import RitmoService
 from app.services.ai.ritmo.orchestrator import RitmoOrchestrator
 from app.services.ai.ritmo.schema import RitmoAnalysisResponse
 
-# Imports Registros
 from app.services.ai.registros.orchestrator import RegistrosOrchestrator
 from app.services.ai.registros.context import RegistrosContext, TaskItemContext
 from app.models.registros import Tarefa
 
-# Imports Roteiro (Agenda AI) e Modelos
 from app.services.ai.roteiro.orchestrator import RoteiroOrchestrator
 from app.models.agenda import Compromisso 
+
+# [NOVO] Imports Finanças (Orchestrator e Models)
+from app.services.ai.financas.orchestrator import FinancasOrchestrator
+from app.models.financas import Transacao, Categoria, HistoricoGastoMensal
 
 router = APIRouter()
 
@@ -35,6 +40,9 @@ try:
 except:
     pass
 
+# ==============================================================================
+# RITMO (Saúde & Treino)
+# ==============================================================================
 @router.get("/ritmo/insight", response_model=RitmoAnalysisResponse)
 async def get_ritmo_ai_insight(
     db: Session = Depends(deps.get_db),
@@ -52,7 +60,9 @@ async def get_ritmo_ai_insight(
     )
     return response
 
-
+# ==============================================================================
+# REGISTROS (Tarefas & Produtividade)
+# ==============================================================================
 @router.get("/registros/insight", response_model=RitmoAnalysisResponse)
 async def get_registros_ai_insight(
     db: Session = Depends(deps.get_db),
@@ -91,6 +101,9 @@ async def get_registros_ai_insight(
     
     return RitmoAnalysisResponse(suggestions=suggestions)
 
+# ==============================================================================
+# ROTEIRO (Agenda & Logística)
+# ==============================================================================
 @router.get("/roteiro/insight", response_model=RitmoAnalysisResponse)
 async def get_roteiro_ai_insight(
     db: Session = Depends(deps.get_db),
@@ -122,7 +135,6 @@ async def get_roteiro_ai_insight(
     for comp in compromissos_db:
         # [CRÍTICO] Conversão centralizada via Autoridade de Tempo (app.core.timezone)
         # Converte o dado do banco (UTC/Naive) para Hora Local (Brasil)
-        # Isso garante que 14:00 UTC vire 11:00 BRT (ou vice-versa), evitando "madrugadas"
         start_local = to_local(comp.data_hora)
         
         # Como o modelo Compromisso não tem hora de fim, vamos assumir 1 hora de duração
@@ -155,4 +167,153 @@ async def get_roteiro_ai_insight(
     )
     
     # 6. Retorna
+    return RitmoAnalysisResponse(suggestions=suggestions)
+
+# ==============================================================================
+# FINANÇAS (CFO Digital)
+# ==============================================================================
+@router.get("/financas/insight", response_model=RitmoAnalysisResponse)
+async def get_financas_ai_insight(
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_user)
+) -> Any:
+    """
+    Gera insights financeiros baseados em:
+    - Passado: Anomalias de gastos (Spending Detective).
+    - Presente: Burn Rate e metas (Budget Sentinel).
+    - Futuro: Fluxo de caixa e Provisões (Oracle & Architect).
+    """
+    
+    # --- 1. DEFINIÇÃO TEMPORAL (UTC para Banco, Local para IA) ---
+    utc_agora = now_utc()
+    local_agora = now_local()
+    
+    # Mês Atual (Inicio e Fim) - Para BudgetSentinel e Transações Recentes
+    inicio_mes_utc = utc_agora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    # Gambiarra segura para fim do mês: dia 1 do próximo mês - 1 segundo
+    proximo_mes = (inicio_mes_utc.replace(day=28) + timedelta(days=4)).replace(day=1)
+    fim_mes_utc = proximo_mes - timedelta(seconds=1)
+
+    # Janela de Histórico (90 dias para trás) - Para SpendingDetective (Médias)
+    inicio_historico_utc = inicio_mes_utc - timedelta(days=90)
+
+    # Janela Futura (30 dias para frente) - Para CashFlowOracle
+    fim_projecao_utc = utc_agora + timedelta(days=30)
+
+    # --- 2. COLETA DE DADOS (QUERIES) ---
+
+    # A. Transações do Mês Atual (Presente)
+    # Usado para calcular o gasto corrente e burn rate
+    transacoes_mes = db.query(Transacao).filter(
+        Transacao.user_id == current_user.id,
+        Transacao.data >= inicio_mes_utc,
+        Transacao.data <= fim_mes_utc
+    ).all()
+
+    # B. Histórico de Gastos (Passado) - Agregado por Categoria
+    # Busca na tabela de cache 'HistoricoGastoMensal' para performance, ou calcula bruto
+    # Aqui vamos calcular bruto da tabela Transacao para garantir precisão de 90 dias
+    historico_raw = db.query(
+        Transacao.categoria_id,
+        func.sum(Transacao.valor).label("total")
+    ).filter(
+        Transacao.user_id == current_user.id,
+        Transacao.data >= inicio_historico_utc,
+        Transacao.data < inicio_mes_utc, # Estritamente anterior ao mês atual
+        Transacao.tipo_recorrencia != 'ignorar' # Exemplo de filtro opcional
+    ).group_by(Transacao.categoria_id).all()
+
+    # C. Metas e Orçamentos (Categorias)
+    categorias = db.query(Categoria).filter(Categoria.user_id == current_user.id).all()
+    mapa_categorias = {c.id: c.nome for c in categorias}
+    
+    # D. Transações Futuras / Recorrentes (Futuro)
+    # Aqui simplificamos: pegamos transações agendadas (se houver lógica de agendamento)
+    # ou simulamos recorrentes baseadas no padrão 'mensal'.
+    # Para este MVP, vamos buscar transações com data futura já lançadas (parcelas, agendamentos)
+    transacoes_futuras = db.query(Transacao).filter(
+        Transacao.user_id == current_user.id,
+        Transacao.data > utc_agora,
+        Transacao.data <= fim_projecao_utc
+    ).all()
+
+    # --- 3. PROCESSAMENTO E FORMATAÇÃO ---
+
+    # Formatar Transações Mês
+    lista_transacoes_mes = []
+    saldo_atual = 0.0 # Deveria vir de uma tabela de Contas, aqui simulamos ou calculamos
+    
+    for t in transacoes_mes:
+        data_local = to_local(t.data)
+        
+        # Simulação simples de saldo: Receita soma, Despesa subtrai
+        # Num sistema real, buscaríamos o saldo da conta bancária
+        cat = next((c for c in categorias if c.id == t.categoria_id), None)
+        tipo = cat.tipo if cat else 'despesa'
+        
+        if tipo == 'receita':
+            saldo_atual += t.valor
+        else:
+            saldo_atual -= t.valor
+
+        lista_transacoes_mes.append({
+            "data": data_local.strftime("%Y-%m-%d"),
+            "descricao": t.descricao,
+            "valor": t.valor,
+            "categoria": mapa_categorias.get(t.categoria_id, "Outros"),
+            "tipo": tipo
+        })
+
+    # Formatar Histórico (Médias)
+    # O query retornou a soma total dos 90 dias. Dividimos por 3 para ter a média mensal.
+    lista_historico_medias = []
+    for cat_id, total in historico_raw:
+        media = total / 3.0
+        lista_historico_medias.append({
+            "categoria": mapa_categorias.get(cat_id, "Desconhecido"),
+            "valor_media": round(media, 2)
+        })
+
+    # Formatar Metas de Orçamento
+    # Assumindo que o modelo Categoria tem um campo 'meta_limite'
+    lista_metas_orcamento = []
+    for c in categorias:
+        if c.meta_limite > 0 and c.tipo == 'despesa':
+            lista_metas_orcamento.append({
+                "categoria": c.nome,
+                "valor_limite": c.meta_limite
+            })
+
+    # Formatar Transações Futuras
+    lista_transacoes_futuras = []
+    for t in transacoes_futuras:
+        data_local = to_local(t.data)
+        cat = next((c for c in categorias if c.id == t.categoria_id), None)
+        lista_transacoes_futuras.append({
+            "data": data_local.strftime("%Y-%m-%d"),
+            "descricao": t.descricao,
+            "valor": t.valor,
+            "tipo": cat.tipo if cat else 'despesa'
+        })
+
+    # [TODO] Metas de Provisão
+    # Se você tiver uma tabela específica para "Objetivos" (Sinking Funds), busque aqui.
+    # Por enquanto, enviamos lista vazia.
+    lista_metas_provisoes = []
+
+    # --- 4. EXECUÇÃO DO ORQUESTRADOR ---
+    
+    suggestions = await FinancasOrchestrator.analyze_finances(
+        data_atual=local_agora.strftime("%Y-%m-%d"),
+        periodo_label=local_agora.strftime("%B %Y"), # ex: Janeiro 2026
+        data_fim_projecao=(local_agora + timedelta(days=30)).strftime("%Y-%m-%d"),
+        saldo_atual=round(saldo_atual, 2), # Passamos o saldo calculado ou real
+        transacoes_mes=lista_transacoes_mes,
+        historico_medias=lista_historico_medias,
+        transacoes_futuras=lista_transacoes_futuras,
+        metas_orcamento=lista_metas_orcamento,
+        metas_provisoes=lista_metas_provisoes,
+        media_sobra=500.0 # [TODO] Calcular sobra média real baseada em Receitas - Despesas históricas
+    )
+
     return RitmoAnalysisResponse(suggestions=suggestions)

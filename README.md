@@ -75,6 +75,7 @@ O desenvolvimento do **Bússola V2** é contínuo, evoluindo de um sistema de ge
 - [ ] **Postgre:** Implementar BD `PostgreSQL` no modo **SaaS**.
 - [ ] **Dockerização:** Containerização completa da aplicação (`Backend`, `Frontend`, `Redis`, `Banco`) via `Docker Compose` para fácil deploy.
 - [ ] **Padronização:** Padronizar nomes de arquivos/variáveis de todo projeto.
+- [ ] **Ativação:** De acordo com as dicas/sugestoes dos `agents modulares` (`Brains`), ter um botao para aceitar e modificar o dado de acordo com o conteúdo.
 
 ---
 

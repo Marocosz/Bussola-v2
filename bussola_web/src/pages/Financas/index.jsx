@@ -5,6 +5,7 @@ import { CategoryCard } from './components/CategoryCard';
 import { FinancasModals } from './components/FinancasModals';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmDialogContext';
+import { AiAssistant } from '../../components/AiAssistant';
 import './styles.css';
 
 export function Financas() {
@@ -371,6 +372,8 @@ export function Financas() {
                 dashboardData={data}
                 editingData={editingData}
             />
+
+            <AiAssistant context="financas" />
         </div>
     );
 }
