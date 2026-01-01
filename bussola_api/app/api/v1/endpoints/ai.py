@@ -201,6 +201,11 @@ async def get_financas_ai_insight(
     fim_projecao_utc = utc_agora + timedelta(days=30)
 
     # --- 2. COLETA DE DADOS (QUERIES) ---
+    
+    # Mapeamento de Categorias (Crucial para saber o que é Receita e o que é Despesa)
+    categorias = db.query(Categoria).filter(Categoria.user_id == current_user.id).all()
+    mapa_cat_obj = {c.id: c for c in categorias}
+    mapa_categorias_nome = {c.id: c.nome for c in categorias}
 
     # A. Transações do Mês Atual (Presente)
     # Usado para calcular o gasto corrente e burn rate
@@ -223,10 +228,6 @@ async def get_financas_ai_insight(
         Transacao.tipo_recorrencia != 'ignorar' # Exemplo de filtro opcional
     ).group_by(Transacao.categoria_id).all()
 
-    # C. Metas e Orçamentos (Categorias)
-    categorias = db.query(Categoria).filter(Categoria.user_id == current_user.id).all()
-    mapa_categorias = {c.id: c.nome for c in categorias}
-    
     # D. Transações Futuras / Recorrentes (Futuro)
     # Aqui simplificamos: pegamos transações agendadas (se houver lógica de agendamento)
     # ou simulamos recorrentes baseadas no padrão 'mensal'.
@@ -237,58 +238,74 @@ async def get_financas_ai_insight(
         Transacao.data <= fim_projecao_utc
     ).all()
 
-    # --- 3. PROCESSAMENTO E FORMATAÇÃO ---
+    # --- 3. CÁLCULO DE CAPACIDADE DE POUPANÇA (REAL) ---
+    # Aqui a mágica acontece. Calculamos a sobra média REAL dos últimos 90 dias.
+    
+    total_receita_90d = 0.0
+    total_despesa_90d = 0.0
+    
+    lista_historico_medias = []
+    
+    for cat_id, total in historico_raw:
+        cat = mapa_cat_obj.get(cat_id)
+        if not cat: continue
+        
+        # Separa para cálculo global de sobra
+        if cat.tipo == 'receita':
+            total_receita_90d += total
+        else:
+            total_despesa_90d += total
+            
+        # Prepara lista para o SpendingDetective (apenas média mensal por categoria)
+        lista_historico_medias.append({
+            "categoria": cat.nome,
+            "valor_media": round(total / 3.0, 2)
+        })
+        
+    # Cálculo da Sobra Média Mensal Real (Receita - Despesa) / 3 meses
+    media_receita_mensal = total_receita_90d / 3.0
+    media_despesa_mensal = total_despesa_90d / 3.0
+    sobra_mensal_real = media_receita_mensal - media_despesa_mensal
+
+    # --- 4. FORMATAÇÃO DO CONTEXTO ---
 
     # Formatar Transações Mês
     lista_transacoes_mes = []
-    saldo_atual = 0.0 # Deveria vir de uma tabela de Contas, aqui simulamos ou calculamos
+    saldo_atual_estimado = 0.0 
     
     for t in transacoes_mes:
         data_local = to_local(t.data)
-        
-        # Simulação simples de saldo: Receita soma, Despesa subtrai
-        # Num sistema real, buscaríamos o saldo da conta bancária
-        cat = next((c for c in categorias if c.id == t.categoria_id), None)
+        cat = mapa_cat_obj.get(t.categoria_id)
         tipo = cat.tipo if cat else 'despesa'
         
         if tipo == 'receita':
-            saldo_atual += t.valor
+            saldo_atual_estimado += t.valor
         else:
-            saldo_atual -= t.valor
+            saldo_atual_estimado -= t.valor
 
         lista_transacoes_mes.append({
             "data": data_local.strftime("%Y-%m-%d"),
             "descricao": t.descricao,
             "valor": t.valor,
-            "categoria": mapa_categorias.get(t.categoria_id, "Outros"),
+            "categoria": cat.nome if cat else "Outros",
             "tipo": tipo
         })
 
-    # Formatar Histórico (Médias)
-    # O query retornou a soma total dos 90 dias. Dividimos por 3 para ter a média mensal.
-    lista_historico_medias = []
-    for cat_id, total in historico_raw:
-        media = total / 3.0
-        lista_historico_medias.append({
-            "categoria": mapa_categorias.get(cat_id, "Desconhecido"),
-            "valor_media": round(media, 2)
-        })
-
     # Formatar Metas de Orçamento
-    # Assumindo que o modelo Categoria tem um campo 'meta_limite'
     lista_metas_orcamento = []
     for c in categorias:
-        if c.meta_limite > 0 and c.tipo == 'despesa':
+        if c.meta_limite > 0: # Inclui Receita e Despesa para o StrategyArchitect analisar
             lista_metas_orcamento.append({
                 "categoria": c.nome,
-                "valor_limite": c.meta_limite
+                "valor_limite": c.meta_limite,
+                "tipo": c.tipo # Importante para o Architect diferenciar Teto de Alvo
             })
 
     # Formatar Transações Futuras
     lista_transacoes_futuras = []
     for t in transacoes_futuras:
         data_local = to_local(t.data)
-        cat = next((c for c in categorias if c.id == t.categoria_id), None)
+        cat = mapa_cat_obj.get(t.categoria_id)
         lista_transacoes_futuras.append({
             "data": data_local.strftime("%Y-%m-%d"),
             "descricao": t.descricao,
@@ -296,24 +313,22 @@ async def get_financas_ai_insight(
             "tipo": cat.tipo if cat else 'despesa'
         })
 
-    # [TODO] Metas de Provisão
-    # Se você tiver uma tabela específica para "Objetivos" (Sinking Funds), busque aqui.
-    # Por enquanto, enviamos lista vazia.
+    # [Sem Mocks] - O StrategyArchitect usará a sobra_mensal_real e as metas das categorias
     lista_metas_provisoes = []
 
-    # --- 4. EXECUÇÃO DO ORQUESTRADOR ---
+    # --- 5. EXECUÇÃO DO ORQUESTRADOR ---
     
     suggestions = await FinancasOrchestrator.analyze_finances(
         data_atual=local_agora.strftime("%Y-%m-%d"),
-        periodo_label=local_agora.strftime("%B %Y"), # ex: Janeiro 2026
+        periodo_label=local_agora.strftime("%B %Y"), 
         data_fim_projecao=(local_agora + timedelta(days=30)).strftime("%Y-%m-%d"),
-        saldo_atual=round(saldo_atual, 2), # Passamos o saldo calculado ou real
+        saldo_atual=round(saldo_atual_estimado, 2), 
         transacoes_mes=lista_transacoes_mes,
         historico_medias=lista_historico_medias,
         transacoes_futuras=lista_transacoes_futuras,
         metas_orcamento=lista_metas_orcamento,
         metas_provisoes=lista_metas_provisoes,
-        media_sobra=500.0 # [TODO] Calcular sobra média real baseada em Receitas - Despesas históricas
+        media_sobra=round(sobra_mensal_real, 2) 
     )
 
     return RitmoAnalysisResponse(suggestions=suggestions)

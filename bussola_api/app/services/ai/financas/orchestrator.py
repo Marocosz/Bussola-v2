@@ -6,7 +6,7 @@ from typing import List, Dict, Any
 # Imports dos Agentes Financeiros
 from app.services.ai.financas.spending_detective.agent import SpendingDetectiveAgent
 from app.services.ai.financas.cash_flow_oracle.agent import CashFlowOracleAgent
-from app.services.ai.financas.provisions_architect.agent import ProvisionsArchitectAgent
+from app.services.ai.financas.strategy_architect.agent import StrategyArchitectAgent
 from app.services.ai.financas.budget_sentinel.agent import BudgetSentinelAgent
 
 # Contexto e Schema Base
@@ -19,7 +19,11 @@ class FinancasOrchestrator:
     """
     CFO Digital (Chief Financial Officer).
     Coordena a análise de Passado, Presente e Futuro Financeiro.
+    Aplica filtros de prioridade para evitar sobrecarga cognitiva no usuário.
     """
+    
+    # Limite máximo de cards para exibir na UI
+    MAX_INSIGHTS_DISPLAY = 6 
     
     @staticmethod
     async def analyze_finances(
@@ -56,17 +60,16 @@ class FinancasOrchestrator:
 
         # 2. Execução Paralela dos 4 Especialistas
         results = await asyncio.gather(
-            SpendingDetectiveAgent.run(context),   # Passado (Auditoria)
-            BudgetSentinelAgent.run(context),      # Presente (Execução Tática)
+            SpendingDetectiveAgent.run(context),   # Passado (Anomalias)
+            BudgetSentinelAgent.run(context),      # Presente (Pacing/Execução)
             CashFlowOracleAgent.run(context),      # Futuro Curto (Liquidez)
-            ProvisionsArchitectAgent.run(context), # Futuro Longo (Estratégia)
+            StrategyArchitectAgent.run(context),   # Futuro Longo (Estratégia)
             return_exceptions=True
         )
 
-        # 3. Consolidação e Limpeza
-        raw_suggestions: List[AtomicSuggestion] = []
-        
-        agents_map = ["SpendingDetective", "BudgetSentinel", "CashFlowOracle", "ProvisionsArchitect"]
+        # 3. Consolidação Bruta
+        all_suggestions: List[AtomicSuggestion] = []
+        agents_map = ["SpendingDetective", "BudgetSentinel", "CashFlowOracle", "StrategyArchitect"]
 
         for i, result in enumerate(results):
             agent_name = agents_map[i]
@@ -77,46 +80,54 @@ class FinancasOrchestrator:
                 continue
                 
             if result:
-                raw_suggestions.extend(result)
-                
-                # --- LOG DETALHADO NO TERMINAL ---
+                all_suggestions.extend(result)
+                # Log para debug (mostra tudo no terminal, mas filtra para o usuário)
                 if len(result) > 0:
-                    print(f"\n{'='*20} 🏦 {agent_name.upper()} ({len(result)}) {'='*20}")
-                    for suggestion in result:
-                        print(json.dumps(suggestion.model_dump(), indent=2, ensure_ascii=False))
-                    print(f"{'='*60}\n")
-                else:
-                    print(f"⚪ {agent_name}: Tudo nos conformes.")
+                    print(f"   -> {agent_name} gerou {len(result)} insights.")
 
-        # 4. Pós-Processamento e Priorização (CFO Logic)
-        final_suggestions = []
+        # 4. LÓGICA DE PRIORIZAÇÃO E CORTE (CFO Logic)
+        
+        # A. Deduplicação (Evitar insights repetidos sobre o mesmo alvo)
+        unique_suggestions = []
         seen_keys = set()
+        for s in all_suggestions:
+            key = f"{s.agent_source}-{s.action.target}" # ex: spending_detective-Alimentação
+            if key not in seen_keys:
+                seen_keys.add(key)
+                unique_suggestions.append(s)
+
+        # B. Pesos de Severidade (Menor número = Maior prioridade)
+        severity_weight = {
+            "critical": 0,
+            "high": 1, 
+            "medium": 2, 
+            "low": 3, 
+            "none": 4
+        }
         
-        # Ordem de prioridade na tela: 
-        # 1. Perigo Imediato (Oracle - Cheque Especial)
-        # 2. Desvio de Execução (Sentinel - Gastando muito rápido)
-        # 3. Anomalia Passada (Detective - Roubo/Erro)
-        # 4. Estratégia (Architect - Planejamento)
-        
-        # Mapeamento de severidade para sort
-        severity_order = {"high": 0, "medium": 1, "low": 2, "none": 3}
+        # C. Pesos de Agente (Quem tem preferência em caso de empate de severidade)
+        # 1. Oracle (Risco de quebrar é o mais importante)
+        # 2. Sentinel (Para de gastar AGORA)
+        # 3. Detective (Olha o que você fez)
+        # 4. Strategy (Planejamento futuro pode esperar)
+        agent_weight = {
+            "cash_flow_oracle": 0,
+            "budget_sentinel": 1,
+            "spending_detective": 2,
+            "strategy_architect": 3
+        }
 
-        for suggestion in raw_suggestions:
-            # Deduplicação
-            key = f"{suggestion.title}-{suggestion.action.target}"
-            if key in seen_keys:
-                continue
-            
-            # Regra de Conflito: Se o Oracle diz "Vai faltar dinheiro" (Danger), 
-            # não precisamos que o Architect diga "Invista seu dinheiro" (Opportunity).
-            # (Poderíamos implementar essa lógica complexa aqui, mas por hora vamos manter simples)
-            
-            seen_keys.add(key)
-            final_suggestions.append(suggestion)
+        # D. Ordenação Multi-nível
+        unique_suggestions.sort(key=lambda x: (
+            severity_weight.get(x.severity, 99), # 1º Critério: Gravidade
+            agent_weight.get(x.agent_source, 99) # 2º Critério: Urgência do Agente
+        ))
 
-        # Ordenação Final
-        final_suggestions.sort(key=lambda x: severity_order.get(x.severity, 99))
+        # E. Corte Final (Top N)
+        final_suggestions = unique_suggestions[:FinancasOrchestrator.MAX_INSIGHTS_DISPLAY]
 
-        print(f"[FinancasOrchestrator] ✅ Análise Financeira Concluída. Insights: {len(final_suggestions)}\n")
+        # Log do resultado final
+        print(f"\n[FinancasOrchestrator] ✂️ Filtro Aplicado: De {len(all_suggestions)} para {len(final_suggestions)} insights.")
+        print(f"[FinancasOrchestrator] ✅ Análise Concluída.\n")
         
         return final_suggestions
