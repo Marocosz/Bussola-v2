@@ -1,3 +1,31 @@
+"""
+=======================================================================================
+ARQUIVO: agent.py (Agente BudgetSentinel)
+=======================================================================================
+
+OBJETIVO:
+    Implementar o "Guarda de Orçamento" (Budget Sentinel).
+    Este agente é responsável pela análise TÁTICA e IMEDIATA da execução orçamentária.
+    
+    Diferente do StrategyArchitect (que olha o longo prazo), o Sentinel olha o AGORA.
+    Ele responde à pergunta: "Estou gastando rápido demais para o dia do mês que estamos?"
+
+CAMADA:
+    Services / AI / Financas (Backend).
+    É invocado pelo `FinancasOrchestrator` durante a análise financeira geral.
+
+RESPONSABILIDADES:
+    1. Cálculo de Burn Rate: Comparar % do Mês Decorrido vs % do Orçamento Consumido.
+    2. Filtragem Temporal: Garantir que gastos futuros (agendados) não disparem alarmes falsos.
+    3. Detecção de Anomalias de Ritmo: Identificar categorias que vão "quebrar" antes do fim do mês.
+    4. Feedback Positivo: Reconhecer e elogiar quando o controle está perfeito (Início de Mês).
+
+INTEGRAÇÕES:
+    - LLMFactory: Para gerar o texto persuasivo do alerta.
+    - AgentCache: Para evitar reprocessamento desnecessário.
+    - FinancasContext: Fonte de dados (Transações e Metas).
+"""
+
 import logging
 import json
 from datetime import datetime, date
@@ -9,7 +37,7 @@ from app.services.ai.base.post_processor import PostProcessor
 from app.services.ai.base.cache import ai_cache
 from app.services.ai.base.base_schema import AtomicSuggestion
 
-# Contextos
+# Contextos e Schemas do Domínio Financeiro
 from app.services.ai.financas.context import FinancasContext
 from app.services.ai.financas.budget_sentinel.schema import BudgetSentinelContext, AnaliseCategoria
 from app.services.ai.financas.budget_sentinel.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
@@ -19,70 +47,98 @@ logger = logging.getLogger(__name__)
 class BudgetSentinelAgent:
     """
     Agente Especialista: Fiscalização Tática de Orçamento (Burn Rate).
-    Responsabilidade: Monitorar a velocidade de gasto considerando QUANDO os gastos ocorreram.
+    
+    Lógica Principal: "Pacing" (Ritmo).
+    Se passou 50% do mês, você não deveria ter gasto 90% do orçamento de Mercado.
     """
     DOMAIN = "financas"
     AGENT_NAME = "budget_sentinel"
 
     @classmethod
     async def run(cls, global_context: FinancasContext) -> List[AtomicSuggestion]:
-        # 1. Pré-Processamento Matemático
+        """
+        Executa a análise de Burn Rate.
+        
+        Args:
+            global_context: Dados financeiros completos (Transações, Metas, Datas).
+            
+        Returns:
+            Lista de sugestões (Alertas de queima rápida ou Elogios de controle).
+        """
+        
+        # ----------------------------------------------------------------------
+        # 1. PRÉ-PROCESSAMENTO MATEMÁTICO (Cálculo de Datas)
+        # ----------------------------------------------------------------------
         try:
-            # Tenta converter a string YYYY-MM-DD para date
+            # Tenta converter a string YYYY-MM-DD para objeto date python
             dt_ref = datetime.strptime(global_context.data_atual, "%Y-%m-%d").date()
         except:
             dt_ref = date.today()
 
-        # Dados Temporais
+        # Dados Temporais Fundamentais para o Pacing
         dia_atual = dt_ref.day
+        # Obtém o último dia do mês (ex: 28, 30, 31)
         _, ultimo_dia = calendar.monthrange(dt_ref.year, dt_ref.month)
         
+        # % do mês que já passou (ex: dia 15/30 = 50%)
         progresso_mes = (dia_atual / ultimo_dia) * 100
         dias_restantes = max(1, ultimo_dia - dia_atual)
 
         analise_items = []
         
-        # [CORREÇÃO CRÍTICA] Agrupamento Temporal
-        # Filtramos transações para considerar apenas o que JÁ ACONTECEU até hoje.
-        # Transações futuras (agendadas para dia 25/01) não contam no Burn Rate do dia 10/01.
+        # ----------------------------------------------------------------------
+        # 2. AGRUPAMENTO E FILTRAGEM TEMPORAL (Core Logic)
+        # ----------------------------------------------------------------------
+        # Objetivo: Somar apenas o que REALMENTE foi gasto (Competência + Caixa).
+        # Ignoramos agendamentos futuros para não gerar pânico desnecessário.
         
         gastos_por_categoria = {}
         
         for t in global_context.transacoes_periodo:
+            # Sentinel só olha DESPESAS. Receitas não têm "burn rate".
             if t.get('tipo') != 'despesa': continue
             
             try:
                 # Converte string para date
                 data_tx = datetime.strptime(t.get('data'), "%Y-%m-%d").date()
                 
-                # Regra 1: A transação deve ser deste mês/ano (Segurança)
+                # Regra de Segurança 1: A transação deve ser deste mês/ano.
                 if data_tx.month != dt_ref.month or data_tx.year != dt_ref.year:
                     continue
                 
-                # Regra 2: A transação não pode ser futura (Agendamento não é gasto realizado para Burn Rate)
+                # Regra de Segurança 2 (CRÍTICA): A transação não pode ser futura.
+                # Se hoje é dia 10 e tem um agendamento dia 25, ele NÃO conta como gasto
+                # para fins de velocidade de queima (Burn Rate).
                 if data_tx > dt_ref:
                     continue
                     
             except:
-                continue # Data inválida, ignora
+                continue # Data inválida, ignora silenciosamente
 
+            # Acumulação
             cat = t.get('categoria', 'Outros')
             valor = float(t.get('valor', 0))
             gastos_por_categoria[cat] = gastos_por_categoria.get(cat, 0.0) + valor
 
-        # Análise de Orçamento (Comparação Meta vs Realizado)
+        # ----------------------------------------------------------------------
+        # 3. ANÁLISE DE CADA ORÇAMENTO (Meta vs Realizado)
+        # ----------------------------------------------------------------------
         for orcamento in global_context.metas_orcamentarias:
             cat = orcamento['categoria']
             limite = float(orcamento.get('valor_limite', 0))
             gasto_real = gastos_por_categoria.get(cat, 0.0)
             
+            # Se não tem limite definido, não tem como calcular estouro.
             if limite <= 0: continue 
 
+            # Indicadores de Performance
             percentual_gasto = (gasto_real / limite) * 100
             saldo = limite - gasto_real
+            # Quanto posso gastar por dia daqui pra frente?
             diaria = saldo / dias_restantes
             
-            # --- Definição de Status (Matemática do Pacing) ---
+            # --- Definição de Status (A Lógica do Pacing) ---
+            # Delta positivo = Gastou mais rápido que o tempo passou.
             delta = percentual_gasto - progresso_mes
             status = "Seguro"
 
@@ -97,7 +153,8 @@ class BudgetSentinelAgent:
                 # Ex: Mês em 80%, Gasto em 50% -> Delta -30 (Economia)
                 status = "Economia (Abaixo do esperado)"
 
-            # Filtro de Relevância para reduzir ruído na IA
+            # Filtro de Relevância: Só enviamos para a IA o que precisa de atenção.
+            # "Tudo normal" é filtrado para economizar tokens, exceto no início do mês.
             eh_relevante = (
                 "ESTOURADO" in status or 
                 "Crítico" in status or 
@@ -116,9 +173,11 @@ class BudgetSentinelAgent:
                     diaria_disponivel=round(diaria, 2)
                 ))
 
-        # [NOVA LÓGICA] Início de Mês / Tudo OK
+        # ----------------------------------------------------------------------
+        # 4. TRATAMENTO DE CASOS ESPECIAIS (Feedback Positivo)
+        # ----------------------------------------------------------------------
         # Se não há problemas e estamos no começo do mês (até dia 10), 
-        # enviamos um item "falso" para o LLM gerar um elogio.
+        # enviamos um item "falso" para o LLM gerar um elogio ("Tudo sob controle").
         if not analise_items and dia_atual <= 10:
             analise_items.append(AnaliseCategoria(
                 categoria="VISÃO GERAL DO MÊS",
@@ -130,7 +189,9 @@ class BudgetSentinelAgent:
                 diaria_disponivel=0
             ))
 
-        # 2. Montagem do Contexto
+        # ----------------------------------------------------------------------
+        # 5. MONTAGEM DO CONTEXTO DO AGENTE
+        # ----------------------------------------------------------------------
         agent_context = BudgetSentinelContext(
             dia_atual=dia_atual,
             dias_no_mes=ultimo_dia,
@@ -140,16 +201,19 @@ class BudgetSentinelAgent:
         
         context_dict = agent_context.model_dump()
         
-        # Se nada relevante foi encontrado (e não caiu na regra do Início de Mês), retorna vazio
+        # Se nada relevante foi encontrado (e não caiu na regra do Início de Mês), retorna vazio.
         if not context_dict["analise_orcamentos"]:
             return []
 
-        # 3. Cache Check
+        # ----------------------------------------------------------------------
+        # 6. CACHE E CHAMADA LLM
+        # ----------------------------------------------------------------------
+        # Verifica se já analisamos este cenário exato hoje.
         cached_response = await ai_cache.get(cls.DOMAIN, cls.AGENT_NAME, context_dict)
         if cached_response:
             return cached_response
 
-        # 4. Prompt
+        # Formata o resumo textual para o Prompt
         analise_str = cls._format_budget_analysis(context_dict["analise_orcamentos"])
 
         user_prompt = USER_PROMPT_TEMPLATE.format(
@@ -160,21 +224,21 @@ class BudgetSentinelAgent:
         )
 
         try:
-            # 5. LLM Call
+            # Chama a IA
             raw_response = await llm_client.call_model(
                 system_prompt=SYSTEM_PROMPT,
                 user_prompt=user_prompt,
                 temperature=0.2 
             )
 
-            # 6. Post-Processing
+            # Processa e Valida a resposta
             suggestions = PostProcessor.process_response(
                 raw_data=raw_response,
                 domain=cls.DOMAIN, 
                 agent_source=cls.AGENT_NAME
             )
 
-            # 7. Cache Save
+            # Salva no Cache se houve sucesso
             if suggestions:
                 await ai_cache.set(cls.DOMAIN, cls.AGENT_NAME, context_dict, suggestions)
 
@@ -186,6 +250,9 @@ class BudgetSentinelAgent:
 
     @staticmethod
     def _format_budget_analysis(items: List[Dict[str, Any]]) -> str:
+        """
+        Formata a lista de análises em um texto legível para o LLM.
+        """
         lines = []
         for item in items:
             # Formatação especial para o item fake de tranquilidade

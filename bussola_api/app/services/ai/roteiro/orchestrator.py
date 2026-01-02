@@ -1,9 +1,34 @@
+"""
+=======================================================================================
+ARQUIVO: orchestrator.py (Orquestrador de Roteiro e Agenda)
+=======================================================================================
+
+OBJETIVO:
+    Atuar como o HUB central de inteligência para o domínio de Roteiro (Agenda/Calendário).
+    Este módulo coordena a execução de múltiplos agentes especialistas para analisar
+    compromissos, detectar conflitos, avaliar carga de trabalho e sugerir logística.
+
+CAMADA:
+    Services / AI / Roteiro (Backend).
+    É o ponto de entrada chamado pelo `ai.py` (Controller).
+
+RESPONSABILIDADES:
+    1. Unificação de Contexto: Transformar dados brutos da agenda em um objeto de contexto imutável.
+    2. Execução Paralela: Disparar ConflictGuardian, DensityAuditor, RecoveryAgent e TravelMarshal simultaneamente.
+    3. Resiliência: Garantir que a falha de um agente não impeça o retorno dos insights dos outros.
+    4. Curadoria (CFO Logic): Filtrar ruídos (ex: checklists genéricos), deduplicar e ordenar por severidade.
+
+INTEGRAÇÕES:
+    - Agentes: ConflictGuardian, DensityAuditor, RecoveryAgent, TravelMarshal.
+    - Contexto: RoteiroContext.
+"""
+
 import asyncio
 import logging
 import json
 from typing import List, Dict, Any
 
-# Imports dos Agentes
+# Imports dos Agentes Especialistas
 from app.services.ai.roteiro.conflict_guardian.agent import ConflictGuardianAgent
 from app.services.ai.roteiro.density_auditor.agent import DensityAuditorAgent
 from app.services.ai.roteiro.recovery_agent.agent import RecoveryAgent
@@ -19,7 +44,7 @@ class RoteiroOrchestrator:
     """
     Orquestrador do domínio Roteiro.
     Responsável por instanciar o contexto e coordenar a execução paralela
-    dos agentes especialistas.
+    dos agentes especialistas (Scatter-Gather Pattern).
     """
     
     @staticmethod
@@ -32,10 +57,23 @@ class RoteiroOrchestrator:
         preferences: Dict[str, Any] = None
     ) -> List[AtomicSuggestion]:
         """
-        Ponto de entrada principal para análise de roteiro.
+        Executa a análise completa da agenda do usuário.
+        
+        Args:
+            data_atual: Data de referência (hoje).
+            data_inicio, data_fim: Janela de análise (ex: mês corrente).
+            agenda_itens: Lista bruta de compromissos vindos do banco/integração.
+            preferences: Preferências do usuário (opcional).
+            
+        Returns:
+            Lista consolidada, filtrada e ordenada de sugestões.
         """
         
-        # 1. Montagem do Contexto Global (Single Source of Truth)
+        # ----------------------------------------------------------------------
+        # 1. MONTAGEM DO CONTEXTO GLOBAL
+        # ----------------------------------------------------------------------
+        # Cria a "Single Source of Truth" (Fonte Única da Verdade).
+        # Todos os agentes leem deste mesmo objeto, garantindo consistência.
         context = RoteiroContext(
             data_atual=data_atual,
             dia_semana=dia_semana,
@@ -47,7 +85,12 @@ class RoteiroOrchestrator:
         
         print(f"\n[RoteiroOrchestrator] 🚀 Iniciando análise. Itens na agenda: {len(agenda_itens)}")
 
-        # 2. Execução Paralela dos Agentes (Scatter-Gather Pattern)
+        # ----------------------------------------------------------------------
+        # 2. EXECUÇÃO PARALELA (Asyncio)
+        # ----------------------------------------------------------------------
+        # Dispara todos os agentes simultaneamente para reduzir a latência total.
+        # 'return_exceptions=True' implementa Degradação Graciosa:
+        # Se um agente falhar, os outros continuam e o fluxo não quebra.
         results = await asyncio.gather(
             ConflictGuardianAgent.run(context),
             DensityAuditorAgent.run(context),
@@ -56,7 +99,9 @@ class RoteiroOrchestrator:
             return_exceptions=True
         )
 
-        # 3. Consolidação dos Resultados Brutos
+        # ----------------------------------------------------------------------
+        # 3. CONSOLIDAÇÃO E TRATAMENTO DE ERROS
+        # ----------------------------------------------------------------------
         raw_suggestions: List[AtomicSuggestion] = []
         
         agents_map = ["ConflictGuardian", "DensityAuditor", "RecoveryAgent", "TravelMarshal"]
@@ -64,6 +109,7 @@ class RoteiroOrchestrator:
         for i, result in enumerate(results):
             agent_name = agents_map[i]
             
+            # Tratamento individual de falhas
             if isinstance(result, Exception):
                 print(f"❌ [ERRO] {agent_name}: {result}")
                 logger.error(f"[RoteiroOrchestrator] Erro no agente {agent_name}: {result}")
@@ -72,7 +118,7 @@ class RoteiroOrchestrator:
             if result:
                 raw_suggestions.extend(result)
                 
-                # --- LOG NO TERMINAL (Visualizar o que cada agente gerou ANTES do filtro) ---
+                # Log detalhado no terminal para debug (mostra output bruto antes dos filtros)
                 if len(result) > 0:
                     print(f"\n{'='*20} 🤖 {agent_name.upper()} ({len(result)}) {'='*20}")
                     for suggestion in result:
@@ -81,24 +127,29 @@ class RoteiroOrchestrator:
                 else:
                     print(f"⚪ {agent_name}: Sem sugestões.")
 
-        # 4. Pós-Processamento e Limpeza de Ruído (Deduplicação e Filtros de UX)
+        # ----------------------------------------------------------------------
+        # 4. PÓS-PROCESSAMENTO E FILTROS DE UX
+        # ----------------------------------------------------------------------
         cleaned_suggestions = []
         seen_keys = set()
         
-        # Definição de ordem de severidade para ordenação final
+        # Mapa de prioridade para ordenação final (Menor valor = Maior prioridade)
         severity_order = {"high": 0, "medium": 1, "low": 2, "none": 3}
 
         for suggestion in raw_suggestions:
-            # Filtro 1: "Lobotomia" no TravelMarshal (Segurança Extra)
-            # Se for checklist genérico sem menção a viagem/voo/estrada, ignora.
+            # --- Regra de Negócio Específica: TravelMarshal ---
+            # O TravelMarshal às vezes gera checklists genéricos ("Faça uma lista") 
+            # para eventos que ele acha que são viagens, mas não são.
+            # Aqui aplicamos um filtro semântico estrito: se não tiver palavras-chave
+            # de viagem no conteúdo, descartamos o checklist para evitar ruído.
             if suggestion.agent_source == "travel_marshal" and suggestion.type == 'info':
                 content_lower = suggestion.content.lower()
                 title_lower = suggestion.title.lower()
                 if "checklist" in title_lower and not any(x in content_lower for x in ["viagem", "voo", "aeroporto", "mala"]):
                     continue
 
-            # Filtro 2: Deduplicação Simples
-            # Evita que o mesmo alerta apareça duas vezes (mesmo título e mesmo alvo)
+            # --- Filtro de Deduplicação ---
+            # Garante unicidade baseada no Título + Alvo da ação.
             key = f"{suggestion.title}-{suggestion.action.target}"
             if key in seen_keys:
                 continue
@@ -106,7 +157,10 @@ class RoteiroOrchestrator:
             seen_keys.add(key)
             cleaned_suggestions.append(suggestion)
 
-        # 5. Ordenação Final
+        # ----------------------------------------------------------------------
+        # 5. ORDENAÇÃO FINAL
+        # ----------------------------------------------------------------------
+        # Ordena para que cards de alta severidade (High) apareçam primeiro na UI.
         cleaned_suggestions.sort(key=lambda x: severity_order.get(x.severity, 99))
 
         print(f"[RoteiroOrchestrator] ✅ Análise concluída.")

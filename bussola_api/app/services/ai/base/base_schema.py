@@ -1,3 +1,28 @@
+"""
+=======================================================================================
+ARQUIVO: base_schema.py (Schemas e Enums Base para IA)
+=======================================================================================
+
+OBJETIVO:
+    Definir a estrutura de dados universal (Contrato de Dados) para todas as respostas
+    geradas pelos agentes de Inteligência Artificial do sistema.
+
+CAMADA:
+    Core / Shared Services (Backend).
+    Este arquivo atua como o contrato de interface entre os Agentes de IA (Backend)
+    e os componentes visuais de IA (Frontend).
+
+RESPONSABILIDADES:
+    1. Padronização: Garantir que Nutri, Coach, Finanças e Agenda falem a "mesma língua".
+    2. Resiliência: Normalizar saídas imprevisíveis de LLMs (Fuzzy Matching) para Enums rígidos.
+    3. Interface de UI: Definir estruturas que o Frontend siba renderizar (Cards, Botões, Alertas).
+
+COMUNICAÇÃO:
+    - Utilizado por: Todos os `orchestrator.py` e `agent.py` dos domínios.
+    - Consumido por: Frontend (Componente AiAssistant e Renderizadores de Cards).
+    - Integrado com: Pydantic (validação) e saídas brutas de LLMs (OpenAI/Anthropic/Google).
+"""
+
 from enum import Enum
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Literal, Union
@@ -11,6 +36,10 @@ logger = logging.getLogger(__name__)
 # ==============================================================================
 
 class ActionKind(str, Enum):
+    """
+    Define a 'intenção técnica' da ação sugerida.
+    Usado pelo Frontend para decidir qual ícone ou comportamento de botão exibir.
+    """
     SWAP = "swap"
     ADD = "add"
     REMOVE = "remove"
@@ -20,6 +49,18 @@ class ActionKind(str, Enum):
 
     @classmethod
     def from_string(cls, value: str):
+        """
+        Normaliza a saída textual da IA para um Enum válido.
+        
+        MOTIVAÇÃO:
+        LLMs (Large Language Models) nem sempre respeitam a saída JSON estrita ou podem
+        usar sinônimos (ex: "delete" ao invés de "remove").
+        
+        LÓGICA:
+        1. Tenta conversão exata.
+        2. Se falhar, usa 'Semantic Matching' (busca por palavras-chave na string).
+        3. Se nada funcionar, retorna um fallback seguro (INFO) para evitar quebra de fluxo.
+        """
         v = str(value).lower().strip()
         # 1. Tentativa Exata
         try:
@@ -38,6 +79,10 @@ class ActionKind(str, Enum):
         return cls.INFO
 
 class SuggestionType(str, Enum):
+    """
+    Classificação semântica da sugestão.
+    Determina o estilo visual (cores, ícones) no Frontend (ex: Vermelho para CRITICAL).
+    """
     WARNING = "warning"
     TIP = "tip"
     SUGGESTION = "suggestion"
@@ -48,6 +93,13 @@ class SuggestionType(str, Enum):
 
     @classmethod
     def from_string(cls, value: str):
+        """
+        Normaliza a classificação de severidade/tipo vinda da IA.
+        
+        IMPORTANTE:
+        Mapeia termos variados que a IA pode gerar (como 'fail', 'bug', 'hint')
+        para os tipos padrões suportados pelo Design System.
+        """
         v = str(value).lower().strip()
         try:
             return cls(v)
@@ -71,6 +123,10 @@ class SuggestionType(str, Enum):
         return cls.SUGGESTION
 
 class SeverityLevel(str, Enum):
+    """
+    Nível de prioridade para ordenação e filtragem de insights.
+    Permite que o 'Orchestrator' decida quais cards mostrar primeiro.
+    """
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -79,6 +135,10 @@ class SeverityLevel(str, Enum):
 
     @classmethod
     def from_string(cls, value: str):
+        """
+        Converte a percepção de urgência da IA em níveis padronizados.
+        Se a IA retornar algo desconhecido (ex: 'mild'), mapeia para o nível mais próximo.
+        """
         v = str(value).lower().strip()
         try:
             return cls(v)
@@ -99,8 +159,11 @@ class SeverityLevel(str, Enum):
 
 class ActionPayload(BaseModel):
     """
-    Define uma ação sugerida para o usuário.
-    Permite que o frontend renderize botões funcionais (ex: 'Aplicar Troca').
+    Estrutura de Ação Executável.
+    
+    OBJETIVO:
+    Transformar uma sugestão textual em um objeto programático que o Frontend possa
+    usar para chamar uma API ou abrir um modal (ex: Botão "Trocar por Arroz Integral").
     """
     kind: ActionKind = Field(
         ..., 
@@ -118,19 +181,27 @@ class ActionPayload(BaseModel):
     @field_validator('kind', mode='before')
     @classmethod
     def validate_kind(cls, v):
-        # Delega a inteligência para o Enum
+        # Intercepta a validação para usar o método inteligente 'from_string' do Enum
+        # Isso evita erros de validação Pydantic caso a IA envie uma string fora do padrão.
         return ActionKind.from_string(v)
 
 class AtomicSuggestion(BaseModel):
     """
-    Representa UMA única unidade de informação/ação gerada pela IA.
-    É a estrutura atômica que o Frontend receberá.
+    CONTRATO PRINCIPAL DE RETORNO DA IA.
+    
+    OBJETIVO:
+    Representa a menor unidade de feedback (Insight) que pode ser exibida na tela.
+    Serve como um contêiner agnóstico: funciona tanto para Finanças quanto para Nutrição.
+    
+    INTEGRAÇÃO:
+    Este objeto é o que o Endpoint da API retorna para o Frontend React.
     """
     id: str = Field(
         default_factory=lambda: str(uuid.uuid4()),
         description="Identificador único (UUID) para controle de estado no frontend."
     )
-    # [ATUALIZADO] Adicionamos 'agenda' para agrupar os agentes de produtividade
+    # Define os domínios de negócio aceitos.
+    # Adicionar um novo agente requer atualizar este Literal.
     domain: Literal["nutri", "coach", "registros", "roteiro", "financas"] = Field(
         ..., 
         description="O domínio de origem da sugestão (Categoria)."
@@ -172,8 +243,10 @@ class AtomicSuggestion(BaseModel):
     )
 
     # --------------------------------------------------------------------------
-    # VALIDADORES DE TIPO E SEVERIDADE
+    # VALIDADORES DE ROBUSTEZ (LLM SAFEGUARDS)
     # --------------------------------------------------------------------------
+    # Estes validadores garantem que strings alucinadas pela IA sejam convertidas
+    # em Enums válidos antes de chegar ao Frontend, prevenindo crashes na UI.
     
     @field_validator('type', mode='before')
     @classmethod
@@ -186,7 +259,7 @@ class AtomicSuggestion(BaseModel):
         return SeverityLevel.from_string(v)
 
     class Config:
-        # Importante: Serializa os Enums como seus valores string
+        # Garante que, ao converter para JSON, os Enums sejam serializados como strings simples
         use_enum_values = True
         json_schema_extra = {
             "example": {

@@ -1,3 +1,32 @@
+"""
+=======================================================================================
+ARQUIVO: agent.py (Agente DensityAuditor)
+=======================================================================================
+
+OBJETIVO:
+    Implementar o "Auditor de Densidade" para o domínio de ROTEIRO (Agenda).
+    Este agente foca na ERGONOMIA e SAÚDE MENTAL da agenda.
+    
+    Diferente do ConflictGuardian (que busca erros lógicos/sobreposições), 
+    este agente busca padrões de exaustão, fragmentação excessiva (context switching)
+    e falta de pausas.
+
+CAMADA:
+    Services / AI / Roteiro (Backend).
+    É invocado pelo `RoteiroOrchestrator` como parte da análise de agenda.
+
+RESPONSABILIDADES:
+    1. Análise de Carga: Identificar dias com excesso de horas comprometidas.
+    2. Detecção de Fragmentação: Alertar sobre "agenda queijo suíço" (muitos buracos inúteis entre reuniões).
+    3. Context Switching: Identificar trocas bruscas de contexto (ex: Reunião Criativa -> Planilha Financeira).
+    4. Engenharia de Prompt: Formatar a agenda para evidenciar a duração e sequência dos blocos.
+
+INTEGRAÇÕES:
+    - LLMFactory: Para analisar os padrões de tempo.
+    - AgentCache: Para evitar reanalisar agendas estáticas.
+    - RoteiroContext: Fonte de dados (Lista de Compromissos).
+"""
+
 import logging
 import json
 from datetime import datetime
@@ -26,7 +55,20 @@ class DensityAuditorAgent:
 
     @classmethod
     async def run(cls, global_context: RoteiroContext) -> List[AtomicSuggestion]:
-        # 1. Mapeamento de Contexto
+        """
+        Executa a auditoria de densidade da agenda.
+
+        Args:
+            global_context: Contém a lista de compromissos do período.
+
+        Returns:
+            Lista de sugestões focadas em otimização de tempo e bem-estar.
+        """
+        
+        # ----------------------------------------------------------------------
+        # 1. MAPEAMENTO DE CONTEXTO (Global -> Local)
+        # ----------------------------------------------------------------------
+        # Isolamos apenas os dados necessários para análise de densidade.
         agent_context = DensityAuditorContext(
             data_inicio=global_context.data_inicio,
             data_fim=global_context.data_fim,
@@ -35,16 +77,23 @@ class DensityAuditorAgent:
         
         context_dict = agent_context.model_dump()
         
+        # Otimização: Sem eventos, não há densidade para auditar.
         if not context_dict["eventos_periodo"]:
             return []
 
-        # 2. Cache Check
+        # ----------------------------------------------------------------------
+        # 2. VERIFICAÇÃO DE CACHE
+        # ----------------------------------------------------------------------
         cached_response = await ai_cache.get(cls.DOMAIN, cls.AGENT_NAME, context_dict)
         if cached_response:
             return cached_response
 
-        # 3. Preparação do Prompt
-        # Formatamos focando em DURAÇÃO e TIPO, que são vitais para análise de densidade
+        # ----------------------------------------------------------------------
+        # 3. PREPARAÇÃO DO PROMPT
+        # ----------------------------------------------------------------------
+        # Utilizamos um formatador específico (_format_schedule_for_density) que
+        # destaca DURAÇÃO e TIPO de atividade, facilitando para a LLM identificar
+        # blocos massivos de trabalho ou fragmentação.
         agenda_str = cls._format_schedule_for_density(context_dict["eventos_periodo"])
 
         user_prompt = USER_PROMPT_TEMPLATE.format(
@@ -54,21 +103,26 @@ class DensityAuditorAgent:
         )
 
         try:
-            # 4. LLM Call
+            # ------------------------------------------------------------------
+            # 4. CHAMADA LLM E PÓS-PROCESSAMENTO
+            # ------------------------------------------------------------------
+            # Temperature 0.1:
+            # Análise de densidade requer consistência técnica. Queremos que a IA
+            # aponte fatos (ex: "4 horas sem pausa"), não opiniões criativas.
             raw_response = await llm_client.call_model(
                 system_prompt=SYSTEM_PROMPT,
                 user_prompt=user_prompt,
-                temperature=0.1 # Baixa temperatura para manter a análise técnica e consistente
+                temperature=0.1 
             )
 
-            # 5. Post-Processing
+            # Validação e Normalização
             suggestions = PostProcessor.process_response(
                 raw_data=raw_response,
                 domain=cls.DOMAIN, 
                 agent_source=cls.AGENT_NAME
             )
 
-            # 6. Cache Save
+            # Salva no Redis se houver sucesso
             if suggestions:
                 await ai_cache.set(cls.DOMAIN, cls.AGENT_NAME, context_dict, suggestions)
 
@@ -82,29 +136,41 @@ class DensityAuditorAgent:
     def _format_schedule_for_density(items: List[Dict[str, Any]]) -> str:
         """
         Formata a agenda destacando a DURAÇÃO e a SEQUÊNCIA dos eventos.
-        Isso ajuda o LLM a visualizar 'blocos' de tempo e 'buracos' (gaps).
+        
+        OBJETIVO:
+        Ajudar o LLM a visualizar 'blocos' de tempo e 'buracos' (gaps).
+        Ao explicitar horário de início e fim lado a lado, facilitamos o cálculo
+        de tempo de deslocamento e pausas pela IA.
+        
+        SAÍDA ESPERADA:
+        "- [2023-10-27] 09:00 até 11:00 | Atividade: Deep Work | Tipo: Trabalho | Local: Escritório"
         """
         sanitized = []
-        # Ordenação cronológica absoluta
+        
+        # Ordenação cronológica absoluta é vital para identificar sequências sem pausa
         sorted_items = sorted(
             items, 
             key=lambda x: (x.get('start_time', ''), x.get('end_time', ''))
         )
 
         for item in sorted_items:
-            # Tenta calcular a duração para facilitar a vida do LLM
-            duration_str = "Duração desconhecida"
+            # Extração e Cálculo de Tempo
+            # O objetivo aqui é fornecer uma string limpa "HH:MM até HH:MM".
+            time_info = "Horário irregular"
             try:
-                # Assumindo formato ISO completo ou parciais, lógica simplificada para exemplo
-                # Num cenário real, usar datetime.strptime é o ideal
                 start = item.get('start_time', '')
                 end = item.get('end_time', '')
-                # Apenas repassamos os horários brutos, o LLM é bom em calcular deltas se os horários estiverem claros
-                time_info = f"{start[11:16] if 'T' in start else start[-8:]} até {end[11:16] if 'T' in end else end[-8:]}"
+                
+                # Suporte robusto a formatos ISO com ou sem 'T'
+                s_time = start[11:16] if 'T' in start else start[-8:][:5]
+                e_time = end[11:16] if 'T' in end else end[-8:][:5]
+                
+                time_info = f"{s_time} até {e_time}"
             except:
-                time_info = "Horário irregular"
+                pass # Mantém "Horário irregular" se falhar o parse
 
-            # Inclui categoria/tags se houver, pois ajuda a detectar context switching
+            # Inclusão de Categoria
+            # Fundamental para detectar Context Switching (ex: Criativo vs Administrativo)
             categoria = item.get('category', 'Geral')
             
             sanitized.append(

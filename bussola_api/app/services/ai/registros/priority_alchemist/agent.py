@@ -1,3 +1,31 @@
+"""
+=======================================================================================
+ARQUIVO: agent.py (Agente PriorityAlchemist)
+=======================================================================================
+
+OBJETIVO:
+    Implementar o "Alquimista de Prioridades".
+    Este agente atua no domínio de REGISTROS (Tarefas) com foco em saneamento de backlog.
+    Ele combate dois problemas principais:
+    1. Estagnação: Tarefas velhas que nunca são concluídas (Backlog Rot).
+    2. Inflação de Prioridade: Quando o usuário marca tudo como "Alta" e nada é urgente.
+
+CAMADA:
+    Services / AI / Registros (Backend).
+    É invocado pelo `RegistrosOrchestrator` durante a análise de produtividade.
+
+RESPONSABILIDADES:
+    1. Filtragem Temporal (Python): Calcular a "idade" das tarefas matematicamente (não via LLM).
+    2. Detecção de Estagnação: Identificar itens criados há mais de 15 dias sem conclusão.
+    3. Engenharia de Prompt: Formatar listas de tarefas de forma concisa para economizar tokens.
+    4. Curadoria: Sugerir arquivamento, deleção ou re-priorização de tarefas.
+
+INTEGRAÇÕES:
+    - LLMFactory: Para gerar sugestões de limpeza e organização.
+    - AgentCache: Para evitar reanalisar listas que não mudaram.
+    - RegistrosContext: Fonte de dados (Lista completa de tarefas do usuário).
+"""
+
 import logging
 from datetime import datetime
 from typing import List
@@ -16,50 +44,79 @@ logger = logging.getLogger(__name__)
 class PriorityAlchemistAgent:
     """
     Agente Especialista: Priorização e Limpeza de Backlog.
+    
+    Lógica Principal:
+    Transforma um backlog caótico em uma lista acionável, sugerindo
+    o que deve ser eliminado para que o importante brilhe.
     """
     DOMAIN = "registros"
     AGENT_NAME = "priority_alchemist"
 
     @classmethod
     async def run(cls, global_context: RegistrosContext) -> List[AtomicSuggestion]:
-        # 1. Filtros Python (Calcula Idade da Tarefa)
+        """
+        Executa a análise de priorização de tarefas.
+
+        Args:
+            global_context: Contém todas as tarefas ativas do usuário e a data atual.
+
+        Returns:
+            Lista de sugestões de limpeza (ex: "Arquive esta tarefa antiga").
+        """
+        
+        # ----------------------------------------------------------------------
+        # 1. FILTRAGEM E LÓGICA DE NEGÓCIO (Python > LLM)
+        # ----------------------------------------------------------------------
+        # Decisão de Arquitetura:
+        # Não enviamos todas as tarefas para a IA. Fazemos a triagem baseada em regras
+        # rígidas (Data de Criação e Prioridade) para economizar tokens e garantir precisão.
+        
         estagnadas = []
         alta_prioridade = []
         
         try:
             today_dt = datetime.strptime(global_context.data_atual, "%Y-%m-%d")
         except ValueError:
-            today_dt = datetime.now() # Fallback
+            today_dt = datetime.now() 
 
         for task in global_context.tarefas:
-            # Ajuste conforme o status exato do seu enum ('done', 'concluida', etc)
+            # Ignora tarefas já finalizadas (não requerem ação)
             if task.status == 'concluida': 
                 continue
 
-            # Check de Alta Prioridade
+            # Regra de Negócio: Detecção de "Tudo é Urgente"
+            # Coletamos todas as tarefas marcadas como 'alta' para verificar se há inflação.
             if hasattr(task, 'prioridade') and task.prioridade and task.prioridade.lower() == 'alta':
                 alta_prioridade.append(task)
 
-            # Check de Estagnação (Criada há > 15 dias e ainda pendente)
-            # Assumimos que created_at vem no formato YYYY-MM-DD ou ISO
+            # Regra de Negócio: Detecção de "Zumbis" (Tarefas Estagnadas)
+            # Tarefas criadas há mais de 15 dias que ainda estão pendentes.
             try:
-                # Garante que seja string antes de fazer split
+                # Normalização de data (pode vir como string ISO do banco ou objeto)
                 c_date = str(task.created_at)
                 created_dt = datetime.strptime(c_date.split('T')[0], "%Y-%m-%d")
                 days_old = (today_dt - created_dt).days
                 
-                if days_old >= 15: # Ajustado para 15 conforme regra de negócio (estava 7 no código anterior, mas prompt diz 15)
-                    # Adiciona atributo temporário para o prompt saber a idade
+                if days_old >= 15: 
+                    # Injeção de Atributo:
+                    # Adicionamos '_days_old' dinamicamente ao objeto para uso no formatador do prompt.
+                    # Isso evita recalcular a data dentro da string de formatação.
                     setattr(task, '_days_old', days_old) 
                     estagnadas.append(task)
             except Exception:
-                continue # Ignora se data estiver bugada
+                continue # Proteção contra dados corrompidos de data
 
-        # Se não tem nada velho nem inflação de prioridade (menos de 3 altas), ignora
-        if not estagnadas and len(alta_prioridade) < 5: # Ajustado para < 5 para evitar chamadas triviais
+        # ----------------------------------------------------------------------
+        # 2. OTIMIZAÇÃO DE CUSTO (Early Exit)
+        # ----------------------------------------------------------------------
+        # Se o usuário não tem tarefas velhas E não tem muitas prioridades altas (< 5),
+        # o backlog é considerado saudável. Não gastamos dinheiro chamando a LLM.
+        if not estagnadas and len(alta_prioridade) < 5: 
             return []
 
-        # 2. Contexto
+        # ----------------------------------------------------------------------
+        # 3. MONTAGEM DO CONTEXTO
+        # ----------------------------------------------------------------------
         agent_context = PriorityAlchemistContext(
             data_atual=global_context.data_atual,
             tarefas_estagnadas=estagnadas,
@@ -67,15 +124,21 @@ class PriorityAlchemistAgent:
         )
         context_dict = agent_context.model_dump()
 
-        # 3. Cache
+        # ----------------------------------------------------------------------
+        # 4. VERIFICAÇÃO DE CACHE
+        # ----------------------------------------------------------------------
         cached_response = await ai_cache.get(cls.DOMAIN, cls.AGENT_NAME, context_dict)
         if cached_response:
             return cached_response
 
-        # 4. Formatter (CORRIGIDO: Acesso via atributo .titulo)
+        # ----------------------------------------------------------------------
+        # 5. PREPARAÇÃO DO PROMPT (Formatadores Auxiliares)
+        # ----------------------------------------------------------------------
+        # Transformam os objetos de tarefa em strings descritivas para a LLM.
+        
         def format_stale(tasks):
             if not tasks: return "Nenhuma."
-            # Usa getattr pois _days_old foi injetado dinamicamente
+            # Usa o atributo injetado '_days_old' para dar contexto temporal à IA
             return "\n".join([f"- {t.titulo} (Criada há {getattr(t, '_days_old', 15)} dias)" for t in tasks])
 
         def format_high(tasks):
@@ -88,12 +151,16 @@ class PriorityAlchemistAgent:
             alta_prioridade_json=format_high(alta_prioridade)
         )
 
-        # 5. LLM Call
+        # ----------------------------------------------------------------------
+        # 6. CHAMADA LLM E PÓS-PROCESSAMENTO
+        # ----------------------------------------------------------------------
         try:
+            # Temperature 0.3: Um pouco mais analítico que o FlowArchitect (0.4),
+            # pois precisa tomar decisões mais duras sobre arquivamento.
             raw_response = await llm_client.call_model(
                 system_prompt=SYSTEM_PROMPT,
                 user_prompt=user_prompt,
-                temperature=0.3 # Equilibrado
+                temperature=0.3 
             )
 
             suggestions = PostProcessor.process_response(

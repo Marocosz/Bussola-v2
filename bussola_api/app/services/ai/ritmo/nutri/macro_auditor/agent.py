@@ -1,3 +1,30 @@
+"""
+=======================================================================================
+ARQUIVO: agent.py (Agente MacroAuditor)
+=======================================================================================
+
+OBJETIVO:
+    Implementar o "Auditor de Macros".
+    Este agente atua no domínio de NUTRIÇÃO com foco puramente MATEMÁTICO e QUANTITATIVO.
+    
+    Sua missão é comparar o planejado (Meta de Calorias/Macros) com o executado (Dieta)
+    e identificar discrepâncias numéricas, sem julgar a qualidade dos alimentos.
+
+CAMADA:
+    Services / AI / Ritmo / Nutri (Backend).
+    É invocado pelo `NutriOrchestrator` durante a análise da dieta.
+
+RESPONSABILIDADES:
+    1. Validação Numérica: Verificar se a soma dos macros bate com as calorias totais.
+    2. Análise de Desvio: Calcular quão longe o usuário está da meta (ex: déficit calórico agressivo demais).
+    3. Segurança: Garantir que a dieta não viole limites fisiológicos básicos (ex: gordura muito baixa).
+
+INTEGRAÇÕES:
+    - LLMFactory: Para interpretar os dados numéricos e gerar alertas textuais.
+    - AgentCache: Para evitar reprocessar cálculos idênticos.
+    - MacroAuditorContext: Dados agregados da dieta.
+"""
+
 import logging
 from typing import List
 
@@ -20,34 +47,43 @@ class MacroAuditorAgent:
 
     @classmethod
     async def run(cls, context: MacroAuditorContext) -> List[AtomicSuggestion]:
-        # 1. Converter Contexto Pydantic para Dict (para hash e prompt)
+        """
+        Executa a análise quantitativa da dieta.
+        """
+        # 1. Preparação de Dados
+        # Converte o objeto Pydantic para dict para gerar o hash de cache e preencher o prompt.
         context_dict = context.model_dump()
 
-        # 2. Verificar Cache (Economia Inteligente)
+        # 2. Verificação de Cache (Otimização de Custo)
+        # Se os macros e metas não mudaram, retornamos a resposta anterior imediatamente.
         cached_response = await ai_cache.get(cls.DOMAIN, cls.AGENT_NAME, context_dict)
         if cached_response:
             return cached_response
 
-        # 3. Montar Prompt
+        # 3. Montagem do Prompt
+        # Injeta os valores (calorias, proteinas, etc) no template de texto.
         user_prompt = USER_PROMPT_TEMPLATE.format(**context_dict)
 
         try:
-            # 4. Chamar LLM (Com Retry Automático da Factory)
-            # O llm_client já retorna um Dict ou List (parseado do JSON)
+            # 4. Chamada à LLM
+            # Temperature 0.2: Crucial para este agente.
+            # Como lidamos com matemática e regras rígidas (ex: 1g gordura = 9kcal),
+            # precisamos de baixa criatividade para evitar alucinações numéricas.
             raw_response = await llm_client.call_model(
                 system_prompt=SYSTEM_PROMPT,
                 user_prompt=user_prompt,
-                temperature=0.2 # Baixa temperatura para análise matemática precisa
+                temperature=0.2 
             )
 
-            # 5. Pós-Processamento (Validação, IDs, Atomicidade)
+            # 5. Pós-Processamento e Sanitização
+            # Garante que a resposta venha no formato AtomicSuggestion e descarta lixo.
             suggestions = PostProcessor.process_response(
                 raw_data=raw_response,
                 domain=cls.DOMAIN,
                 agent_source=cls.AGENT_NAME
             )
 
-            # 6. Salvar no Cache (se houver sugestões válidas)
+            # 6. Atualização de Cache
             if suggestions:
                 await ai_cache.set(cls.DOMAIN, cls.AGENT_NAME, context_dict, suggestions)
 
@@ -55,5 +91,6 @@ class MacroAuditorAgent:
 
         except Exception as e:
             logger.error(f"Falha na execução do {cls.AGENT_NAME}: {e}")
-            # Degradação Graciosa: Retorna lista vazia para não quebrar o dashboard
+            # Estratégia de Falha (Graceful Degradation):
+            # Se este agente falhar, retornamos vazio para não quebrar o painel inteiro do usuário.
             return []
