@@ -76,6 +76,8 @@ Abaixo detalhamos os 4 pilares fundamentais desta arquitetura.
     - [Hierarquia Visual dos Cards](#hierarquia-visual-dos-cards)
     - [Interatividade e Micro-interações](#interatividade-e-micro-interações)
   - [🔄 Ciclo de Vida da Requisição](#-ciclo-de-vida-da-requisição)
+  - [📱 Screenshot](#-screenshot)
+    - [1. FAB](#1-fab)
 
 
 ---
@@ -566,3 +568,14 @@ Os insights retornados pela IA (`AtomicSuggestion`) são renderizados em cards c
 4.  **Processing:** O Backend processa (ver seções anteriores de Orchestrator).
 5.  **Render:** O JSON de resposta é mapeado para os cards visuais.
 6.  **Cooldown:** O botão de "Refresh" fica desabilitado até o fim do temporizador.
+
+
+## 📱 Screenshot
+
+### 1. FAB
+<div align="center">
+  <img src="images/ia_1.png" alt="FAB" width="48%">
+</div>
+
+
+---
