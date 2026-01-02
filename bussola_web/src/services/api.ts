@@ -12,8 +12,13 @@ import axios from 'axios';
 // 1. CONFIGURAÇÃO BASE & INTERCEPTORES
 // ==========================================================
 
+// Verifica se o Vite está rodando em modo de produção (Build/Docker)
+const isProduction = import.meta.env.PROD;
+
 const api = axios.create({
-    baseURL: 'http://127.0.0.1:8000/api/v1', 
+    // Se for produção (Docker), usa caminho relativo e deixa o Nginx gerenciar o proxy.
+    // Se for dev local, aponta direto para o backend.
+    baseURL: isProduction ? '/api/v1' : 'http://127.0.0.1:8000/api/v1', 
 });
 
 // [INTERCEPTOR DE REQUISIÇÃO]
@@ -789,7 +794,7 @@ export const updateUser = async (data: {
     return response.data;
 };
 
-export type AiContext = 'ritmo' | 'financas' | 'agenda' | 'registros' | 'cofre';
+export type AiContext = 'ritmo' | 'financas' | 'agenda' | 'registros';
 
 export const aiService = {
   getInsight: async (context: AiContext) => {

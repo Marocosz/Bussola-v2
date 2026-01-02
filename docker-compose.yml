@@ -1,0 +1,29 @@
+services:
+  # Serviço da API
+  backend:
+    container_name: bussola_backend
+    build: ./bussola_api
+    volumes:
+      # Persistência do SQLite: Mapeia a pasta data do host para o container
+      - ./bussola_api/data:/app/data
+    env_file:
+      - ./bussola_api/.env
+    ports:
+      - "8000:8000"
+    networks:
+      - bussola_net
+
+  # Serviço do Frontend (Web)
+  frontend:
+    container_name: bussola_frontend
+    build: ./bussola_web
+    ports:
+      - "3000:80"  # Acessar no navegador via localhost:3000
+    depends_on:
+      - backend
+    networks:
+      - bussola_net
+
+networks:
+  bussola_net:
+    driver: bridge

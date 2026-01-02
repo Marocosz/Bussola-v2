@@ -46,6 +46,15 @@ Seja para gerenciar o fluxo de caixa, monitorar a dieta ou blindar senhas sensí
 - [📦 Módulos do Sistema](#-módulos-do-sistema)
 - [📐 Diagrama de Entidade-Relacionamento (ERD)](#-diagrama-de-entidade-relacionamento-erd)
 - [📚 Documentação da API](#-documentação-da-api)
+- [🐳 Deploy com Docker](#-deploy-com-docker)
+  - [🏗️ Arquitetura dos Containers](#️-arquitetura-dos-containers)
+  - [🚀 Como Rodar](#-como-rodar)
+    - [Pré-requisitos](#pré-requisitos)
+    - [Passo a Passo](#passo-a-passo)
+  - [⚙️ Detalhes Técnicos Importantes](#️-detalhes-técnicos-importantes)
+    - [💾 Persistência de Dados (SQLite)](#-persistência-de-dados-sqlite)
+    - [🌐 Variáveis de Ambiente e Networking](#-variáveis-de-ambiente-e-networking)
+    - [🛠️ Comandos Úteis](#️-comandos-úteis)
 - [🤝 Agradecimentos e Contato](#-agradecimentos-e-contato)
   - [Dúvidas, Bugs ou Sugestões?](#dúvidas-bugs-ou-sugestões)
   - [Vamos nos Conectar!](#vamos-nos-conectar)
@@ -57,25 +66,30 @@ Seja para gerenciar o fluxo de caixa, monitorar a dieta ou blindar senhas sensí
 O desenvolvimento do **Bússola V2** é contínuo, evoluindo de um sistema de gestão pessoal para um **ecossistema inteligente**. Abaixo, o status atual e os planos futuros:
 
 ### ✅ Concluído (Fase 1: Fundação)
+
 - [x] **Core da Arquitetura:** Estrutura `Monorepo` (`FastAPI` + `React`) e configuração de ambiente.
 - [x] **Segurança:** Autenticação `JWT`, Hashing de senhas e proteção de rotas (`CORS`/`Middlewares`).
 - [x] **Camada de Dados:** Modelagem relacional complexa (`SQLAlchemy`) e Migrações (`Alembic`).
 - [x] **Módulos Essenciais:** Implementação funcional de *Finanças* (Fluxo de Caixa), *Ritmo* (Treino/Dieta) e *Registros* (Tarefas).
 - [x] **Documentação:** Integração automática com `Scalar` e `Swagger UI`.
+- [x] - [ ] **Agentes de IA Avançados:** Refinamento dos agentes (`Brains`) dos Módulos Ritmo e Registros.
 
 ### 🚧 Em Desenvolvimento (Fase 2: Inteligência & Infra)
-- [ ] **Agentes de IA Avançados:** Refinamento dos agentes (`Brains`) dos Módulos Ritmo e Registros.
+
 - [ ] **ChatBot Inteligente:** Criando ChatBot inteligente interativo e dinâmico referente a toda aplicação, dados e informação.
 - [ ] **Documentação:** Documentando todos os módulos e funcionalidades do projeto.
 
 ### 🔭 Futuro (Fase 3: Expansão)
-- [ ] **Mobile Experience:** Adaptação da interface para `PWA` (Progressive Web App) ou melhorar 100% da responsividade (Decidir ainda).
-- [ ] **Interface de Voz:** Integração com `Whisper` para registrar gastos e tarefas via comando de voz.
-- [ ] **Gamificação:** Sistema de **XP** e níveis baseado no cumprimento de metas financeiras e de saúde.
-- [ ] **Postgre:** Implementar BD `PostgreSQL` no modo **SaaS**.
-- [ ] **Dockerização:** Containerização completa da aplicação (`Backend`, `Frontend`, `Redis`, `Banco`) via `Docker Compose` para fácil deploy.
-- [ ] **Padronização:** Padronizar nomes de arquivos/variáveis de todo projeto.
-- [ ] **Ativação:** De acordo com as dicas/sugestoes dos `agents modulares` (`Brains`), ter um botao para aceitar e modificar o dado de acordo com o conteúdo.
+
+- [ ] **Feedback Loop & Memória:** Evoluir a interface dos cards de IA com botões de Aceitar (executa a ação automaticamente) e Descartar. O descarte deve alimentar uma Blacklist no Redis para impedir que a IA repita a mesma sugestão rejeitada nos próximos dias.
+- [ ] **Contexto Expandido (RAG):** Implementar Retrieval-Augmented Generation para que os agentes (ex: SpendingDetective) consultem todo o histórico do usuário via busca vetorial, eliminando a limitação de enviar apenas as "Top 30" linhas e permitindo análises estatísticas profundas.
+- [ ] **Meta-Orquestração (Cross-Domain):** Criar uma camada de comunicação entre módulos, permitindo que o CFO Digital (Finanças) saiba que o usuário está em fase de Bulking (Nutrição) para não bloquear gastos essenciais de dieta, evitando conselhos contraditórios entre os agentes.
+- [ ] **Mobile Experience:** Adaptação da interface para PWA (Progressive Web App) ou melhorar 100% da responsividade.- 
+- [ ] **Interface de Voz:** Integração com Whisper para registrar gastos e tarefas via comando de voz.
+- [ ] **Gamificação:** Sistema de XP e níveis baseado no cumprimento de metas financeiras e de saúde.
+- [ ] **Postgre:** Migrar para BD PostgreSQL no modo SaaS para maior robustez.
+- [ ] **Dockerização:** Containerização completa da aplicação (Backend, Frontend, Redis, Banco) via Docker Compose.
+- [ ] **Padronização:** Refatoração global para padronizar nomes de arquivos/variáveis de todo projeto (Code Clean-up).
 
 ---
 
@@ -410,6 +424,87 @@ O `backend` do **Bússola V2** gera automaticamente a documentação de todos os
 > [!TIP]
 > **Nota:** Para importar a coleção no **Postman** ou **Insomnia**, utilize o `JSON` bruto disponível em:  
 > [`http://localhost:8000/api/v1/openapi.json`](http://localhost:8000/api/v1/openapi.json)
+
+---
+
+---
+
+# 🐳 Deploy com Docker
+
+Para facilitar a execução em qualquer ambiente e garantir a paridade entre desenvolvimento e produção, o **Bússola V2** foi containerizado. Utilizamos uma arquitetura de **Microserviços** onde Backend e Frontend rodam em containers isolados, porém orquestrados para funcionarem como uma unidade coesa.
+
+## 🏗️ Arquitetura dos Containers
+
+O sistema não roda em um único "blocão". Utilizamos o **Docker Compose** para orquestrar dois serviços distintos, cada um com sua responsabilidade e otimização específica:
+
+1.  **Backend (`bussola_backend`):**
+    * Construído a partir de uma imagem `python:3.12-slim`.
+    * Roda o servidor `Uvicorn` na porta interna `8000`.
+    * Responsável pela lógica de negócios, acesso ao SQLite e comunicação com LLMs.
+
+2.  **Frontend (`bussola_frontend`):**
+    * Utiliza **Multi-stage Build**:
+        1.  **Stage 1 (Node):** Compila o código React/Vite para arquivos estáticos (`build`).
+        2.  **Stage 2 (Nginx):** Descarta o Node e usa um servidor Nginx Alpine (super leve) para servir os arquivos.
+    * Atua também como **Proxy Reverso**: Redireciona chamadas de `/api/v1` automaticamente para o container do backend, evitando problemas de CORS e expondo apenas a porta `3000` para o usuário.
+
+> [!NOTE]
+> **Por que separado?** Essa separação permite escalar o frontend (estático) independentemente do backend (processamento), além de reduzir drasticamente o tamanho final da imagem do frontend, já que não precisamos manter o Node.js rodando em produção.
+
+---
+
+## 🚀 Como Rodar
+
+### Pré-requisitos
+* [Docker](https://www.docker.com/get-started) e Docker Compose instalados.
+
+### Passo a Passo
+
+1.  **Configuração de Ambiente:**
+    Certifique-se de que o arquivo `.env` dentro de `bussola_api/` esteja configurado com suas chaves de API (OpenAI/Gemini) e configurações de segurança.
+    * *O Docker injetará essas variáveis automaticamente no container do Backend.*
+
+2.  **Subir a Aplicação:**
+    Na raiz do projeto (onde está o `docker-compose.yml`), execute:
+
+    ```bash
+    docker compose up -d --build
+    ```
+    * `-d`: Roda em segundo plano (Detached).
+    * `--build`: Força a recriação das imagens se houver alterações no código.
+
+3.  **Acessar:**
+    * 💻 **Aplicação:** [http://localhost:3000](http://localhost:3000)
+    * 📚 **Documentação API:** [http://localhost:8000/docs](http://localhost:8000/docs)
+
+---
+
+## ⚙️ Detalhes Técnicos Importantes
+
+### 💾 Persistência de Dados (SQLite)
+Uma dúvida comum é: *"Se eu deletar o container, perco meu banco de dados?"*
+**Não.** Configuramos um **Volume** no Docker que espelha o diretório de dados do container para sua máquina local.
+
+```yaml
+volumes:
+  - ./bussola_api/data:/app/data
+```
+
+Isso significa que o arquivo `bussola.db` que vive dentro do container é, na verdade, o mesmo arquivo que está na sua pasta `bussola_api/data/`. Você pode parar, destruir e recriar os containers quantas vezes quiser; seus dados financeiros e de saúde permanecerão intactos.
+
+### 🌐 Variáveis de Ambiente e Networking
+O Frontend detecta automaticamente se está rodando via Docker (`import.meta.env.PROD`).
+* **Local (`dev`):** O Front chama `http://127.0.0.1:8000`.
+* **Docker (`prod`):** O Front chama `/api/v1` (caminho relativo). O Nginx intercepta essa chamada e a repassa para o container `bussola_backend` através da rede interna do Docker (`bussola_net`).
+
+### 🛠️ Comandos Úteis
+
+| Ação | Comando |
+| :--- | :--- |
+| **Ver logs em tempo real** | `docker compose logs -f` |
+| **Parar e remover containers** | `docker compose down` |
+| **Status dos containers** | `docker compose ps` |
+| **Limpar tudo (Reset total)** | `docker compose down -v --rmi all` |
 
 ---
 
