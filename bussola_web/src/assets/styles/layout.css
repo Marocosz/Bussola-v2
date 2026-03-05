@@ -104,6 +104,139 @@ main.container {
     /* Altura fixa para alinhar com os outros itens */
 }
 
+/* --- Controles direita da Navbar --- */
+.nav-right-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* --- Hamburger button (hidden on desktop) --- */
+.btn-hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.btn-hamburger:hover {
+    background: var(--cor-fundo-hover);
+}
+
+.btn-hamburger span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--cor-texto-principal);
+    border-radius: 2px;
+    transition: all 0.3s ease;
+    transform-origin: center;
+}
+
+.btn-hamburger.open span:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+}
+
+.btn-hamburger.open span:nth-child(2) {
+    opacity: 0;
+    transform: scaleX(0);
+}
+
+.btn-hamburger.open span:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+}
+
+/* --- Mobile menu overlay --- */
+.mobile-menu-overlay {
+    display: none;
+}
+
+/* ============================================= */
+/* RESPONSIVIDADE MOBILE                         */
+/* ============================================= */
+@media (max-width: 768px) {
+    .btn-hamburger {
+        display: flex;
+    }
+
+    .mobile-menu-overlay {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 998;
+    }
+
+    .nav-links {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 75%;
+        max-width: 300px;
+        height: 100vh;
+        background: var(--cor-card-principal);
+        border-left: 1px solid var(--cor-borda);
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0;
+        padding: 5rem 0 2rem 0;
+        z-index: 999;
+        transform: translateX(100%);
+        transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        overflow-y: auto;
+    }
+
+    .nav-links.mobile-open {
+        transform: translateX(0);
+    }
+
+    .nav-links li {
+        width: 100%;
+    }
+
+    .nav-links a {
+        padding: 1rem 1.5rem;
+        font-size: 1.1rem;
+        width: 100%;
+        color: var(--cor-texto-principal);
+        border-bottom: 1px solid var(--cor-borda);
+    }
+
+    .nav-links:hover li {
+        opacity: 1;
+    }
+
+    .nav-links:hover li:hover {
+        transform: none;
+    }
+
+    .btn-nav-account {
+        width: 100%;
+        padding: 1rem 1.5rem;
+        justify-content: flex-start;
+        border-bottom: 1px solid var(--cor-borda);
+        border-radius: 0;
+    }
+
+    .btn-nav-create {
+        margin: 0.5rem 1rem;
+        width: calc(100% - 2rem);
+    }
+
+    #theme-toggle-li {
+        padding: 0.5rem 1rem;
+    }
+}
+
 /* ============================================= */
 /* 3. Cabeçalhos de Página e Colunas             */
 /* ============================================= */

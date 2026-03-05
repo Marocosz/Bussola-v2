@@ -601,3 +601,36 @@
   background: rgba(239, 68, 68, 0.2);
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
+
+/* =========================================
+   RESPONSIVIDADE MOBILE
+   ========================================= */
+@media (max-width: 768px) {
+  .ai-content-slider {
+    position: fixed;
+    top: auto !important;
+    left: 0 !important;
+    bottom: 0;
+    width: 100vw;
+    transform: none !important;
+  }
+
+  .pos-right-up,
+  .pos-right-down,
+  .pos-left-up,
+  .pos-left-down {
+    transform: none !important;
+  }
+
+  .ai-glass-card {
+    border-radius: 20px 20px 0 0;
+    max-height: 75vh;
+  }
+
+  .ai-floating-container {
+    bottom: 1.5rem;
+    right: 1.5rem;
+    left: auto !important;
+    top: auto !important;
+  }
+}

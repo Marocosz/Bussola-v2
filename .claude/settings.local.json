@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__git__git_commit",
+      "mcp__git__git_add"
+    ]
+  }
+}

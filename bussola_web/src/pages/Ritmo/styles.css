@@ -871,6 +871,19 @@
     .ritmo-scope .form-grid.two-cols {
         grid-template-columns: 1fr;
     }
+
+    .ritmo-scope .macros-horizontal-row {
+        flex-wrap: wrap;
+        gap: 1.5rem;
+    }
+
+    .ritmo-scope .internal-hero {
+        padding: 2rem 1rem 3rem 1rem;
+    }
+
+    .ritmo-scope .internal-hero h1 {
+        font-size: 2rem;
+    }
 }
 
 /* ============================================= */

@@ -15,9 +15,10 @@ export function Navbar() {
 
     const [theme, setTheme] = useState('dark');
     const [showAdminModal, setShowAdminModal] = useState(false);
-    
-    // Agora só precisamos deste estado para controlar se o Drawer abre ou fecha
     const [isAccountOpen, setIsAccountOpen] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
     // Lógica de Tema (Mantida)
     useEffect(() => {
@@ -43,23 +44,40 @@ export function Navbar() {
         <>
             <header className="main-header">
                 <nav className="navbar">
-                    <Link to="/" className="nav-brand">
+                    <Link to="/" className="nav-brand" onClick={closeMobileMenu}>
                         <img src={bussolaLogo} alt="Logo Bússola" className="nav-logo" />
                     </Link>
 
-                    <ul className="nav-links">
+                    <div className="nav-right-controls">
+                        <button id="theme-toggle" className="btn-action-icon" onClick={toggleTheme}>
+                            <i className={`fa-solid ${theme === 'light' ? 'fa-moon' : 'fa-sun'}`}></i>
+                        </button>
+                        <button
+                            className={`btn-hamburger ${isMobileMenuOpen ? 'open' : ''}`}
+                            onClick={() => setIsMobileMenuOpen(prev => !prev)}
+                            aria-label="Menu"
+                        >
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </button>
+                    </div>
+
+                    {isMobileMenuOpen && <div className="mobile-menu-overlay" onClick={closeMobileMenu} />}
+
+                    <ul className={`nav-links ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
                         {authenticated ? (
                             <>
-                                <li><Link to="/home">Início</Link></li>
-                                <li><Link to="/panorama">Panorama</Link></li>
-                                <li><Link to="/financas">Provisões</Link></li>
-                                <li><Link to="/agenda">Roteiro</Link></li>
-                                <li><Link to="/registros">Registros</Link></li>
-                                <li><Link to="/ritmo">Ritmo</Link></li>
-                                <li><Link to="/cofre">Cofre</Link></li>
-                                
+                                <li><Link to="/home" onClick={closeMobileMenu}>Início</Link></li>
+                                <li><Link to="/panorama" onClick={closeMobileMenu}>Panorama</Link></li>
+                                <li><Link to="/financas" onClick={closeMobileMenu}>Provisões</Link></li>
+                                <li><Link to="/agenda" onClick={closeMobileMenu}>Roteiro</Link></li>
+                                <li><Link to="/registros" onClick={closeMobileMenu}>Registros</Link></li>
+                                <li><Link to="/ritmo" onClick={closeMobileMenu}>Ritmo</Link></li>
+                                <li><Link to="/cofre" onClick={closeMobileMenu}>Cofre</Link></li>
+
                                 <li>
-                                    <button className="btn-nav-account" onClick={() => setIsAccountOpen(true)}>
+                                    <button className="btn-nav-account" onClick={() => { setIsAccountOpen(true); closeMobileMenu(); }}>
                                         <div className="nav-user-avatar">
                                             {user?.avatar_url ? <img src={user.avatar_url} alt="Avatar" /> : <i className="fa-solid fa-user"></i>}
                                         </div>
@@ -67,14 +85,13 @@ export function Navbar() {
                                     </button>
                                 </li>
 
-                                <li><Link to="/login" onClick={logout}>Sair</Link></li>
+                                <li><Link to="/login" onClick={() => { logout(); closeMobileMenu(); }}>Sair</Link></li>
 
-                                {/* Lógica Self-Hosted Restaurada */}
                                 {isSelfHosted && user?.is_superuser && (
                                     <li>
-                                        <button 
-                                            className="btn-secondary btn-nav-create" 
-                                            onClick={() => setShowAdminModal(true)}
+                                        <button
+                                            className="btn-secondary btn-nav-create"
+                                            onClick={() => { setShowAdminModal(true); closeMobileMenu(); }}
                                             title="Criar Novo Usuário"
                                         >
                                             <i className="fa-solid fa-user-plus"></i>
@@ -82,21 +99,10 @@ export function Navbar() {
                                         </button>
                                     </li>
                                 )}
-
-                                <li id="theme-toggle-li">
-                                    <button id="theme-toggle" className="btn-action-icon" onClick={toggleTheme}>
-                                        <i className={`fa-solid ${theme === 'light' ? 'fa-moon' : 'fa-sun'}`}></i>
-                                    </button>
-                                </li>
                             </>
                         ) : (
                             <>
-                                <li><Link to="/login">Entrar</Link></li>
-                                <li id="theme-toggle-li">
-                                    <button id="theme-toggle" className="btn-action-icon" onClick={toggleTheme}>
-                                        <i className={`fa-solid ${theme === 'light' ? 'fa-moon' : 'fa-sun'}`}></i>
-                                    </button>
-                                </li>
+                                <li><Link to="/login" onClick={closeMobileMenu}>Entrar</Link></li>
                             </>
                         )}
                     </ul>

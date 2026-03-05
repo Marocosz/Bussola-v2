@@ -492,6 +492,32 @@ a {
     background: var(--cor-vermelho-delete-hover);
 }
 
+/* =========================================
+   RESPONSIVIDADE MOBILE GLOBAL
+   ========================================= */
+@media (max-width: 768px) {
+    .toast-container {
+        top: auto;
+        bottom: 1rem;
+        right: 1rem;
+        left: 1rem;
+        align-items: stretch;
+    }
+
+    .toast-notification {
+        min-width: unset;
+        max-width: unset;
+        width: 100%;
+    }
+
+    main.container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+}
+
 .confirm-footer .btn-confirm.info {
     background: var(--cor-azul-primario);
     border: none;

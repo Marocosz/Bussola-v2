@@ -291,3 +291,33 @@
 .drawer-content.open .drawer-body > * {
     animation: drawerFadeIn 0.5s ease forwards;
 }
+
+/* Responsividade Mobile */
+@media (max-width: 480px) {
+    .drawer-content {
+        width: 100%;
+        min-width: unset;
+        max-width: unset;
+    }
+
+    .drawer-header {
+        padding: 1.25rem 1rem;
+    }
+
+    .drawer-body {
+        padding: 1.5rem 1rem;
+    }
+
+    .drawer-footer {
+        padding: 1.25rem 1rem;
+    }
+
+    .tags-container {
+        gap: 8px;
+    }
+
+    .tag-option {
+        flex-grow: 0;
+        padding: 10px 14px;
+    }
+}

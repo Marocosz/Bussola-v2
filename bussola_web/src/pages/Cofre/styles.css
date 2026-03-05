@@ -374,7 +374,7 @@
         gap: 1rem;
         border-radius: 12px;
     }
-    
+
     .cofre-scope .section-header-flex .btn-primary {
         width: 100%;
         justify-content: center;
@@ -384,16 +384,28 @@
         border-top: 1px solid var(--cor-borda);
         border-radius: 12px;
         margin-top: 1rem;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
-    
-    .cofre-scope .data-table th, 
+
+    .cofre-scope .data-table {
+        min-width: 560px;
+    }
+
+    .cofre-scope .data-table th,
     .cofre-scope .data-table td {
-        padding: 1rem;
+        padding: 0.8rem 1rem;
     }
-    
+
     .cofre-scope .column-notas {
-        /* No mobile ainda pode ser útil clicar pra ver, então não escondemos, 
-           mas limitamos ainda mais o tamanho */
-        max-width: 100px; 
+        max-width: 100px;
+    }
+
+    .cofre-scope .internal-hero {
+        padding: 2rem 1rem 3rem 1rem;
+    }
+
+    .cofre-scope .internal-hero h1 {
+        font-size: 2rem;
     }
 }
