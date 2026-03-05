@@ -9,9 +9,12 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 # Instala dependências do sistema necessárias para compilar algumas libs (como numpy/pandas se necessário)
+ENV TZ=America/Sao_Paulo
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
+    tzdata \
     && rm -rf /var/lib/apt/lists/*
 
 # Copia e instala as dependências Python

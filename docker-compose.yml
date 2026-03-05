@@ -4,6 +4,8 @@ services:
     container_name: bussola_backend
     env_file:
       - ./bussola_api/.env
+    environment:
+      - TZ=America/Sao_Paulo
     volumes:
       - ./bussola_api/data:/app/data
     restart: unless-stopped
