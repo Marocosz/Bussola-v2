@@ -16,7 +16,8 @@ export function AgendaModal({ active, closeModal, onUpdate, editingData }) {
         if (active) {
             if (editingData) {
                 setTitulo(editingData.titulo);
-                const isoDate = new Date(editingData.data_hora).toISOString().slice(0, 16);
+                const d = new Date(editingData.data_hora);
+                const isoDate = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
                 setDataHora(isoDate);
                 setLocal(editingData.local || '');
                 setDescricao(editingData.descricao || '');
