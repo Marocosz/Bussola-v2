@@ -20,10 +20,11 @@ export const AuthProvider = ({ children }) => {
                     setUser(userResponse.data);
                     setAuthenticated(true);
                 } catch (error) {
-                    console.error("Token inválido ou expirado:", error);
-                    // Não chamamos logout() aqui para evitar loop com o interceptor
-                    localStorage.removeItem('@Bussola:token');
-                    localStorage.removeItem('@Bussola:refresh_token');
+                    // Só limpa tokens em erros de autenticação (401), não em erros de rede (502, 504)
+                    if (error.response?.status === 401) {
+                        localStorage.removeItem('@Bussola:token');
+                        localStorage.removeItem('@Bussola:refresh_token');
+                    }
                     setAuthenticated(false);
                 }
             }

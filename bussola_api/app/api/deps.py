@@ -114,7 +114,7 @@ def get_current_user(session: SessionDep, token: TokenDep) -> User:
 
     except (JWTError, ValidationError):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Não foi possível validar as credenciais",
         )
     
