@@ -48,21 +48,6 @@ export function Navbar() {
                         <img src={bussolaLogo} alt="Logo Bússola" className="nav-logo" />
                     </Link>
 
-                    <div className="nav-right-controls">
-                        <button id="theme-toggle" className="btn-action-icon" onClick={toggleTheme}>
-                            <i className={`fa-solid ${theme === 'light' ? 'fa-moon' : 'fa-sun'}`}></i>
-                        </button>
-                        <button
-                            className={`btn-hamburger ${isMobileMenuOpen ? 'open' : ''}`}
-                            onClick={() => setIsMobileMenuOpen(prev => !prev)}
-                            aria-label="Menu"
-                        >
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                        </button>
-                    </div>
-
                     {isMobileMenuOpen && <div className="mobile-menu-overlay" onClick={closeMobileMenu} />}
 
                     <ul className={`nav-links ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
@@ -99,13 +84,34 @@ export function Navbar() {
                                         </button>
                                     </li>
                                 )}
+
+                                <li id="theme-toggle-li">
+                                    <button id="theme-toggle" className="btn-action-icon" onClick={toggleTheme}>
+                                        <i className={`fa-solid ${theme === 'light' ? 'fa-moon' : 'fa-sun'}`}></i>
+                                    </button>
+                                </li>
                             </>
                         ) : (
                             <>
                                 <li><Link to="/login" onClick={closeMobileMenu}>Entrar</Link></li>
+                                <li id="theme-toggle-li">
+                                    <button id="theme-toggle" className="btn-action-icon" onClick={toggleTheme}>
+                                        <i className={`fa-solid ${theme === 'light' ? 'fa-moon' : 'fa-sun'}`}></i>
+                                    </button>
+                                </li>
                             </>
                         )}
                     </ul>
+
+                    <button
+                        className={`btn-hamburger ${isMobileMenuOpen ? 'open' : ''}`}
+                        onClick={() => setIsMobileMenuOpen(prev => !prev)}
+                        aria-label="Menu"
+                    >
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
                 </nav>
             </header>
 

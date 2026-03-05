@@ -1095,9 +1095,9 @@
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
     z-index: 3000;
     display: none;
-    gap: 8px;
+    gap: 6px;
     width: max-content;
-    max-width: 260px;
+    max-width: 320px;
 }
 
 .financas-scope .picker-popover.visible {
@@ -1105,13 +1105,19 @@
 }
 
 .financas-scope .picker-popover.icon-grid {
-    grid-template-columns: repeat(5, 1fr);
-    max-height: 200px;
+    grid-template-columns: repeat(7, 1fr);
+    max-height: 260px;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--cor-borda) transparent;
 }
 
 .financas-scope .picker-popover.color-grid {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(7, 1fr);
+    max-height: 220px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--cor-borda) transparent;
 }
 
 .financas-scope .icon-option,

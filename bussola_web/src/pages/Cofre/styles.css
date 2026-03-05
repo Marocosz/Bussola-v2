@@ -210,10 +210,14 @@
     display: inline-block;
 }
 
-.cofre-scope .empty-state-cell {
+.cofre-scope .data-table td.empty-state-cell {
     text-align: center;
-    padding: 5rem 2rem !important;
+    padding: 5rem 2rem;
     color: var(--cor-texto-secundario);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .cofre-scope .empty-state-cell i {

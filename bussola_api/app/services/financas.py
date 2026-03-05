@@ -31,29 +31,60 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, and_, desc
 from sqlalchemy.exc import IntegrityError # Import para tratamento de concorrência
 from collections import defaultdict
-import random
 
-from app.models.financas import Transacao, Categoria 
+from app.models.financas import Transacao, Categoria
 from app.schemas.financas import TransacaoCreate, TransacaoUpdate
 
 # Catálogo de ícones FontAwesome disponíveis para escolha no frontend
 ICONES_DISPONIVEIS = [
-    "fa-solid fa-utensils", "fa-solid fa-burger", "fa-solid fa-cart-shopping",
+    # Alimentação
+    "fa-solid fa-utensils", "fa-solid fa-burger", "fa-solid fa-mug-hot",
+    # Moradia & Contas
     "fa-solid fa-house", "fa-solid fa-lightbulb", "fa-solid fa-wifi",
-    "fa-solid fa-car", "fa-solid fa-gas-pump", "fa-solid fa-film",
-    "fa-solid fa-gamepad", "fa-solid fa-shirt", "fa-solid fa-pills",
-    "fa-solid fa-dollar-sign", "fa-solid fa-graduation-cap"
+    "fa-solid fa-droplet", "fa-solid fa-fire", "fa-solid fa-wrench",
+    # Transporte
+    "fa-solid fa-car", "fa-solid fa-gas-pump", "fa-solid fa-bus",
+    "fa-solid fa-plane",
+    # Compras & Vestuário
+    "fa-solid fa-cart-shopping", "fa-solid fa-shirt", "fa-solid fa-bag-shopping",
+    # Saúde & Bem-estar
+    "fa-solid fa-pills", "fa-solid fa-heart-pulse", "fa-solid fa-dumbbell",
+    # Lazer & Entretenimento
+    "fa-solid fa-film", "fa-solid fa-gamepad", "fa-solid fa-music",
+    "fa-solid fa-book", "fa-solid fa-tv",
+    # Educação & Trabalho
+    "fa-solid fa-graduation-cap", "fa-solid fa-briefcase", "fa-solid fa-laptop",
+    # Finanças & Receitas
+    "fa-solid fa-dollar-sign", "fa-solid fa-piggy-bank", "fa-solid fa-coins",
+]
+
+# Paleta fixa de cores para categorias (determinística — não muda a cada carregamento)
+CORES_DISPONIVEIS = [
+    # Vermelhos / Rosas
+    "#ef4444", "#f87171", "#ec4899", "#f43f5e",
+    # Laranjas / Amarelos
+    "#f97316", "#fb923c", "#eab308", "#facc15",
+    # Verdes
+    "#22c55e", "#10b981", "#4ade80",
+    # Azuis / Ciano
+    "#3b82f6", "#60a5fa", "#06b6d4", "#0ea5e9",
+    # Roxos / Índigo
+    "#8b5cf6", "#6366f1", "#a78bfa",
+    # Rosa / Fúcsia
+    "#d946ef", "#c026d3",
+    # Terrosos
+    "#a16207", "#92400e",
+    # Neutros
+    "#64748b", "#6b7280",
+    # Extras
+    "#14b8a6", "#84cc16", "#f59e0b", "#22d3ee",
 ]
 
 class FinancasService:
-    
-    def gerar_paleta_cores(self, n=20):
-        """Gera cores hexadecimais aleatórias para gráficos e categorias."""
-        cores = []
-        for _ in range(n):
-            color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
-            cores.append(color)
-        return cores
+
+    def gerar_paleta_cores(self):
+        """Retorna paleta fixa de cores para categorias."""
+        return CORES_DISPONIVEIS
 
     def get_or_create_indefinida(self, db: Session, tipo: str, user_id: int) -> Categoria:
         """

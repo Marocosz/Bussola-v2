@@ -104,13 +104,6 @@ main.container {
     /* Altura fixa para alinhar com os outros itens */
 }
 
-/* --- Controles direita da Navbar --- */
-.nav-right-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
 /* --- Hamburger button (hidden on desktop) --- */
 .btn-hamburger {
     display: none;
