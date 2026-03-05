@@ -30,6 +30,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
+import logging
 import redis
 
 from app.core import security
@@ -38,6 +39,8 @@ from app.db.session import SessionLocal
 from app.models.user import User
 from app.schemas.token import TokenPayload
 
+logger = logging.getLogger(__name__)
+
 # Configura o esquema de segurança OAuth2.
 # Define a URL que o Swagger UI utilizará para obter o token de acesso.
 reusable_oauth2 = OAuth2PasswordBearer(
@@ -45,7 +48,13 @@ reusable_oauth2 = OAuth2PasswordBearer(
 )
 
 # Conexão Global com Redis (Connection Pool)
-redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
+# Se o Redis não estiver disponível, o app continua funcionando sem blacklist de tokens.
+try:
+    redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
+    redis_client.ping()
+except Exception as e:
+    logger.warning(f"Redis indisponível: {e}. Blacklist de tokens desativada.")
+    redis_client = None
 
 def get_db() -> Generator:
     """
@@ -83,7 +92,7 @@ def get_current_user(session: SessionDep, token: TokenDep) -> User:
     """
     
     # [CHECK BLACKLIST] Se o token foi revogado, nega acesso instantaneamente.
-    if redis_client.exists(f"blacklist:{token}"):
+    if redis_client and redis_client.exists(f"blacklist:{token}"):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Sessão revogada. Faça login novamente.",

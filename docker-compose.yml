@@ -15,11 +15,23 @@ services:
   frontend:
     container_name: bussola_frontend
     build: ./bussola_web
+    expose:
+      - "80"
     depends_on:
       - backend
     networks:
       - bussola_net
+      - coolify
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bussola-frontend.rule=Host(`bussola.marocos.dev`)"
+      - "traefik.http.routers.bussola-frontend.entrypoints=https"
+      - "traefik.http.routers.bussola-frontend.tls=true"
+      - "traefik.http.routers.bussola-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.bussola-frontend.loadbalancer.server.port=80"
 
 networks:
   bussola_net:
     driver: bridge
+  coolify:
+    external: true

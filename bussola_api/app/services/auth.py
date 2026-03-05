@@ -186,7 +186,7 @@ class AuthService:
         Valida o Refresh Token e emite um novo par Access/Refresh.
         """
         # Checa Blacklist
-        if redis_client.exists(f"blacklist:{refresh_token}"):
+        if redis_client and redis_client.exists(f"blacklist:{refresh_token}"):
             raise HTTPException(status_code=401, detail="Refresh token revogado.")
 
         try:
@@ -222,7 +222,7 @@ class AuthService:
             now_timestamp = now_utc().timestamp() # [CORREÇÃO]
             ttl = int(exp_timestamp - now_timestamp)
             
-            if ttl > 0:
+            if ttl > 0 and redis_client:
                 redis_client.setex(f"blacklist:{token}", ttl, "revoked")
                 
         except Exception:
