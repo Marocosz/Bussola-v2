@@ -20,9 +20,9 @@ export function Financas() {
     const [openMonths, setOpenMonths] = useState(() => {
         try {
             const saved = localStorage.getItem('bussola_financas_accordions');
-            return saved ? JSON.parse(saved) : {};
+            return saved ? JSON.parse(saved) : { 'resumo-despesas': true, 'resumo-receitas': true };
         } catch (e) {
-            return {};
+            return { 'resumo-despesas': true, 'resumo-receitas': true };
         }
     });
 
@@ -335,30 +335,51 @@ export function Financas() {
                         <LoadingState />
                     ) : (
                         <>
-                            <h4>Despesas do Mês</h4>
-                            <div className="category-grid">
-                                {(data.categorias_despesa || []).map(cat => (
-                                    <CategoryCard
-                                        key={cat.id}
-                                        categoria={cat}
-                                        onEdit={handleEditCategory}
-                                        onDelete={handleDeleteCategory}
-                                    />
-                                ))}
-                                {(!data.categorias_despesa || data.categorias_despesa.length === 0) && <p className="empty-list-msg">Sem despesas.</p>}
+                            <h3
+                                className={`month-header ${openMonths['resumo-despesas'] ? 'active' : ''}`}
+                                onClick={() => toggleAccordion('resumo-despesas')}
+                            >
+                                <span>Despesas do Mês</span>
+                                <i className={`fa-solid fa-chevron-down ${openMonths['resumo-despesas'] ? 'rotate' : ''}`}></i>
+                            </h3>
+                            <div className={`accordion-wrapper ${openMonths['resumo-despesas'] ? 'open' : ''}`}>
+                                <div className="accordion-inner">
+                                    <div className="category-grid">
+                                        {(data.categorias_despesa || []).map(cat => (
+                                            <CategoryCard
+                                                key={cat.id}
+                                                categoria={cat}
+                                                onEdit={handleEditCategory}
+                                                onDelete={handleDeleteCategory}
+                                            />
+                                        ))}
+                                        {(!data.categorias_despesa || data.categorias_despesa.length === 0) && <p className="empty-list-msg">Sem despesas.</p>}
+                                    </div>
+                                </div>
                             </div>
 
-                            <h4 style={{ marginTop: '1.5rem' }}>Receitas do Mês</h4>
-                            <div className="category-grid">
-                                {(data.categorias_receita || []).map(cat => (
-                                    <CategoryCard
-                                        key={cat.id}
-                                        categoria={cat}
-                                        onEdit={handleEditCategory}
-                                        onDelete={handleDeleteCategory}
-                                    />
-                                ))}
-                                {(!data.categorias_receita || data.categorias_receita.length === 0) && <p className="empty-list-msg">Sem receitas.</p>}
+                            <h3
+                                className={`month-header ${openMonths['resumo-receitas'] ? 'active' : ''}`}
+                                onClick={() => toggleAccordion('resumo-receitas')}
+                                style={{ marginTop: '0.5rem' }}
+                            >
+                                <span>Receitas do Mês</span>
+                                <i className={`fa-solid fa-chevron-down ${openMonths['resumo-receitas'] ? 'rotate' : ''}`}></i>
+                            </h3>
+                            <div className={`accordion-wrapper ${openMonths['resumo-receitas'] ? 'open' : ''}`}>
+                                <div className="accordion-inner">
+                                    <div className="category-grid">
+                                        {(data.categorias_receita || []).map(cat => (
+                                            <CategoryCard
+                                                key={cat.id}
+                                                categoria={cat}
+                                                onEdit={handleEditCategory}
+                                                onDelete={handleDeleteCategory}
+                                            />
+                                        ))}
+                                        {(!data.categorias_receita || data.categorias_receita.length === 0) && <p className="empty-list-msg">Sem receitas.</p>}
+                                    </div>
+                                </div>
                             </div>
                         </>
                     )}

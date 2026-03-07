@@ -525,10 +525,16 @@
 /* ============================ */
 .charts-grid-layout {
     display: grid;
-    grid-template-columns: 1.2fr 0.8fr;
-    gap: 2rem;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1.5rem;
     margin-bottom: 2rem;
 }
+
+/* Span variants para o grid de 12 colunas */
+.chart-wrapper.span-4  { grid-column: span 4; }
+.chart-wrapper.span-6  { grid-column: span 6; }
+.chart-wrapper.span-8  { grid-column: span 8; }
+.chart-wrapper.span-12 { grid-column: span 12; }
 
 .chart-wrapper {
     background: var(--cor-card-principal);
@@ -543,11 +549,26 @@
     grid-column: 1 / -1;
 }
 
+/* Wrapper do gauge (Taxa de Poupança) */
+.chart-wrapper.gauge-wrapper {
+    align-items: center;
+    justify-content: center;
+}
+
+/* Wrapper com flex-column explícito (Eficiência de Tarefas) */
+.chart-wrapper.col-flex {
+    flex-direction: column;
+}
+
 .chart-header {
     margin-bottom: 1.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.chart-header.full-width {
+    width: 100%;
 }
 
 .chart-header h3 {
@@ -571,6 +592,113 @@
     position: relative;
     height: 300px;
     width: 100%;
+}
+
+/* Gauge body (semicírculo de poupança) */
+.chart-body.gauge-body {
+    height: 200px;
+    display: flex;
+    justify-content: center;
+}
+
+/* Chart body para gráfico de categoria (maior) */
+.chart-body.tall-body {
+    height: 300px;
+}
+
+/* Chart body centralizado (Eficiência de Tarefas) */
+.chart-body.centered-body {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Label central do gauge */
+.gauge-center-label {
+    position: absolute;
+    bottom: 20%;
+    text-align: center;
+}
+
+.gauge-percentage {
+    font-size: 2rem;
+    font-weight: bold;
+    /* color aplicada via inline pois é dinâmica (corPoupanca) */
+}
+
+.gauge-subtitle {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--cor-texto-secundario);
+}
+
+/* Status do Forecasting */
+.forecast-status {
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.forecast-status.safe   { color: #10b981; }
+.forecast-status.danger { color: #ef4444; }
+
+/* Container do donut (Eficiência de Tarefas) */
+.donut-container {
+    width: 180px;
+    height: 180px;
+}
+
+/* Label central do donut */
+.donut-center-label {
+    position: absolute;
+    text-align: center;
+}
+
+.donut-percentage {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #3b82f6;
+}
+
+.donut-sublabel {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--cor-texto-secundario);
+}
+
+/* Footer de stats da eficiência */
+.efficiency-footer {
+    display: flex;
+    justify-content: space-around;
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid var(--cor-borda);
+}
+
+.efficiency-stat {
+    text-align: center;
+}
+
+.efficiency-stat strong {
+    display: block;
+    font-size: 1.1rem;
+}
+
+.efficiency-stat span {
+    font-size: 0.75rem;
+    color: var(--cor-texto-secundario);
+}
+
+/* Wrapper do select de categoria no header */
+.category-select-wrapper {
+    width: 200px;
+}
+
+/* Lado esquerdo do panel-header (h2 + botão privacidade) */
+.panel-header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
 /* Responsividade */

@@ -282,7 +282,7 @@ export function Panorama() {
                 {/* 1. KPIS GERAIS */}
                 <div className="panel-section">
                     <div className="panel-header">
-                        <div style={{display:'flex', alignItems:'center', gap:'15px'}}>
+                        <div className="panel-header-left">
                             <h2>Indicadores Chave</h2>
                             <button className={`btn-privacy-toggle ${privacyMode ? 'active' : ''}`} onClick={togglePrivacy} title={privacyMode ? "Mostrar valores" : "Ocultar valores"}>
                                 <i className={`fa-solid ${privacyMode ? 'fa-eye-slash' : 'fa-eye'}`}></i>
@@ -297,7 +297,7 @@ export function Panorama() {
                             </div>
                             
                             {/* Dropdown Lógico baseado no tipo */}
-                            <div className="period-dropdown-wrapper" style={{width: '200px'}}>
+                            <div className="period-dropdown-wrapper">
                                 <CustomSelect 
                                     name="periodRange" 
                                     value={selectedRangeStart} 
@@ -381,10 +381,10 @@ export function Panorama() {
                 </div>
 
                 {/* 3. GRID DE INTELEGÊNCIA & GRÁFICOS */}
-                <div className="charts-grid-layout" style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '1.5rem' }}>
+                <div className="charts-grid-layout">
                     
                     {/* A. FLUXO DE CAIXA + ACUMULADO */}
-                    <div className="chart-wrapper" style={{ gridColumn: 'span 8' }}>
+                    <div className="chart-wrapper span-8">
                         <div className="chart-header"><h3>Fluxo de Caixa & Acumulado</h3></div>
                         <div className={`chart-body ${privacyMode ? 'privacy-blur' : ''}`}>
                             <Bar data={evolucaoData} options={{ maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'top' } } }} />
@@ -392,22 +392,22 @@ export function Panorama() {
                     </div>
 
                     {/* B. VELOCÍMETRO (GAUGE) */}
-                    <div className="chart-wrapper" style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                        <div className="chart-header" style={{ width: '100%' }}><h3>Taxa de Poupança</h3></div>
-                        <div className={`chart-body ${privacyMode ? 'privacy-blur' : ''}`} style={{ height: '200px', width: '100%', position: 'relative', display: 'flex', justifyContent: 'center' }}>
+                    <div className="chart-wrapper span-4 gauge-wrapper">
+                        <div className="chart-header full-width"><h3>Taxa de Poupança</h3></div>
+                        <div className={`chart-body gauge-body ${privacyMode ? 'privacy-blur' : ''}`}>
                             <Doughnut data={gaugeData} options={{ maintainAspectRatio: false, rotation: -90, circumference: 180, plugins: { legend: { display: false }, tooltip: { enabled: false } } }} />
-                            <div style={{ position: 'absolute', bottom: '20%', textAlign: 'center' }}>
-                                <span style={{ fontSize: '2rem', fontWeight: 'bold', color: corPoupanca }}>{taxaPoupanca.toFixed(1)}%</span>
-                                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--cor-texto-secundario)' }}>da receita economizada</p>
+                            <div className="gauge-center-label">
+                                <span className="gauge-percentage" style={{ color: corPoupanca }}>{taxaPoupanca.toFixed(1)}%</span>
+                                <p className="gauge-subtitle">da receita economizada</p>
                             </div>
                         </div>
                     </div>
 
                     {/* C. PROJEÇÃO DE FIM DE MÊS (FORECASTING) */}
-                    <div className="chart-wrapper" style={{ gridColumn: 'span 6' }}>
+                    <div className="chart-wrapper span-6">
                         <div className="chart-header">
                             <h3>Forecasting (Projeção)</h3>
-                            <span style={{ fontSize: '0.8rem', color: statusProjecao === 'danger' ? '#ef4444' : '#10b981', fontWeight: 'bold' }}>
+                            <span className={`forecast-status ${statusProjecao}`}>
                                 {statusProjecao === 'danger' ? 'ALERTA: Risco de fechar no negativo' : 'Ritmo Seguro'}
                             </span>
                         </div>
@@ -425,7 +425,7 @@ export function Panorama() {
                     </div>
 
                     {/* D. PADRÕES DE GASTO (HEATMAP SEMANAL) */}
-                    <div className="chart-wrapper" style={{ gridColumn: 'span 6' }}>
+                    <div className="chart-wrapper span-6">
                         <div className="chart-header">
                             <h3>Padrão Semanal de Gastos</h3>
                         </div>
@@ -445,7 +445,7 @@ export function Panorama() {
                     </div>
 
                     {/* E. DISTRIBUIÇÃO DE GASTOS */}
-                    <div className="chart-wrapper" style={{ gridColumn: 'span 4' }}>
+                    <div className="chart-wrapper span-4">
                         <div className="chart-header"><h3>Gastos por Categoria</h3></div>
                         <div className={`chart-body ${privacyMode ? 'privacy-blur' : ''}`}>
                             <Doughnut data={roscaGastosData} options={{ maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 11 } } } } }} />
@@ -453,7 +453,7 @@ export function Panorama() {
                     </div>
 
                     {/* F. RADAR DE RISCO */}
-                    <div className="chart-wrapper" style={{ gridColumn: 'span 4' }}>
+                    <div className="chart-wrapper span-4">
                         <div className="chart-header"><h3>Perfil de Risco (Pendências)</h3></div>
                         <div className="chart-body">
                             <Radar data={radarTarefasData} options={radarOptions} />
@@ -461,34 +461,34 @@ export function Panorama() {
                     </div>
 
                     {/* G. ÍNDICE DE PRODUTIVIDADE */}
-                    <div className="chart-wrapper" style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column' }}>
+                    <div className="chart-wrapper span-4 col-flex">
                         <div className="chart-header"><h3>Eficiência de Tarefas</h3></div>
-                        <div className="chart-body" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <div style={{ width: '180px', height: '180px' }}>
+                        <div className="chart-body centered-body">
+                            <div className="donut-container">
                                 <Doughnut data={execucaoData} options={{ maintainAspectRatio: false, plugins: { legend: { display: false } } }} />
                             </div>
-                            <div style={{ position: 'absolute', textAlign: 'center' }}>
-                                <span style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#3b82f6' }}>{taxaExecucao.toFixed(0)}%</span>
-                                <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--cor-texto-secundario)' }}>Concluídas</p>
+                            <div className="donut-center-label">
+                                <span className="donut-percentage">{taxaExecucao.toFixed(0)}%</span>
+                                <p className="donut-sublabel">Concluídas</p>
                             </div>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--cor-borda)' }}>
-                            <div style={{ textAlign: 'center' }}>
-                                <strong style={{ display: 'block', fontSize: '1.1rem' }}>{tarefasConcluidas}</strong>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--cor-texto-secundario)' }}>Feitas</span>
+                        <div className="efficiency-footer">
+                            <div className="efficiency-stat">
+                                <strong>{tarefasConcluidas}</strong>
+                                <span>Feitas</span>
                             </div>
-                            <div style={{ textAlign: 'center' }}>
-                                <strong style={{ display: 'block', fontSize: '1.1rem' }}>{tarefasPendentesTotal}</strong>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--cor-texto-secundario)' }}>Pendentes</span>
+                            <div className="efficiency-stat">
+                                <strong>{tarefasPendentesTotal}</strong>
+                                <span>Pendentes</span>
                             </div>
                         </div>
                     </div>
 
                     {/* H. HISTÓRICO DETALHADO */}
-                    <div className="chart-wrapper" style={{ gridColumn: 'span 12' }}>
+                    <div className="chart-wrapper span-12">
                         <div className="chart-header with-select">
                             <h3>Histórico da Categoria</h3>
-                            <div style={{ width: '200px' }}>
+                            <div className="category-select-wrapper">
                                 <CustomSelect
                                     name="categoryHistory"
                                     value={selectedCategory}
@@ -497,7 +497,7 @@ export function Panorama() {
                                 />
                             </div>
                         </div>
-                        <div className={`chart-body ${privacyMode ? 'privacy-blur' : ''}`} style={{ height: '300px' }}>
+                        <div className={`chart-body tall-body ${privacyMode ? 'privacy-blur' : ''}`}>
                             {dynamicDataConfig && <Line data={dynamicDataConfig} options={{ maintainAspectRatio: false }} />}
                         </div>
                     </div>
