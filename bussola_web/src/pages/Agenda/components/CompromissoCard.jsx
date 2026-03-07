@@ -5,7 +5,8 @@ import { useConfirm } from '../../../context/ConfirmDialogContext'; // <--- Impo
 
 export function CompromissoCard({ comp, onUpdate, onEdit }) {
     const { addToast } = useToast();
-    const confirm = useConfirm(); // <--- Hook Novo
+    const confirm = useConfirm();
+    const [isDeleting, setIsDeleting] = React.useState(false);
 
     const handleToggle = async () => {
         await toggleCompromissoStatus(comp.id);
@@ -26,7 +27,8 @@ export function CompromissoCard({ comp, onUpdate, onEdit }) {
 
         await deleteCompromisso(comp.id);
         addToast({type:'success', title:'Excluído', description:'Compromisso removido.'});
-        onUpdate();
+        setIsDeleting(true);
+        setTimeout(() => onUpdate(), 450);
     };
 
     const dataObj = new Date(comp.data_hora);
@@ -45,7 +47,7 @@ export function CompromissoCard({ comp, onUpdate, onEdit }) {
     const isRealizado = comp.status === 'Realizado';
 
     return (
-        <div className={`compromisso-card-modern ${statusClass}`}>
+        <div className={`compromisso-card-modern ${statusClass} ${isDeleting ? 'card-deleting' : ''}`}>
             
             {/* 1. TOPO: Data, Hora, Dia da Semana e Botões */}
             <div className="card-header-row">

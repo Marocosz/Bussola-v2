@@ -2,6 +2,14 @@ import React, { useState } from 'react';
 
 export function CategoryCard({ categoria, onEdit, onDelete }) {
     const [expanded, setExpanded] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleDelete = (e) => {
+        e.stopPropagation();
+        if (!onDelete) return;
+        setIsDeleting(true);
+        setTimeout(() => onDelete(categoria.id), 450);
+    };
 
     // Helpers de formatação
     const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
@@ -23,7 +31,7 @@ export function CategoryCard({ categoria, onEdit, onDelete }) {
     const isSystemCategory = categoria.nome && categoria.nome.toLowerCase().includes('indefinida');
 
     return (
-        <div className={`categoria-card ${expanded ? 'expanded' : ''}`}>
+        <div className={`categoria-card ${expanded ? 'expanded' : ''} ${isDeleting ? 'card-deleting' : ''}`}>
             
             <div 
                 className="categoria-card-header" 
@@ -90,8 +98,8 @@ export function CategoryCard({ categoria, onEdit, onDelete }) {
                                 >
                                     <i className="fa-solid fa-pen-to-square"></i>
                                 </button>
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); onDelete && onDelete(categoria.id); }} 
+                                <button
+                                    onClick={handleDelete}
                                     className="btn-action-icon btn-delete-transacao"
                                     title="Excluir Categoria"
                                 >

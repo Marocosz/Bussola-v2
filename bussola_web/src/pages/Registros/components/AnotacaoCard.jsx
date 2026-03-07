@@ -1,14 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { deleteAnotacao, toggleFixarAnotacao } from '../../../services/api';
-import { useConfirm } from '../../../context/ConfirmDialogContext'; // <--- Import Novo
+import { useConfirm } from '../../../context/ConfirmDialogContext';
 
 export function AnotacaoCard({ anotacao, onUpdate, onEdit, onView }) {
-    const confirm = useConfirm(); // <--- Hook Novo
-    
+    const confirm = useConfirm();
+    const [isDeleting, setIsDeleting] = useState(false);
+
     const handleDelete = async (e) => {
         e.stopPropagation();
-        
-        // --- SUBSTITUIÇÃO DO CONFIRM NATIVO ---
+
         const isConfirmed = await confirm({
             title: 'Excluir Anotação?',
             description: 'Esta anotação será permanentemente removida.',
@@ -18,9 +18,9 @@ export function AnotacaoCard({ anotacao, onUpdate, onEdit, onView }) {
 
         if (isConfirmed) {
             await deleteAnotacao(anotacao.id);
-            onUpdate();
+            setIsDeleting(true);
+            setTimeout(() => onUpdate(), 450);
         }
-        // --------------------------------------
     };
 
     const handlePin = async (e) => {
@@ -44,8 +44,8 @@ export function AnotacaoCard({ anotacao, onUpdate, onEdit, onView }) {
     const rawText = anotacao.conteudo.replace(/<[^>]+>/g, ' ');
     
     return (
-        <div 
-            className={`anotacao-card ${anotacao.fixado ? 'fixado' : ''}`} 
+        <div
+            className={`anotacao-card ${anotacao.fixado ? 'fixado' : ''} ${isDeleting ? 'card-deleting' : ''}`}
             onClick={() => onView(anotacao)}
             style={{ borderLeftColor: grupoCor }}
         >

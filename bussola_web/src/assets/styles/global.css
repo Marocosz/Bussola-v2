@@ -643,9 +643,23 @@ textarea:required:invalid {
 }
 
 /* Opcional: Remove o foco vermelho também, se houver */
-input:focus:invalid, 
-select:focus:invalid, 
+input:focus:invalid,
+select:focus:invalid,
 textarea:focus:invalid {
     box-shadow: none !important;
     border-color: var(--cor-azul-primario) !important; /* Ou a cor de foco normal */
+}
+
+/* ======================================================= */
+/* ANIMAÇÃO GLOBAL DE EXCLUSÃO DE CARD                     */
+/* ======================================================= */
+@keyframes cardDelete {
+    0%   { transform: translateX(0)    scale(1);    opacity: 1; box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+    15%  { transform: translateX(-6px) scale(1.01); opacity: 1; box-shadow: 0 0 0 3px rgba(239,68,68,0.3); }
+    100% { transform: translateX(40px) scale(0.88); opacity: 0; box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+}
+
+.card-deleting {
+    animation: cardDelete 0.45s ease-in forwards !important;
+    pointer-events: none !important;
 }

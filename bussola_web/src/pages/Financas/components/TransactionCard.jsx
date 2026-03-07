@@ -6,6 +6,7 @@ import { useConfirm } from '../../../context/ConfirmDialogContext';
 export function TransactionCard({ transacao, onUpdate, onEdit }) {
     const { addToast } = useToast();
     const confirm = useConfirm();
+    const [isDeleting, setIsDeleting] = React.useState(false);
 
     // Verifica se a série foi encerrada manualmente
     const isEncerrada = transacao.recorrencia_encerrada === true;
@@ -47,7 +48,8 @@ export function TransactionCard({ transacao, onUpdate, onEdit }) {
                 await deleteTransacao(transacao.id);
                 addToast({ type: 'success', title: 'Excluído', description: 'Transação removida.' });
             }
-            onUpdate();
+            setIsDeleting(true);
+            setTimeout(() => onUpdate(), 450);
         } catch (error) {
             const msg = error.response?.data?.detail || 'Erro ao processar a solicitação.';
             addToast({ type: 'error', title: 'Erro', description: msg });
@@ -64,7 +66,7 @@ export function TransactionCard({ transacao, onUpdate, onEdit }) {
     const valorTotalStr = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(rawTotal);
 
     return (
-        <div className={`transacao-card ${transacao.status.toLowerCase()} ${isEncerrada ? 'card-encerrado' : ''}`}>
+        <div className={`transacao-card ${transacao.status.toLowerCase()} ${isEncerrada ? 'card-encerrado' : ''} ${isDeleting ? 'card-deleting' : ''}`}>
             <div className="transacao-card-main">
                 <div className="transacao-card-info">
                     <div className="transacao-card-top-line">

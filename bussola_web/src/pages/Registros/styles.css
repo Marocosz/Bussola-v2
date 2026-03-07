@@ -75,78 +75,67 @@
 }
 
 /* ============================================= */
-/* 2. LAYOUT GRID PRINCIPAL                      */
+/* 2. LAYOUT PRINCIPAL                           */
 /* ============================================= */
-.registros-scope .registros-layout {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 0;
-    align-items: start;
-    padding: 0 1rem;
-    height: auto;
-}
-
-.registros-scope .registros-column {
+.registros-scope .registros-wrapper {
     display: flex;
     flex-direction: column;
-    min-width: 0;
-    position: relative;
-    height: auto;
-    padding: 0 1.5rem;
-    overflow: visible;
+    padding: 0 1rem;
+    max-width: 1600px;
+    margin: 0 auto;
+    gap: 2rem;
+}
+
+@media (min-width: 1400px) {
+    .registros-scope .registros-wrapper {
+        padding: 0 2rem;
+    }
 }
 
 /* ============================================= */
-/* 3. HEADERS CONECTADOS                         */
+/* 3. HEADER ÚNICO COM ABAS                      */
 /* ============================================= */
 .registros-scope .column-header-flex {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.8rem 1.5rem;
+    padding: 0 1.5rem;
     background-color: var(--cor-card-secundario);
-    border-bottom: 1px solid var(--cor-borda);
-    border-right: 1px solid var(--cor-borda);
+    border: 1px solid var(--cor-borda);
+    border-radius: 12px;
     position: relative;
-    min-height: 60px;
-    margin-bottom: 2rem;
-    /* AUMENTADO PARA GARANTIR QUE O DROPDOWN FIQUE ACIMA DOS TITULOS */
-    z-index: 50; 
+    height: 60px;
+    z-index: 50;
+    box-sizing: border-box;
+    width: 100%;
 }
 
-.registros-scope .column-header-flex h2 {
-    font-size: 1rem;
-    font-weight: 700;
+.registros-scope .tab-selector-wrapper {
+    display: flex;
+    background: var(--cor-fundo);
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid var(--cor-borda);
+}
+
+.registros-scope .tab-btn-pill {
+    background: transparent;
+    border: none;
+    padding: 8px 20px;
+    font-size: 0.9rem;
     color: var(--cor-texto-secundario);
-    margin: 0;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-/* Overlap Tricks (Correção do Bloco 1 aplicada) */
-.registros-scope .column-anotacoes {
-    padding-left: 0;
-    z-index: 10;
-    /* Garante que a sombra fique sobre a col tarefas */
-}
-
-.registros-scope .column-anotacoes .column-header-flex {
-    margin-left: 0;
-    margin-right: -1.5rem;
-    border-radius: 12px 0 0 12px;
-}
-
-.registros-scope .column-tarefas {
-    padding-right: 0;
-    z-index: 1;
-}
-
-.registros-scope .column-tarefas .column-header-flex {
-    margin-left: -1.5rem;
-    margin-right: 0;
-    border-radius: 0 12px 12px 0;
-    border-right: 1px solid var(--cor-borda);
-    padding-left: 2.5rem;
+.registros-scope .tab-btn-pill.active {
+    background: var(--cor-azul-primario);
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .registros-scope .header-actions-group {
@@ -475,6 +464,8 @@
     color: var(--cor-texto-principal);
     margin: 0;
     line-height: 1.4;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .registros-scope .anotacao-data {
@@ -501,6 +492,8 @@
     max-height: 100px;
     overflow: hidden;
     position: relative;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .registros-scope .anotacao-footer {
@@ -518,23 +511,36 @@
     cursor: pointer;
     color: var(--cor-texto-secundario);
     font-size: 0.9rem;
-    transition: color 0.2s;
+    transition: color 0.2s, background 0.2s, transform 0.2s;
     display: flex;
     align-items: center;
     gap: 5px;
-    padding: 4px 0;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.registros-scope .footer-pin-btn i {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .registros-scope .footer-pin-btn:hover {
-    color: var(--cor-texto-principal);
+    color: var(--cor-azul-primario);
+}
+
+.registros-scope .footer-pin-btn:hover i {
+    transform: rotate(-20deg) scale(1.2);
 }
 
 .registros-scope .footer-pin-btn.pinned {
     color: var(--cor-azul-primario);
 }
 
-.registros-scope .footer-pin-btn i.pinned {
+.registros-scope .footer-pin-btn.pinned i {
     transform: rotate(45deg);
+}
+
+.registros-scope .footer-pin-btn.pinned:hover i {
+    transform: rotate(20deg) scale(1.2);
 }
 
 .registros-scope .anotacao-footer-links {
@@ -646,8 +652,11 @@
 .registros-scope .modal-content.large-modal .modal-body,
 .registros-scope .view-modal .modal-body {
     overflow-y: auto !important;
+    overflow-x: hidden !important;
     scrollbar-width: thin;
     scrollbar-color: var(--cor-borda) transparent;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .registros-scope .modal-body::-webkit-scrollbar {
@@ -875,6 +884,28 @@
 /* ============================================= */
 /* 9. TAREFAS (DESIGN MODERNO & ARVORE)          */
 /* ============================================= */
+.registros-scope .tarefas-grid {
+    columns: 3;
+    column-gap: 16px;
+}
+
+.registros-scope .tarefas-grid > * {
+    break-inside: avoid;
+    margin-bottom: 16px;
+}
+
+@media (max-width: 1024px) {
+    .registros-scope .tarefas-grid {
+        columns: 2;
+    }
+}
+
+@media (max-width: 640px) {
+    .registros-scope .tarefas-grid {
+        columns: 1;
+    }
+}
+
 .registros-scope .tarefas-list {
     display: flex;
     flex-direction: column;
@@ -934,6 +965,17 @@
 
 .registros-scope .concluidas-content-wrapper {
     animation: fadeIn 0.3s ease;
+}
+
+@keyframes taskComplete {
+    0%   { transform: scale(1);    opacity: 1; }
+    40%  { transform: scale(1.03); opacity: 1; }
+    100% { transform: scale(0.92); opacity: 0; }
+}
+
+.registros-scope .tarefa-card.completing {
+    animation: taskComplete 0.5s ease-in forwards;
+    pointer-events: none;
 }
 
 /* --- CARD DE TAREFA --- */

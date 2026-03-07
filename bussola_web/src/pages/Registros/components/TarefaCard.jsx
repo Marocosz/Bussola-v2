@@ -118,17 +118,22 @@ export function TarefaCard({ tarefa, onUpdate, onEdit }) {
         }
     };
 
+    const [isCompleting, setIsCompleting] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
     const handleCheck = async () => {
         const novoStatus = isConcluido ? 'Pendente' : 'Concluído';
         try {
             await updateTarefaStatus(tarefa.id, novoStatus);
             if (novoStatus === 'Concluído') {
                 addToast({ type: 'success', title: 'Concluído!', description: 'Tarefa marcada como feita.' });
+                setIsCompleting(true);
+                setTimeout(() => onUpdate(), 500);
             } else {
                 addToast({ type: 'info', title: 'Reaberta', description: 'Tarefa voltou para pendentes.' });
+                onUpdate();
             }
-            onUpdate();
-        } catch (error) { 
+        } catch (error) {
             console.error(error);
             addToast({ type: 'error', title: 'Erro', description: 'Não foi possível atualizar a tarefa.' });
         }
@@ -147,7 +152,8 @@ export function TarefaCard({ tarefa, onUpdate, onEdit }) {
         try {
             await deleteTarefa(tarefa.id);
             addToast({type:'success', title:'Excluído', description:'Tarefa removida.'});
-            onUpdate();
+            setIsDeleting(true);
+            setTimeout(() => onUpdate(), 450);
         } catch { addToast({type:'error', title:'Erro', description:'Falha ao excluir.'}); }
     };
 
@@ -189,7 +195,7 @@ export function TarefaCard({ tarefa, onUpdate, onEdit }) {
     }[tarefa.prioridade] || 'media';
 
     return (
-        <div className={`tarefa-card ${isConcluido ? 'concluida' : ''} ${isAtrasado ? 'card-atrasado' : ''}`}>
+        <div className={`tarefa-card ${isConcluido ? 'concluida' : ''} ${isAtrasado ? 'card-atrasado' : ''} ${isCompleting ? 'completing' : ''} ${isDeleting ? 'card-deleting' : ''}`}>
             <div className="tarefa-header">
                 <button className={`check-btn ${isConcluido ? 'checked' : ''}`} onClick={handleCheck}>
                     {isConcluido && <i className="fa-solid fa-check"></i>}
