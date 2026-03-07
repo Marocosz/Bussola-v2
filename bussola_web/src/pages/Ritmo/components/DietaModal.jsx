@@ -146,7 +146,14 @@ export function DietaModal({ onClose, onSuccess, initialData }) {
                                                             </div>
                                                             {!searching && searchResults.map((food, fIdx) => (
                                                                 <div key={fIdx} onClick={() => handleSelectFood(food, rIndex, aIndex)} className="search-item-hover" style={{ padding: '10px 12px', cursor: 'pointer', borderBottom: '1px solid var(--cor-borda)', fontSize: '0.8rem', transition: 'background 0.2s' }}>
-                                                                    <div style={{ fontWeight: '600' }}>{food.nome}</div>
+                                                                    <div style={{ fontWeight: '600', marginBottom: '2px' }}>{food.nome}</div>
+                                                                    <div style={{ fontSize: '0.72rem', color: 'var(--cor-texto-secundario)', display: 'flex', gap: '10px' }}>
+                                                                        <span>{arredondar(food.calorias_100g)} kcal</span>
+                                                                        <span>P: {arredondar(food.proteina_100g)}g</span>
+                                                                        <span>C: {arredondar(food.carbo_100g)}g</span>
+                                                                        <span>G: {arredondar(food.gordura_100g)}g</span>
+                                                                        <span style={{ color: 'var(--cor-borda)' }}>por 100g</span>
+                                                                    </div>
                                                                 </div>
                                                             ))}
                                                         </div>

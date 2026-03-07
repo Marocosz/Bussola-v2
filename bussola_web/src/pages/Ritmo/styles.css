@@ -575,8 +575,6 @@
     color: var(--cor-texto-principal);
     font-weight: 600;
     line-height: 1.2;
-    display: flex;
-    flex-direction: column;
 }
 
 .ritmo-scope .alim-sub {
