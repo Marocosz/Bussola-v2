@@ -37,6 +37,7 @@ from app.core.config import settings, BASE_DIR
 from datetime import datetime
 import json
 import os
+import unicodedata
 
 class RitmoService:
     
@@ -548,11 +549,11 @@ class RitmoService:
     @staticmethod
     def search_taco_foods(query: str):
         file_path = os.path.join(str(BASE_DIR), "seeds", "taco.json")
-        
+
         if not os.path.exists(file_path):
             print(f"ERRO: Arquivo taco.json NÃO encontrado em: {file_path}")
             return []
-            
+
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 taco_data = json.load(f)
@@ -560,15 +561,21 @@ class RitmoService:
             print(f"ERRO CRÍTICO ao abrir/ler o JSON: {str(e)}")
             return []
 
-        query_norm = query.lower()
+        def normalizar(texto: str) -> str:
+            """Remove acentos e converte para minúsculas."""
+            return unicodedata.normalize('NFD', texto).encode('ascii', 'ignore').decode('ascii').lower()
+
+        tokens = [t for t in normalizar(query).split() if t]
         results = []
-        
+
         for item in taco_data:
             nome_alimento = item.get("nome", "")
-            if query_norm in nome_alimento.lower():
+            nome_norm = normalizar(nome_alimento)
+            # Todos os tokens da busca devem aparecer no nome (qualquer ordem)
+            if all(tok in nome_norm for tok in tokens):
                 comp = item.get("composicao", {})
                 energia = comp.get("energia", {})
-                
+
                 results.append({
                     "nome": nome_alimento,
                     "calorias_100g": energia.get("kcal") or 0,
@@ -578,5 +585,5 @@ class RitmoService:
                 })
             if len(results) >= 20:
                 break
-        
+
         return results

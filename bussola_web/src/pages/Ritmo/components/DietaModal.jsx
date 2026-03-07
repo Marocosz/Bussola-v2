@@ -22,10 +22,8 @@ export function DietaModal({ onClose, onSuccess, initialData }) {
                 ...ref,
                 alimentos: ref.alimentos.map(ali => ({
                     ...ali,
-                    base_kcal: (ali.calorias / ali.quantidade) * 100,
-                    base_prot: (ali.proteina / ali.quantidade) * 100,
-                    base_carb: (ali.carbo / ali.quantidade) * 100,
-                    base_gord: (ali.gordura / ali.quantidade) * 100,
+                    base_kcal: 0, base_prot: 0, base_carb: 0, base_gord: 0,
+                    isTacoItem: false,
                 }))
             }));
             setRefeicoes(refeicoesEdit);
@@ -53,30 +51,38 @@ export function DietaModal({ onClose, onSuccess, initialData }) {
         newRef[rIndex].alimentos[aIndex] = {
             ...newRef[rIndex].alimentos[aIndex],
             nome: food.nome,
+            unidade: 'g',
             base_kcal: food.calorias_100g, base_prot: food.proteina_100g, base_carb: food.carbo_100g, base_gord: food.gordura_100g,
             quantidade: 100, calorias: arredondar(food.calorias_100g), proteina: arredondar(food.proteina_100g),
-            carbo: arredondar(food.carbo_100g), gordura: arredondar(food.gordura_100g)
+            carbo: arredondar(food.carbo_100g), gordura: arredondar(food.gordura_100g),
+            isTacoItem: true,
         };
         setRefeicoes(newRef); setSearchResults([]); setActiveSearch(null);
     };
 
     const handleSelectCustom = (rIndex, aIndex) => {
         const newRef = [...refeicoes];
-        newRef[rIndex].alimentos[aIndex] = { ...newRef[rIndex].alimentos[aIndex], base_kcal: 0, base_prot: 0, base_carb: 0, base_gord: 0, calorias: 0, proteina: 0, carbo: 0, gordura: 0 };
+        newRef[rIndex].alimentos[aIndex] = {
+            ...newRef[rIndex].alimentos[aIndex],
+            nome: searchQuery,
+            base_kcal: 0, base_prot: 0, base_carb: 0, base_gord: 0,
+            calorias: 0, proteina: 0, carbo: 0, gordura: 0,
+            isTacoItem: false,
+        };
         setRefeicoes(newRef); setSearchResults([]); setActiveSearch(null);
     };
 
     const addRefeicao = () => setRefeicoes([...refeicoes, { nome: `Refeição ${refeicoes.length + 1}`, alimentos: [] }]);
     const removeRefeicao = (index) => { const newRef = [...refeicoes]; newRef.splice(index, 1); setRefeicoes(newRef); };
     const handleRefeicaoChange = (index, field, value) => { const newRef = [...refeicoes]; newRef[index][field] = value; setRefeicoes(newRef); };
-    const addAlimento = (refIndex) => { const newRef = [...refeicoes]; newRef[refIndex].alimentos.push({ nome: '', quantidade: 100, unidade: 'g', calorias: 0, proteina: 0, carbo: 0, gordura: 0, base_kcal: 0, base_prot: 0, base_carb: 0, base_gord: 0 }); setRefeicoes(newRef); };
+    const addAlimento = (refIndex) => { const newRef = [...refeicoes]; newRef[refIndex].alimentos.push({ nome: '', quantidade: 100, unidade: 'g', calorias: 0, proteina: 0, carbo: 0, gordura: 0, base_kcal: 0, base_prot: 0, base_carb: 0, base_gord: 0, isTacoItem: false }); setRefeicoes(newRef); };
     const removeAlimento = (refIndex, aliIndex) => { const newRef = [...refeicoes]; newRef[refIndex].alimentos.splice(aliIndex, 1); setRefeicoes(newRef); };
 
     const handleAlimentoChange = (refIndex, aliIndex, field, value) => {
         const newRef = [...refeicoes];
         const alimento = newRef[refIndex].alimentos[aliIndex];
         alimento[field] = value;
-        if (field === 'quantidade') {
+        if (field === 'quantidade' && alimento.isTacoItem) {
             const qtd = parseFloat(value) || 0;
             alimento.calorias = calcularMacro(alimento.base_kcal, qtd);
             alimento.proteina = calcularMacro(alimento.base_prot, qtd);
@@ -133,7 +139,7 @@ export function DietaModal({ onClose, onSuccess, initialData }) {
                                         </div>
                                     </div>
                                     {ref.alimentos.map((ali, aIndex) => {
-                                        const isLocked = ali.base_kcal > 0;
+                                        const isLocked = ali.isTacoItem;
                                         return (
                                             <div key={aIndex} style={{ display: 'grid', gridTemplateColumns: '2fr 0.8fr 0.6fr 0.7fr 0.7fr 0.7fr 0.7fr 30px', gap: '8px', alignItems: 'end', marginBottom: '8px', position: 'relative' }}>
                                                 <div className="form-group">
@@ -160,7 +166,7 @@ export function DietaModal({ onClose, onSuccess, initialData }) {
                                                     )}
                                                 </div>
                                                 <div className="form-group"><label style={{ fontSize: '0.6rem' }}>Qtd</label><input className="form-input" style={{ height: '35px', fontSize: '0.85rem' }} type="number" value={ali.quantidade} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'quantidade', e.target.value)} /></div>
-                                                <div className="form-group"><label style={{ fontSize: '0.6rem' }}>Un</label><div style={{ minWidth: 0 }}><CustomSelect name="unidade" value={ali.unidade} options={unitOptions} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'unidade', e.target.value)} placeholder="un" /></div></div>
+                                                <div className="form-group"><label style={{ fontSize: '0.6rem' }}>Un</label><div style={{ minWidth: 0 }}>{isLocked ? (<input className="form-input" style={{ height: '35px', fontSize: '0.85rem', opacity: 0.7 }} value="g" readOnly />) : (<CustomSelect name="unidade" value={ali.unidade} options={unitOptions} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'unidade', e.target.value)} placeholder="un" />)}</div></div>
                                                 <div className="form-group"><label style={{ fontSize: '0.6rem' }}>Kcal</label><input className="form-input" style={{ height: '35px', fontSize: '0.85rem', opacity: isLocked ? 0.7 : 1 }} type="number" value={arredondar(ali.calorias)} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'calorias', e.target.value)} readOnly={isLocked}/></div>
                                                 <div className="form-group"><label style={{ fontSize: '0.6rem' }}>P</label><input className="form-input" style={{ height: '35px', fontSize: '0.85rem', opacity: isLocked ? 0.7 : 1 }} type="number" value={arredondar(ali.proteina)} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'proteina', e.target.value)} readOnly={isLocked}/></div>
                                                 <div className="form-group"><label style={{ fontSize: '0.6rem' }}>C</label><input className="form-input" style={{ height: '35px', fontSize: '0.85rem', opacity: isLocked ? 0.7 : 1 }} type="number" value={arredondar(ali.carbo)} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'carbo', e.target.value)} readOnly={isLocked}/></div>
