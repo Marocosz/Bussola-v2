@@ -29,6 +29,14 @@
     transition: all 0.2s;
     user-select: none;
     box-sizing: border-box;
+    overflow: hidden;
+}
+
+.custom-select-trigger span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
 }
 
 .custom-select-trigger:hover {
