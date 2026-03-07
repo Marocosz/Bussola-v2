@@ -95,7 +95,7 @@ export function Panorama() {
 
     const handleCategoryChange = (e) => {
         const id = e.target.value;
-        setSelectedCategory(id);
+        setSelectedCategory(Number(id));
         fetchCategoryHistory(id);
     };
 
@@ -488,9 +488,14 @@ export function Panorama() {
                     <div className="chart-wrapper" style={{ gridColumn: 'span 12' }}>
                         <div className="chart-header with-select">
                             <h3>Histórico da Categoria</h3>
-                            <select value={selectedCategory} onChange={handleCategoryChange} className="chart-select">
-                                {data.categorias_para_filtro.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
-                            </select>
+                            <div style={{ width: '200px' }}>
+                                <CustomSelect
+                                    name="categoryHistory"
+                                    value={selectedCategory}
+                                    options={data.categorias_para_filtro.map(c => ({ value: c.id, label: c.nome }))}
+                                    onChange={handleCategoryChange}
+                                />
+                            </div>
                         </div>
                         <div className={`chart-body ${privacyMode ? 'privacy-blur' : ''}`} style={{ height: '300px' }}>
                             {dynamicDataConfig && <Line data={dynamicDataConfig} options={{ maintainAspectRatio: false }} />}

@@ -107,17 +107,11 @@
     background-color: var(--cor-card-secundario);
     border-bottom: 1px solid var(--cor-borda);
     border-right: 1px solid var(--cor-borda);
-    transition: background-color 0.2s;
     position: relative;
     min-height: 60px;
     margin-bottom: 2rem;
     /* AUMENTADO PARA GARANTIR QUE O DROPDOWN FIQUE ACIMA DOS TITULOS */
     z-index: 50; 
-}
-
-.registros-scope .column-header-flex:hover {
-    background-color: var(--cor-card-principal);
-    box-shadow: inset 0 -2px 0 var(--cor-azul-primario);
 }
 
 .registros-scope .column-header-flex h2 {
@@ -127,10 +121,6 @@
     margin: 0;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-}
-
-.registros-scope .column-header-flex:hover h2 {
-    color: var(--cor-texto-principal);
 }
 
 /* Overlap Tricks (Correção do Bloco 1 aplicada) */
