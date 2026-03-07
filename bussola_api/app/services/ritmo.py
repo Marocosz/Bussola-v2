@@ -33,7 +33,7 @@ from app.models.ritmo import (
 from app.schemas.ritmo import (
     BioCreate, PlanoTreinoCreate, DietaConfigCreate
 )
-from app.core.config import settings
+from app.core.config import settings, BASE_DIR
 from datetime import datetime
 import json
 import os
@@ -547,7 +547,7 @@ class RitmoService:
 
     @staticmethod
     def search_taco_foods(query: str):
-        file_path = os.path.join(settings.DATA_DIR, "taco.json")
+        file_path = os.path.join(str(BASE_DIR), "seeds", "taco.json")
         
         if not os.path.exists(file_path):
             print(f"ERRO: Arquivo taco.json NÃO encontrado em: {file_path}")
