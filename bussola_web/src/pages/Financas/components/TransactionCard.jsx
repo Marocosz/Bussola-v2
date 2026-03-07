@@ -3,13 +3,14 @@ import { toggleStatusTransacao, deleteTransacao, stopRecorrencia } from '../../.
 import { useToast } from '../../../context/ToastContext';
 import { useConfirm } from '../../../context/ConfirmDialogContext';
 
-export function TransactionCard({ transacao, onUpdate, onEdit }) {
+export function TransactionCard({ transacao, onUpdate, onEdit, isExpanded, onToggleExpand }) {
     const { addToast } = useToast();
     const confirm = useConfirm();
     const [isDeleting, setIsDeleting] = React.useState(false);
 
-    // Verifica se a série foi encerrada manualmente
     const isEncerrada = transacao.recorrencia_encerrada === true;
+    const tipo = transacao.tipo_recorrencia || 'pontual';
+    const isParceladaGroup = tipo === 'parcelada' && transacao._allParcelas && transacao._allParcelas.length > 1;
 
     const handleToggleStatus = async () => {
         try {
@@ -21,9 +22,8 @@ export function TransactionCard({ transacao, onUpdate, onEdit }) {
     };
 
     const handleDelete = async () => {
-        const isRecorrente = transacao.tipo_recorrencia && transacao.tipo_recorrencia !== 'pontual';
-        
-        const dialogConfig = isRecorrente 
+        const isRecorrente = tipo !== 'pontual';
+        const dialogConfig = isRecorrente
             ? {
                 title: 'Encerrar Recorrência?',
                 description: 'Deseja encerrar esta série? O histórico pago será mantido como "Encerrado" e cobranças futuras serão canceladas.',
@@ -56,82 +56,124 @@ export function TransactionCard({ transacao, onUpdate, onEdit }) {
         }
     };
 
-    // Formatação de data e valor
     const dateObj = new Date(transacao.data);
     const dateStr = dateObj.toLocaleDateString('pt-BR');
     const valorStr = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(transacao.valor);
-
-    // Usa o valor total exato salvo no banco. Fallback para cálculo se for dado legado.
     const rawTotal = transacao.valor_total_parcelamento || (transacao.valor * transacao.total_parcelas);
     const valorTotalStr = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(rawTotal);
 
+    const today = new Date();
+
     return (
-        <div className={`transacao-card ${transacao.status.toLowerCase()} ${isEncerrada ? 'card-encerrado' : ''} ${isDeleting ? 'card-deleting' : ''}`}>
-            <div className="transacao-card-main">
-                <div className="transacao-card-info">
-                    <div className="transacao-card-top-line">
-                        <h4 className="transacao-descricao" style={isEncerrada ? { opacity: 0.7, color: 'var(--cor-texto-secundario)' } : {}}>
-                            {transacao.descricao}
-                        </h4>
-                        <span className="transacao-data">{dateStr}</span>
+        <div className={`transacao-row-wrapper ${isDeleting ? 'row-wrapper-deleting' : ''}`}>
+            <div className={`transacao-row ${transacao.status.toLowerCase()} ${isEncerrada ? 'row-encerrado' : ''}`}>
+
+                {/* Células principais */}
+                <div className="row-cells">
+
+                    {/* Col 1: Ícone */}
+                    <div className="row-cat-icon">
+                        <i
+                            className={transacao.categoria?.icone || 'fa-solid fa-question'}
+                            style={{ color: isEncerrada ? '#9ca3af' : (transacao.categoria?.cor || '#aaa') }}
+                        />
                     </div>
-                    <div className="transacao-card-bottom-line">
-                        <div className="transacao-categoria">
-                            <i className={transacao.categoria?.icone || 'fa-solid fa-question'} 
-                               style={{ color: isEncerrada ? '#9ca3af' : (transacao.categoria?.cor || '#fff') }}></i>
-                            <span>{transacao.categoria?.nome}</span>
-                        </div>
-                        
-                        {isEncerrada && (
-                            <span className="badge-encerrado">
+
+                    {/* Col 2: Título */}
+                    <div className="row-main">
+                        <span className={`row-descricao ${isEncerrada ? 'row-descricao-encerrada' : ''}`}>
+                            {transacao.descricao}
+                        </span>
+                    </div>
+
+                    {/* Col 3: Categoria */}
+                    <span className="row-categoria-nome">{transacao.categoria?.nome || '—'}</span>
+
+                    {/* Col 4: Data */}
+                    <span className="row-data">{dateStr}</span>
+
+                    {/* Col 5: Tags */}
+                    <div className="row-tags">
+                        {isEncerrada ? (
+                            <span className="tag tag-encerrada">
                                 <i className="fa-solid fa-ban"></i> Encerrada
                             </span>
-                        )}
-
-                        {transacao.tipo_recorrencia === 'parcelada' && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <span className="badge-parcela">
-                                    {transacao.parcela_atual}/{transacao.total_parcelas}
+                        ) : tipo === 'pontual' ? (
+                            <span className="tag tag-tipo tag-pontual">Pontual</span>
+                        ) : (
+                            <>
+                                <span className={`tag tag-tipo tag-${tipo}`}>
+                                    {tipo === 'parcelada' ? 'Parcelada' : 'Recorrente'}
                                 </span>
-                                {!isEncerrada && (
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--cor-texto-secundario)', fontStyle: 'italic' }}>
-                                        Total: {valorTotalStr}
-                                    </span>
-                                )}
-                            </div>
-                        )}
-
-                        {transacao.tipo_recorrencia === 'recorrente' && (
-                            <span className="badge-recorrente">{transacao.frequencia}</span>
+                                <span className={`tag tag-status tag-${transacao.status.toLowerCase()}`}>
+                                    {transacao.status}
+                                </span>
+                            </>
                         )}
                     </div>
+
+                    {/* Col 6: Valor */}
+                    <div className="row-valor-cell">
+                        {isParceladaGroup && (
+                            <span className="parcela-indicator" title={`Total: ${valorTotalStr}`}>
+                                {transacao.parcela_atual}/{transacao.total_parcelas}
+                            </span>
+                        )}
+                        <span className={`row-valor ${transacao.categoria?.tipo} ${isEncerrada ? 'row-valor-encerrado' : ''}`}>
+                            {transacao.categoria?.tipo === 'despesa' ? '−' : '+'} {valorStr}
+                        </span>
+                    </div>
                 </div>
-                <div className={`transacao-valor ${transacao.categoria?.tipo}`}>
-                    {transacao.categoria?.tipo === 'despesa' ? '- ' : '+ '}{valorStr}
-                </div>
-            </div>
-            <div className="transacao-footer">
-                <span className={`status-badge ${transacao.status.toLowerCase()}`}>{transacao.status}</span>
-                <div className="transacao-actions">
-                    
-                    {transacao.tipo_recorrencia !== 'pontual' && !isEncerrada && (
-                        <button onClick={handleToggleStatus} className={transacao.status === 'Pendente' ? 'btn-sm-pagar' : 'btn-sm-desmarcar'}>
+
+                {/* Ações — reveladas pela direita no hover */}
+                <div className="row-actions">
+                  <div className="row-actions-inner">
+                    {tipo !== 'pontual' && !isEncerrada && (
+                        <button
+                            onClick={handleToggleStatus}
+                            className={transacao.status === 'Pendente' ? 'btn-sm-pagar' : 'btn-sm-desmarcar'}
+                        >
                             {transacao.status === 'Pendente' ? 'Efetivar' : 'Desmarcar'}
                         </button>
                     )}
-                    
-                    <button 
-                        onClick={() => onEdit && onEdit(transacao)} 
-                        className="btn-action-icon btn-edit-transacao"
-                    >
+                    <button onClick={() => onEdit && onEdit(transacao)} className="btn-action-icon btn-edit-transacao">
                         <i className="fa-solid fa-pen-to-square"></i>
                     </button>
-
                     <button onClick={handleDelete} className="btn-action-icon btn-delete-transacao">
                         <i className="fa-solid fa-trash-can"></i>
                     </button>
+                    {isParceladaGroup && (
+                        <button
+                            onClick={() => onToggleExpand && onToggleExpand(transacao.id_grupo_recorrencia)}
+                            className="btn-action-icon btn-expand-parcelas"
+                        >
+                            <i className={`fa-solid fa-chevron-${isExpanded ? 'up' : 'down'}`}></i>
+                        </button>
+                    )}
+                  </div>
                 </div>
             </div>
+
+            {/* Sub-linhas de parcelas expandidas */}
+            {isExpanded && transacao._allParcelas && (
+                <div className="parcela-expanded-list">
+                    {transacao._allParcelas.map(p => {
+                        const d = new Date(p.data);
+                        const isCurrentMonth = d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+                        const pValorStr = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.valor);
+                        return (
+                            <div key={p.id} className={`parcela-sub-row ${isCurrentMonth ? 'parcela-sub-current' : ''}`}>
+                                <span className="parcela-sub-num">{p.parcela_atual}/{p.total_parcelas}</span>
+                                <span className="parcela-sub-data">{d.toLocaleDateString('pt-BR')}</span>
+                                <span className={`tag tag-status tag-${p.status.toLowerCase()}`}>{p.status}</span>
+                                <span className={`parcela-sub-valor ${p.categoria?.tipo}`}>
+                                    {p.categoria?.tipo === 'despesa' ? '−' : '+'} {pValorStr}
+                                </span>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 }

@@ -300,7 +300,11 @@ class PanoramaService:
         
         transacoes = db.query(Transacao).join(Categoria).filter(
             Transacao.user_id == user_id,
-            or_(Transacao.status == 'Pendente', Transacao.data > today)
+            or_(
+                Transacao.status == 'Pendente',
+                Transacao.data > today,
+                Transacao.tipo_recorrencia == 'pontual'
+            )
         ).order_by(Transacao.data.asc()).all()
         
         resultado = []

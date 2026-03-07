@@ -11,12 +11,11 @@ import './styles.css';
 export function Financas() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
-    
-    // Hooks de Contexto
-    const { addToast } = useToast();
-    const dialogConfirm = useConfirm(); // Renomeado para evitar conflito com window.confirm
 
-    // Controle de UI - Accordions
+    const { addToast } = useToast();
+    const dialogConfirm = useConfirm();
+
+    // Accordions das categorias
     const [openMonths, setOpenMonths] = useState(() => {
         try {
             const saved = localStorage.getItem('bussola_financas_accordions');
@@ -30,14 +29,21 @@ export function Financas() {
     const [editingData, setEditingData] = useState(null);
     const [showDropdown, setShowDropdown] = useState(false);
 
-    // Estados de Ordenação
-    const [orderPontual, setOrderPontual] = useState(() => {
-        return localStorage.getItem('bussola_financas_order_pontual') || 'desc';
+    const [orderTransacoes, setOrderTransacoes] = useState(() => {
+        return localStorage.getItem('bussola_financas_order') || 'desc';
     });
 
-    const [orderRecorrente, setOrderRecorrente] = useState(() => {
-        return localStorage.getItem('bussola_financas_order_recorrente') || 'desc';
-    });
+    const [filterTipo, setFilterTipo] = useState('todos');
+    const [filterStatus, setFilterStatus] = useState('todos');
+    const [filterCategoria, setFilterCategoria] = useState(null);
+    const [filterDatePreset, setFilterDatePreset] = useState('todos');
+    const [filterDateStart, setFilterDateStart] = useState('');
+    const [filterDateEnd, setFilterDateEnd] = useState('');
+    const [expandedGroups, setExpandedGroups] = useState(new Set());
+    const [openFilterDropdown, setOpenFilterDropdown] = useState(null);
+
+    const PAGE_SIZE = 50;
+    const [currentPage, setCurrentPage] = useState(1);
 
     const dropdownRef = useRef(null);
 
@@ -46,12 +52,8 @@ export function Financas() {
     }, [openMonths]);
 
     useEffect(() => {
-        localStorage.setItem('bussola_financas_order_pontual', orderPontual);
-    }, [orderPontual]);
-
-    useEffect(() => {
-        localStorage.setItem('bussola_financas_order_recorrente', orderRecorrente);
-    }, [orderRecorrente]);
+        localStorage.setItem('bussola_financas_order', orderTransacoes);
+    }, [orderTransacoes]);
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -59,27 +61,14 @@ export function Financas() {
                 setShowDropdown(false);
             }
         }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [dropdownRef]);
 
     const fetchData = async () => {
         try {
             const result = await getFinancasDashboard();
-
             if (result && typeof result === 'object') {
-                if (data === null && Object.keys(openMonths).length === 0) {
-                    if (result.transacoes_pontuais && Object.keys(result.transacoes_pontuais).length > 0) {
-                        const firstPontual = Object.keys(result.transacoes_pontuais)[0];
-                        setOpenMonths(prev => ({ ...prev, [`pontual-${firstPontual}`]: true }));
-                    }
-                    if (result.transacoes_recorrentes && Object.keys(result.transacoes_recorrentes).length > 0) {
-                        const firstRecorrente = Object.keys(result.transacoes_recorrentes)[0];
-                        setOpenMonths(prev => ({ ...prev, [`recorrente-${firstRecorrente}`]: true }));
-                    }
-                }
                 setData(result);
             } else {
                 setData({
@@ -99,28 +88,96 @@ export function Financas() {
         }
     };
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+    useEffect(() => { fetchData(); }, []);
 
     const toggleAccordion = (key) => {
         setOpenMonths(prev => ({ ...prev, [key]: !prev[key] }));
     };
 
-    const getSortedKeys = (obj, order) => {
-        if (!obj) return [];
-        const mesesMap = {
-            "Janeiro": 1, "Fevereiro": 2, "Março": 3, "Abril": 4, "Maio": 5, "Junho": 6,
-            "Julho": 7, "Agosto": 8, "Setembro": 9, "Outubro": 10, "Novembro": 11, "Dezembro": 12
-        };
-        return Object.keys(obj).sort((a, b) => {
-            try {
-                const [mesA, anoA] = a.split('/');
-                const [mesB, anoB] = b.split('/');
-                const dateA = new Date(parseInt(anoA), mesesMap[mesA] - 1);
-                const dateB = new Date(parseInt(anoB), mesesMap[mesB] - 1);
-                return order === 'asc' ? dateA - dateB : dateB - dateA;
-            } catch (e) { return 0; }
+    const handleToggleExpand = (grupoId) => {
+        setExpandedGroups(prev => {
+            const next = new Set(prev);
+            if (next.has(grupoId)) next.delete(grupoId);
+            else next.add(grupoId);
+            return next;
+        });
+    };
+
+    // Achata, filtra, agrupa parceladas e ordena todas as transações
+    const getAllTransactions = () => {
+        if (!data) return [];
+        const pontuais = Object.values(data.transacoes_pontuais || {}).flat();
+        const recorrentes = Object.values(data.transacoes_recorrentes || {}).flat();
+        let all = [...pontuais, ...recorrentes];
+
+        if (filterTipo !== 'todos') {
+            all = all.filter(t => (t.tipo_recorrencia || 'pontual') === filterTipo);
+        }
+        if (filterStatus !== 'todos') {
+            all = all.filter(t => {
+                // Pontual é sempre Efetivada por regra de negócio
+                if ((t.tipo_recorrencia || 'pontual') === 'pontual') return filterStatus === 'Efetivada';
+                return t.status === filterStatus;
+            });
+        }
+        if (filterCategoria) {
+            all = all.filter(t => t.categoria?.id === filterCategoria);
+        }
+
+        // Filtro de data
+        if (filterDatePreset !== 'todos') {
+            const today = new Date();
+            let start = null, end = null;
+            if (filterDatePreset === 'semana') {
+                start = new Date(today); start.setDate(today.getDate() - 6); start.setHours(0,0,0,0);
+                end = new Date(today); end.setHours(23,59,59,999);
+            } else if (filterDatePreset === 'mes') {
+                start = new Date(today.getFullYear(), today.getMonth(), 1);
+                end = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+            } else if (filterDatePreset === 'custom') {
+                start = filterDateStart ? new Date(filterDateStart + 'T00:00:00') : null;
+                end = filterDateEnd ? new Date(filterDateEnd + 'T23:59:59') : null;
+            }
+            if (start || end) {
+                all = all.filter(t => {
+                    const d = new Date(t.data);
+                    if (start && d < start) return false;
+                    if (end && d > end) return false;
+                    return true;
+                });
+            }
+        }
+
+        // Agrupa parceladas pelo id_grupo_recorrencia
+        const parcelaGroups = {};
+        const others = [];
+        for (const t of all) {
+            if (t.tipo_recorrencia === 'parcelada' && t.id_grupo_recorrencia) {
+                if (!parcelaGroups[t.id_grupo_recorrencia]) parcelaGroups[t.id_grupo_recorrencia] = [];
+                parcelaGroups[t.id_grupo_recorrencia].push(t);
+            } else {
+                others.push(t);
+            }
+        }
+
+        const today = new Date();
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+
+        const representatives = Object.values(parcelaGroups).map(parcelas => {
+            parcelas.sort((a, b) => a.parcela_atual - b.parcela_atual);
+            const currentMonthP = parcelas.find(p => {
+                const d = new Date(p.data);
+                return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+            });
+            const rep = currentMonthP || parcelas.find(p => p.status === 'Pendente') || parcelas[parcelas.length - 1];
+            return { ...rep, _allParcelas: parcelas };
+        });
+
+        return [...others, ...representatives].sort((a, b) => {
+            const dateA = new Date(a.data);
+            const dateB = new Date(b.data);
+            return orderTransacoes === 'desc' ? dateB - dateA : dateA - dateB;
         });
     };
 
@@ -135,16 +192,13 @@ export function Financas() {
     };
 
     const handleDeleteCategory = async (id) => {
-        // --- SUBSTITUIÇÃO DO CONFIRM NATIVO PELO DIALOG CUSTOMIZADO ---
         const isConfirmed = await dialogConfirm({
             title: 'Excluir Categoria?',
             description: 'Todas as transações vinculadas a esta categoria serão movidas para "Indefinida". Esta ação não pode ser desfeita.',
             confirmLabel: 'Sim, excluir',
             variant: 'danger'
         });
-
         if (!isConfirmed) return;
-        // --------------------------------------------------------------
 
         try {
             await deleteCategoria(id);
@@ -161,11 +215,10 @@ export function Financas() {
         setEditingData(null);
     };
 
-    // Calculamos chaves apenas se data existe, senão array vazio
-    const pontuaisKeys = data ? getSortedKeys(data.transacoes_pontuais, orderPontual) : [];
-    const recorrentesKeys = data ? getSortedKeys(data.transacoes_recorrentes, orderRecorrente) : [];
+    const allTransactions = getAllTransactions();
+    const totalPages = Math.ceil(allTransactions.length / PAGE_SIZE);
+    const pagedTransactions = allTransactions.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-    // Componente de Loading interno
     const LoadingState = () => (
         <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--cor-texto-secundario)', gridColumn: '1/-1' }}>
             <i className="fa-solid fa-circle-notch fa-spin" style={{ fontSize: '1.5rem', marginBottom: '10px', color: 'var(--cor-azul-primario)' }}></i>
@@ -185,94 +238,136 @@ export function Financas() {
 
             <div className="layout-grid-custom">
 
-                {/* --- COLUNA 1: PONTUAIS --- */}
+                {/* --- COLUNA 1: TODAS AS TRANSAÇÕES --- */}
                 <div className="agenda-column">
                     <div className="column-header-flex">
-                        <h2>Transações Pontuais</h2>
+                        <h2>Transações</h2>
                         <div className="header-actions-group">
-                            <button
-                                className="btn-filter-sort"
-                                onClick={() => setOrderPontual(prev => prev === 'desc' ? 'asc' : 'desc')}
-                                title={orderPontual === 'desc' ? "Mais antigos primeiro" : "Mais recentes primeiro"}
-                                disabled={loading}
-                            >
-                                <i className={`fa-solid fa-arrow-${orderPontual === 'desc' ? 'down-wide-short' : 'up-wide-short'}`}></i>
-                            </button>
 
-                            <button className="btn-primary" onClick={() => { setEditingData(null); setActiveModal('pontual'); }}>
-                                <i className="fa-solid fa-plus"></i> Pontual
-                            </button>
-                        </div>
-                    </div>
+                            {/* Filtro: Tipo */}
+                            <div className="filter-dropdown-wrapper">
+                                <button
+                                    className={`filter-trigger-btn ${filterTipo !== 'todos' ? 'active' : ''}`}
+                                    onClick={() => setOpenFilterDropdown(openFilterDropdown === 'tipo' ? null : 'tipo')}
+                                    disabled={loading}
+                                >
+                                    <span>{filterTipo === 'todos' ? 'Tipo' : filterTipo.charAt(0).toUpperCase() + filterTipo.slice(1)}</span>
+                                    <i className="fa-solid fa-chevron-down"></i>
+                                </button>
+                                {openFilterDropdown === 'tipo' && (
+                                    <>
+                                        <div className="filter-backdrop" onClick={() => setOpenFilterDropdown(null)}></div>
+                                        <div className="filter-dropdown-menu">
+                                            {[['todos','Todos'],['pontual','Pontual'],['parcelada','Parcelada'],['recorrente','Recorrente']].map(([val, label]) => (
+                                                <div key={val} className={`filter-dropdown-item ${filterTipo === val ? 'selected' : ''}`} onClick={() => { setFilterTipo(val); setCurrentPage(1); setOpenFilterDropdown(null); }}>{label}</div>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
 
-                    {loading ? (
-                        <LoadingState />
-                    ) : (
-                        pontuaisKeys.length > 0 ? (
-                            pontuaisKeys.map((mes) => (
-                                <div className="month-group" key={mes}>
-                                    <h3
-                                        className={`month-header ${openMonths[`pontual-${mes}`] ? 'active' : ''}`}
-                                        onClick={() => toggleAccordion(`pontual-${mes}`)}
+                            {/* Filtro: Status */}
+                            <div className="filter-dropdown-wrapper">
+                                <button
+                                    className={`filter-trigger-btn ${filterStatus !== 'todos' ? 'active' : ''}`}
+                                    onClick={() => setOpenFilterDropdown(openFilterDropdown === 'status' ? null : 'status')}
+                                    disabled={loading}
+                                >
+                                    <span>{filterStatus === 'todos' ? 'Status' : filterStatus}</span>
+                                    <i className="fa-solid fa-chevron-down"></i>
+                                </button>
+                                {openFilterDropdown === 'status' && (
+                                    <>
+                                        <div className="filter-backdrop" onClick={() => setOpenFilterDropdown(null)}></div>
+                                        <div className="filter-dropdown-menu">
+                                            {[['todos','Todos'],['Pendente','Pendente'],['Efetivada','Efetivada']].map(([val, label]) => (
+                                                <div key={val} className={`filter-dropdown-item ${filterStatus === val ? 'selected' : ''}`} onClick={() => { setFilterStatus(val); setCurrentPage(1); setOpenFilterDropdown(null); }}>{label}</div>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
+                            {/* Filtro: Categoria */}
+                            {data && (
+                                <div className="filter-dropdown-wrapper">
+                                    <button
+                                        className={`filter-trigger-btn ${filterCategoria ? 'active' : ''}`}
+                                        onClick={() => setOpenFilterDropdown(openFilterDropdown === 'categoria' ? null : 'categoria')}
+                                        disabled={loading}
                                     >
-                                        <span>{mes}</span>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <span style={{ fontSize: '0.75rem', fontWeight: '400', opacity: 0.6 }}>
-                                                {(data.transacoes_pontuais[mes] || []).length} Transacão(s)
-                                            </span>
-                                            <i className={`fa-solid fa-chevron-down ${openMonths[`pontual-${mes}`] ? 'rotate' : ''}`}></i>
-                                        </div>
-                                    </h3>
-
-                                    <div className={`accordion-wrapper ${openMonths[`pontual-${mes}`] ? 'open' : ''}`}>
-                                        <div className="accordion-inner">
-                                            <div className="month-content">
-                                                <div className="transacoes-grid">
-                                                    {(data.transacoes_pontuais[mes] || []).map(t => (
-                                                        <TransactionCard
-                                                            key={t.id}
-                                                            transacao={t}
-                                                            onUpdate={fetchData}
-                                                            onEdit={handleEditTransaction}
-                                                        />
-                                                    ))}
-                                                </div>
+                                        <span>{filterCategoria ? ([...(data.categorias_despesa||[]),...(data.categorias_receita||[])].find(c => c.id === filterCategoria)?.nome || 'Categoria') : 'Categoria'}</span>
+                                        <i className="fa-solid fa-chevron-down"></i>
+                                    </button>
+                                    {openFilterDropdown === 'categoria' && (
+                                        <>
+                                            <div className="filter-backdrop" onClick={() => setOpenFilterDropdown(null)}></div>
+                                            <div className="filter-dropdown-menu">
+                                                <div className={`filter-dropdown-item ${!filterCategoria ? 'selected' : ''}`} onClick={() => { setFilterCategoria(null); setCurrentPage(1); setOpenFilterDropdown(null); }}>Todas</div>
+                                                {[...(data.categorias_despesa||[]),...(data.categorias_receita||[])].map(cat => (
+                                                    <div key={cat.id} className={`filter-dropdown-item ${filterCategoria === cat.id ? 'selected' : ''}`} onClick={() => { setFilterCategoria(cat.id); setCurrentPage(1); setOpenFilterDropdown(null); }}>
+                                                        <i className={cat.icone} style={{ color: cat.cor, marginRight: '6px', fontSize: '0.72rem' }}></i>{cat.nome}
+                                                    </div>
+                                                ))}
                                             </div>
-                                        </div>
-                                    </div>
+                                        </>
+                                    )}
                                 </div>
-                            ))
-                        ) : (
-                            <p className="empty-list-msg">Nenhuma transação pontual.</p>
-                        )
-                    )}
-                </div>
+                            )}
 
-                {/* --- COLUNA 2: RECORRENTES --- */}
-                <div className="agenda-column">
-                    <div className="column-header-flex">
-                        <h2>Recorrentes e Parceladas</h2>
-                        <div className="header-actions-group">
+                            {/* Filtro: Data */}
+                            <div className="filter-dropdown-wrapper">
+                                <button
+                                    className={`filter-trigger-btn ${filterDatePreset !== 'todos' ? 'active' : ''}`}
+                                    onClick={() => setOpenFilterDropdown(openFilterDropdown === 'data' ? null : 'data')}
+                                    disabled={loading}
+                                >
+                                    <span>{filterDatePreset === 'todos' ? 'Data' : filterDatePreset === 'semana' ? 'Esta semana' : filterDatePreset === 'mes' ? 'Este mês' : 'Personalizado'}</span>
+                                    <i className="fa-solid fa-chevron-down"></i>
+                                </button>
+                                {openFilterDropdown === 'data' && (
+                                    <>
+                                        <div className="filter-backdrop" onClick={() => setOpenFilterDropdown(null)}></div>
+                                        <div className="filter-dropdown-menu">
+                                            {[['todos','Tudo'],['semana','Esta semana'],['mes','Este mês'],['custom','Personalizado']].map(([val, label]) => (
+                                                <div key={val} className={`filter-dropdown-item ${filterDatePreset === val ? 'selected' : ''}`} onClick={() => { setFilterDatePreset(val); setCurrentPage(1); if (val !== 'custom') setOpenFilterDropdown(null); }}>{label}</div>
+                                            ))}
+                                            {filterDatePreset === 'custom' && (
+                                                <div className="filter-date-range">
+                                                    <input type="date" className="filter-date-input" value={filterDateStart} onChange={e => { setFilterDateStart(e.target.value); setCurrentPage(1); }} />
+                                                    <span>—</span>
+                                                    <input type="date" className="filter-date-input" value={filterDateEnd} onChange={e => { setFilterDateEnd(e.target.value); setCurrentPage(1); }} />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
                             <button
                                 className="btn-filter-sort"
-                                onClick={() => setOrderRecorrente(prev => prev === 'desc' ? 'asc' : 'desc')}
-                                title={orderRecorrente === 'desc' ? "Mais antigos primeiro" : "Mais recentes primeiro"}
+                                onClick={() => { setOrderTransacoes(prev => prev === 'desc' ? 'asc' : 'desc'); setCurrentPage(1); }}
+                                title={orderTransacoes === 'desc' ? 'Mais antigos primeiro' : 'Mais recentes primeiro'}
                                 disabled={loading}
                             >
-                                <i className={`fa-solid fa-arrow-${orderRecorrente === 'desc' ? 'down-wide-short' : 'up-wide-short'}`}></i>
+                                <i className={`fa-solid fa-arrow-${orderTransacoes === 'desc' ? 'down-wide-short' : 'up-wide-short'}`}></i>
                             </button>
 
                             <div className="btn-group" style={{ position: 'relative' }} ref={dropdownRef}>
-                                <button
-                                    className="btn-primary"
-                                    onClick={() => setShowDropdown(!showDropdown)}
-                                >
+                                <button className="btn-primary" onClick={() => setShowDropdown(!showDropdown)}>
                                     <i className="fa-solid fa-plus"></i> Adicionar
                                 </button>
                                 {showDropdown && (
                                     <div className="dropdown-menu visible" style={{ display: 'block' }}>
-                                        <a onClick={() => { setEditingData(null); setActiveModal('parcelada'); setShowDropdown(false); }}>Parcelada</a>
-                                        <a onClick={() => { setEditingData(null); setActiveModal('recorrente'); setShowDropdown(false); }}>Recorrente</a>
+                                        <a onClick={() => { setEditingData(null); setActiveModal('pontual'); setShowDropdown(false); }}>
+                                            <i className="fa-solid fa-circle-dot" style={{ marginRight: '8px', opacity: 0.6 }}></i>Pontual
+                                        </a>
+                                        <a onClick={() => { setEditingData(null); setActiveModal('parcelada'); setShowDropdown(false); }}>
+                                            <i className="fa-solid fa-layer-group" style={{ marginRight: '8px', opacity: 0.6 }}></i>Parcelada
+                                        </a>
+                                        <a onClick={() => { setEditingData(null); setActiveModal('recorrente'); setShowDropdown(false); }}>
+                                            <i className="fa-solid fa-rotate" style={{ marginRight: '8px', opacity: 0.6 }}></i>Recorrente
+                                        </a>
                                     </div>
                                 )}
                             </div>
@@ -281,51 +376,79 @@ export function Financas() {
 
                     {loading ? (
                         <LoadingState />
-                    ) : (
-                        recorrentesKeys.length > 0 ? (
-                            recorrentesKeys.map((mes) => (
-                                <div className="month-group" key={mes}>
-                                    <h3
-                                        className={`month-header ${openMonths[`recorrente-${mes}`] ? 'active' : ''}`}
-                                        onClick={() => toggleAccordion(`recorrente-${mes}`)}
-                                    >
-                                        <span>{mes}</span>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <span style={{ fontSize: '0.75rem', fontWeight: '400', opacity: 0.6 }}>
-                                                {(data.transacoes_recorrentes[mes] || []).length} Transacão(s)
-                                            </span>
-                                            <i className={`fa-solid fa-chevron-down ${openMonths[`recorrente-${mes}`] ? 'rotate' : ''}`}></i>
-                                        </div>
-                                    </h3>
-
-                                    <div className={`accordion-wrapper ${openMonths[`recorrente-${mes}`] ? 'open' : ''}`}>
-                                        <div className="accordion-inner">
-                                            <div className="month-content">
-                                                <div className="transacoes-grid">
-                                                    {(data.transacoes_recorrentes[mes] || []).map(t => (
-                                                        <TransactionCard
-                                                            key={t.id}
-                                                            transacao={t}
-                                                            onUpdate={fetchData}
-                                                            onEdit={handleEditTransaction}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                    ) : allTransactions.length > 0 ? (
+                        <>
+                            <div className="transacoes-list">
+                                <div className="table-header">
+                                    <span></span>
+                                    <span>Título</span>
+                                    <span>Categoria</span>
+                                    <span>Data</span>
+                                    <span>Tag</span>
+                                    <span>Valor</span>
                                 </div>
-                            ))
-                        ) : (
-                            <p className="empty-list-msg">Nenhuma transação recorrente.</p>
-                        )
+                                {pagedTransactions.map(t => (
+                                    <TransactionCard
+                                        key={t._allParcelas ? t.id_grupo_recorrencia : t.id}
+                                        transacao={t}
+                                        onUpdate={fetchData}
+                                        onEdit={handleEditTransaction}
+                                        isExpanded={t.id_grupo_recorrencia ? expandedGroups.has(t.id_grupo_recorrencia) : false}
+                                        onToggleExpand={handleToggleExpand}
+                                    />
+                                ))}
+                            </div>
+
+                            {totalPages > 1 && (
+                                <div className="pagination-bar">
+                                    <button
+                                        className="btn-page"
+                                        onClick={() => setCurrentPage(1)}
+                                        disabled={currentPage === 1}
+                                        title="Primeira página"
+                                    >
+                                        <i className="fa-solid fa-angles-left"></i>
+                                    </button>
+                                    <button
+                                        className="btn-page"
+                                        onClick={() => setCurrentPage(p => p - 1)}
+                                        disabled={currentPage === 1}
+                                    >
+                                        <i className="fa-solid fa-angle-left"></i>
+                                    </button>
+
+                                    <span className="pagination-info">
+                                        {currentPage} <span>/ {totalPages}</span>
+                                        <span className="pagination-count">· {allTransactions.length} transações</span>
+                                    </span>
+
+                                    <button
+                                        className="btn-page"
+                                        onClick={() => setCurrentPage(p => p + 1)}
+                                        disabled={currentPage === totalPages}
+                                    >
+                                        <i className="fa-solid fa-angle-right"></i>
+                                    </button>
+                                    <button
+                                        className="btn-page"
+                                        onClick={() => setCurrentPage(totalPages)}
+                                        disabled={currentPage === totalPages}
+                                        title="Última página"
+                                    >
+                                        <i className="fa-solid fa-angles-right"></i>
+                                    </button>
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <p className="empty-list-msg">Nenhuma transação registrada.</p>
                     )}
                 </div>
 
-                {/* --- COLUNA 3: CATEGORIAS --- */}
+                {/* --- COLUNA 2: CATEGORIAS --- */}
                 <div className="agenda-column" id="category-column">
                     <div className="column-header-flex">
-                        <h2>Resumo</h2>
+                        <h2>Categorias</h2>
                         <button className="btn-primary" onClick={() => { setEditingData(null); setActiveModal('category'); }}>
                             <i className="fa-solid fa-plus"></i> Categoria
                         </button>
