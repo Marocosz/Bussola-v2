@@ -148,13 +148,13 @@ export function Financas() {
             }
         }
 
-        // Agrupa parceladas pelo id_grupo_recorrencia
-        const parcelaGroups = {};
+        // Agrupa parceladas e recorrentes pelo id_grupo_recorrencia
+        const groups = {};
         const others = [];
         for (const t of all) {
-            if (t.tipo_recorrencia === 'parcelada' && t.id_grupo_recorrencia) {
-                if (!parcelaGroups[t.id_grupo_recorrencia]) parcelaGroups[t.id_grupo_recorrencia] = [];
-                parcelaGroups[t.id_grupo_recorrencia].push(t);
+            if ((t.tipo_recorrencia === 'parcelada' || t.tipo_recorrencia === 'recorrente') && t.id_grupo_recorrencia) {
+                if (!groups[t.id_grupo_recorrencia]) groups[t.id_grupo_recorrencia] = [];
+                groups[t.id_grupo_recorrencia].push(t);
             } else {
                 others.push(t);
             }
@@ -164,14 +164,27 @@ export function Financas() {
         const currentMonth = today.getMonth();
         const currentYear = today.getFullYear();
 
-        const representatives = Object.values(parcelaGroups).map(parcelas => {
-            parcelas.sort((a, b) => a.parcela_atual - b.parcela_atual);
-            const currentMonthP = parcelas.find(p => {
+        const representatives = Object.values(groups).map(items => {
+            const tipoGrupo = items[0].tipo_recorrencia;
+            items.sort((a, b) => new Date(a.data) - new Date(b.data));
+
+            const currentMonthItem = items.find(p => {
                 const d = new Date(p.data);
                 return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
             });
-            const rep = currentMonthP || parcelas.find(p => p.status === 'Pendente') || parcelas[parcelas.length - 1];
-            return { ...rep, _allParcelas: parcelas };
+
+            let rep, expandItems;
+            if (tipoGrupo === 'parcelada') {
+                rep = currentMonthItem || items.find(p => p.status === 'Pendente') || items[items.length - 1];
+                expandItems = items;
+            } else {
+                // recorrente: só histórico (passado + atual), sem futuras
+                const history = items.filter(t => new Date(t.data) <= today);
+                rep = currentMonthItem || (history.length > 0 ? history[history.length - 1] : items[items.length - 1]);
+                expandItems = [...history].sort((a, b) => new Date(b.data) - new Date(a.data));
+            }
+
+            return { ...rep, _allParcelas: expandItems };
         });
 
         return [...others, ...representatives].sort((a, b) => {

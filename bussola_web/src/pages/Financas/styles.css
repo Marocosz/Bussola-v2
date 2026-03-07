@@ -670,8 +670,7 @@
 }
 
 .financas-scope .parcela-sub-row {
-    display: grid;
-    grid-template-columns: 50px 1fr 130px 130px;
+    display: flex;
     align-items: center;
     gap: 12px;
     padding: 7px 14px 7px 60px;
@@ -696,23 +695,32 @@
     background: rgba(59, 130, 246, 0.09);
 }
 
-.financas-scope .parcela-sub-num {
+.financas-scope .parcela-sub-badge {
     font-weight: 700;
     color: var(--cor-texto-principal);
     font-size: 0.75rem;
     font-variant-numeric: tabular-nums;
     opacity: 0.85;
+    min-width: 48px;
+    flex-shrink: 0;
+}
+
+.financas-scope .parcela-sub-badge-month {
+    text-transform: capitalize;
+    font-size: 0.7rem;
+    letter-spacing: 0.3px;
 }
 
 .financas-scope .parcela-sub-data {
     color: var(--cor-texto-secundario);
     font-variant-numeric: tabular-nums;
+    flex: 1;
 }
 
 .financas-scope .parcela-sub-valor {
     font-weight: 600;
     font-variant-numeric: tabular-nums;
-    text-align: right;
+    margin-left: auto;
 }
 
 .financas-scope .parcela-sub-valor.despesa {

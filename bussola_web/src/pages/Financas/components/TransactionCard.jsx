@@ -10,7 +10,7 @@ export function TransactionCard({ transacao, onUpdate, onEdit, isExpanded, onTog
 
     const isEncerrada = transacao.recorrencia_encerrada === true;
     const tipo = transacao.tipo_recorrencia || 'pontual';
-    const isParceladaGroup = tipo === 'parcelada' && transacao._allParcelas && transacao._allParcelas.length > 1;
+    const isExpandableGroup = transacao._allParcelas && transacao._allParcelas.length > 1;
 
     const handleToggleStatus = async () => {
         try {
@@ -114,7 +114,7 @@ export function TransactionCard({ transacao, onUpdate, onEdit, isExpanded, onTog
 
                     {/* Col 6: Valor */}
                     <div className="row-valor-cell">
-                        {isParceladaGroup && (
+                        {tipo === 'parcelada' && transacao._allParcelas && (
                             <span className="parcela-indicator" title={`Total: ${valorTotalStr}`}>
                                 {transacao.parcela_atual}/{transacao.total_parcelas}
                             </span>
@@ -142,7 +142,7 @@ export function TransactionCard({ transacao, onUpdate, onEdit, isExpanded, onTog
                     <button onClick={handleDelete} className="btn-action-icon btn-delete-transacao">
                         <i className="fa-solid fa-trash-can"></i>
                     </button>
-                    {isParceladaGroup && (
+                    {isExpandableGroup && (
                         <button
                             onClick={() => onToggleExpand && onToggleExpand(transacao.id_grupo_recorrencia)}
                             className="btn-action-icon btn-expand-parcelas"
@@ -154,7 +154,7 @@ export function TransactionCard({ transacao, onUpdate, onEdit, isExpanded, onTog
                 </div>
             </div>
 
-            {/* Sub-linhas de parcelas expandidas */}
+            {/* Sub-linhas expandidas (parcelas ou histórico recorrente) */}
             {isExpanded && transacao._allParcelas && (
                 <div className="parcela-expanded-list">
                     {transacao._allParcelas.map(p => {
@@ -163,7 +163,13 @@ export function TransactionCard({ transacao, onUpdate, onEdit, isExpanded, onTog
                         const pValorStr = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.valor);
                         return (
                             <div key={p.id} className={`parcela-sub-row ${isCurrentMonth ? 'parcela-sub-current' : ''}`}>
-                                <span className="parcela-sub-num">{p.parcela_atual}/{p.total_parcelas}</span>
+                                {tipo === 'parcelada' ? (
+                                    <span className="parcela-sub-badge">{p.parcela_atual}/{p.total_parcelas}</span>
+                                ) : (
+                                    <span className="parcela-sub-badge parcela-sub-badge-month">
+                                        {d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })}
+                                    </span>
+                                )}
                                 <span className="parcela-sub-data">{d.toLocaleDateString('pt-BR')}</span>
                                 <span className={`tag tag-status tag-${p.status.toLowerCase()}`}>{p.status}</span>
                                 <span className={`parcela-sub-valor ${p.categoria?.tipo}`}>
