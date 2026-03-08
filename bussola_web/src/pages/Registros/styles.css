@@ -80,16 +80,10 @@
 .registros-scope .registros-wrapper {
     display: flex;
     flex-direction: column;
-    padding: 0 1rem;
-    max-width: 1600px;
+    max-width: 90%;
+    width: 100%;
     margin: 0 auto;
     gap: 2rem;
-}
-
-@media (min-width: 1400px) {
-    .registros-scope .registros-wrapper {
-        padding: 0 2rem;
-    }
 }
 
 /* ============================================= */
@@ -103,6 +97,7 @@
     background-color: var(--cor-card-secundario);
     border: 1px solid var(--cor-borda);
     border-radius: 12px;
+    margin: 0;
     position: relative;
     height: 60px;
     z-index: 50;
@@ -1761,4 +1756,587 @@
 /* Hover na barra para feedback visual */
 .registros-scope .dropdown-scroll-area::-webkit-scrollbar-thumb:hover {
     background-color: var(--cor-texto-secundario) !important;
+}
+
+
+/* ================================================================= */
+/* JORNADA — HÁBITOS (KANBAN DESIGN)                                  */
+/* ================================================================= */
+
+/* ─── Modal de Hábito ─────────────────────────────────────────────── */
+
+.registros-scope .habito-modal-content {
+    max-width: 520px;
+    width: 95vw;
+}
+
+.registros-scope .form-row-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.registros-scope .habito-dias-selector {
+    display: flex;
+    gap: 6px;
+}
+
+.registros-scope .habito-dia-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--cor-borda);
+    background: transparent;
+    color: var(--cor-texto-secundario);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.registros-scope .habito-dia-btn:hover   { border-color: var(--cor-azul-primario); color: var(--cor-texto-principal); }
+.registros-scope .habito-dia-btn.selected { color: white; }
+
+.registros-scope .habito-freq-preset {
+    background: transparent;
+    border: 1px solid var(--cor-borda);
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 0.75rem;
+    color: var(--cor-texto-secundario);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.registros-scope .habito-freq-preset:hover { border-color: var(--cor-azul-primario); color: var(--cor-texto-principal); }
+
+.registros-scope .habito-cores-wrapper { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+.registros-scope .habito-cor-btn {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 2px solid transparent; cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s;
+}
+.registros-scope .habito-cor-btn:hover   { transform: scale(1.15); }
+.registros-scope .habito-cor-btn.selected { border-color: white; box-shadow: 0 0 0 2px var(--cor-azul-primario); transform: scale(1.1); }
+
+.registros-scope .habito-cor-custom-wrapper {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 2px dashed var(--cor-texto-secundario);
+    cursor: pointer;
+    display: flex !important; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+    color: var(--cor-texto-secundario);
+    font-size: 0.8rem;
+    transition: all 0.15s;
+    margin: 0 !important;
+}
+
+.registros-scope .habito-cor-custom-wrapper:hover {
+    border-color: var(--cor-texto-principal);
+    color: var(--cor-texto-principal);
+    transform: scale(1.15);
+}
+
+.registros-scope .habito-cor-custom-input {
+    position: absolute;
+    opacity: 0;
+    width: 100%; height: 100%;
+    cursor: pointer;
+}
+
+/* ─── Wrapper geral Jornada ───────────────────────────────────────── */
+
+.registros-scope .jk-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding-bottom: 4rem;
+}
+
+/* ─── Data e Mensagem no header principal da Jornada ─────────────── */
+
+.registros-scope .jk-header-info-group {
+    align-items: center;
+}
+
+.registros-scope .jk-header-date-msg {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    margin-right: 12px;
+}
+
+.registros-scope .jk-header-date {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.82rem;
+    color: var(--cor-texto-secundario);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.registros-scope .jk-header-date-sep {
+    width: 1px;
+    height: 14px;
+    background: var(--cor-borda);
+    flex-shrink: 0;
+}
+
+.registros-scope .jk-header-msg {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--cor-texto-principal);
+    white-space: nowrap;
+}
+
+/* ─── Kanban Board ────────────────────────────────────────────────── */
+
+.registros-scope .jk-kanban {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr;
+    gap: 0;
+    align-items: start;
+}
+
+/* ─── Coluna do Período ───────────────────────────────────────────── */
+
+.registros-scope .jk-col {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* Header da coluna */
+.registros-scope .jk-col-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--periodo-accent) 9%, var(--cor-card-secundario));
+    border: 1px solid color-mix(in srgb, var(--periodo-accent) 22%, var(--cor-borda));
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+
+.registros-scope .jk-col-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.registros-scope .jk-col-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    background: color-mix(in srgb, var(--periodo-accent) 15%, transparent);
+    color: var(--periodo-accent);
+    flex-shrink: 0;
+}
+
+.registros-scope .jk-col-label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--cor-texto-principal);
+}
+
+.registros-scope .jk-col-stats {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.registros-scope .jk-col-stats-count {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--periodo-accent);
+}
+
+.registros-scope .jk-col-progress-bar {
+    width: 90px;
+    height: 8px;
+    background: var(--cor-borda);
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.registros-scope .jk-col-progress-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.5s ease;
+    box-shadow: 0 0 6px color-mix(in srgb, currentColor 40%, transparent);
+}
+
+/* Body da coluna */
+.registros-scope .jk-col-body {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 0;
+    min-height: 80px;
+}
+
+.registros-scope .jk-col-body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 160px;
+    background: linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--periodo-accent) 15%, transparent) 0%,
+        color-mix(in srgb, var(--periodo-accent) 6%, transparent) 40%,
+        transparent 100%
+    );
+    pointer-events: none;
+    z-index: 0;
+    border-radius: 14px;
+}
+
+.registros-scope .jk-col-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 32px 16px;
+    color: var(--cor-texto-secundario);
+    opacity: 0.5;
+    font-size: 0.8rem;
+}
+
+.registros-scope .jk-col-empty i {
+    font-size: 1.4rem;
+}
+
+/* ─── Habit Row (dentro da coluna) ───────────────────────────────── */
+
+.registros-scope .jk-habit-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    padding: 0 12px;
+    position: relative;
+    z-index: 1;
+    transition: background 0.15s;
+}
+
+.registros-scope .jk-habit-row:hover {
+    background: rgba(255,255,255,0.03);
+}
+
+/* Track vertical (linha + círculo) */
+.registros-scope .jk-track {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    width: 44px;
+}
+
+.registros-scope .jk-track-line {
+    width: 2px;
+    flex: 1;
+    min-height: 10px;
+    border-radius: 1px;
+    transition: background 0.3s;
+}
+
+.registros-scope .jk-track-line.top    { background: var(--cor-borda); }
+.registros-scope .jk-track-line.bottom { background: var(--cor-borda); }
+
+/* ─── Círculo do Hábito ───────────────────────────────────────────── */
+
+.registros-scope .jk-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 2.5px solid var(--hcor, var(--cor-azul-primario));
+    background: var(--cor-fundo);
+    color: var(--hcor, var(--cor-azul-primario));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    flex-shrink: 0;
+    font-size: 1rem;
+    margin: 4px 0;
+    z-index: 1;
+}
+
+.registros-scope .jk-circle:hover:not(:disabled) {
+    transform: scale(1.14);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--hcor, var(--cor-azul-primario)) 18%, transparent);
+}
+
+/* Estados */
+.registros-scope .jk-circle.state-concluido {
+    background: var(--hcor);
+    color: white;
+    border-color: var(--hcor);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--hcor) 40%, transparent);
+}
+
+.registros-scope .jk-circle.state-atrasado {
+    border-color: #ef4444;
+    color: #ef4444;
+    animation: jk-pulse-danger 2s ease-in-out infinite;
+}
+
+.registros-scope .jk-circle.state-pausado {
+    border-color: var(--cor-borda);
+    color: var(--cor-texto-secundario);
+    opacity: 0.5;
+    cursor: default;
+}
+
+.registros-scope .jk-circle.state-sem-hoje {
+    opacity: 0.2;
+    cursor: default;
+}
+
+.registros-scope .jk-circle:disabled {
+    cursor: default;
+}
+
+/* Ícone dentro do círculo */
+.registros-scope .jk-circle-icon {
+    font-size: 1rem;
+    pointer-events: none;
+}
+
+/* Pulso (estado pendente + ocorre hoje) */
+.registros-scope .jk-circle-pulse {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    animation: jk-idle-spin 0s;
+    opacity: 0.6;
+}
+
+/* Streak badge */
+.registros-scope .jk-streak {
+    position: absolute;
+    top: -5px;
+    right: -8px;
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: white;
+    font-size: 0.58rem;
+    font-weight: 800;
+    padding: 2px 5px;
+    border-radius: 99px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+/* ─── Habit Info (lateral ao círculo) ────────────────────────────── */
+
+.registros-scope .jk-habit-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    padding: 16px 0 16px 14px;
+    flex: 1;
+    min-width: 0;
+}
+
+.registros-scope .jk-habit-info.is-pausado {
+    opacity: 0.5;
+}
+
+.registros-scope .jk-habit-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+}
+
+.registros-scope .jk-habit-header-left {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.registros-scope .jk-time {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--cor-texto-principal);
+    background: var(--cor-card-principal);
+    padding: 2px 7px;
+    border-radius: 6px;
+    border: 1px solid var(--cor-borda);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-variant-numeric: tabular-nums;
+}
+
+.registros-scope .jk-badge-pausado,
+.registros-scope .jk-badge-atrasado {
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.registros-scope .jk-badge-pausado {
+    background: var(--cor-borda);
+    color: var(--cor-texto-secundario);
+}
+
+.registros-scope .jk-badge-atrasado {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+}
+
+.registros-scope .jk-titulo {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--cor-texto-principal);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.registros-scope .jk-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.72rem;
+    color: var(--cor-texto-secundario);
+}
+
+.registros-scope .jk-meta i {
+    font-size: 0.65rem;
+    margin-right: 2px;
+}
+
+.registros-scope .jk-duracao-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 6px;
+    border: 1px dashed var(--cor-texto-secundario);
+    border-radius: 4px;
+    color: var(--cor-texto-secundario);
+    opacity: 0.85;
+}
+
+.registros-scope .jk-descricao-inline {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+/* ─── Botões de ação do hábito (hover) ───────────────────────────── */
+
+.registros-scope .jk-habit-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    flex-shrink: 0;
+}
+
+.registros-scope .jk-habit-row:hover .jk-habit-actions {
+    opacity: 1;
+}
+
+.registros-scope .btn-pause:hover {
+    background-color: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+    color: #fff !important;
+}
+
+/* ─── Conector entre colunas ──────────────────────────────────────── */
+
+.registros-scope .jk-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    gap: 4px;
+    align-self: stretch;
+    padding: 80px 0 0;  /* empurra para altura média dos hábitos */
+}
+
+.registros-scope .jk-connector-line {
+    width: 1px;
+    flex: 1;
+    max-height: 32px;
+    background: linear-gradient(to bottom, transparent, var(--cor-borda), transparent);
+}
+
+.registros-scope .jk-connector-arrow {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--cor-card-secundario);
+    border: 1px solid var(--cor-borda);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--cor-texto-secundario);
+    font-size: 0.6rem;
+    flex-shrink: 0;
+}
+
+/* ─── Animações ───────────────────────────────────────────────────── */
+
+@keyframes jk-pulse-danger {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+    50%       { box-shadow: 0 0 0 6px rgba(239,68,68,0.18); }
+}
+
+/* ─── Responsividade ──────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+    .registros-scope .jk-kanban {
+        grid-template-columns: 1fr;
+    }
+
+    .registros-scope .jk-connector {
+        flex-direction: row;
+        width: 100%;
+        height: 36px;
+        padding: 0;
+        align-self: auto;
+    }
+
+    .registros-scope .jk-connector-line {
+        flex: 1;
+        height: 1px;
+        width: auto;
+        max-height: none;
+        background: linear-gradient(to right, transparent, var(--cor-borda), transparent);
+    }
+
+    .registros-scope .jk-connector-arrow {
+        transform: rotate(90deg);
+    }
+
+    .registros-scope .jk-header-date-msg {
+        display: none;
+    }
 }

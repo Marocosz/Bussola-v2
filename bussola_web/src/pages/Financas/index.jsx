@@ -317,11 +317,13 @@ export function Financas() {
                                             <div className="filter-backdrop" onClick={() => setOpenFilterDropdown(null)}></div>
                                             <div className="filter-dropdown-menu">
                                                 <div className={`filter-dropdown-item ${!filterCategoria ? 'selected' : ''}`} onClick={() => { setFilterCategoria(null); setCurrentPage(1); setOpenFilterDropdown(null); }}>Todas</div>
-                                                {[...(data.categorias_despesa||[]),...(data.categorias_receita||[])].map(cat => (
-                                                    <div key={cat.id} className={`filter-dropdown-item ${filterCategoria === cat.id ? 'selected' : ''}`} onClick={() => { setFilterCategoria(cat.id); setCurrentPage(1); setOpenFilterDropdown(null); }}>
-                                                        <i className={cat.icone} style={{ color: cat.cor, marginRight: '6px', fontSize: '0.72rem' }}></i>{cat.nome}
-                                                    </div>
-                                                ))}
+                                                <div className="dropdown-scroll-area">
+                                                    {[...(data.categorias_despesa||[]),...(data.categorias_receita||[])].map(cat => (
+                                                        <div key={cat.id} className={`filter-dropdown-item ${filterCategoria === cat.id ? 'selected' : ''}`} onClick={() => { setFilterCategoria(cat.id); setCurrentPage(1); setOpenFilterDropdown(null); }}>
+                                                            <i className={cat.icone} style={{ color: cat.cor, marginRight: '6px', fontSize: '0.72rem' }}></i>{cat.nome}
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         </>
                                     )}

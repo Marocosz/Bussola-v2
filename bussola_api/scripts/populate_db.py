@@ -55,7 +55,7 @@ from app.core.config import settings
 try:
     from app.models.user import User
     from app.models.financas import Categoria, Transacao
-    from app.models.registros import GrupoAnotacao, Anotacao, Link, Tarefa, Subtarefa
+    from app.models.registros import GrupoAnotacao, Anotacao, Link, Tarefa, Subtarefa, Habito, HabitoRegistro
     from app.models.agenda import Compromisso
     from app.models.cofre import Segredo
     from app.models.ritmo import (
@@ -249,6 +249,48 @@ def create_registros(user_id):
         
     db.commit()
     print("   ✅ Registros OK (Cenários de IA criados).")
+
+def create_habitos(user_id):
+    """
+    Popula o módulo de Hábitos (Jornada).
+    Cria hábitos com histórico preenchido (últimos 21 dias) para gerar gráficos ricos na UI.
+    """
+    print("🔁 Populando Hábitos...")
+    
+    TODOS = ["seg","ter","qua","qui","sex","sab","dom"]
+    habitos_data = [
+        {"titulo": "Meditação Diária",         "descricao": "15 minutos de mindfulness na varanda",        "horario": "07:00", "frequencia": TODOS,                                     "duracao_min": 15, "cor": "#8b5cf6"},
+        {"titulo": "Leitura Técnica",           "descricao": "Ler pelo menos 10 páginas de clean code",    "horario": "21:30", "frequencia": TODOS,                                     "duracao_min": 30, "cor": "#3b82f6"},
+        {"titulo": "Alongamento",               "descricao": "Alongamento rápido antes do trabalho",       "horario": "08:30", "frequencia": TODOS,                                     "duracao_min": 10, "cor": "#10b981"},
+        {"titulo": "Trabalhar no Side Project", "descricao": "Desenvolver features do projeto pessoal",    "horario": "19:00", "frequencia": ["ter","qui","sab","dom"],                  "duracao_min": 60, "cor": "#f59e0b"},
+    ]
+    
+    now = datetime.now()
+    
+    for h_data in habitos_data:
+        habito = create_instance(Habito, h_data, user_id)
+        db.add(habito)
+        db.commit()
+        db.refresh(habito)
+        
+        # Gerar histórico passado (últimos 21 dias, excluindo hoje para a UI iniciar limpa)
+        for i in range(21, 0, -1):
+            date_to_check = (now - timedelta(days=i)).date()
+            weekday_str = ["seg","ter","qua","qui","sex","sab","dom"][date_to_check.weekday()]
+            
+            if weekday_str in habito.frequencia:
+                # 75% de taxa de conclusão
+                concluido = random.random() < 0.75
+                registro = create_instance(HabitoRegistro, {
+                    "habito_id": habito.id,
+                    "data": date_to_check,
+                    "concluido": concluido
+                })
+                db.add(registro)
+    
+    db.commit()
+    print("   ✅ Hábitos OK.")
+
 
 def create_financas(user_id):
     """
@@ -627,6 +669,7 @@ def main():
         uid = get_target_user_id()
         
         create_registros(uid)
+        create_habitos(uid)
         create_financas(uid)
         create_agenda(uid)
         create_cofre(uid)

@@ -9,18 +9,12 @@
 }
 
 .ritmo-scope .ritmo-content-wrapper {
-    padding: 0 1rem;
-    max-width: 1600px;
+    max-width: 90%;
+    width: 100%;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
     gap: 2.5rem;
-}
-
-@media (min-width: 1400px) {
-    .ritmo-scope .ritmo-content-wrapper {
-        padding: 0 2rem;
-    }
 }
 
 /* ============================================= */

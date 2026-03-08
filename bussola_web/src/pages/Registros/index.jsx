@@ -1,11 +1,40 @@
 import { useEffect, useState } from 'react';
 import { getRegistrosDashboard, deleteGrupo } from '../../services/api';
+
+// ── Helpers de Jornada ──────────────────────────────────────────────────────
+function getTodayKey() {
+    const dias = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
+    return dias[new Date().getDay()];
+}
+function calcularProgressoJornada(habitos) {
+    const hoje = getTodayKey();
+    const ativos = habitos.filter(h => h.status === 'ativo' && h.frequencia.includes(hoje));
+    if (!ativos.length) return { pct: 0, mensagem: 'Comece sua jornada!' };
+    const feitos = ativos.filter(h => h.registro_hoje?.concluido).length;
+    const pct = Math.round((feitos / ativos.length) * 100);
+    const mensagem = pct === 0 ? 'Comece sua jornada!'
+        : pct < 25 ? 'Você está começando.'
+        : pct < 50 ? 'Siga em frente!'
+        : pct < 75 ? 'Mais da metade. Bora!'
+        : pct < 100 ? 'Quase lá, não pare!'
+        : 'Jornada completa! 🎉';
+    return { pct, mensagem };
+}
+function formatarDataJornada() {
+    const d = new Date();
+    const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+    const meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+    return `${diasSemana[d.getDay()]}, ${d.getDate()} de ${meses[d.getMonth()]}`;
+}
+// ────────────────────────────────────────────────────────────────────────────
 import { AnotacaoCard } from './components/AnotacaoCard';
 import { TarefaCard } from './components/TarefaCard';
 import { AnotacaoModal } from './components/AnotacaoModal';
 import { TarefaModal } from './components/TarefaModal';
 import { GrupoModal } from './components/GrupoModal';
 import { ViewAnotacaoModal } from './components/ViewAnotacaoModal';
+import { HabitoModal } from './components/HabitoModal';
+import { JornadaTimeline } from './components/JornadaTimeline';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmDialogContext';
 import { AiAssistant } from '../../components/AiAssistant';
@@ -28,11 +57,13 @@ export function Registros() {
     const [viewModalOpen, setViewModalOpen] = useState(false);
     const [tarefaModalOpen, setTarefaModalOpen] = useState(false);
     const [grupoModalOpen, setGrupoModalOpen] = useState(false);
+    const [habitoModalOpen, setHabitoModalOpen] = useState(false);
 
     const [editingNota, setEditingNota] = useState(null);
     const [viewingNota, setViewingNota] = useState(null);
     const [editingGrupo, setEditingGrupo] = useState(null);
     const [editingTarefa, setEditingTarefa] = useState(null);
+    const [editingHabito, setEditingHabito] = useState(null);
 
     // UI State - Filtros e Accordions (Caderno)
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -188,6 +219,9 @@ export function Registros() {
         setTarefaModalOpen(true);
     };
 
+    const handleNewHabito = () => { setEditingHabito(null); setHabitoModalOpen(true); };
+    const handleEditHabito = (habito) => { setEditingHabito(habito); setHabitoModalOpen(true); };
+
     const handleNewGrupo = () => {
         setEditingGrupo(null);
         setGrupoModalOpen(true);
@@ -276,6 +310,12 @@ export function Registros() {
                         >
                             Tarefas
                         </button>
+                        <button
+                            className={`tab-btn-pill ${activeTab === 'jornada' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('jornada')}
+                        >
+                            Jornada
+                        </button>
                     </div>
 
                     {/* Ações do Caderno */}
@@ -341,6 +381,29 @@ export function Registros() {
                             </button>
                         </div>
                     )}
+
+                    {/* Ações da Jornada */}
+                    {activeTab === 'jornada' && (() => {
+                        const habitos = data?.habitos || [];
+                        const { mensagem } = habitos.length ? calcularProgressoJornada(habitos) : { mensagem: '' };
+                        return (
+                            <div className="header-actions-group jk-header-info-group">
+                                {habitos.length > 0 && (
+                                    <div className="jk-header-date-msg">
+                                        <span className="jk-header-date">
+                                            <i className="fa-regular fa-calendar-days"></i>
+                                            {formatarDataJornada()}
+                                        </span>
+                                        <span className="jk-header-date-sep"></span>
+                                        <span className="jk-header-msg">{mensagem}</span>
+                                    </div>
+                                )}
+                                <button className="btn-primary small-btn" onClick={handleNewHabito}>
+                                    <i className="fa-solid fa-plus"></i> Hábito
+                                </button>
+                            </div>
+                        );
+                    })()}
 
                     {/* Ações das Tarefas */}
                     {activeTab === 'tarefas' && (
@@ -568,6 +631,22 @@ export function Registros() {
                         )}
                     </div>
                 )}
+
+                {/* CONTEÚDO: JORNADA */}
+                {activeTab === 'jornada' && (
+                    <div className="column-scroll-content">
+                        {loading ? (
+                            <LoadingState />
+                        ) : (
+                            <JornadaTimeline
+                                habitos={data?.habitos || []}
+                                onUpdate={() => fetchData(true)}
+                                onEdit={handleEditHabito}
+                            />
+                        )}
+                    </div>
+                )}
+
             </div>
 
             {/* MODAIS */}
@@ -581,6 +660,7 @@ export function Registros() {
                 existingGroups={grupos}
             />
             <ViewAnotacaoModal active={viewModalOpen} closeModal={() => setViewModalOpen(false)} nota={viewingNota} onEdit={handleEditNota} />
+            <HabitoModal active={habitoModalOpen} closeModal={() => setHabitoModalOpen(false)} onUpdate={() => fetchData(true)} editingData={editingHabito} />
 
             <AiAssistant context="registros" />
         </div>

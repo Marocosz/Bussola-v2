@@ -20,7 +20,7 @@ COMUNICAÇÃO:
 =======================================================================================
 """
 
-from sqlalchemy import Column, Integer, String, Boolean, Text, DateTime, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, Boolean, Text, DateTime, Date, ForeignKey, Enum, JSON
 from sqlalchemy.orm import relationship, backref
 from app.db.base_class import Base
 from app.core.timezone import now_utc # [NOVO]
@@ -122,17 +122,17 @@ class Subtarefa(Base):
     id = Column(Integer, primary_key=True, index=True)
     titulo = Column(String(200), nullable=False)
     concluido = Column(Boolean, default=False)
-    
+
     # Vínculo com a tarefa "Raiz" (Mãe de todas)
     tarefa_id = Column(Integer, ForeignKey('tarefa.id'), nullable=False)
-    
+
     # Estrutura de Árvore (Adjacency List):
     # Aponta para outra subtarefa superior, permitindo n-níveis de profundidade.
     parent_id = Column(Integer, ForeignKey('subtarefa.id'), nullable=True)
-    
+
     # Relacionamentos
     tarefa = relationship("Tarefa", back_populates="subtarefas")
-    
+
     # Configuração de Auto-Relacionamento:
     # 'remote_side=[id]' é necessário para o SQLAlchemy entender a relação recursiva.
     subtarefas = relationship(
@@ -140,3 +140,59 @@ class Subtarefa(Base):
         backref=backref('parent', remote_side=[id]),
         cascade="all, delete-orphan"
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JORNADA — Módulo de Hábitos
+# ─────────────────────────────────────────────────────────────────────────────
+
+class StatusHabito(str, enum.Enum):
+    ATIVO     = "ativo"
+    PAUSADO   = "pausado"
+    ARQUIVADO = "arquivado"
+
+
+class Habito(Base):
+    """
+    Define um hábito recorrente do usuário (ex: Meditação às 07:00).
+
+    Campos:
+        horario      — "HH:MM" — horário alvo do dia.
+        frequencia   — JSON list de strings: ["seg","ter","qua","qui","sex","sab","dom"]
+        duracao_min  — Duração estimada em minutos (influencia o tamanho visual da bolinha).
+        cor          — Cor hex usada na visualização do mapa de hábitos.
+        status       — ativo | pausado | arquivado.
+    """
+    __tablename__ = 'habito'
+
+    id           = Column(Integer, primary_key=True, index=True)
+    titulo       = Column(String(200), nullable=False)
+    descricao    = Column(Text, nullable=True)
+    horario      = Column(String(5), nullable=False)              # "HH:MM"
+    frequencia   = Column(JSON, default=lambda: ["seg","ter","qua","qui","sex","sab","dom"])
+    duracao_min  = Column(Integer, default=15)
+    cor          = Column(String(7), default="#4A6DFF")
+    status       = Column(String(20), default=StatusHabito.ATIVO.value)
+    data_criacao = Column(DateTime, default=now_utc)
+
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    user    = relationship("User", back_populates="habitos")
+
+    # Cascade Delete: remover o hábito apaga todos os registros de check-in.
+    registros = relationship("HabitoRegistro", back_populates="habito", cascade="all, delete-orphan")
+
+
+class HabitoRegistro(Base):
+    """
+    Representa o check-in diário de um hábito.
+
+    Regra: Apenas um registro por (habito_id, data) — garantido pela constraint unique.
+    """
+    __tablename__ = 'habito_registro'
+
+    id         = Column(Integer, primary_key=True, index=True)
+    habito_id  = Column(Integer, ForeignKey('habito.id'), nullable=False)
+    data       = Column(Date, nullable=False)       # Data do check-in (sem hora)
+    concluido  = Column(Boolean, default=False)
+
+    habito = relationship("Habito", back_populates="registros")

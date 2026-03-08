@@ -30,8 +30,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, case
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
-from app.models.registros import GrupoAnotacao, Anotacao, Link, Tarefa, Subtarefa
-from datetime import datetime
+from app.models.registros import GrupoAnotacao, Anotacao, Link, Tarefa, Subtarefa, Habito, HabitoRegistro
+from datetime import datetime, date, timedelta
 
 class RegistrosService:
     
@@ -390,10 +390,208 @@ class RegistrosService:
         
         grupos = db.query(GrupoAnotacao).filter(GrupoAnotacao.user_id == user_id).all()
 
+        habitos = self.get_habitos_com_contexto(db, user_id)
+
         return {
             "anotacoes_fixadas": fixadas, "anotacoes_por_mes": por_mes,
             "tarefas_pendentes": t_pendentes, "tarefas_concluidas": t_concluidas,
-            "grupos_disponiveis": grupos
+            "grupos_disponiveis": grupos,
+            "habitos": habitos,
         }
+
+    # ==============================================================================
+    # 6. GESTÃO DE HÁBITOS (JORNADA)
+    # ==============================================================================
+
+    def _calcular_streak(self, db: Session, habito_id: int) -> int:
+        """
+        Calcula a sequência atual (streak) de dias consecutivos concluídos.
+
+        Lógica:
+            Percorre os registros de conclusão do mais recente ao mais antigo.
+            Para cada dia esperado, verifica se há um check-in concluído.
+            Quebra assim que encontrar um gap.
+        """
+        hoje = date.today()
+        registros = (
+            db.query(HabitoRegistro)
+            .filter(
+                HabitoRegistro.habito_id == habito_id,
+                HabitoRegistro.concluido == True,
+            )
+            .order_by(HabitoRegistro.data.desc())
+            .all()
+        )
+        if not registros:
+            return 0
+
+        datas_concluidas = {r.data for r in registros}
+        streak = 0
+        dia_verificar = hoje
+
+        while dia_verificar in datas_concluidas:
+            streak += 1
+            dia_verificar -= timedelta(days=1)
+
+        return streak
+
+    def get_habitos_com_contexto(self, db: Session, user_id: int):
+        """
+        Retorna todos os hábitos ativos/pausados do usuário enriquecidos com:
+        - registro_hoje: check-in do dia corrente (se existir)
+        - streak: sequência de dias consecutivos concluídos
+        Ordenados por horário do dia.
+        """
+        hoje = date.today()
+        habitos = (
+            db.query(Habito)
+            .filter(
+                Habito.user_id == user_id,
+                Habito.status != "arquivado",
+            )
+            .order_by(Habito.horario)
+            .all()
+        )
+
+        resultado = []
+        for h in habitos:
+            registro_hoje = (
+                db.query(HabitoRegistro)
+                .filter(
+                    HabitoRegistro.habito_id == h.id,
+                    HabitoRegistro.data == hoje,
+                )
+                .first()
+            )
+            streak = self._calcular_streak(db, h.id)
+
+            # Injeta atributos computados diretamente no objeto ORM
+            # para que o schema Pydantic os capture via from_attributes.
+            h.registro_hoje = registro_hoje
+            h.streak = streak
+            resultado.append(h)
+
+        return resultado
+
+    def get_habitos(self, db: Session, user_id: int):
+        return self.get_habitos_com_contexto(db, user_id)
+
+    def create_habito(self, db: Session, habito_data, user_id: int) -> Habito:
+        novo = Habito(
+            titulo=habito_data.titulo,
+            descricao=habito_data.descricao,
+            horario=habito_data.horario,
+            frequencia=habito_data.frequencia,
+            duracao_min=habito_data.duracao_min,
+            cor=habito_data.cor,
+            user_id=user_id,
+        )
+        db.add(novo)
+        db.commit()
+        db.refresh(novo)
+        novo.registro_hoje = None
+        novo.streak = 0
+        return novo
+
+    def update_habito(self, db: Session, habito_id: int, habito_data, user_id: int):
+        habito = db.query(Habito).filter(Habito.id == habito_id, Habito.user_id == user_id).first()
+        if not habito:
+            return None
+
+        if habito_data.titulo is not None:      habito.titulo = habito_data.titulo
+        if habito_data.descricao is not None:   habito.descricao = habito_data.descricao
+        if habito_data.horario is not None:     habito.horario = habito_data.horario
+        if habito_data.frequencia is not None:  habito.frequencia = habito_data.frequencia
+        if habito_data.duracao_min is not None: habito.duracao_min = habito_data.duracao_min
+        if habito_data.cor is not None:         habito.cor = habito_data.cor
+        if habito_data.status is not None:      habito.status = habito_data.status
+
+        db.commit()
+        db.refresh(habito)
+
+        hoje = date.today()
+        habito.registro_hoje = (
+            db.query(HabitoRegistro)
+            .filter(HabitoRegistro.habito_id == habito.id, HabitoRegistro.data == hoje)
+            .first()
+        )
+        habito.streak = self._calcular_streak(db, habito.id)
+        return habito
+
+    def toggle_status_habito(self, db: Session, habito_id: int, user_id: int):
+        """Alterna entre ativo e pausado."""
+        habito = db.query(Habito).filter(Habito.id == habito_id, Habito.user_id == user_id).first()
+        if not habito:
+            return None
+        habito.status = "pausado" if habito.status == "ativo" else "ativo"
+        db.commit()
+        db.refresh(habito)
+        hoje = date.today()
+        habito.registro_hoje = (
+            db.query(HabitoRegistro)
+            .filter(HabitoRegistro.habito_id == habito.id, HabitoRegistro.data == hoje)
+            .first()
+        )
+        habito.streak = self._calcular_streak(db, habito.id)
+        return habito
+
+    def delete_habito(self, db: Session, habito_id: int, user_id: int) -> bool:
+        habito = db.query(Habito).filter(Habito.id == habito_id, Habito.user_id == user_id).first()
+        if not habito:
+            return False
+        db.delete(habito)
+        db.commit()
+        return True
+
+    def toggle_checkin(self, db: Session, habito_id: int, user_id: int, data_checkin: date):
+        """
+        Cria ou alterna o check-in de um hábito em uma data específica.
+
+        Regra de Idempotência:
+            Se já existe registro para aquela data, alterna 'concluido'.
+            Se não existe, cria como concluido=True.
+        """
+        # Verifica propriedade do hábito
+        habito = db.query(Habito).filter(Habito.id == habito_id, Habito.user_id == user_id).first()
+        if not habito:
+            raise HTTPException(status_code=404, detail="Hábito não encontrado.")
+
+        registro = (
+            db.query(HabitoRegistro)
+            .filter(HabitoRegistro.habito_id == habito_id, HabitoRegistro.data == data_checkin)
+            .first()
+        )
+
+        if registro:
+            registro.concluido = not registro.concluido
+        else:
+            registro = HabitoRegistro(habito_id=habito_id, data=data_checkin, concluido=True)
+            db.add(registro)
+
+        db.commit()
+        db.refresh(registro)
+        return registro
+
+    def get_historico_habito(self, db: Session, habito_id: int, user_id: int, dias: int = 90):
+        """
+        Retorna os registros de check-in dos últimos N dias.
+        Usado para o heatmap/histórico na UI.
+        """
+        habito = db.query(Habito).filter(Habito.id == habito_id, Habito.user_id == user_id).first()
+        if not habito:
+            raise HTTPException(status_code=404, detail="Hábito não encontrado.")
+
+        data_inicio = date.today() - timedelta(days=dias)
+        registros = (
+            db.query(HabitoRegistro)
+            .filter(
+                HabitoRegistro.habito_id == habito_id,
+                HabitoRegistro.data >= data_inicio,
+            )
+            .order_by(HabitoRegistro.data.asc())
+            .all()
+        )
+        return registros
+
 
 registros_service = RegistrosService()

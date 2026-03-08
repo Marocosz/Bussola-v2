@@ -97,6 +97,7 @@ class User(Base):
     grupos_anotacao = relationship("GrupoAnotacao", back_populates="user", cascade="all, delete-orphan")
     anotacoes = relationship("Anotacao", back_populates="user", cascade="all, delete-orphan")
     tarefas = relationship("Tarefa", back_populates="user", cascade="all, delete-orphan")
+    habitos = relationship("Habito", back_populates="user", cascade="all, delete-orphan")
 
     # =========================================================
     # RELACIONAMENTOS RITMO (SAÚDE)

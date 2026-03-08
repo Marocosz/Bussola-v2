@@ -493,6 +493,78 @@ export const toggleSubtarefa = async (subId: number) => {
     return response.data;
 };
 
+// --- HÁBITOS (JORNADA) ---
+
+export interface HabitoRegistro {
+    id: number;
+    data: string;
+    concluido: boolean;
+}
+
+export interface Habito {
+    id: number;
+    titulo: string;
+    descricao?: string;
+    horario: string;                    // "HH:MM"
+    frequencia: string[];               // ["seg","ter","qua","qui","sex","sab","dom"]
+    duracao_min: number;
+    cor: string;
+    status: 'ativo' | 'pausado' | 'arquivado';
+    data_criacao: string;
+    registro_hoje?: HabitoRegistro | null;
+    streak: number;
+}
+
+export const getHabitos = async (): Promise<Habito[]> => {
+    const response = await api.get('/registros/habitos');
+    return response.data;
+};
+
+export const createHabito = async (data: {
+    titulo: string;
+    descricao?: string;
+    horario: string;
+    frequencia: string[];
+    duracao_min: number;
+    cor: string;
+}) => {
+    const response = await api.post('/registros/habitos', data);
+    return response.data;
+};
+
+export const updateHabito = async (id: number, data: Partial<{
+    titulo: string;
+    descricao: string;
+    horario: string;
+    frequencia: string[];
+    duracao_min: number;
+    cor: string;
+    status: string;
+}>) => {
+    const response = await api.put(`/registros/habitos/${id}`, data);
+    return response.data;
+};
+
+export const toggleStatusHabito = async (id: number) => {
+    const response = await api.patch(`/registros/habitos/${id}/toggle-status`);
+    return response.data;
+};
+
+export const deleteHabito = async (id: number) => {
+    const response = await api.delete(`/registros/habitos/${id}`);
+    return response.data;
+};
+
+export const toggleCheckinHabito = async (id: number, data: string) => {
+    const response = await api.patch(`/registros/habitos/${id}/checkin`, { data });
+    return response.data;
+};
+
+export const getHistoricoHabito = async (id: number, dias = 90): Promise<HabitoRegistro[]> => {
+    const response = await api.get(`/registros/habitos/${id}/historico`, { params: { dias } });
+    return response.data;
+};
+
 // ==========================================================
 // 7. MÓDULO COFRE (GERENCIADOR DE SENHAS)
 // ==========================================================

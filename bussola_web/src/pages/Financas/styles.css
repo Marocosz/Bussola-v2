@@ -14,6 +14,9 @@
     grid-template-columns: 1fr 480px;
     gap: 0;
     align-items: stretch;
+    max-width: 90%;
+    width: 100%;
+    margin: 0 auto;
 }
 
 /* Colunas Individuais */
@@ -136,6 +139,7 @@
     border-right: 1px solid var(--cor-borda);
     position: relative;
     z-index: 2;
+    min-height: 60px;
 }
 
 /* 1. Coluna Transações (Esquerda) */
@@ -155,21 +159,21 @@
     background-color: var(--cor-fundo);
     border: 1px solid var(--cor-borda);
     color: var(--cor-texto-principal);
-    padding: 4px 10px;
-    height: 30px;
-    border-radius: 7px;
+    padding: 6px 12px;
+    height: 36px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 0.78rem;
+    font-size: 0.9rem;
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 10px;
     justify-content: space-between;
     transition: all 0.15s;
     white-space: nowrap;
 }
 
 .financas-scope .filter-trigger-btn i {
-    font-size: 0.58rem;
+    font-size: 0.8rem;
     opacity: 0.6;
 }
 
@@ -207,8 +211,42 @@
     border-radius: 10px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
     z-index: 999;
-    padding: 0.35rem;
+    padding: 0.5rem;
     animation: fadeInFilter 0.15s ease;
+}
+
+.financas-scope .dropdown-scroll-area {
+    max-height: 280px;
+    overflow-y: auto;
+    /* Suporte para Firefox (que não usa -webkit) */
+    scrollbar-width: thin;
+    scrollbar-color: var(--cor-borda) var(--cor-card-principal);
+}
+
+/* 2. Suporte para Chrome/Edge/Brave (Webkit) */
+.financas-scope .dropdown-scroll-area::-webkit-scrollbar {
+    width: 6px !important;            /* Largura fina */
+    height: 6px !important;
+    display: block !important;        /* Força aparecer */
+    background: var(--cor-card-principal) !important; /* Pinta o fundo da barra da mesma cor do menu */
+}
+
+/* O "trilho" por onde a barra corre */
+.financas-scope .dropdown-scroll-area::-webkit-scrollbar-track {
+    background: var(--cor-card-principal) !important; /* Fundo escuro igual ao menu */
+    border-radius: 4px;
+}
+
+/* O "polegar" (a barra que você arrasta) */
+.financas-scope .dropdown-scroll-area::-webkit-scrollbar-thumb {
+    background-color: var(--cor-borda) !important;    /* Cor cinza do tema */
+    border-radius: 4px !important;
+    border: 1px solid var(--cor-card-principal) !important; /* Cria um pequeno espaçamento visual */
+}
+
+/* Hover na barra para feedback visual */
+.financas-scope .dropdown-scroll-area::-webkit-scrollbar-thumb:hover {
+    background-color: var(--cor-texto-secundario) !important;
 }
 
 @keyframes fadeInFilter {
@@ -217,10 +255,10 @@
 }
 
 .financas-scope .filter-dropdown-item {
-    padding: 6px 10px;
+    padding: 0.8rem 1rem;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 0.82rem;
+    font-size: 0.95rem;
     color: var(--cor-texto-secundario);
     display: flex;
     align-items: center;

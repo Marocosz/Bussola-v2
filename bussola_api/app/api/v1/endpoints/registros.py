@@ -23,15 +23,17 @@ COMUNICAÇÃO:
 =======================================================================================
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi import APIRouter, Depends, HTTPException, Body, Query
 from sqlalchemy.orm import Session
 from typing import List, Any, Optional
+from datetime import date
 from app.api import deps
 from app.schemas.registros import (
-    RegistrosDashboardResponse, 
+    RegistrosDashboardResponse,
     AnotacaoCreate, AnotacaoResponse, AnotacaoUpdate,
     TarefaCreate, TarefaResponse, TarefaUpdate,
-    GrupoCreate, GrupoResponse 
+    GrupoCreate, GrupoResponse,
+    HabitoCreate, HabitoUpdate, HabitoResponse, HabitoRegistroResponse,
 )
 from app.services.registros import registros_service
 
@@ -218,7 +220,7 @@ def add_subtarefa(
 
 @router.patch("/subtarefas/{id}/toggle")
 def toggle_subtarefa(
-    id: int, 
+    id: int,
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):
@@ -230,3 +232,89 @@ def toggle_subtarefa(
     if not sub:
         raise HTTPException(status_code=404, detail="Subtarefa não encontrada")
     return {"status": "success", "concluido": sub.concluido}
+
+
+# --------------------------------------------------------------------------------------
+# HÁBITOS (JORNADA)
+# --------------------------------------------------------------------------------------
+
+@router.get("/habitos", response_model=List[HabitoResponse])
+def get_habitos(
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_user)
+):
+    """Lista todos os hábitos ativos/pausados do usuário, ordenados por horário."""
+    return registros_service.get_habitos(db, current_user.id)
+
+
+@router.post("/habitos", response_model=HabitoResponse)
+def create_habito(
+    dados: HabitoCreate,
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_user)
+):
+    """Cria um novo hábito."""
+    return registros_service.create_habito(db, dados, current_user.id)
+
+
+@router.put("/habitos/{id}", response_model=HabitoResponse)
+def update_habito(
+    id: int,
+    dados: HabitoUpdate,
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_user)
+):
+    habito = registros_service.update_habito(db, id, dados, current_user.id)
+    if not habito:
+        raise HTTPException(status_code=404, detail="Hábito não encontrado")
+    return habito
+
+
+@router.patch("/habitos/{id}/toggle-status", response_model=HabitoResponse)
+def toggle_status_habito(
+    id: int,
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_user)
+):
+    """Alterna o status do hábito entre ativo e pausado."""
+    habito = registros_service.toggle_status_habito(db, id, current_user.id)
+    if not habito:
+        raise HTTPException(status_code=404, detail="Hábito não encontrado")
+    return habito
+
+
+@router.delete("/habitos/{id}")
+def delete_habito(
+    id: int,
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_user)
+):
+    success = registros_service.delete_habito(db, id, current_user.id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Hábito não encontrado")
+    return {"status": "success"}
+
+
+@router.patch("/habitos/{id}/checkin", response_model=HabitoRegistroResponse)
+def toggle_checkin_habito(
+    id: int,
+    data: date = Body(..., embed=True),
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_user)
+):
+    """
+    Cria ou alterna o check-in de um hábito numa data específica.
+    Se já existe registro, inverte 'concluido'. Se não existe, cria como True.
+    """
+    return registros_service.toggle_checkin(db, id, current_user.id, data)
+
+
+@router.get("/habitos/{id}/historico", response_model=List[HabitoRegistroResponse])
+def get_historico_habito(
+    id: int,
+    dias: int = Query(default=90, ge=1, le=365),
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_user)
+):
+    """Retorna os check-ins dos últimos N dias para o heatmap de histórico."""
+    return registros_service.get_historico_habito(db, id, current_user.id, dias)

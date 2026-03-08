@@ -14,7 +14,7 @@ PARTE DO SISTEMA:
 
 from pydantic import BaseModel, field_validator
 from typing import List, Optional, ForwardRef, Any
-from datetime import datetime
+from datetime import datetime, date
 
 # --------------------------------------------------------------------------------------
 # GRUPOS (Organização de Notas)
@@ -144,6 +144,56 @@ class TarefaResponse(TarefaBase):
         from_attributes = True
 
 # --------------------------------------------------------------------------------------
+# HÁBITOS (JORNADA)
+# --------------------------------------------------------------------------------------
+
+DIAS_SEMANA = ["seg", "ter", "qua", "qui", "sex", "sab", "dom"]
+
+
+class HabitoBase(BaseModel):
+    titulo: str
+    descricao: Optional[str] = None
+    horario: str                             # "HH:MM"
+    frequencia: List[str] = DIAS_SEMANA      # Quais dias da semana o hábito ocorre
+    duracao_min: int = 15
+    cor: str = "#4A6DFF"
+
+
+class HabitoCreate(HabitoBase):
+    pass
+
+
+class HabitoUpdate(BaseModel):
+    titulo: Optional[str] = None
+    descricao: Optional[str] = None
+    horario: Optional[str] = None
+    frequencia: Optional[List[str]] = None
+    duracao_min: Optional[int] = None
+    cor: Optional[str] = None
+    status: Optional[str] = None
+
+
+class HabitoRegistroResponse(BaseModel):
+    id: int
+    data: date
+    concluido: bool
+
+    class Config:
+        from_attributes = True
+
+
+class HabitoResponse(HabitoBase):
+    id: int
+    status: str
+    data_criacao: datetime
+    registro_hoje: Optional[HabitoRegistroResponse] = None
+    streak: int = 0
+
+    class Config:
+        from_attributes = True
+
+
+# --------------------------------------------------------------------------------------
 # DASHBOARD REGISTROS
 # --------------------------------------------------------------------------------------
 class RegistrosDashboardResponse(BaseModel):
@@ -152,3 +202,4 @@ class RegistrosDashboardResponse(BaseModel):
     tarefas_pendentes: List[TarefaResponse]
     tarefas_concluidas: List[TarefaResponse]
     grupos_disponiveis: List[GrupoResponse]
+    habitos: List[HabitoResponse] = []

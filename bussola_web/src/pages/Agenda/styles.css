@@ -19,6 +19,9 @@
     grid-template-columns: 1fr 1fr;
     gap: 0;
     align-items: stretch;
+    max-width: 90%;
+    width: 100%;
+    margin: 0 auto;
 }
 
 /* --- COLUNAS INDIVIDUAIS --- */
@@ -102,7 +105,7 @@
 /* 3. CABEÇALHOS DAS COLUNAS (HEADER)            */
 /* ============================================= */
 
-.column-header-flex {
+.agenda-layout .column-header-flex {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -113,23 +116,20 @@
     border-right: 1px solid var(--cor-borda);
     position: relative;
     z-index: 2;
+    min-height: 60px;
 }
 
-.header-left-aligned {
+.agenda-layout .header-left-aligned {
     justify-content: space-between !important; 
 }
 
-.column-header-flex h2 {
+.agenda-layout .column-header-flex h2 {
     font-size: 1rem;
     font-weight: 600;
     color: var(--cor-texto-secundario);
     margin: 0;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-}
-
-.agenda-layout .column-header-flex {
-    min-height: 60px;
 }
 
 .agenda-column:last-child .column-header-flex {
