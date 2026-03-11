@@ -10,6 +10,7 @@ services:
       - ./bussola_api/data:/app/data
     restart: unless-stopped
     networks:
+      - internal
       - coolify
 
   frontend:
@@ -19,8 +20,11 @@ services:
     depends_on:
       - backend
     networks:
+      - internal
       - coolify
 
 networks:
+  internal:
+    driver: bridge
   coolify:
     external: true
