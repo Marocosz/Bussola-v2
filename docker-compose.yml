@@ -1,5 +1,5 @@
 services:
-  backend:
+  bussola_backend:
     build: ./bussola_api
     container_name: bussola_backend
     env_file:
@@ -18,7 +18,7 @@ services:
     container_name: bussola_frontend
     restart: unless-stopped
     depends_on:
-      - backend
+      - bussola_backend
     networks:
       - internal
       - coolify
