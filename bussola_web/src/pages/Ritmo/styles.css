@@ -200,7 +200,7 @@
     width: 8px;
     height: 13px;
     border-radius: 2px;
-    background: var(--cor-primaria);
+    background: var(--cor-azul-primario);
     opacity: 0.75;
 }
 
@@ -208,7 +208,7 @@
     font-size: 0.78rem;
     font-weight: 700;
     text-align: right;
-    color: var(--cor-primaria);
+    color: var(--cor-azul-primario);
 }
 
 /* ── Macro bars ── */
