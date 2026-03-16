@@ -34,6 +34,7 @@ import { TarefaModal } from './components/TarefaModal';
 import { GrupoModal } from './components/GrupoModal';
 import { ViewAnotacaoModal } from './components/ViewAnotacaoModal';
 import { HabitoModal } from './components/HabitoModal';
+import { HabitoListaModal } from './components/HabitoListaModal';
 import { JornadaTimeline } from './components/JornadaTimeline';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmDialogContext';
@@ -58,6 +59,7 @@ export function Registros() {
     const [tarefaModalOpen, setTarefaModalOpen] = useState(false);
     const [grupoModalOpen, setGrupoModalOpen] = useState(false);
     const [habitoModalOpen, setHabitoModalOpen] = useState(false);
+    const [habitoListaModalOpen, setHabitoListaModalOpen] = useState(false);
 
     const [editingNota, setEditingNota] = useState(null);
     const [viewingNota, setViewingNota] = useState(null);
@@ -221,6 +223,11 @@ export function Registros() {
 
     const handleNewHabito = () => { setEditingHabito(null); setHabitoModalOpen(true); };
     const handleEditHabito = (habito) => { setEditingHabito(habito); setHabitoModalOpen(true); };
+    const handleEditHabitoFromLista = (habito) => {
+        setHabitoListaModalOpen(false);
+        setEditingHabito(habito);
+        setHabitoModalOpen(true);
+    };
 
     const handleNewGrupo = () => {
         setEditingGrupo(null);
@@ -398,6 +405,13 @@ export function Registros() {
                                         <span className="jk-header-msg">{mensagem}</span>
                                     </div>
                                 )}
+                                <button
+                                    className="btn-secondary small-btn"
+                                    onClick={() => setHabitoListaModalOpen(true)}
+                                    title="Ver todos os hábitos"
+                                >
+                                    <i className="fa-solid fa-list-ul"></i> Lista
+                                </button>
                                 <button className="btn-primary small-btn" onClick={handleNewHabito}>
                                     <i className="fa-solid fa-plus"></i> Hábito
                                 </button>
@@ -661,6 +675,13 @@ export function Registros() {
             />
             <ViewAnotacaoModal active={viewModalOpen} closeModal={() => setViewModalOpen(false)} nota={viewingNota} onEdit={handleEditNota} />
             <HabitoModal active={habitoModalOpen} closeModal={() => setHabitoModalOpen(false)} onUpdate={() => fetchData(true)} editingData={editingHabito} />
+            <HabitoListaModal
+                active={habitoListaModalOpen}
+                closeModal={() => setHabitoListaModalOpen(false)}
+                habitos={data?.habitos || []}
+                onEdit={handleEditHabitoFromLista}
+                onUpdate={() => fetchData(true)}
+            />
 
             <AiAssistant context="registros" />
         </div>

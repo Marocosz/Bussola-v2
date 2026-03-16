@@ -156,11 +156,11 @@ function HabitoCard({ habito, isLast, onCheckin, onEdit, onTogglePause, onDelete
                     </div>
                 </div>
 
-                <p className="jk-titulo">{habito.titulo}</p>
+                <p className="jk-titulo" title={habito.titulo}>{habito.titulo}</p>
 
                 <div className="jk-meta">
                     <span className="jk-duracao-badge"><i className="fa-regular fa-clock"></i> {habito.duracao_min}min</span>
-                    {habito.descricao && <span className="jk-descricao-inline">{habito.descricao}</span>}
+                    {habito.descricao && <span className="jk-descricao-inline" title={habito.descricao}>{habito.descricao}</span>}
                 </div>
             </div>
         </div>
