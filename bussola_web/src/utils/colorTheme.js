@@ -30,6 +30,9 @@ export const COLOR_PRESETS = [
     // ── Neutros ────────────────────────────────────────────────
     { id: 'ardosia',   name: 'Ardósia',   from: '#64748b', to: '#94a3b8', hover: '#475569' },
     { id: 'grafite',   name: 'Grafite',   from: '#374151', to: '#6b7280', hover: '#1f2937' },
+    // ── Extras ─────────────────────────────────────────────────
+    { id: 'teal',      name: 'Teal',      from: '#0d9488', to: '#06b6d4', hover: '#0f766e' },
+    { id: 'lavanda',   name: 'Lavanda',   from: '#818cf8', to: '#c4b5fd', hover: '#6366f1' },
 ];
 
 const STORAGE_KEY = 'bussola_color_theme';

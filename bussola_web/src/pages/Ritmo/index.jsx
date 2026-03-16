@@ -315,26 +315,17 @@ export function Ritmo() {
                             </div>
                             {Object.entries(volumeSemanal).length > 0 ? (
                                 <div className="vol-bars-list">
-                                    {Object.entries(volumeSemanal).map(([grupo, sets]) => {
-                                        const MAX = 22;
-                                        const pct = Math.min((sets / MAX) * 100, 100);
-                                        const status = sets < 10 ? 'low' : sets < 20 ? 'ok' : 'high';
-                                        return (
-                                            <div key={grupo} className="vol-bar-row">
-                                                <span className="vol-bar-label">{grupo}</span>
-                                                <div className="vol-bar-track">
-                                                    <div className={`vol-bar-fill ${status}`} style={{ width: `${pct}%` }}></div>
-                                                    <div className="vol-bar-mev" title="Mínimo recomendado (10 sets/sem)"></div>
-                                                </div>
-                                                <span className={`vol-bar-count ${status}`}>{sets}</span>
+                                    {Object.entries(volumeSemanal).map(([grupo, sets]) => (
+                                        <div key={grupo} className="vol-bar-row">
+                                            <span className="vol-bar-label">{grupo}</span>
+                                            <div className="vol-blocks-track">
+                                                {Array.from({ length: sets }).map((_, i) => (
+                                                    <div key={i} className="vol-block"></div>
+                                                ))}
                                             </div>
-                                        );
-                                    })}
-                                    <div className="vol-legend">
-                                        <span className="vol-legend-dot low"></span><span>{'< 10 (baixo)'}</span>
-                                        <span className="vol-legend-dot ok"></span><span>10–19 (ótimo)</span>
-                                        <span className="vol-legend-dot high"></span><span>{'≥ 20 (alto)'}</span>
-                                    </div>
+                                            <span className="vol-bar-count">{sets}</span>
+                                        </div>
+                                    ))}
                                 </div>
                             ) : (
                                 <p className="bio-panel-empty">Configure um plano de treino para ver o volume semanal.</p>

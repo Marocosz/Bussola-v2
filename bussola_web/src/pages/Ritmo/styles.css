@@ -175,7 +175,7 @@
 
 .ritmo-scope .vol-bar-row {
     display: grid;
-    grid-template-columns: 110px 1fr 24px;
+    grid-template-columns: 110px 1fr 28px;
     align-items: center;
     gap: 10px;
 }
@@ -189,65 +189,27 @@
     text-overflow: ellipsis;
 }
 
-.ritmo-scope .vol-bar-track {
-    height: 6px;
-    background: var(--cor-card-secundario);
-    border-radius: 99px;
-    position: relative;
-    overflow: visible;
+.ritmo-scope .vol-blocks-track {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    align-items: center;
 }
 
-.ritmo-scope .vol-bar-fill {
-    height: 100%;
-    border-radius: 99px;
-    transition: width 0.5s ease;
-}
-
-.ritmo-scope .vol-bar-fill.low  { background: #ef4444; }
-.ritmo-scope .vol-bar-fill.ok   { background: #10b981; }
-.ritmo-scope .vol-bar-fill.high { background: #f59e0b; }
-
-/* Linha vertical no MEV (10/22 ≈ 45%) */
-.ritmo-scope .vol-bar-mev {
-    position: absolute;
-    top: -3px;
-    bottom: -3px;
-    left: calc(10 / 22 * 100%);
-    width: 1px;
-    background: var(--cor-borda);
+.ritmo-scope .vol-block {
+    width: 8px;
+    height: 13px;
+    border-radius: 2px;
+    background: var(--cor-primaria);
+    opacity: 0.75;
 }
 
 .ritmo-scope .vol-bar-count {
     font-size: 0.78rem;
     font-weight: 700;
     text-align: right;
+    color: var(--cor-primaria);
 }
-.ritmo-scope .vol-bar-count.low  { color: #ef4444; }
-.ritmo-scope .vol-bar-count.ok   { color: #10b981; }
-.ritmo-scope .vol-bar-count.high { color: #f59e0b; }
-
-.ritmo-scope .vol-legend {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    margin-top: 4px;
-    flex-wrap: wrap;
-}
-.ritmo-scope .vol-legend > span {
-    font-size: 0.68rem;
-    color: var(--cor-texto-secundario);
-}
-.ritmo-scope .vol-legend-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    margin-left: 8px;
-    flex-shrink: 0;
-}
-.ritmo-scope .vol-legend-dot:first-child { margin-left: 0; }
-.ritmo-scope .vol-legend-dot.low  { background: #ef4444; }
-.ritmo-scope .vol-legend-dot.ok   { background: #10b981; }
-.ritmo-scope .vol-legend-dot.high { background: #f59e0b; }
 
 /* ── Macro bars ── */
 .ritmo-scope .macro-bars-list {
