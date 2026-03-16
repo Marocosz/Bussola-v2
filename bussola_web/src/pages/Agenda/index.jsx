@@ -198,11 +198,16 @@ export function Agenda() {
 
     return (
         <div className="container main-container">
-            <div className="internal-hero">
-                <div className="hero-bg-effect"></div>
-                <div className="internal-hero-content">
-                    <h1>Roteiro</h1>
-                    <p>Organize seus compromissos, tarefas e eventos importantes.</p>
+            <div className="page-header">
+                <div className="page-header-main">
+                    <h1><i className="fa-solid fa-calendar-days"></i> Roteiro</h1>
+                </div>
+                <div className="page-header-kpis">
+                    <span className="ph-kpi"><i className="fa-solid fa-calendar"></i> {formatMonthTitle(viewDate)}</span>
+                    {data && <span className="ph-kpi">
+                        <i className="fa-solid fa-calendar-check"></i>
+                        {Object.values(data.compromissos_por_mes || {}).reduce((s, a) => s + a.length, 0)} compromisso(s)
+                    </span>}
                 </div>
             </div>
 

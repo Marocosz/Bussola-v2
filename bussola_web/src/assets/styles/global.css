@@ -667,3 +667,66 @@ textarea:focus:invalid {
     animation: cardDelete 0.45s ease-in forwards !important;
     pointer-events: none !important;
 }
+
+/* ======================================================= */
+/* PAGE HEADER — substitui o internal-hero em todas páginas*/
+/* ======================================================= */
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    max-width: 90%;
+    margin: 0 auto 2rem auto;
+    padding: 1.4rem 1.25rem 1.1rem 1.25rem;
+    border-radius: 10px 10px 0 0;
+    border-bottom: 1px solid rgba(var(--cor-tema-rgb), 0.25);
+    background: linear-gradient(to right, transparent 0%, rgba(var(--cor-tema-rgb), 0.11) 20%, transparent 65%);
+}
+
+.page-header-main h1 {
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: var(--cor-texto-primario);
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+
+.page-header-main h1 i {
+    color: var(--cor-azul-primario);
+    font-size: 1rem;
+}
+
+.page-header-kpis {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.ph-kpi {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.28rem 0.75rem;
+    background: var(--cor-card-secundario);
+    border: 1px solid var(--cor-borda);
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: var(--cor-texto-secundario);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.ph-kpi i {
+    font-size: 0.72rem;
+}
+
+.ph-kpi.receita  { color: #10b981; border-color: rgba(16, 185, 129, 0.25); }
+.ph-kpi.despesa  { color: #ef4444; border-color: rgba(239, 68, 68, 0.25); }
+.ph-kpi.positivo { color: #10b981; border-color: rgba(16, 185, 129, 0.25); }
+.ph-kpi.negativo { color: #ef4444; border-color: rgba(239, 68, 68, 0.25); }

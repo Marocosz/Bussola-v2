@@ -231,11 +231,14 @@ export function Ritmo() {
 
     return (
         <div className="ritmo-scope container main-container">
-            <div className="internal-hero">
-                <div className="hero-bg-effect"></div>
-                <div className="internal-hero-content">
-                    <h1>Ritmo</h1>
-                    <p>Sincronize sua biologia: gestão inteligente de treino, dieta e bio-indicadores.</p>
+            <div className="page-header">
+                <div className="page-header-main">
+                    <h1><i className="fa-solid fa-dumbbell"></i> Ritmo</h1>
+                </div>
+                <div className="page-header-kpis">
+                    <span className="ph-kpi"><i className="fa-solid fa-dumbbell"></i> {treinoAtivo ? treinoAtivo.nome : 'Sem plano ativo'}</span>
+                    <span className="ph-kpi"><i className="fa-solid fa-utensils"></i> {dietaAtiva ? dietaAtiva.nome : 'Sem dieta ativa'}</span>
+                    {bio?.peso && <span className="ph-kpi"><i className="fa-solid fa-weight-scale"></i> {bio.peso} kg</span>}
                 </div>
             </div>
 

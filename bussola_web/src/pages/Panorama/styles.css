@@ -4,60 +4,6 @@
     padding-top: 0 !important;
 }
 
-/* ============================ */
-/* 1. HERO SECTION              */
-/* ============================ */
-.panorama-scope .internal-hero {
-    position: relative;
-    text-align: center;
-    padding: 5rem 2rem 6rem 2rem;
-    overflow: hidden;
-    background: transparent;
-    border-radius: 0 0 20px 20px;
-}
-
-.panorama-scope .hero-bg-effect {
-    position: absolute;
-    top: -50%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 60%;
-    height: 200%;
-    background: radial-gradient(ellipse at center, rgba(var(--cor-tema-rgb), 0.15) 0%, rgba(var(--cor-acento-rgb), 0.05) 40%, transparent 70%);
-    z-index: 0;
-    pointer-events: none;
-}
-
-.panorama-scope .internal-hero h1 {
-    font-size: 3rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-    background: linear-gradient(90deg, #fff 0%, var(--cor-azul-primario) 50%, #fff 100%);
-    background-size: 200% auto;
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
-    -webkit-text-fill-color: transparent;
-    animation: shine 5s linear infinite;
-    position: relative;
-    z-index: 1;
-}
-
-.panorama-scope .internal-hero p {
-    color: var(--cor-texto-secundario);
-    font-size: 1.2rem;
-    position: relative;
-    z-index: 1;
-    max-width: 600px;
-    margin: 0 auto;
-}
-
-@keyframes shine {
-    to {
-        background-position: 200% center;
-    }
-}
-
 /* Wrapper Principal */
 .panorama-content-wrapper {
     padding: 0 1rem;

@@ -292,11 +292,9 @@ export function Registros() {
     return (
         <div className="container main-container registros-scope">
 
-            <div className="internal-hero">
-                <div className="hero-bg-effect"></div>
-                <div className="internal-hero-content">
-                    <h1>Caderno & Tarefas</h1>
-                    <p>Organize suas ideias por grupos e gerencie suas pendências.</p>
+            <div className="page-header">
+                <div className="page-header-main">
+                    <h1><i className="fa-solid fa-book-open"></i> Caderno & Tarefas</h1>
                 </div>
             </div>
 

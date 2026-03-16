@@ -20,62 +20,7 @@
 }
 
 /* ============================================= */
-/* 1. HERO INTERNO                               */
-/* ============================================= */
-.registros-scope .internal-hero {
-    position: relative;
-    text-align: center;
-    padding: 4rem 2rem 5rem 2rem;
-    overflow: hidden;
-    border-radius: 0 0 20px 20px;
-    background: transparent;
-}
-
-.registros-scope .hero-bg-effect {
-    position: absolute;
-    top: -50%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 60%;
-    height: 200%;
-    background: radial-gradient(ellipse at center, rgba(var(--cor-tema-rgb), 0.15) 0%, rgba(var(--cor-acento-rgb), 0.05) 40%, transparent 70%);
-    z-index: 0;
-    pointer-events: none;
-}
-
-.registros-scope .internal-hero-content {
-    position: relative;
-    z-index: 1;
-}
-
-.registros-scope .internal-hero h1 {
-    font-size: 3rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-    background: linear-gradient(90deg, #fff 0%, var(--cor-azul-primario) 50%, #fff 100%);
-    background-size: 200% auto;
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
-    -webkit-text-fill-color: transparent;
-    animation: registrosShine 5s linear infinite;
-}
-
-.registros-scope .internal-hero p {
-    font-size: 1.1rem;
-    color: var(--cor-texto-secundario);
-    max-width: 600px;
-    margin: 0 auto;
-}
-
-@keyframes registrosShine {
-    to {
-        background-position: 200% center;
-    }
-}
-
-/* ============================================= */
-/* 2. LAYOUT PRINCIPAL                           */
+/* 1. LAYOUT PRINCIPAL                           */
 /* ============================================= */
 .registros-scope .registros-wrapper {
     display: flex;

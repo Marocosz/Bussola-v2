@@ -44,62 +44,6 @@
 }
 
 /* ============================================= */
-/* 2. HERO INTERNO                               */
-/* ============================================= */
-
-.internal-hero {
-    position: relative;
-    text-align: center;
-    padding: 4rem 2rem 5rem 2rem;
-    overflow: hidden;
-    border-radius: 0 0 20px 20px;
-}
-
-.hero-bg-effect {
-    position: absolute;
-    top: -50%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 60%;
-    height: 200%;
-    background: radial-gradient(ellipse at center,
-            rgba(var(--cor-tema-rgb), 0.15) 0%,
-            rgba(var(--cor-acento-rgb), 0.05) 40%,
-            transparent 70%);
-    z-index: 0;
-    pointer-events: none;
-}
-
-.internal-hero-content {
-    position: relative;
-    z-index: 1;
-}
-
-.internal-hero h1 {
-    font-size: 3rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-    background: linear-gradient(90deg, #fff 0%, var(--cor-azul-primario) 50%, #fff 100%);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    color: transparent;
-    animation: shine 5s linear infinite;
-}
-
-.internal-hero p {
-    font-size: 1.1rem;
-    color: var(--cor-texto-secundario);
-    max-width: 600px;
-    margin: 0 auto;
-}
-
-@keyframes shine {
-    to {
-        background-position: 200% center;
-    }
-}
 
 /* ============================================= */
 /* 3. CABEÇALHOS DAS COLUNAS (HEADER)            */

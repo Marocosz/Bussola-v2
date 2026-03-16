@@ -125,11 +125,9 @@ export function Panorama() {
 
     if (loading && !data) return (
         <div className="container main-container panorama-scope">
-            <div className="internal-hero">
-                <div className="hero-bg-effect"></div>
-                <div className="internal-hero-content">
-                    <h1>Panorama Geral</h1>
-                    <p>Carregando seus indicadores...</p>
+            <div className="page-header">
+                <div className="page-header-main">
+                    <h1><i className="fa-solid fa-gauge-high"></i> Panorama</h1>
                 </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: '3rem' }}>
@@ -269,11 +267,9 @@ export function Panorama() {
     return (
         <div className="container main-container panorama-scope">
             
-            <div className="internal-hero">
-                <div className="hero-bg-effect"></div>
-                <div className="internal-hero-content">
-                    <h1>Panorama Geral</h1>
-                    <p>Inteligência financeira e produtividade em tempo real.</p>
+            <div className="page-header">
+                <div className="page-header-main">
+                    <h1><i className="fa-solid fa-gauge-high"></i> Panorama</h1>
                 </div>
             </div>
 

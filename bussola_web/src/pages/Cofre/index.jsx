@@ -83,14 +83,11 @@ export function Cofre() {
 
     return (
         <div className="container main-container cofre-scope">
-            <div className="internal-hero">
-                <div className="hero-bg-effect"></div>
-                <div className="internal-hero-content">
-                    <h1>Meu Cofre</h1>
-                    <p>Gerencie seus tokens e informações sensíveis com segurança.</p>
+            <div className="page-header">
+                <div className="page-header-main">
+                    <h1><i className="fa-solid fa-vault"></i> Meu Cofre</h1>
                 </div>
             </div>
-
             <div className="cofre-content-wrapper">
                 <div className="section-header-flex">
                     <h2>Lista de Segredos</h2>

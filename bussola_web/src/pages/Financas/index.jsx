@@ -241,13 +241,21 @@ export function Financas() {
         </div>
     );
 
+    const fmtCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+    const totalReceita = (data?.categorias_receita || []).reduce((sum, c) => sum + Number(c.total_ganho || 0), 0);
+    const totalDespesa = (data?.categorias_despesa || []).reduce((sum, c) => sum + Number(c.total_gasto || 0), 0);
+    const saldo = totalReceita - totalDespesa;
+
     return (
         <div className="container main-container financas-scope">
-            <div className="internal-hero">
-                <div className="hero-bg-effect"></div>
-                <div className="internal-hero-content">
-                    <h1>Provisões Financeiras</h1>
-                    <p>Controle total sobre suas entradas, saídas e planejamento.</p>
+            <div className="page-header">
+                <div className="page-header-main">
+                    <h1><i className="fa-solid fa-wallet"></i> Provisões Financeiras</h1>
+                </div>
+                <div className="page-header-kpis">
+                    <span className="ph-kpi receita"><i className="fa-solid fa-arrow-trend-up"></i> {fmtCurrency(totalReceita)}</span>
+                    <span className="ph-kpi despesa"><i className="fa-solid fa-arrow-trend-down"></i> {fmtCurrency(totalDespesa)}</span>
+                    <span className={`ph-kpi ${saldo >= 0 ? 'positivo' : 'negativo'}`}><i className="fa-solid fa-scale-balanced"></i> {fmtCurrency(saldo)}</span>
                 </div>
             </div>
 
