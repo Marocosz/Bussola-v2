@@ -37,8 +37,8 @@
     width: 60%;
     height: 200%;
     background: radial-gradient(ellipse at center,
-            rgba(74, 109, 255, 0.15) 0%,
-            rgba(168, 85, 247, 0.05) 40%,
+            rgba(var(--cor-tema-rgb), 0.15) 0%,
+            rgba(var(--cor-acento-rgb), 0.05) 40%,
             transparent 70%);
     z-index: 0;
     pointer-events: none;
@@ -79,13 +79,339 @@
 /* 3. BIO-INDICADORES (GRID & MACROS)            */
 /* ============================================= */
 
+/* ============================================= */
+/* 3b. BIO OVERVIEW — REDESENHADO                */
+/* ============================================= */
+
+.ritmo-scope .bio-overview-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    margin-bottom: 2.5rem;
+}
+
+/* Faixa de stat chips horizontal */
+.ritmo-scope .bio-stat-strip {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    background: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.ritmo-scope .bio-stat-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    background: var(--cor-card-principal);
+    flex: 1;
+    min-width: 0;
+    border-right: 1px solid var(--cor-borda);
+}
+
+.ritmo-scope .bio-stat-chip > i {
+    font-size: 1rem;
+    color: var(--cor-azul-primario);
+    flex-shrink: 0;
+    opacity: 0.85;
+}
+
+.ritmo-scope .bio-stat-chip > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.ritmo-scope .chip-label {
+    font-size: 0.62rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--cor-texto-secundario);
+    white-space: nowrap;
+}
+
+.ritmo-scope .chip-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--cor-texto-principal);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ritmo-scope .chip-value em {
+    font-style: normal;
+    font-size: 0.72rem;
+    font-weight: 400;
+    color: var(--cor-texto-secundario);
+}
+
+.ritmo-scope .btn-adjust-profile-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 20px;
+    background: var(--cor-azul-primario);
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+
+.ritmo-scope .btn-adjust-profile-chip:hover {
+    background: var(--cor-azul-hover, #3a5ce0);
+    color: #fff;
+}
+
+/* Dois painéis abaixo da strip */
+.ritmo-scope .bio-panels-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+}
+
+.ritmo-scope .bio-panel {
+    background: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    border-radius: 14px;
+    padding: 1.2rem 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.ritmo-scope .bio-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ritmo-scope .bio-panel-header > i {
+    color: var(--cor-azul-primario);
+    font-size: 0.85rem;
+    opacity: 0.85;
+}
+
+.ritmo-scope .bio-panel-header > span:first-of-type {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--cor-texto-secundario);
+}
+
+.ritmo-scope .bio-panel-sub {
+    font-size: 0.68rem;
+    color: var(--cor-texto-secundario);
+    opacity: 0.55;
+    margin-left: auto;
+}
+
+.ritmo-scope .bio-panel-empty {
+    font-size: 0.85rem;
+    color: var(--cor-texto-secundario);
+    font-style: italic;
+    text-align: center;
+    padding: 1.5rem 0;
+}
+
+/* ── Volume bars ── */
+.ritmo-scope .vol-bars-list {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.ritmo-scope .vol-bar-row {
+    display: grid;
+    grid-template-columns: 110px 1fr 24px;
+    align-items: center;
+    gap: 10px;
+}
+
+.ritmo-scope .vol-bar-label {
+    font-size: 0.78rem;
+    color: var(--cor-texto-secundario);
+    text-transform: capitalize;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ritmo-scope .vol-bar-track {
+    height: 6px;
+    background: var(--cor-card-secundario);
+    border-radius: 99px;
+    position: relative;
+    overflow: visible;
+}
+
+.ritmo-scope .vol-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.5s ease;
+}
+
+.ritmo-scope .vol-bar-fill.low  { background: #ef4444; }
+.ritmo-scope .vol-bar-fill.ok   { background: #10b981; }
+.ritmo-scope .vol-bar-fill.high { background: #f59e0b; }
+
+/* Linha vertical no MEV (10/22 ≈ 45%) */
+.ritmo-scope .vol-bar-mev {
+    position: absolute;
+    top: -3px;
+    bottom: -3px;
+    left: calc(10 / 22 * 100%);
+    width: 1px;
+    background: var(--cor-borda);
+}
+
+.ritmo-scope .vol-bar-count {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-align: right;
+}
+.ritmo-scope .vol-bar-count.low  { color: #ef4444; }
+.ritmo-scope .vol-bar-count.ok   { color: #10b981; }
+.ritmo-scope .vol-bar-count.high { color: #f59e0b; }
+
+.ritmo-scope .vol-legend {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+}
+.ritmo-scope .vol-legend > span {
+    font-size: 0.68rem;
+    color: var(--cor-texto-secundario);
+}
+.ritmo-scope .vol-legend-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+.ritmo-scope .vol-legend-dot:first-child { margin-left: 0; }
+.ritmo-scope .vol-legend-dot.low  { background: #ef4444; }
+.ritmo-scope .vol-legend-dot.ok   { background: #10b981; }
+.ritmo-scope .vol-legend-dot.high { background: #f59e0b; }
+
+/* ── Macro bars ── */
+.ritmo-scope .macro-bars-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.ritmo-scope .macro-bar-row {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.ritmo-scope .macro-bar-head {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.ritmo-scope .macro-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.ritmo-scope .macro-dot.protein { background: var(--cor-azul-primario); }
+.ritmo-scope .macro-dot.carb    { background: #f59e0b; }
+.ritmo-scope .macro-dot.fat     { background: #a855f7; }
+
+.ritmo-scope .macro-bar-label {
+    font-size: 0.8rem;
+    color: var(--cor-texto-secundario);
+    flex: 1;
+}
+
+.ritmo-scope .macro-bar-values {
+    font-size: 0.82rem;
+}
+.ritmo-scope .macro-bar-values strong {
+    color: var(--cor-texto-principal);
+    font-weight: 600;
+}
+.ritmo-scope .macro-bar-values span {
+    color: var(--cor-texto-secundario);
+}
+
+.ritmo-scope .macro-bar-track {
+    height: 6px;
+    background: var(--cor-card-secundario);
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.ritmo-scope .macro-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.5s ease;
+}
+.ritmo-scope .macro-bar-fill.protein      { background: var(--cor-azul-primario); }
+.ritmo-scope .macro-bar-fill.carb         { background: #f59e0b; }
+.ritmo-scope .macro-bar-fill.fat          { background: #a855f7; }
+.ritmo-scope .macro-bar-fill.over         { opacity: 0.7; }
+
+/* Linha kcal total — grudada no rodapé do card */
+.ritmo-scope .macro-kcal-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--cor-borda);
+    font-size: 0.8rem;
+    color: var(--cor-texto-secundario);
+    margin-top: auto;
+}
+.ritmo-scope .macro-kcal-row > i {
+    color: #f59e0b;
+    font-size: 0.82rem;
+}
+.ritmo-scope .macro-kcal-vals {
+    margin-left: auto;
+    font-size: 0.83rem;
+}
+.ritmo-scope .macro-kcal-vals strong {
+    color: var(--cor-texto-principal);
+    font-weight: 700;
+}
+.ritmo-scope .kcal-diff {
+    margin-left: 6px;
+    font-size: 0.73rem;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+.ritmo-scope .kcal-diff.over  { color: #ef4444; background: rgba(239, 68, 68, 0.12); }
+.ritmo-scope .kcal-diff.under { color: #f59e0b; background: rgba(245,158, 11, 0.12); }
+.ritmo-scope .kcal-diff.ok    { color: #10b981; background: rgba( 16,185,129, 0.12); }
+
+/* ── Legado (mantido para não quebrar nada) ── */
 .ritmo-scope .bio-grid-layout {
     display: grid;
     grid-template-columns: max-content 1fr;
     gap: 1.5rem;
     margin-bottom: 2.5rem;
     align-items: stretch;
-    max-width: 100%; /* Evita overflow */
+    max-width: 100%;
 }
 
 .ritmo-scope .volume-summary-box.full-height {

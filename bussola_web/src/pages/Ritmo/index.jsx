@@ -240,76 +240,155 @@ export function Ritmo() {
             </div>
 
             <div className="ritmo-content-wrapper">
-                <div className="bio-grid-layout">
-                    <div className="volume-summary-box full-height">
-                        <div className="box-header">Volume Semanal (Sets)</div>
-                        <div className="volume-vertical-list">
-                            {Object.entries(volumeSemanal).length > 0 ? (
-                                Object.entries(volumeSemanal).map(([grupo, series]) => (
-                                    <div key={grupo} className="vol-tag">
-                                        <span className="tag-muscle">{grupo}</span>
-                                        <span className="tag-count">{series}</span>
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="empty-list-msg">Sem dados de volume.</div>
-                            )}
+                {/* ── BIO OVERVIEW ── */}
+                <div className="bio-overview-section">
+
+                    {/* Faixa de stat chips */}
+                    <div className="bio-stat-strip">
+                        <div className="bio-stat-chip">
+                            <i className="fa-solid fa-weight-scale"></i>
+                            <div>
+                                <span className="chip-label">Peso</span>
+                                <span className="chip-value">{bio?.peso ?? '--'} <em>kg</em></span>
+                            </div>
                         </div>
+                        <div className="bio-stat-chip">
+                            <i className="fa-solid fa-ruler-vertical"></i>
+                            <div>
+                                <span className="chip-label">Altura</span>
+                                <span className="chip-value">{bio?.altura ?? '--'} <em>cm</em></span>
+                            </div>
+                        </div>
+                        <div className="bio-stat-chip">
+                            <i className="fa-solid fa-percent"></i>
+                            <div>
+                                <span className="chip-label">% Gordura</span>
+                                <span className="chip-value">{bio?.bf_estimado ? `${bio.bf_estimado}` : '--'} <em>%</em></span>
+                            </div>
+                        </div>
+                        <div className="bio-stat-chip">
+                            <i className="fa-solid fa-fire-flame-curved"></i>
+                            <div>
+                                <span className="chip-label">Meta Calórica</span>
+                                <span className="chip-value">{bio?.gasto_calorico_total ? Math.round(bio.gasto_calorico_total) : '--'} <em>kcal</em></span>
+                            </div>
+                        </div>
+                        <div className="bio-stat-chip">
+                            <i className="fa-solid fa-brain"></i>
+                            <div>
+                                <span className="chip-label">TMB</span>
+                                <span className="chip-value">{bio?.tmb ?? '--'} <em>kcal</em></span>
+                            </div>
+                        </div>
+                        <div className="bio-stat-chip">
+                            <i className="fa-solid fa-droplet"></i>
+                            <div>
+                                <span className="chip-label">Hidratação</span>
+                                <span className="chip-value">{bio?.meta_agua ? bio.meta_agua.toFixed(1) : '--'} <em>L</em></span>
+                            </div>
+                        </div>
+                        <div className="bio-stat-chip">
+                            <i className="fa-solid fa-person-running"></i>
+                            <div>
+                                <span className="chip-label">Atividade</span>
+                                <span className="chip-value">{bio?.nivel_atividade ?? '--'}</span>
+                            </div>
+                        </div>
+                        <button className="btn-adjust-profile-chip" onClick={() => setShowBioModal(true)}>
+                            <i className="fa-solid fa-sliders"></i>
+                            <span>Ajustar Perfil</span>
+                        </button>
                     </div>
 
-                    <div className="bio-right-column">
-                        <div className="profile-info-card">
-                            <button className="btn-adjust-profile-square" onClick={() => setShowBioModal(true)}>
-                                <i className="fa-solid fa-sliders"></i>
-                                <span>Ajustar Perfil</span>
-                            </button>
+                    {/* Dois painéis */}
+                    <div className="bio-panels-row">
 
-                            <div className="bio-indicator-group">
-                                <div className="bio-mini-card">
-                                    <label>Peso Atual</label>
-                                    <strong>{bio?.peso || '--'} <span>kg</span></strong>
-                                </div>
-                                <div className="bio-mini-card">
-                                    <label>Meta Diária</label>
-                                    <strong>{bio?.gasto_calorico_total ? Math.round(bio.gasto_calorico_total) : '--'} <span>kcal</span></strong>
-                                </div>
-                                <div className="bio-mini-card">
-                                    <label>Taxa Metabólica</label>
-                                    <strong>{bio?.tmb || '--'} <span>kcal</span></strong>
-                                </div>
-                                <div className="bio-mini-card">
-                                    <label>Hidratação</label>
-                                    <strong>{bio?.meta_agua ? (bio.meta_agua).toFixed(1) : '--'} <span>L</span></strong>
-                                </div>
+                        {/* Volume Semanal */}
+                        <div className="bio-panel">
+                            <div className="bio-panel-header">
+                                <i className="fa-solid fa-dumbbell"></i>
+                                <span>Volume Semanal</span>
+                                <span className="bio-panel-sub">sets / semana por grupo muscular</span>
                             </div>
+                            {Object.entries(volumeSemanal).length > 0 ? (
+                                <div className="vol-bars-list">
+                                    {Object.entries(volumeSemanal).map(([grupo, sets]) => {
+                                        const MAX = 22;
+                                        const pct = Math.min((sets / MAX) * 100, 100);
+                                        const status = sets < 10 ? 'low' : sets < 20 ? 'ok' : 'high';
+                                        return (
+                                            <div key={grupo} className="vol-bar-row">
+                                                <span className="vol-bar-label">{grupo}</span>
+                                                <div className="vol-bar-track">
+                                                    <div className={`vol-bar-fill ${status}`} style={{ width: `${pct}%` }}></div>
+                                                    <div className="vol-bar-mev" title="Mínimo recomendado (10 sets/sem)"></div>
+                                                </div>
+                                                <span className={`vol-bar-count ${status}`}>{sets}</span>
+                                            </div>
+                                        );
+                                    })}
+                                    <div className="vol-legend">
+                                        <span className="vol-legend-dot low"></span><span>{'< 10 (baixo)'}</span>
+                                        <span className="vol-legend-dot ok"></span><span>10–19 (ótimo)</span>
+                                        <span className="vol-legend-dot high"></span><span>{'≥ 20 (alto)'}</span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <p className="bio-panel-empty">Configure um plano de treino para ver o volume semanal.</p>
+                            )}
                         </div>
 
-                        <div className="macros-clean-container">
-                            <div className="box-header">Distribuição (Meta / Planejado)</div>
-                            <div className="macros-horizontal-row">
-                                <div className="macro-item-mini">
-                                    <span className="m-label">Proteína</span>
-                                    <span className="m-val">
-                                        {bio?.meta_proteina || 0}g 
-                                        <span className="m-planned"> / {Math.round(macrosDieta.p)}g</span>
-                                    </span>
-                                </div>
-                                <div className="macro-item-mini">
-                                    <span className="m-label">Carbo</span>
-                                    <span className="m-val">
-                                        {bio?.meta_carbo || 0}g 
-                                        <span className="m-planned"> / {Math.round(macrosDieta.c)}g</span>
-                                    </span>
-                                </div>
-                                <div className="macro-item-mini">
-                                    <span className="m-label">Gordura</span>
-                                    <span className="m-val">
-                                        {bio?.meta_gordura || 0}g 
-                                        <span className="m-planned"> / {Math.round(macrosDieta.g)}g</span>
-                                    </span>
-                                </div>
+                        {/* Macros */}
+                        <div className="bio-panel">
+                            <div className="bio-panel-header">
+                                <i className="fa-solid fa-utensils"></i>
+                                <span>Distribuição de Macros</span>
+                                <span className="bio-panel-sub">meta vs. planejado na dieta ativa</span>
                             </div>
+                            <div className="macro-bars-list">
+                                {[
+                                    { label: 'Proteína',     meta: bio?.meta_proteina ?? 0, plan: Math.round(macrosDieta.p), cls: 'protein' },
+                                    { label: 'Carboidratos', meta: bio?.meta_carbo     ?? 0, plan: Math.round(macrosDieta.c), cls: 'carb'    },
+                                    { label: 'Gorduras',     meta: bio?.meta_gordura   ?? 0, plan: Math.round(macrosDieta.g), cls: 'fat'     },
+                                ].map(({ label, meta, plan, cls }) => {
+                                    const pct = meta > 0 ? Math.min((plan / meta) * 100, 100) : 0;
+                                    const over = plan > meta && meta > 0;
+                                    return (
+                                        <div key={label} className="macro-bar-row">
+                                            <div className="macro-bar-head">
+                                                <span className={`macro-dot ${cls}`}></span>
+                                                <span className="macro-bar-label">{label}</span>
+                                                <span className="macro-bar-values">
+                                                    <strong>{plan}g</strong><span> / {meta}g</span>
+                                                </span>
+                                            </div>
+                                            <div className="macro-bar-track">
+                                                <div className={`macro-bar-fill ${cls}${over ? ' over' : ''}`} style={{ width: `${pct}%` }}></div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            {(() => {
+                                const kcalPlan = Math.round(macrosDieta.p * 4 + macrosDieta.c * 4 + macrosDieta.g * 9);
+                                const kcalMeta = bio?.gasto_calorico_total ? Math.round(bio.gasto_calorico_total) : 0;
+                                const diff = kcalPlan - kcalMeta;
+                                const diffCls = diff > 50 ? 'over' : diff < -50 ? 'under' : 'ok';
+                                return (
+                                    <div className="macro-kcal-row">
+                                        <i className="fa-solid fa-fire-flame-curved"></i>
+                                        <span>Kcal planejadas</span>
+                                        <span className="macro-kcal-vals">
+                                            <strong>{kcalPlan}</strong> / {kcalMeta} kcal
+                                            {kcalMeta > 0 && (
+                                                <span className={`kcal-diff ${diffCls}`}>{diff > 0 ? `+${diff}` : diff}</span>
+                                            )}
+                                        </span>
+                                    </div>
+                                );
+                            })()}
                         </div>
+
                     </div>
                 </div>
 

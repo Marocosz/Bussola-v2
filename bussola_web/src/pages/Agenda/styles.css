@@ -63,8 +63,8 @@
     width: 60%;
     height: 200%;
     background: radial-gradient(ellipse at center,
-            rgba(74, 109, 255, 0.15) 0%,
-            rgba(168, 85, 247, 0.05) 40%,
+            rgba(var(--cor-tema-rgb), 0.15) 0%,
+            rgba(var(--cor-acento-rgb), 0.05) 40%,
             transparent 70%);
     z-index: 0;
     pointer-events: none;

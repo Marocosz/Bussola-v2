@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
+import { loadSavedColorTheme } from '../../utils/colorTheme';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext'; 
 import { useSystem } from '../../context/SystemContext';
@@ -27,6 +28,7 @@ export function Navbar() {
             document.body.classList.add('light-theme');
             setTheme('light');
         }
+        loadSavedColorTheme();
     }, []);
 
     const toggleTheme = () => {

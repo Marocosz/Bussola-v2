@@ -282,6 +282,78 @@
     font-weight: 600;
 }
 
+/* ─── Color Theme Picker ─────────────────────────────────────── */
+.color-theme-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+}
+
+.color-preset-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    padding: 8px 4px;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.color-preset-btn:hover {
+    background: var(--cor-fundo-hover);
+}
+
+.color-preset-btn.active {
+    border-color: var(--cor-azul-primario);
+    background: var(--cor-fundo-hover);
+}
+
+.color-preset-swatch {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    transition: transform 0.15s;
+}
+
+.color-preset-btn.active .color-preset-swatch {
+    transform: scale(1.12);
+}
+
+.color-preset-check {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 0.8rem;
+    opacity: 0;
+    transition: opacity 0.15s;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.color-preset-btn.active .color-preset-check {
+    opacity: 1;
+}
+
+.color-preset-name {
+    font-size: 0.68rem;
+    color: var(--cor-texto-secundario);
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+.color-preset-btn.active .color-preset-name {
+    color: var(--cor-azul-primario);
+    font-weight: 600;
+}
+
 /* Animação */
 @keyframes drawerFadeIn {
     from { opacity: 0; transform: translateY(10px); }

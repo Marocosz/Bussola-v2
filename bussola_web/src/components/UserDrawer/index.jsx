@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '../../context/ToastContext';
 import { CitySelector } from '../CitySelector';
-import { getNewsTopics } from '../../services/api'; 
+import { getNewsTopics } from '../../services/api';
 import zxcvbn from 'zxcvbn'; // Importando lib de força de senha
+import { COLOR_PRESETS, applyColorTheme, getActivePresetId } from '../../utils/colorTheme';
 import './styles.css';
 
 export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
@@ -22,6 +23,7 @@ export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
     const [passwordFeedback, setPasswordFeedback] = useState('');
 
     const [availableTopics, setAvailableTopics] = useState([]);
+    const [activePreset, setActivePreset] = useState(getActivePresetId);
 
     useEffect(() => {
         async function loadTopics() {
@@ -103,6 +105,11 @@ export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
         }
     };
 
+    const handlePresetSelect = (presetId) => {
+        applyColorTheme(presetId);
+        setActivePreset(presetId);
+    };
+
     const handleSaveAccount = async () => {
         // Validação de senha fraca antes de salvar
         if (editPassword && passwordScore !== null && passwordScore < 2) {
@@ -168,6 +175,32 @@ export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
                     </div>
 
                     <div className="drawer-form">
+                        <div className="form-section-title">Aparência</div>
+                        <div className="form-group">
+                            <label>Cor do Tema</label>
+                            <div className="color-theme-grid">
+                                {COLOR_PRESETS.map(preset => (
+                                    <button
+                                        key={preset.id}
+                                        type="button"
+                                        className={`color-preset-btn ${activePreset === preset.id ? 'active' : ''}`}
+                                        onClick={() => handlePresetSelect(preset.id)}
+                                        title={preset.name}
+                                    >
+                                        <div
+                                            className="color-preset-swatch"
+                                            style={{ background: `linear-gradient(135deg, ${preset.from}, ${preset.to})` }}
+                                        >
+                                            <div className="color-preset-check">
+                                                <i className="fa-solid fa-check"></i>
+                                            </div>
+                                        </div>
+                                        <span className="color-preset-name">{preset.name}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
                         <div className="form-section-title">Informações Pessoais</div>
                         
                         <div className="form-row">

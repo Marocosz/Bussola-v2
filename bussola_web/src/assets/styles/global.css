@@ -16,7 +16,11 @@
 
     /* --- Cores de Ação --- */
     --cor-azul-primario: #4A6DFF;
+    --cor-acento: #a855f7;
     --cor-azul-hover: #3859e0;
+    /* Componentes RGB para uso em rgba() — atualizados pelo tema */
+    --cor-tema-rgb: 74, 109, 255;
+    --cor-acento-rgb: 168, 85, 247;
     --cor-vermelho-delete: #e74c3c;
     --cor-vermelho-delete-hover: #c0392b;
     --cor-cinza-botao: #484a4f;
@@ -131,7 +135,7 @@ a {
 /* Botão Primário (Gradiente) */
 .btn-primary,
 .submit-button {
-    background: linear-gradient(90deg, var(--cor-azul-primario), #a855f7);
+    background: linear-gradient(90deg, var(--cor-azul-primario), var(--cor-acento));
 }
 
 .btn-primary:hover,
