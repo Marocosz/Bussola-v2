@@ -85,9 +85,57 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* Conteúdo do trigger selecionado */
+.cs-selected-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* Ícone colorido (bolinha com ícone FA dentro) */
+.cs-opt-icon-wrap {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.cs-opt-icon-wrap i {
+    font-size: 0.65rem;
+    color: #fff;
+}
+
+.cs-opt-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Badge de tipo (Despesa / Receita) */
+.cs-opt-type {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.08);
+    color: var(--cor-texto-secundario);
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
 /* Item individual */
 .custom-option {
-    padding: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
     font-size: 0.9rem;
     color: var(--cor-texto-principal);
     border-radius: 6px;
@@ -95,10 +143,18 @@
     transition: background 0.2s;
 }
 
-.custom-option:hover,
+.custom-option:hover {
+    background-color: var(--cor-card-secundario);
+}
+
 .custom-option.selected {
     background-color: var(--cor-azul-primario);
     color: white;
+}
+
+.custom-option.selected .cs-opt-type {
+    background: rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.85);
 }
 
 /* ========================================================= */

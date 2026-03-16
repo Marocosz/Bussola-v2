@@ -140,6 +140,7 @@
     position: relative;
     z-index: 2;
     min-height: 60px;
+    box-sizing: border-box;
 }
 
 /* 1. Coluna Transações (Esquerda) */
@@ -159,8 +160,8 @@
     background-color: var(--cor-fundo);
     border: 1px solid var(--cor-borda);
     color: var(--cor-texto-principal);
-    padding: 6px 12px;
-    height: 36px;
+    padding: 4px 12px;
+    height: 30px;
     border-radius: 8px;
     cursor: pointer;
     font-size: 0.9rem;
@@ -307,7 +308,6 @@
     width: 100%;
     border-radius: 0 12px 12px 0 !important;
     z-index: 2;
-    box-sizing: border-box;
 }
 
 .financas-scope .column-header-flex h2 {

@@ -2510,7 +2510,7 @@
     grid-template-columns: 4px 72px 1fr 88px 168px 90px 96px;
     align-items: center;
     gap: 0;
-    padding: 0 16px 6px 0;
+    padding-bottom: 6px;
     border-bottom: 1px solid var(--cor-borda);
     margin-bottom: 2px;
     flex-shrink: 0;

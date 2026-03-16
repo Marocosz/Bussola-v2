@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createCompromisso, updateCompromisso } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 import { BaseModal } from '../../../components/BaseModal';
+import { DateTimePicker } from '../../../components/Pickers';
 
 export function AgendaModal({ active, closeModal, onUpdate, editingData }) {
     const { addToast } = useToast();
@@ -74,13 +75,11 @@ export function AgendaModal({ active, closeModal, onUpdate, editingData }) {
                                 />
                             </div>
                             <div className="form-group" style={{flexGrow:1}}>
-                                <label>Data e Hora</label>
-                                <input 
-                                    type="datetime-local" 
-                                    className="form-input" 
-                                    value={dataHora} 
-                                    onChange={e => setDataHora(e.target.value)} 
-                                    required 
+                                <DateTimePicker
+                                    label="Data e Hora"
+                                    value={dataHora}
+                                    onChange={e => setDataHora(e.target.value)}
+                                    required
                                 />
                             </div>
                         </div>

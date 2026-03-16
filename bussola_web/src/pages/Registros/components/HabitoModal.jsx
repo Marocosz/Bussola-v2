@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { createHabito, updateHabito } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 import { BaseModal } from '../../../components/BaseModal';
+import { TimePicker } from '../../../components/Pickers';
 import '../styles.css';
 
 const DIAS = [
@@ -152,10 +153,8 @@ export function HabitoModal({ active, closeModal, onUpdate, editingData }) {
                         {/* Horário + Duração */}
                         <div className="form-row-2col">
                             <div className="form-group">
-                                <label className="form-label">Horário</label>
-                                <input
-                                    type="time"
-                                    className="form-input"
+                                <TimePicker
+                                    label="Horário"
                                     value={form.horario}
                                     onChange={e => setForm(p => ({ ...p, horario: e.target.value }))}
                                     required

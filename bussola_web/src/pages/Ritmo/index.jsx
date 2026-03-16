@@ -230,7 +230,7 @@ export function Ritmo() {
     );
 
     return (
-        <div className="ritmo-scope main-container">
+        <div className="ritmo-scope container main-container">
             <div className="internal-hero">
                 <div className="hero-bg-effect"></div>
                 <div className="internal-hero-content">

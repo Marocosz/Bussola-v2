@@ -6,6 +6,7 @@ import { FinancasModals } from './components/FinancasModals';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmDialogContext';
 import { AiAssistant } from '../../components/AiAssistant';
+import { DatePicker } from '../../components/Pickers';
 import './styles.css';
 
 export function Financas() {
@@ -349,9 +350,19 @@ export function Financas() {
                                             ))}
                                             {filterDatePreset === 'custom' && (
                                                 <div className="filter-date-range">
-                                                    <input type="date" className="filter-date-input" value={filterDateStart} onChange={e => { setFilterDateStart(e.target.value); setCurrentPage(1); }} />
-                                                    <span>—</span>
-                                                    <input type="date" className="filter-date-input" value={filterDateEnd} onChange={e => { setFilterDateEnd(e.target.value); setCurrentPage(1); }} />
+                                                    <DatePicker
+                                                        size="sm"
+                                                        value={filterDateStart}
+                                                        onChange={e => { setFilterDateStart(e.target.value); setCurrentPage(1); }}
+                                                        placeholder="Início"
+                                                    />
+                                                    <span style={{ color: 'var(--cor-texto-secundario)', flexShrink: 0 }}>—</span>
+                                                    <DatePicker
+                                                        size="sm"
+                                                        value={filterDateEnd}
+                                                        onChange={e => { setFilterDateEnd(e.target.value); setCurrentPage(1); }}
+                                                        placeholder="Fim"
+                                                    />
                                                 </div>
                                             )}
                                         </div>

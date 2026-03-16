@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createTarefa, updateTarefa, addSubtarefa } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 import { BaseModal } from '../../../components/BaseModal';
+import { DatePicker } from '../../../components/Pickers';
 import '../styles.css';
 
 const ModalSubtaskEdit = ({ sub, index, path, onUpdate, onDelete, onAddChild, level = 0 }) => {
@@ -219,8 +220,11 @@ export function TarefaModal({ active, closeModal, onUpdate, editingData }) {
                                 )}
                             </div>
                             <div className="form-group" style={{flex:1}}>
-                                <label>Prazo (Opcional)</label>
-                                <input type="date" className="form-input" value={prazo} onChange={e => setPrazo(e.target.value)} />
+                                <DatePicker
+                                    label="Prazo (Opcional)"
+                                    value={prazo}
+                                    onChange={e => setPrazo(e.target.value)}
+                                />
                             </div>
                         </div>
                         <div className="form-group">

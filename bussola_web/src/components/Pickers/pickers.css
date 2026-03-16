@@ -1,0 +1,399 @@
+/* ==========================================================================
+   CUSTOM PICKERS — TimePicker · DatePicker · DateTimePicker
+   Segue o mesmo design language do CustomSelect e dropdowns do projeto.
+   ========================================================================== */
+
+/* ─── Wrapper ─────────────────────────────────────────────────────────────── */
+
+.pk-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    width: 100%;
+}
+
+/* ─── Label ───────────────────────────────────────────────────────────────── */
+
+.pk-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--cor-texto-secundario);
+    display: block;
+}
+
+/* ─── Trigger (botão que abre o picker) ──────────────────────────────────── */
+
+.pk-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    height: 45px;
+    padding: 0 12px;
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    background: var(--cor-fundo);
+    color: var(--cor-texto-principal);
+    font-size: 0.95rem;
+    cursor: pointer;
+    user-select: none;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    position: relative;
+    /* resets para <button> */
+    -webkit-appearance: none;
+    appearance: none;
+    font-family: inherit;
+    text-align: left;
+    outline: none;
+}
+
+.pk-trigger:hover {
+    border-color: var(--cor-texto-secundario);
+}
+
+.pk-trigger.open {
+    border-color: var(--cor-azul-primario);
+    box-shadow: 0 0 0 3px rgba(74, 109, 255, 0.12);
+}
+
+.pk-trigger.placeholder .pk-trigger-text {
+    color: var(--cor-texto-secundario);
+    opacity: 0.65;
+}
+
+.pk-trigger-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.95rem;
+}
+
+.pk-trigger-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    color: var(--cor-texto-secundario);
+}
+
+.pk-trigger-icon {
+    font-size: 0.85rem;
+}
+
+.pk-chevron {
+    font-size: 0.72rem;
+    transition: transform 0.2s;
+    color: var(--cor-texto-secundario);
+}
+
+.pk-trigger.open .pk-chevron {
+    transform: rotate(180deg);
+}
+
+/* ─── Variant: sm (para filtros compactos) ───────────────────────────────── */
+
+.pk-wrapper.pk-sm .pk-trigger {
+    height: 30px;
+    padding: 0 8px;
+    font-size: 0.78rem;
+    border-radius: 6px;
+}
+
+.pk-wrapper.pk-sm .pk-trigger-text {
+    font-size: 0.78rem;
+}
+
+.pk-wrapper.pk-sm .pk-trigger-icon {
+    font-size: 0.72rem;
+}
+
+.pk-wrapper.pk-sm .pk-chevron {
+    font-size: 0.62rem;
+}
+
+/* ─── Panel base (portal — position: fixed via JS) ───────────────────────── */
+
+.pk-panel {
+    background: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+    overflow: hidden;
+    animation: pk-fade-in 0.12s ease-out;
+}
+
+@keyframes pk-fade-in {
+    from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* =========================================================================
+   TIME PICKER
+   ========================================================================= */
+
+.pk-time-panel {
+    min-width: 160px;
+}
+
+.pk-time-cols {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    height: 220px;
+}
+
+.pk-time-col-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.pk-time-col-header {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--cor-texto-secundario);
+    text-align: center;
+    padding: 10px 0 6px;
+    border-bottom: 1px solid var(--cor-borda);
+    flex-shrink: 0;
+}
+
+.pk-time-col {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 4px;
+    scrollbar-width: none;
+}
+
+.pk-time-col::-webkit-scrollbar {
+    display: none;
+}
+
+.pk-time-sep {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 2px;
+    margin-top: 36px; /* align with items */
+    color: var(--cor-texto-secundario);
+    font-weight: 700;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.pk-time-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    border-radius: 7px;
+    border: none;
+    background: transparent;
+    color: var(--cor-texto-secundario);
+    font-size: 0.92rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+}
+
+.pk-time-item:hover {
+    background: var(--cor-fundo-hover);
+    color: var(--cor-texto-principal);
+}
+
+.pk-time-item.selected {
+    background: var(--cor-azul-primario);
+    color: #fff;
+    font-weight: 700;
+}
+
+/* =========================================================================
+   DATE PICKER
+   ========================================================================= */
+
+.pk-date-panel {
+    width: 288px;
+    padding: 0;
+}
+
+/* Header: nav arrows + month/year */
+.pk-cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 14px 10px;
+    border-bottom: 1px solid var(--cor-borda);
+}
+
+.pk-cal-month-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--cor-texto-principal);
+    letter-spacing: 0.2px;
+}
+
+.pk-cal-nav-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    border: 1px solid var(--cor-borda);
+    background: transparent;
+    color: var(--cor-texto-secundario);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.72rem;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+
+.pk-cal-nav-btn:hover {
+    background: var(--cor-azul-primario);
+    border-color: var(--cor-azul-primario);
+    color: #fff;
+}
+
+/* Weekday headers */
+.pk-cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding: 8px 10px 4px;
+}
+
+.pk-cal-weekday {
+    text-align: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--cor-texto-secundario);
+    padding: 4px 0;
+    letter-spacing: 0.3px;
+}
+
+/* Day grid */
+.pk-cal-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding: 0 10px 8px;
+    gap: 2px;
+}
+
+.pk-cal-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    border: none;
+    background: transparent;
+    color: var(--cor-texto-principal);
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    font-variant-numeric: tabular-nums;
+    min-height: 32px;
+}
+
+.pk-cal-day:hover:not(.selected):not(.other-month) {
+    background: var(--cor-fundo-hover);
+}
+
+.pk-cal-day.other-month {
+    color: var(--cor-texto-secundario);
+    opacity: 0.3;
+    cursor: default;
+    pointer-events: none;
+}
+
+.pk-cal-day.today:not(.selected) {
+    border: 1.5px solid var(--cor-azul-primario);
+    color: var(--cor-azul-primario);
+    font-weight: 700;
+}
+
+.pk-cal-day.selected {
+    background: var(--cor-azul-primario);
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(74, 109, 255, 0.35);
+}
+
+/* Footer: Hoje + Limpar */
+.pk-cal-footer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px 12px;
+    border-top: 1px solid var(--cor-borda);
+}
+
+.pk-cal-today-btn,
+.pk-cal-clear-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.15s;
+}
+
+.pk-cal-today-btn {
+    color: var(--cor-azul-primario);
+    background: rgba(74, 109, 255, 0.1);
+}
+
+.pk-cal-today-btn:hover {
+    background: rgba(74, 109, 255, 0.2);
+}
+
+.pk-cal-clear-btn {
+    color: var(--cor-texto-secundario);
+    margin-left: auto;
+}
+
+.pk-cal-clear-btn:hover {
+    background: var(--cor-fundo-hover);
+    color: var(--cor-vermelho-delete);
+}
+
+/* =========================================================================
+   DATETIME PICKER
+   ========================================================================= */
+
+.pk-datetime-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    width: 100%;
+}
+
+.pk-datetime-fields {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    align-items: start;
+}
+
+.pk-datetime-fields .pk-wrapper {
+    /* date takes most space, time is fixed */
+}
+
+.pk-datetime-fields .pk-wrapper:last-child {
+    width: 110px;
+    flex-shrink: 0;
+}

@@ -3,6 +3,7 @@ import { createTransacao, createCategoria, updateTransacao, updateCategoria } fr
 import { useToast } from '../../../context/ToastContext';
 import { CustomSelect } from '../../../components/CustomSelect';
 import { BaseModal } from '../../../components/BaseModal';
+import { DatePicker } from '../../../components/Pickers';
 
 export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardData, editingData }) {
     const { addToast } = useToast();
@@ -105,14 +106,20 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
     const safeCores = safeData.cores_disponiveis || [];
 
     const categoryOptions = [
-        ...safeDespesas.map(c => ({ 
-            value: c.id, 
-            label: c.nome.includes('(') ? c.nome : `${c.nome} (Despesa)` 
+        ...safeDespesas.map(c => ({
+            value: c.id,
+            label: c.nome,
+            icon: c.icone,
+            color: c.cor,
+            type: 'Despesa',
         })),
-        ...safeReceitas.map(c => ({ 
-            value: c.id, 
-            label: c.nome.includes('(') ? c.nome : `${c.nome} (Receita)` 
-        }))
+        ...safeReceitas.map(c => ({
+            value: c.id,
+            label: c.nome,
+            icon: c.icone,
+            color: c.cor,
+            type: 'Receita',
+        })),
     ];
 
     const frequencyOptions = [
@@ -208,8 +215,13 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                 </div>
                                 <div className="form-row grid-50-50">
                                     <div className="form-group">
-                                        <label>Data</label>
-                                        <input type="date" name="data" value={formData.data || ''} className="form-input" required onChange={handleChange} />
+                                        <DatePicker
+                                            label="Data"
+                                            name="data"
+                                            value={formData.data || ''}
+                                            onChange={handleChange}
+                                            required
+                                        />
                                     </div>
                                     <div className="form-group">
                                         <CustomSelect 
@@ -239,8 +251,13 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                 </div>
                                 <div className="form-row grid-33">
                                     <div className="form-group">
-                                        <label>{editingData ? 'Data' : 'Data 1ª parcela'}</label>
-                                        <input type="date" name="data" value={formData.data || ''} className="form-input" required onChange={handleChange} />
+                                        <DatePicker
+                                            label={editingData ? 'Data' : 'Data 1ª parcela'}
+                                            name="data"
+                                            value={formData.data || ''}
+                                            onChange={handleChange}
+                                            required
+                                        />
                                     </div>
                                     <div className="form-group">
                                         <label>Nº Parcelas</label>
@@ -283,8 +300,13 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                 </div>
                                 <div className="form-row grid-33">
                                     <div className="form-group">
-                                        <label>{editingData ? 'Data' : 'Data Início'}</label>
-                                        <input type="date" name="data" value={formData.data || ''} className="form-input" required onChange={handleChange} />
+                                        <DatePicker
+                                            label={editingData ? 'Data' : 'Data Início'}
+                                            name="data"
+                                            value={formData.data || ''}
+                                            onChange={handleChange}
+                                            required
+                                        />
                                     </div>
                                     <div className="form-group">
                                         <CustomSelect 
