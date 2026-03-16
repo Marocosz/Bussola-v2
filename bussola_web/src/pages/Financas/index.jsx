@@ -7,6 +7,7 @@ import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmDialogContext';
 import { AiAssistant } from '../../components/AiAssistant';
 import { DatePicker } from '../../components/Pickers';
+import { CustomSelect } from '../../components/CustomSelect';
 import './styles.css';
 
 export function Financas() {
@@ -304,30 +305,18 @@ export function Financas() {
 
                             {/* Filtro: Categoria */}
                             {data && (
-                                <div className="filter-dropdown-wrapper">
-                                    <button
-                                        className={`filter-trigger-btn ${filterCategoria ? 'active' : ''}`}
-                                        onClick={() => setOpenFilterDropdown(openFilterDropdown === 'categoria' ? null : 'categoria')}
-                                        disabled={loading}
-                                    >
-                                        <span>{filterCategoria ? ([...(data.categorias_despesa||[]),...(data.categorias_receita||[])].find(c => c.id === filterCategoria)?.nome || 'Categoria') : 'Categoria'}</span>
-                                        <i className="fa-solid fa-chevron-down"></i>
-                                    </button>
-                                    {openFilterDropdown === 'categoria' && (
-                                        <>
-                                            <div className="filter-backdrop" onClick={() => setOpenFilterDropdown(null)}></div>
-                                            <div className="filter-dropdown-menu">
-                                                <div className={`filter-dropdown-item ${!filterCategoria ? 'selected' : ''}`} onClick={() => { setFilterCategoria(null); setCurrentPage(1); setOpenFilterDropdown(null); }}>Todas</div>
-                                                <div className="dropdown-scroll-area">
-                                                    {[...(data.categorias_despesa||[]),...(data.categorias_receita||[])].map(cat => (
-                                                        <div key={cat.id} className={`filter-dropdown-item ${filterCategoria === cat.id ? 'selected' : ''}`} onClick={() => { setFilterCategoria(cat.id); setCurrentPage(1); setOpenFilterDropdown(null); }}>
-                                                            <i className={cat.icone} style={{ color: cat.cor, marginRight: '6px', fontSize: '0.72rem' }}></i>{cat.nome}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </>
-                                    )}
+                                <div className="filter-dropdown-wrapper filter-categoria-cs">
+                                    <CustomSelect
+                                        name="filterCategoria"
+                                        value={filterCategoria === null ? '' : filterCategoria}
+                                        options={[
+                                            { value: '', label: 'Categoria' },
+                                            ...(data.categorias_despesa || []).map(c => ({ value: c.id, label: c.nome, icon: c.icone, color: c.cor, type: 'Despesa' })),
+                                            ...(data.categorias_receita || []).map(c => ({ value: c.id, label: c.nome, icon: c.icone, color: c.cor, type: 'Receita' })),
+                                        ]}
+                                        onChange={e => { setFilterCategoria(e.target.value === '' ? null : Number(e.target.value)); setCurrentPage(1); }}
+                                        placeholder="Categoria"
+                                    />
                                 </div>
                             )}
 

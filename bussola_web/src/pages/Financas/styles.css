@@ -192,6 +192,28 @@
     cursor: not-allowed;
 }
 
+/* CustomSelect compacto no header (filtro de categoria) */
+.financas-scope .filter-categoria-cs {
+    min-width: 130px;
+}
+
+.financas-scope .filter-categoria-cs .custom-select-wrapper {
+    gap: 0;
+}
+
+.financas-scope .filter-categoria-cs .custom-select-trigger {
+    height: 30px;
+    min-height: unset;
+    font-size: 0.9rem;
+    padding: 0 10px;
+    background-color: var(--cor-fundo);
+}
+
+.financas-scope .filter-categoria-cs .custom-select-trigger.open {
+    border-color: var(--cor-azul-primario);
+    box-shadow: none;
+}
+
 .financas-scope .filter-backdrop {
     position: fixed;
     top: 0;

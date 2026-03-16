@@ -64,7 +64,8 @@
     position: absolute;
     top: calc(100% + 5px);
     left: 0;
-    right: 0;
+    right: auto;
+    min-width: max(100%, 220px);
     background-color: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
     border-radius: 10px;

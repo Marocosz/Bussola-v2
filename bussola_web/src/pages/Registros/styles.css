@@ -2475,14 +2475,19 @@
 }
 
 .registros-scope .hl-list-container::-webkit-scrollbar {
-    width: 4px;
+    display: block;
+    width: 5px;
 }
 .registros-scope .hl-list-container::-webkit-scrollbar-track {
     background: transparent;
+    margin: 4px 0;
 }
 .registros-scope .hl-list-container::-webkit-scrollbar-thumb {
     background: var(--cor-borda);
     border-radius: 4px;
+}
+.registros-scope .hl-list-container::-webkit-scrollbar-thumb:hover {
+    background: var(--cor-texto-secundario);
 }
 
 /* ─── Estado vazio ────────────────────────────────────────────────── */
