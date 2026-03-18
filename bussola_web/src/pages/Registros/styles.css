@@ -1091,7 +1091,7 @@
 /* Subtarefas e Progresso */
 .registros-scope .subtarefas-container {
     margin-top: 1rem;
-    padding-top: 0.5rem;
+    padding-top: 0.2rem;
     border-top: none;
 }
 
@@ -1122,6 +1122,7 @@
     border-radius: 4px;
     flex: 1;
     overflow: hidden;
+    margin-bottom: 24px;
 }
 
 .registros-scope .progress-bar-fill {
@@ -1134,19 +1135,31 @@
 .registros-scope .subtarefas-list {
     list-style: none;
     padding: 0;
-    margin: 10px 0 0 0;
+    margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 2px;
 }
 
 .registros-scope .subtask-row {
+    position: relative;
     transition: background 0.2s;
     border-radius: 6px;
 }
 
 .registros-scope .subtask-row:hover {
     background-color: var(--cor-fundo-hover);
+}
+
+/* Linha separadora edge-to-edge entre itens irmãos */
+.registros-scope .subtarefas-list > div + div > .subtask-row::before,
+.registros-scope .subtask-children > div + div > .subtask-row::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: var(--cor-borda);
 }
 
 .registros-scope .riscado {

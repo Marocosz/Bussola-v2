@@ -24,9 +24,9 @@ const SubtaskItem = ({ sub, tarefaId, onToggle, onUpdate, level = 0 }) => {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-            <div 
-                className="subtask-row" 
-                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '5px 8px', paddingLeft: `${paddingLeft}px` }}
+            <div
+                className="subtask-row"
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '5px 8px', paddingLeft: `calc(1.2rem + ${paddingLeft}px)`, paddingRight: 'calc(1.2rem + 8px)', marginLeft: '-1.2rem', marginRight: '-1.2rem' }}
             >
                 <i 
                     className={`fa-regular ${sub.concluido ? 'fa-square-check' : 'fa-square'}`}
@@ -203,7 +203,7 @@ export function TarefaCard({ tarefa, onUpdate, onEdit }) {
 
                 <div className="tarefa-content">
                     <h4 className="tarefa-titulo">{tarefa.titulo}</h4>
-                    
+
                     <div className="tarefa-meta">
                         <span className={`badge-prio ${prioClass}`}>{tarefa.prioridade}</span>
                         {prazoFormatado && (
@@ -212,8 +212,6 @@ export function TarefaCard({ tarefa, onUpdate, onEdit }) {
                             </span>
                         )}
                     </div>
-
-                    {tarefa.descricao && <p className="tarefa-desc">{tarefa.descricao}</p>}
                 </div>
 
                 <div className="tarefa-actions">
@@ -225,6 +223,8 @@ export function TarefaCard({ tarefa, onUpdate, onEdit }) {
                     </button>
                 </div>
             </div>
+
+            {tarefa.descricao && <p className="tarefa-desc">{tarefa.descricao}</p>}
 
             {/* Renderiza CONTAINER SE tiver subtarefas OU se estiver adicionando */}
             <div className="subtarefas-container" style={{ display: (progressData.total > 0 || isAddingRoot) ? 'block' : 'block' }}>
