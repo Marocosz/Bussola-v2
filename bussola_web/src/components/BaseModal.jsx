@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 export function BaseModal({ children, onClose, className = '' }) {
+    const mouseDownTarget = useRef(null);
     
     // Trava o scroll do body ao abrir
     useEffect(() => {
@@ -22,7 +23,12 @@ export function BaseModal({ children, onClose, className = '' }) {
     return (
         // A classe 'modal-overlay' é padrão, e 'className' injeta o escopo (ex: 'registros-scope')
         // O clique aqui fecha o modal
-        <div className={`modal-overlay ${className}`} onClick={onClose} style={{ display: 'flex' }}>
+        <div
+            className={`modal-overlay ${className}`}
+            onMouseDown={(e) => { mouseDownTarget.current = e.target; }}
+            onClick={(e) => { if (e.target === e.currentTarget && mouseDownTarget.current === e.currentTarget) onClose(); }}
+            style={{ display: 'flex' }}
+        >
             {/* O clique aqui dentro NÃO fecha (stopPropagation) */}
             {/* Renderizamos o children diretamente, sem criar uma nova div 'modal-content' wrapper 
                 para não quebrar seu layout flex/grid interno. 

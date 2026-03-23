@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { adminCreateUser } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { BaseModal } from './BaseModal'; 
@@ -11,6 +11,7 @@ export function AdminUserModal({ isOpen, onClose }) {
     const [loading, setLoading] = useState(false);
     
     const { addToast } = useToast();
+    const mouseDownTarget = useRef(null);
 
     // 1. OBRIGATÓRIO: Se fechado, retorna null (para sumir da tela)
     if (!isOpen) return null;
@@ -53,7 +54,11 @@ export function AdminUserModal({ isOpen, onClose }) {
             {/* [CORREÇÃO] Adicionamos o Wrapper que tem 'position: fixed'
                 Isso garante que ele sobreponha a página, independente de onde o BaseModal esteja.
             */}
-            <div className="admin-modal-wrapper" onClick={onClose}>
+            <div
+                className="admin-modal-wrapper"
+                onMouseDown={(e) => { mouseDownTarget.current = e.target; }}
+                onClick={(e) => { if (e.target === e.currentTarget && mouseDownTarget.current === e.currentTarget) onClose(); }}
+            >
                 
                 {/* O conteúdo (Cartão) */}
                 <div className="admin-modal-content" onClick={(e) => e.stopPropagation()}>

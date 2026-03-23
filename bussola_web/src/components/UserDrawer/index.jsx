@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from '../../context/ToastContext';
 import { CitySelector } from '../CitySelector';
 import { getNewsTopics } from '../../services/api';
@@ -24,6 +24,7 @@ export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
 
     const [availableTopics, setAvailableTopics] = useState([]);
     const [activePreset, setActivePreset] = useState(getActivePresetId);
+    const mouseDownTarget = useRef(null);
 
     useEffect(() => {
         async function loadTopics() {
@@ -153,7 +154,11 @@ export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
     };
 
     return (
-        <div className={`drawer-overlay ${isOpen ? 'active' : ''}`} onClick={onClose}>
+        <div
+            className={`drawer-overlay ${isOpen ? 'active' : ''}`}
+            onMouseDown={(e) => { mouseDownTarget.current = e.target; }}
+            onClick={(e) => { if (e.target === e.currentTarget && mouseDownTarget.current === e.currentTarget) onClose(); }}
+        >
             <div className={`drawer-content ${isOpen ? 'open' : ''}`} onClick={e => e.stopPropagation()}>
                 <div className="drawer-header">
                     <h2>Configurações da Conta</h2>
