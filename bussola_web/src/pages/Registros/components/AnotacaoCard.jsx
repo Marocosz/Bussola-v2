@@ -94,11 +94,6 @@ export function AnotacaoCard({ anotacao, onUpdate, onEdit, onView }) {
                     {anotacao.fixado ? '' : ''} 
                 </button>
 
-                {anotacao.links && anotacao.links.length > 0 && (
-                    <div className="anotacao-footer-links">
-                        <i className="fa-solid fa-paperclip"></i> {anotacao.links.length}
-                    </div>
-                )}
             </div>
         </div>
     );

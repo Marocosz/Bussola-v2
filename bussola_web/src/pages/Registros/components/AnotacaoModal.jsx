@@ -54,8 +54,6 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
     const [conteudo, setConteudo]   = useState('');
     const [grupoId, setGrupoId]     = useState('');
     const [fixado, setFixado]       = useState(false);
-    const [links, setLinks]         = useState([]);
-    const [newLink, setNewLink]     = useState('');
     const [loading, setLoading]     = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -97,7 +95,6 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
             setTitulo(editingData.titulo);
             setGrupoId(editingData.grupo?.id || '');
             setFixado(editingData.fixado);
-            setLinks(editingData.links ? editingData.links.map(l => l.url) : []);
 
             let content = editingData.conteudo || '';
             if (isHtmlContent(content)) content = htmlToMarkdown(content);
@@ -108,7 +105,6 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
             setConteudo(draft || '');
             setGrupoId(gruposDisponiveis.length > 0 ? gruposDisponiveis[0].id : '');
             setFixado(false);
-            setLinks([]);
         }
     }, [active, editingData]);
 
@@ -131,14 +127,6 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
         return () => document.removeEventListener('keydown', handler);
     }, [isFullscreen]);
 
-    // ── Links ──────────────────────────────────────────────────────
-    const handleAddLink = (e) => {
-        e.preventDefault();
-        if (newLink.trim()) { setLinks([...links, newLink.trim()]); setNewLink(''); }
-    };
-
-    const handleRemoveLink = (idx) => setLinks(links.filter((_, i) => i !== idx));
-
     // ── Salvar ─────────────────────────────────────────────────────
     const handleSave = async () => {
         if (!titulo.trim()) return alert('O título é obrigatório');
@@ -148,7 +136,7 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
             conteudo,
             grupo_id: grupoId ? Number(grupoId) : null,
             fixado,
-            links,
+            links: [],
         };
         try {
             editingData
@@ -399,37 +387,6 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
                         </div>
                     </div>
 
-                    {/* ── Links ─────────────────────────────── */}
-                    <div className="links-manager-section">
-                        <label className="section-label">
-                            <i className="fa-solid fa-link"></i> Links e Referências
-                        </label>
-                        <div className="add-link-row">
-                            <input
-                                type="text"
-                                className="form-input link-input"
-                                placeholder="Cole uma URL aqui (ex: https://...)"
-                                value={newLink}
-                                onChange={e => setNewLink(e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && handleAddLink(e)}
-                            />
-                            <button className="btn-secondary btn-add-link" onClick={handleAddLink}>
-                                <i className="fa-solid fa-plus"></i> Adicionar
-                            </button>
-                        </div>
-                        {links.length > 0 && (
-                            <ul className="links-list-edit">
-                                {links.map((link, idx) => (
-                                    <li key={idx}>
-                                        <span className="link-url-text">{link}</span>
-                                        <button className="remove-link-btn" onClick={() => handleRemoveLink(idx)}>
-                                            <i className="fa-solid fa-trash"></i>
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </div>
                 </div>
 
                 {/* ── Footer ─────────────────────────────────── */}

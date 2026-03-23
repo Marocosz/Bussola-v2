@@ -122,28 +122,6 @@ export function ViewAnotacaoModal({ active, closeModal, nota, onEdit }) {
                         </p>
                     )}
 
-                    {/* Links anexados */}
-                    {nota.links && nota.links.length > 0 && (
-                        <div className="view-links-container">
-                            <h4 className="links-title">
-                                <i className="fa-solid fa-link"></i> Links Anexados
-                            </h4>
-                            <div className="links-list-view">
-                                {nota.links.map(link => (
-                                    <a
-                                        key={link.id}
-                                        href={link.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="link-item-view"
-                                    >
-                                        <i className="fa-solid fa-arrow-up-right-from-square"></i>
-                                        <span>{link.url}</span>
-                                    </a>
-                                ))}
-                            </div>
-                        </div>
-                    )}
                 </div>
 
                 {/* ── Footer ───────────────────────────────────────── */}
