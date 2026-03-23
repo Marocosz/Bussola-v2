@@ -40,8 +40,20 @@ export function AnotacaoCard({ anotacao, onUpdate, onEdit, onView }) {
     const dateObj = new Date(anotacao.data_criacao);
     const dateStr = dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
 
-    // Remove tags HTML para o preview e limita texto
-    const rawText = anotacao.conteudo.replace(/<[^>]+>/g, ' ');
+    // Remove tags HTML (legado) ou sintaxe markdown para o preview
+    const isHtml = anotacao.conteudo && /<[a-z][\s\S]*>/i.test(anotacao.conteudo);
+    const rawText = isHtml
+        ? anotacao.conteudo.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+        : (anotacao.conteudo || '')
+            .replace(/#{1,6}\s+/g, '')
+            .replace(/(\*\*|__)(.*?)\1/g, '$2')
+            .replace(/(\*|_)(.*?)\1/g, '$2')
+            .replace(/~~(.*?)~~/g, '$1')
+            .replace(/`{1,3}[^`]*`{1,3}/g, '')
+            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+            .replace(/^[>-]\s+/gm, '')
+            .replace(/\n{2,}/g, ' ')
+            .trim();
     
     return (
         <div
