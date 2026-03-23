@@ -89,7 +89,6 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
         setEditorMode('edit');
         setIsFullscreen(false);
         setDropdownOpen(false);
-        setNewLink('');
 
         if (editingData) {
             setTitulo(editingData.titulo);
