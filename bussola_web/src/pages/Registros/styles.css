@@ -1315,11 +1315,9 @@
 .registros-scope .editor-container {
     display: flex;
     flex-direction: column;
-    height: 350px !important;
-    min-height: 350px;
-    max-height: 350px;
+    flex: 1;
+    min-height: 0;
     margin-bottom: 1rem;
-    flex-shrink: 0;
 }
 
 .registros-scope .custom-quill-editor {
