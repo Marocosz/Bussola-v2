@@ -348,6 +348,11 @@
     border-left: 5px solid var(--cor-vermelho-delete);
 }
 
+.compromisso-card-modern.cancelado {
+    border-left: 5px solid #6b7280;
+    opacity: 0.8;
+}
+
 /* --- 1. Header: Data e Botões --- */
 .card-header-row {
     display: flex;
@@ -520,6 +525,11 @@
     color: #e74c3c;
 }
 
+.status-badge-modern.cancelado {
+    background: rgba(107, 114, 128, 0.15);
+    color: #9ca3af;
+}
+
 .btn-concluir-action {
     display: flex;
     align-items: center;
@@ -555,6 +565,32 @@
     background-color: var(--cor-fundo-hover);
     color: var(--cor-texto-principal);
     border-color: var(--cor-texto-secundario);
+}
+
+.footer-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.btn-cancelar-action {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid var(--cor-vermelho-delete);
+    color: var(--cor-vermelho-delete);
+    transition: all 0.2s;
+}
+
+.btn-cancelar-action:hover {
+    background: rgba(231, 76, 60, 0.1);
+    transform: translateY(-1px);
 }
 
 /* ============================================= */
