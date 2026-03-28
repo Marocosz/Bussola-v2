@@ -186,12 +186,18 @@ class AgendaService:
         db.commit(); db.refresh(comp)
         return comp
 
-    def toggle_status(self, db: Session, id: int, user_id: int):
-        """Alterna status entre 'Realizado' e 'Pendente'."""
-        comp = db.query(Compromisso).filter(Compromisso.id == id, Compromisso.user_id == user_id).first()
+    def set_status(self, db: Session, id: int, new_status: str, user_id: int):
+        """Define explicitamente o status de um compromisso."""
+        VALID_STATUSES = {'Realizado', 'Cancelado', 'Pendente'}
+        if new_status not in VALID_STATUSES:
+            return None
+        comp = db.query(Compromisso).filter(
+            Compromisso.id == id, Compromisso.user_id == user_id
+        ).first()
         if comp:
-            comp.status = 'Pendente' if comp.status == 'Realizado' else 'Realizado'
+            comp.status = new_status
             db.commit()
+            db.refresh(comp)
         return comp
 
     def delete(self, db: Session, id: int, user_id: int):
