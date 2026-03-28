@@ -36,6 +36,7 @@ services:
       - bussola_backend
     networks:
       - internal
+      - coolify
 
 networks:
   internal:
