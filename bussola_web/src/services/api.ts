@@ -615,7 +615,7 @@ export interface Compromisso {
     local: string;
     data_hora: string;
     lembrete: boolean;
-    status: 'Pendente' | 'Realizado' | 'Perdido';
+    status: 'Pendente' | 'Realizado' | 'Perdido' | 'Cancelado';
 }
 
 export interface CalendarDay {
@@ -655,8 +655,11 @@ export const updateCompromisso = async (id: number, data: any) => {
     return response.data;
 };
 
-export const toggleCompromissoStatus = async (id: number) => {
-    const response = await api.patch(`/agenda/${id}/toggle-status`);
+export const setCompromissoStatus = async (
+    id: number,
+    status: 'Realizado' | 'Cancelado' | 'Pendente'
+) => {
+    const response = await api.patch(`/agenda/${id}/status`, { status });
     return response.data;
 };
 
