@@ -26,11 +26,12 @@ services:
   bussola_bot:
     build: ./bussola_bot
     container_name: bussola_bot
-    env_file:
-      - ./bussola_bot/.env
     environment:
       - TZ=America/Sao_Paulo
       - API_BASE_URL=http://bussola_backend:8000
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      - BOT_SERVICE_TOKEN=${BOT_SERVICE_TOKEN}
+      - FRONTEND_URL=${FRONTEND_URL}
     restart: unless-stopped
     depends_on:
       - bussola_backend
