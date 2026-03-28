@@ -146,6 +146,8 @@ class Settings(BaseSettings):
     STRIPE_WEBHOOK_SECRET: Optional[str] = None
     DISCORD_BOT_TOKEN: Optional[str] = None
     DISCORD_CLIENT_ID: Optional[str] = None
+    BOT_SERVICE_TOKEN: Optional[str] = None
+    FRONTEND_URL: str = "http://localhost:5173"
     
     # ----------------------------------------------------------------------------------
     # REDE E ARQUIVOS

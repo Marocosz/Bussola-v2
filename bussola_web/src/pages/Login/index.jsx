@@ -2,7 +2,7 @@ import { useState, useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useSystem } from '../../context/SystemContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google'; // Importando Hook Google
 
 import './styles.css';
@@ -24,6 +24,8 @@ export function Login() {
     const { canRegister, isSaaS, loading: systemLoading } = useSystem();
 
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const nextUrl = searchParams.get('next') ? decodeURIComponent(searchParams.get('next')) : '/home';
 
     // --- LÓGICA DO LOGIN GOOGLE ---
     const handleGoogleClick = useGoogleLogin({
@@ -35,7 +37,7 @@ export function Login() {
 
                 if (result.success) {
                     addToast({ type: 'success', title: 'Login com Google', description: 'Bem-vindo de volta!' });
-                    navigate('/home');
+                    navigate(nextUrl);
                 } else {
                     addToast({ type: 'error', title: 'Falha', description: 'Não foi possível autenticar com o Google.' });
                 }
@@ -61,7 +63,7 @@ export function Login() {
 
             if (result.success) {
                 addToast({ type: 'success', title: 'Bem-vindo!', description: 'Login realizado com sucesso.' });
-                navigate('/home');
+                navigate(nextUrl);
             } else {
                 // Tratamento específico para conta não verificada (Backend retorna 401 com mensagem)
                 const errorMsg = result.message || 'Credenciais inválidas.';

@@ -36,6 +36,7 @@ from .registros import (
 )
 
 from .cofre import Segredo
+from .discord_link_token import DiscordLinkToken
 
 # Módulo Ritmo (Saúde & Performance)
 # Agrupa entidades de Biometria, Treino Físico e Nutrição

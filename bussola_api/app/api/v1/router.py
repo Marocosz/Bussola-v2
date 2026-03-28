@@ -25,17 +25,19 @@ COMUNICAÇÃO:
 
 from fastapi import APIRouter
 from app.api.v1.endpoints import (
-    auth, 
-    home, 
-    financas, 
-    agenda, 
-    registros, 
-    ritmo, 
-    cofre, 
+    auth,
+    home,
+    financas,
+    agenda,
+    registros,
+    ritmo,
+    cofre,
     panorama,
     system,
     users,
-    ai
+    ai,
+    bot_auth,
+    discord_link,
 )
 
 # Instância principal que acumulará todas as rotas
@@ -67,3 +69,9 @@ api_router.include_router(ai.router, prefix="/ai", tags=["ai"])
 # Módulos de Sistema e Administração
 api_router.include_router(system.router, prefix="/system", tags=["system"])
 api_router.include_router(users.router, prefix="/users", tags=["users"])
+
+# Discord Bot (autenticação via SERVICE_TOKEN)
+api_router.include_router(bot_auth.router, prefix="/bot", tags=["bot"])
+
+# Discord Link (confirmação de vínculo via JWT do usuário)
+api_router.include_router(discord_link.router, prefix="/discord/link", tags=["discord"])

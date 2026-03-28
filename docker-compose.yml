@@ -23,6 +23,20 @@ services:
       - internal
       - coolify
 
+  bussola_bot:
+    build: ./bussola_bot
+    container_name: bussola_bot
+    env_file:
+      - ./bussola_bot/.env
+    environment:
+      - TZ=America/Sao_Paulo
+      - API_BASE_URL=http://bussola_backend:8000
+    restart: unless-stopped
+    depends_on:
+      - bussola_backend
+    networks:
+      - internal
+
 networks:
   internal:
     driver: bridge

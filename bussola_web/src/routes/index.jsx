@@ -1,6 +1,6 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; 
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 import { Navbar } from '../components/Navbar';
 import { Login } from '../pages/Login';
@@ -16,16 +16,19 @@ import { ForgotPassword } from '../pages/Auth/ForgotPassword';
 import { ResetPassword } from '../pages/Auth/ResetPassword';
 import { VerifyEmail } from '../pages/Auth/VerifyEmail';
 import { RegisterSuccess } from '../pages/Auth/RegisterSuccess';
+import { DiscordLink } from '../pages/Auth/DiscordLink';
 
 function PrivateRoute({ children }) {
     const { authenticated, loading } = useAuth();
+    const location = useLocation();
 
     if (loading) {
         return <div className="loading-screen">Carregando Usuário...</div>;
     }
 
     if (!authenticated) {
-        return <Navigate to="/login" />;
+        const next = encodeURIComponent(location.pathname + location.search);
+        return <Navigate to={`/login?next=${next}`} />;
     }
 
     return (
@@ -48,6 +51,7 @@ export function AppRoutes() {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/register-success" element={<RegisterSuccess />} />
+            <Route path="/discord/link" element={<PrivateRoute><DiscordLink /></PrivateRoute>} />
             
             {/* --- ROTAS PRIVADAS --- */}
             <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
