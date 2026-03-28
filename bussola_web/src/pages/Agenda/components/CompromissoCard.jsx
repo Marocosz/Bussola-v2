@@ -1,5 +1,5 @@
 import React from 'react';
-import { toggleCompromissoStatus, deleteCompromisso } from '../../../services/api';
+import { setCompromissoStatus, deleteCompromisso } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 import { useConfirm } from '../../../context/ConfirmDialogContext'; // <--- Import Novo
 
@@ -8,8 +8,8 @@ export function CompromissoCard({ comp, onUpdate, onEdit }) {
     const confirm = useConfirm();
     const [isDeleting, setIsDeleting] = React.useState(false);
 
-    const handleToggle = async () => {
-        await toggleCompromissoStatus(comp.id);
+    const handleSetStatus = async (newStatus) => {
+        await setCompromissoStatus(comp.id, newStatus);
         onUpdate();
     };
 
@@ -43,8 +43,7 @@ export function CompromissoCard({ comp, onUpdate, onEdit }) {
     let statusClass = 'pendente';
     if(comp.status === 'Realizado') statusClass = 'realizado';
     if(comp.status === 'Perdido') statusClass = 'perdido';
-
-    const isRealizado = comp.status === 'Realizado';
+    if(comp.status === 'Cancelado') statusClass = 'cancelado';
 
     return (
         <div className={`compromisso-card-modern ${statusClass} ${isDeleting ? 'card-deleting' : ''}`}>
@@ -93,29 +92,73 @@ export function CompromissoCard({ comp, onUpdate, onEdit }) {
                 )}
             </div>
             
-            {/* 4. RODAPÉ (Status Esquerda | Botão Direita) */}
+            {/* 4. RODAPÉ (Status Esquerda | Botões Direita) */}
             <div className="card-footer-row">
-                
+
                 {/* Status na Esquerda */}
                 <span className={`status-badge-modern ${statusClass}`}>
                     {comp.status}
                 </span>
 
-                {/* Botão na Direita */}
-                <button 
-                    className={`btn-concluir-action ${isRealizado ? 'undo' : 'complete'}`} 
-                    onClick={handleToggle}
-                >
-                    {isRealizado ? (
+                {/* Botões na Direita */}
+                <div className="footer-actions">
+                    {comp.status === 'Pendente' && (
                         <>
-                            <i className="fa-solid fa-rotate-left"></i> Reabrir
-                        </>
-                    ) : (
-                        <>
-                            Concluir <i className="fa-solid fa-check"></i>
+                            <button
+                                className="btn-cancelar-action"
+                                onClick={() => handleSetStatus('Cancelado')}
+                            >
+                                <i className="fa-solid fa-xmark"></i> Cancelar
+                            </button>
+                            <button
+                                className="btn-concluir-action complete"
+                                onClick={() => handleSetStatus('Realizado')}
+                            >
+                                Concluir <i className="fa-solid fa-check"></i>
+                            </button>
                         </>
                     )}
-                </button>
+                    {comp.status === 'Realizado' && (
+                        <button
+                            className="btn-concluir-action undo"
+                            onClick={() => handleSetStatus('Pendente')}
+                        >
+                            <i className="fa-solid fa-rotate-left"></i> Reabrir
+                        </button>
+                    )}
+                    {comp.status === 'Perdido' && (
+                        <>
+                            <button
+                                className="btn-cancelar-action"
+                                onClick={() => handleSetStatus('Cancelado')}
+                            >
+                                <i className="fa-solid fa-xmark"></i> Cancelar
+                            </button>
+                            <button
+                                className="btn-concluir-action complete"
+                                onClick={() => handleSetStatus('Realizado')}
+                            >
+                                Concluir <i className="fa-solid fa-check"></i>
+                            </button>
+                        </>
+                    )}
+                    {comp.status === 'Cancelado' && (
+                        <>
+                            <button
+                                className="btn-concluir-action complete"
+                                onClick={() => handleSetStatus('Realizado')}
+                            >
+                                Concluir <i className="fa-solid fa-check"></i>
+                            </button>
+                            <button
+                                className="btn-concluir-action undo"
+                                onClick={() => handleSetStatus('Pendente')}
+                            >
+                                <i className="fa-solid fa-rotate-left"></i> Reabrir
+                            </button>
+                        </>
+                    )}
+                </div>
             </div>
         </div>
     );
