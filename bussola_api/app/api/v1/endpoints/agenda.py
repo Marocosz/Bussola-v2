@@ -28,11 +28,15 @@ COMUNICAÇÃO:
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import Optional
+from pydantic import BaseModel
 from app.api import deps
 from app.schemas.agenda import AgendaDashboardResponse, CompromissoCreate, CompromissoUpdate, CompromissoResponse
 from app.services.agenda import agenda_service
 
 router = APIRouter()
+
+class StatusUpdate(BaseModel):
+    status: str
 
 # --------------------------------------------------------------------------------------
 # ROTAS DE LEITURA (READ)
@@ -100,21 +104,24 @@ def update_compromisso(
     """
     return agenda_service.update(db, id, dados, current_user.id)
 
-@router.patch("/{id}/toggle-status")
-def toggle_status(
-    id: int, 
-    db: Session = Depends(deps.get_db), 
+@router.patch("/{id}/status")
+def set_status(
+    id: int,
+    body: StatusUpdate,
+    db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):
     """
-    Alterna o status de um compromisso (Ex: Pendente <-> Realizado).
-    
-    Por que existe:
-        Permite interações rápidas na UI (checkbox) sem precisar enviar o objeto inteiro
-        para atualização via PUT.
+    Define explicitamente o status de um compromisso.
+    Valores aceitos: 'Realizado', 'Cancelado', 'Pendente'
     """
-    agenda_service.toggle_status(db, id, current_user.id)
-    return {"status": "success"}
+    VALID = {'Realizado', 'Cancelado', 'Pendente'}
+    if body.status not in VALID:
+        raise HTTPException(status_code=400, detail=f"Status inválido. Use: {VALID}")
+    result = agenda_service.set_status(db, id, body.status, current_user.id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Compromisso não encontrado.")
+    return {"status": "success", "new_status": result.status}
 
 @router.delete("/{id}")
 def delete_compromisso(
