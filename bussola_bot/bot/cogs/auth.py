@@ -1,7 +1,10 @@
+import logging
+
 import discord
 from discord import app_commands
 from discord.ext import commands
 
+logger = logging.getLogger(__name__)
 
 WELCOME_COLOR = 0x5865F2  # Discord Blurple
 
@@ -58,7 +61,11 @@ class AuthCog(commands.Cog):
             embed.set_footer(text="O link de vinculação expira em 10 minutos.")
             await interaction.followup.send(embed=embed, view=LinkView(self, interaction.user), ephemeral=True)
         except Exception as e:
-            print(f"[start_command] Erro: {e}")
+            logger.error(
+                "Erro no comando /start",
+                extra={"discord_user_id": interaction.user.id, "error": str(e)},
+                exc_info=True,
+            )
             await interaction.followup.send("❌ Erro interno. Tente novamente.", ephemeral=True)
 
     # ------------------------------------------------------------------
@@ -88,7 +95,11 @@ class AuthCog(commands.Cog):
             else:
                 await interaction.followup.send("❌ Erro ao desvincular. Tente novamente.", ephemeral=True)
         except Exception as e:
-            print(f"[unlink_command] Erro: {e}")
+            logger.error(
+                "Erro no comando /desvincular",
+                extra={"discord_user_id": interaction.user.id, "error": str(e)},
+                exc_info=True,
+            )
             await interaction.followup.send("❌ Erro interno. Tente novamente.", ephemeral=True)
 
     # ------------------------------------------------------------------
@@ -120,7 +131,11 @@ class AuthCog(commands.Cog):
                 ephemeral=True,
             )
         except Exception as e:
-            print(f"[_start_link_flow] Erro: {e}")
+            logger.error(
+                "Erro no fluxo de vinculação",
+                extra={"discord_user_id": interaction.user.id, "error": str(e)},
+                exc_info=True,
+            )
             await interaction.followup.send("❌ Erro interno. Tente novamente.", ephemeral=True)
 
 
