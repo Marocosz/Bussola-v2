@@ -37,7 +37,7 @@ def confirm_discord_link(
     if not link_token:
         raise HTTPException(status_code=404, detail="Token inválido ou já utilizado")
 
-    if link_token.expires_at < datetime.now(timezone.utc):
+    if link_token.expires_at < datetime.utcnow():
         raise HTTPException(status_code=400, detail="Token expirado. Gere um novo link pelo Discord")
 
     # Garante que o discord_id não está vinculado a outra conta
