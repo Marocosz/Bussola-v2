@@ -7,9 +7,15 @@ services:
     environment:
       - TZ=America/Sao_Paulo
       - BOT_WEBHOOK_URL=http://bussola_bot:8001
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
     volumes:
       - ./bussola_api/data:/app/data
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
     networks:
       - internal
       - coolify
@@ -20,6 +26,11 @@ services:
     restart: unless-stopped
     depends_on:
       - bussola_backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
     networks:
       - internal
       - coolify
@@ -33,9 +44,15 @@ services:
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
       - BOT_SERVICE_TOKEN=${BOT_SERVICE_TOKEN}
       - FRONTEND_URL=${FRONTEND_URL}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
     restart: unless-stopped
     depends_on:
       - bussola_backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
     networks:
       - internal
       - coolify
