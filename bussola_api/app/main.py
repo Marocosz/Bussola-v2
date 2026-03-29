@@ -33,6 +33,10 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
+# Logging deve ser inicializado antes de qualquer outra importação que possa logar
+from app.core.config import settings as _settings_for_logging
+from app.core.logging_config import setup_logging
+setup_logging(_settings_for_logging.LOG_LEVEL)
 # -------------------------------------
 
 from fastapi import FastAPI
@@ -46,7 +50,12 @@ from app.core.config import settings
 from app.api.v1.router import api_router
 from app.db.session import engine
 # Importamos 'base' para garantir que todos os Models sejam lidos pelo SQLAlchemy
-from app.db import base 
+from app.db import base
+import logging
+from fastapi import Request
+from fastapi.responses import JSONResponse
+from app.core.logging_config import setup_logging
+from app.api.middleware.logging_middleware import RequestLoggingMiddleware
 
 # --------------------------------------------------------------------------------------
 # INICIALIZAÇÃO DO BANCO DE DADOS
@@ -81,6 +90,29 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # --------------------------------------------------------------------------------------
+# HANDLER GLOBAL DE ERROS
+# --------------------------------------------------------------------------------------
+_logger = logging.getLogger("api.main")
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    request_id = getattr(request.state, "request_id", "unknown")
+    _logger.critical(
+        "Erro interno não tratado",
+        extra={
+            "request_id": request_id,
+            "path": request.url.path,
+            "error_type": type(exc).__name__,
+            "error": str(exc),
+        },
+        exc_info=True,
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Erro interno do servidor.", "request_id": request_id},
+    )
+
+# --------------------------------------------------------------------------------------
 # CONFIGURAÇÃO DE SEGURANÇA (CORS)
 # --------------------------------------------------------------------------------------
 # O CORS (Cross-Origin Resource Sharing) permite que o navegador (Frontend)
@@ -98,6 +130,11 @@ if settings.BACKEND_CORS_ORIGINS:
         # Permite todos os headers
         allow_headers=["*"],
     )
+
+# --------------------------------------------------------------------------------------
+# LOGGING DE REQUISIÇÕES
+# --------------------------------------------------------------------------------------
+app.add_middleware(RequestLoggingMiddleware)
 
 # --------------------------------------------------------------------------------------
 # DOCUMENTAÇÃO ALTERNATIVA (SCALAR)
