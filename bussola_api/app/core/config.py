@@ -47,6 +47,7 @@ class Settings(BaseSettings):
 
     # Identificação da API
     PROJECT_NAME: str = "Bússola API"
+    LOG_LEVEL: str = "INFO"
     API_V1_STR: str = "/api/v1"
     
     # ----------------------------------------------------------------------------------
