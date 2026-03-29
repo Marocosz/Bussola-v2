@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from bot.client import BussolaBot
 
-load_dotenv()
+load_dotenv(override=False)  # em Docker, vars já vêm do ambiente — não sobrescreve
 
 async def main():
     bot = BussolaBot()
