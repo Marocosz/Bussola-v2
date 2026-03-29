@@ -11,6 +11,8 @@ logger = logging.getLogger("api.http")
 
 # Paths cujo body nunca deve aparecer em logs (LGPD: dados sensíveis)
 _SENSITIVE_PATH_PREFIXES = ("/api/v1/cofre",)
+# NOTE: este conjunto é reservado para uma futura fase de body-logging.
+# O middleware atual não loga bodies, portanto esta constante não é referenciada.
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):

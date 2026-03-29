@@ -9,7 +9,7 @@ class BotJsonFormatter(jsonlogger.JsonFormatter):
     def add_fields(self, log_record: dict, record: logging.LogRecord, message_dict: dict) -> None:
         super().add_fields(log_record, record, message_dict)
         log_record["service"] = "bussola_bot"
-        for field in ("token", "secret"):
+        for field in ("token", "secret", "password", "authorization"):
             log_record.pop(field, None)
 
 

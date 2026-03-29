@@ -54,7 +54,6 @@ from app.db import base
 import logging
 from fastapi import Request
 from fastapi.responses import JSONResponse
-from app.core.logging_config import setup_logging
 from app.api.middleware.logging_middleware import RequestLoggingMiddleware
 
 # --------------------------------------------------------------------------------------

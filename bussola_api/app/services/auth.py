@@ -31,6 +31,8 @@ from fastapi import HTTPException, status, BackgroundTasks
 import httpx 
 from jose import jwt, JWTError
 
+import logging
+
 from app.models.user import User
 from app.schemas.user import UserCreate, NewPassword
 from app.schemas.token import Token
@@ -39,6 +41,9 @@ from app.core.config import settings
 from app.utils.email import send_password_reset_email, send_account_verification_email
 from app.api.deps import redis_client
 from app.core.timezone import now_utc # [NOVO]
+
+logger = logging.getLogger(__name__)
+
 
 class AuthService:
     """
@@ -118,7 +123,7 @@ class AuthService:
                     raise HTTPException(status_code=400, detail="Token do Google inválido ou expirado.")
                 google_user_info = response.json()
             except Exception as e:
-                print(f"Erro conexão Google: {e}")
+                logger.error("Erro ao conectar com o Google OAuth", exc_info=True)
                 raise HTTPException(status_code=400, detail="Falha ao conectar com o Google.")
         
         email = google_user_info.get("email")
@@ -314,13 +319,13 @@ class AuthService:
                 await send_password_reset_email(email_to=user.email, token=reset_token)
                 return "Email de recuperação enviado."
             except Exception as e:
-                print(f"Erro SMTP: {e}")
+                logger.error("Erro ao enviar e-mail de recuperação via SMTP", exc_info=True)
         
         if settings.DEPLOYMENT_MODE == "SELF_HOSTED":
-            print("\n" + "="*60)
-            print(f"RECUPERAÇÃO DE SENHA (SELF-HOSTED) PARA: {user.email}")
-            print(f"LINK: http://localhost:5173/reset-password?token={reset_token}")
-            print("="*60 + "\n")
+            logger.info(
+                "Link de recuperação de senha gerado",
+                extra={"user_id": user.id},
+            )
             return "SISTEMA_LOCAL_SEM_EMAIL"
 
         raise HTTPException(
