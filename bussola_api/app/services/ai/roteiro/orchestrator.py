@@ -83,7 +83,7 @@ class RoteiroOrchestrator:
             user_preferences=preferences or {}
         )
         
-        print(f"\n[RoteiroOrchestrator] 🚀 Iniciando análise. Itens na agenda: {len(agenda_itens)}")
+        logger.info("RoteiroOrchestrator: iniciando análise", extra={"agenda_count": len(agenda_itens)})
 
         # ----------------------------------------------------------------------
         # 2. EXECUÇÃO PARALELA (Asyncio)
@@ -111,21 +111,16 @@ class RoteiroOrchestrator:
             
             # Tratamento individual de falhas
             if isinstance(result, Exception):
-                print(f"❌ [ERRO] {agent_name}: {result}")
-                logger.error(f"[RoteiroOrchestrator] Erro no agente {agent_name}: {result}")
+                logger.error("Agente retornou erro", extra={"agent": agent_name, "result": str(result)})
                 continue
-                
+
             if result:
                 raw_suggestions.extend(result)
-                
-                # Log detalhado no terminal para debug (mostra output bruto antes dos filtros)
+
                 if len(result) > 0:
-                    print(f"\n{'='*20} 🤖 {agent_name.upper()} ({len(result)}) {'='*20}")
-                    for suggestion in result:
-                        print(json.dumps(suggestion.model_dump(), indent=2, ensure_ascii=False))
-                    print(f"{'='*60}\n")
+                    logger.debug("Sugestões do agente", extra={"agent": agent_name, "count": len(result)})
                 else:
-                    print(f"⚪ {agent_name}: Sem sugestões.")
+                    logger.info("Agente sem sugestões", extra={"agent": agent_name})
 
         # ----------------------------------------------------------------------
         # 4. PÓS-PROCESSAMENTO E FILTROS DE UX
@@ -163,7 +158,7 @@ class RoteiroOrchestrator:
         # Ordena para que cards de alta severidade (High) apareçam primeiro na UI.
         cleaned_suggestions.sort(key=lambda x: severity_order.get(x.severity, 99))
 
-        print(f"[RoteiroOrchestrator] ✅ Análise concluída.")
-        print(f"📊 Redução de Ruído: {len(raw_suggestions)} insights originais -> {len(cleaned_suggestions)} insights finais.\n")
+        logger.info("RoteiroOrchestrator: análise concluída")
+        logger.info("Redução de ruído aplicada", extra={"original": len(raw_suggestions), "final": len(cleaned_suggestions)})
         
         return cleaned_suggestions

@@ -26,6 +26,7 @@ COMUNICAÇÃO:
 """
 
 import json
+import logging
 import httpx
 import feedparser
 import redis.asyncio as redis
@@ -36,6 +37,8 @@ from typing import List, Optional, Dict, Any
 
 from app.core.config import settings
 from app.core.timezone import now_utc # [NOVO]
+
+logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------------------
 # CONFIGURAÇÃO DE CURADORIA DE NOTÍCIAS
@@ -176,12 +179,12 @@ class ExternalDataService:
                     socket_connect_timeout=2,
                     socket_timeout=2
                 )
-                print(f"[Redis] Cliente configurado para: {self.redis_url.split('@')[-1]}") 
+                logger.info("Redis configurado", extra={"host": self.redis_url.split('@')[-1]})
             except Exception as e:
-                print(f"[ERRO] Falha crítica ao configurar Redis: {e}")
+                logger.error("Falha crítica ao configurar Redis", extra={"error": str(e)}, exc_info=True)
                 self.redis_client = None
         else:
-            print("[Aviso] REDIS_URL não definida. Cache desativado.")
+            logger.warning("REDIS_URL não definida. Cache desativado.")
 
     def get_available_topics(self) -> List[Dict[str, str]]:
         """
@@ -219,7 +222,7 @@ class ExternalDataService:
                 if cached:
                     return json.loads(cached)
             except Exception as e:
-                print(f"[Redis Error] Falha ao ler clima: {e}")
+                logger.warning("Falha ao ler clima do cache Redis", extra={"error": str(e)})
 
         # 2. Chamada à API Externa
         api_key = settings.OPENWEATHER_API_KEY
@@ -259,11 +262,11 @@ class ExternalDataService:
                     try:
                         await self.redis_client.setex(cache_key, 1800, json.dumps(result))
                     except Exception as e:
-                        print(f"[Redis Error] Falha ao salvar clima: {e}")
+                        logger.warning("Falha ao salvar clima no cache Redis", extra={"error": str(e)})
 
                 return result
             except Exception as e:
-                print(f"[API Error] Erro OpenWeather: {e}")
+                logger.error("Erro ao buscar dados do OpenWeather", extra={"error": str(e)}, exc_info=True)
                 return None
 
     # ==========================================================================

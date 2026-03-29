@@ -96,7 +96,7 @@ class FinancasOrchestrator:
             media_sobra_mensal=media_sobra
         )
         
-        print(f"\n[FinancasOrchestrator] 💰 Iniciando CFO Digital. Saldo: {saldo_atual} | Transações Mês: {len(transacoes_mes)}")
+        logger.info("FinancasOrchestrator: iniciando análise", extra={"saldo_atual": saldo_atual, "transacoes_count": len(transacoes_mes)})
 
         # ----------------------------------------------------------------------
         # 2. EXECUÇÃO PARALELA (Asyncio)
@@ -123,15 +123,14 @@ class FinancasOrchestrator:
             
             # Tratamento de exceção por agente individual
             if isinstance(result, Exception):
-                print(f"❌ [ERRO] {agent_name}: {result}")
-                logger.error(f"[FinancasOrchestrator] Erro no agente {agent_name}: {result}")
+                logger.error("Agente retornou erro", extra={"agent": agent_name, "result": str(result)})
                 continue
-                
+
             if result:
                 all_suggestions.extend(result)
                 # Log informativo para debug de volume de geração
                 if len(result) > 0:
-                    print(f"   -> {agent_name} gerou {len(result)} insights.")
+                    logger.info("Agente concluído", extra={"agent": agent_name, "insights_count": len(result)})
 
         # ----------------------------------------------------------------------
         # 4. LÓGICA DE PRIORIZAÇÃO E CORTE (CFO Logic)
@@ -185,7 +184,7 @@ class FinancasOrchestrator:
         final_suggestions = unique_suggestions[:FinancasOrchestrator.MAX_INSIGHTS_DISPLAY]
 
         # Log final de auditoria
-        print(f"\n[FinancasOrchestrator] ✂️ Filtro Aplicado: De {len(all_suggestions)} para {len(final_suggestions)} insights.")
-        print(f"[FinancasOrchestrator] ✅ Análise Concluída.\n")
+        logger.info("Filtro aplicado", extra={"original": len(all_suggestions), "final": len(final_suggestions)})
+        logger.info("FinancasOrchestrator: análise concluída")
         
         return final_suggestions

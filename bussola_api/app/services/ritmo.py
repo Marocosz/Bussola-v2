@@ -24,6 +24,7 @@ COMUNICAÇÃO:
 =======================================================================================
 """
 
+import logging
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from app.models.ritmo import (
@@ -38,6 +39,8 @@ from datetime import datetime
 import json
 import os
 import unicodedata
+
+logger = logging.getLogger(__name__)
 
 class RitmoService:
     
@@ -551,14 +554,14 @@ class RitmoService:
         file_path = os.path.join(str(BASE_DIR), "seeds", "taco.json")
 
         if not os.path.exists(file_path):
-            print(f"ERRO: Arquivo taco.json NÃO encontrado em: {file_path}")
+            logger.error("Arquivo taco.json não encontrado", extra={"path": str(file_path)})
             return []
 
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 taco_data = json.load(f)
         except Exception as e:
-            print(f"ERRO CRÍTICO ao abrir/ler o JSON: {str(e)}")
+            logger.error("Erro crítico ao abrir/ler taco.json", extra={"error": str(e)}, exc_info=True)
             return []
 
         def normalizar(texto: str) -> str:

@@ -25,11 +25,14 @@ COMUNICAÇÃO:
 =======================================================================================
 """
 
+import logging
 from sqlalchemy.orm import Session
 from cryptography.fernet import Fernet
 from app.core.config import settings
 from app.models.cofre import Segredo
 from app.schemas.cofre import SegredoCreate, SegredoUpdate
+
+logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------------------
 # INICIALIZAÇÃO DO MOTOR CRIPTOGRÁFICO
@@ -40,7 +43,7 @@ from app.schemas.cofre import SegredoCreate, SegredoUpdate
 try:
     cipher_suite = Fernet(settings.ENCRYPTION_KEY.encode())
 except Exception as e:
-    print(f"AVISO: Falha ao carregar ENCRYPTION_KEY no CofreService: {e}")
+    logger.error("Falha ao carregar ENCRYPTION_KEY no CofreService", extra={"error": str(e)}, exc_info=True)
     cipher_suite = None
 
 class CofreService:
