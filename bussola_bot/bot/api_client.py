@@ -52,7 +52,8 @@ class ApiClient:
         """Remove o vínculo entre discord_id e a conta Bussola."""
         async with httpx.AsyncClient() as client:
             try:
-                response = await client.delete(
+                response = await client.request(
+                    "DELETE",
                     f"{self.base_url}/api/v1/bot/auth/unlink",
                     json={"discord_id": discord_id},
                     headers=self._headers,

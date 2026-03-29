@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -53,7 +53,7 @@ def generate_link_token(payload: LinkTokenRequest, db: Session = Depends(get_db)
     new_token = DiscordLinkToken(
         token=str(uuid.uuid4()),
         discord_id=payload.discord_id,
-        expires_at=datetime.now(timezone.utc) + timedelta(minutes=10),
+        expires_at=datetime.utcnow() + timedelta(minutes=10),
     )
     db.add(new_token)
     db.commit()
