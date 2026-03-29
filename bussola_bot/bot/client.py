@@ -1,9 +1,12 @@
+import logging
 import os
 import discord
 from discord.ext import commands
 
 from bot.api_client import ApiClient
 from bot.webhook import start_webhook_server
+
+logger = logging.getLogger(__name__)
 
 COGS = [
     "bot.cogs.auth",
@@ -38,6 +41,12 @@ class BussolaBot(commands.Bot):
         await start_webhook_server(self, webhook_port)
 
     async def on_ready(self):
-        print(f"✅ Bot online: {self.user} (ID: {self.user.id})")
-        print(f"   API: {self.api_base_url}")
-        print(f"   Frontend: {self.frontend_url}")
+        logger.info(
+            "Bot online",
+            extra={
+                "bot_user": str(self.user),
+                "bot_id": self.user.id,
+                "api_base_url": self.api_base_url,
+                "frontend_url": self.frontend_url,
+            },
+        )

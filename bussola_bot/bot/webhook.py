@@ -4,8 +4,11 @@ Servidor HTTP interno do bot para receber notificações push da API.
 A API chama POST /webhook/discord-linked após confirmar um vínculo,
 eliminando a necessidade de polling periódico.
 """
+import logging
 
 from aiohttp import web
+
+logger = logging.getLogger(__name__)
 
 
 def create_webhook_app(bot) -> web.Application:
@@ -14,12 +17,14 @@ def create_webhook_app(bot) -> web.Application:
     async def handle_discord_linked(request: web.Request) -> web.Response:
         token = request.headers.get("X-Bot-Service-Token", "")
         if token != bot.bot_service_token:
+            logger.warning("Webhook: token de serviço inválido", extra={"client_ip": request.remote})
             return web.json_response({"error": "Unauthorized"}, status=401)
 
         try:
             data = await request.json()
             discord_id = int(data["discord_id"])
-        except Exception:
+        except Exception as exc:
+            logger.warning("Webhook: payload inválido", extra={"error": str(exc)})
             return web.json_response({"error": "Invalid payload"}, status=400)
 
         user = bot.get_user(discord_id)
@@ -36,8 +41,9 @@ def create_webhook_app(bot) -> web.Application:
                     "Você já pode usar todos os comandos. "
                     "Digite `/start` para ver o que posso fazer."
                 )
+                logger.info("DM de confirmação enviada", extra={"discord_id": discord_id})
             except Exception:
-                pass  # DMs podem estar desativadas
+                logger.warning("Falha ao enviar DM (DMs desativadas)", extra={"discord_id": discord_id})
 
         return web.json_response({"ok": True})
 
@@ -51,4 +57,4 @@ async def start_webhook_server(bot, port: int = 8001):
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
-    print(f"✅ Webhook server listening on :{port}")
+    logger.info("Webhook server iniciado", extra={"port": port})
