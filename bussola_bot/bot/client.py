@@ -3,6 +3,7 @@ import discord
 from discord.ext import commands
 
 from bot.api_client import ApiClient
+from bot.webhook import start_webhook_server
 
 COGS = [
     "bot.cogs.auth",
@@ -32,6 +33,9 @@ class BussolaBot(commands.Bot):
         for cog in COGS:
             await self.load_extension(cog)
         await self.tree.sync()
+
+        webhook_port = int(os.getenv("BOT_WEBHOOK_PORT", "8001"))
+        await start_webhook_server(self, webhook_port)
 
     async def on_ready(self):
         print(f"✅ Bot online: {self.user} (ID: {self.user.id})")

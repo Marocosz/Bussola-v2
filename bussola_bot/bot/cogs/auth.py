@@ -1,5 +1,3 @@
-import asyncio
-
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -119,23 +117,6 @@ class AuthCog(commands.Cog):
             f"**(válido por 10 minutos)**:\n{link_url}",
             ephemeral=True,
         )
-
-        asyncio.create_task(self._poll_link(interaction.user, discord_id))
-
-    async def _poll_link(self, user: discord.User, discord_id: str):
-        """
-        Verifica a cada 3 segundos se o usuário completou a vinculação.
-        Timeout: 10 minutos (200 tentativas × 3s).
-        """
-        for _ in range(200):
-            await asyncio.sleep(3)
-            if await self.bot.api.check_link_status(discord_id):
-                await user.send(
-                    "✅ **Conta vinculada com sucesso!**\n\n"
-                    "Você já pode usar todos os comandos. "
-                    "Digite `/start` para começar."
-                )
-                return
 
 
 async def setup(bot: commands.Bot):

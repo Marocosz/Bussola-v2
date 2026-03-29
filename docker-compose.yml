@@ -6,6 +6,7 @@ services:
       - ./bussola_api/.env
     environment:
       - TZ=America/Sao_Paulo
+      - BOT_WEBHOOK_URL=http://bussola_bot:8001
     volumes:
       - ./bussola_api/data:/app/data
     restart: unless-stopped

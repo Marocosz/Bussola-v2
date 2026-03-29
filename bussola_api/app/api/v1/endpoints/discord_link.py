@@ -1,10 +1,12 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+import httpx
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, CurrentUser
+from app.core.config import settings
 from app.models.discord_link_token import DiscordLinkToken
 from app.models.user import User
 
@@ -19,9 +21,28 @@ class ConfirmLinkResponse(BaseModel):
     message: str
 
 
+def _notify_bot(discord_id: str) -> None:
+    """
+    Fire-and-forget: avisa o bot que um vínculo foi confirmado.
+    Chamado como BackgroundTask — falhas não afetam a resposta ao usuário.
+    """
+    if not settings.BOT_WEBHOOK_URL:
+        return
+    try:
+        with httpx.Client(timeout=5.0) as client:
+            client.post(
+                f"{settings.BOT_WEBHOOK_URL}/webhook/discord-linked",
+                json={"discord_id": discord_id},
+                headers={"X-Bot-Service-Token": settings.BOT_SERVICE_TOKEN or ""},
+            )
+    except Exception:
+        pass  # Bot pode estar temporariamente indisponível
+
+
 @router.post("/confirm", response_model=ConfirmLinkResponse)
 def confirm_discord_link(
     payload: ConfirmLinkRequest,
+    background_tasks: BackgroundTasks,
     current_user: CurrentUser,
     db: Session = Depends(get_db),
 ):
@@ -53,5 +74,7 @@ def confirm_discord_link(
     current_user.discord_id = link_token.discord_id
     link_token.used = True
     db.commit()
+
+    background_tasks.add_task(_notify_bot, link_token.discord_id)
 
     return {"message": "Conta vinculada com sucesso!"}

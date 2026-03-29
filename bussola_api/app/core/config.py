@@ -147,6 +147,7 @@ class Settings(BaseSettings):
     DISCORD_BOT_TOKEN: Optional[str] = None
     DISCORD_CLIENT_ID: Optional[str] = None
     BOT_SERVICE_TOKEN: Optional[str] = None
+    BOT_WEBHOOK_URL: Optional[str] = None
     FRONTEND_URL: str = "http://localhost:5173"
     
     # ----------------------------------------------------------------------------------
