@@ -34,30 +34,32 @@ class AuthCog(commands.Cog):
 
     @app_commands.command(name="start", description="Começar a usar o Bússola Bot")
     async def start_command(self, interaction: discord.Interaction):
-        """Exibe boas-vindas se não vinculado, ou confirma se já estiver vinculado."""
         await interaction.response.defer(ephemeral=True)
+        try:
+            is_linked = await self.bot.api.check_link_status(str(interaction.user.id))
 
-        is_linked = await self.bot.api.check_link_status(str(interaction.user.id))
+            if is_linked:
+                await interaction.followup.send(
+                    "✅ Sua conta já está vinculada! Use `/ajuda` para ver os comandos disponíveis.",
+                    ephemeral=True,
+                )
+                return
 
-        if is_linked:
-            await interaction.followup.send(
-                "✅ Sua conta já está vinculada! Use `/ajuda` para ver os comandos disponíveis.",
-                ephemeral=True,
+            embed = discord.Embed(
+                title="Olá! Sou o Bússola Bot 🧭",
+                description=(
+                    "Sou a interface do **Bússola** direto no seu Discord.\n\n"
+                    "Consulte seus dados, registre informações e receba "
+                    "notificações sem sair do Discord.\n\n"
+                    "Para começar, vincule sua conta Bússola:"
+                ),
+                color=WELCOME_COLOR,
             )
-            return
-
-        embed = discord.Embed(
-            title="Olá! Sou o Bússola Bot 🧭",
-            description=(
-                "Sou a interface do **Bússola** direto no seu Discord.\n\n"
-                "Consulte seus dados, registre informações e receba "
-                "notificações sem sair do Discord.\n\n"
-                "Para começar, vincule sua conta Bússola:"
-            ),
-            color=WELCOME_COLOR,
-        )
-        embed.set_footer(text="O link de vinculação expira em 10 minutos.")
-        await interaction.followup.send(embed=embed, view=LinkView(self, interaction.user), ephemeral=True)
+            embed.set_footer(text="O link de vinculação expira em 10 minutos.")
+            await interaction.followup.send(embed=embed, view=LinkView(self, interaction.user), ephemeral=True)
+        except Exception as e:
+            print(f"[start_command] Erro: {e}")
+            await interaction.followup.send("❌ Erro interno. Tente novamente.", ephemeral=True)
 
     # ------------------------------------------------------------------
     # Slash command: /link — gera novo link de vinculação
@@ -74,17 +76,20 @@ class AuthCog(commands.Cog):
     @app_commands.command(name="desvincular", description="Remove o vínculo entre seu Discord e o Bússola")
     async def unlink_command(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
+        try:
+            is_linked = await self.bot.api.check_link_status(str(interaction.user.id))
+            if not is_linked:
+                await interaction.followup.send("Sua conta não está vinculada.", ephemeral=True)
+                return
 
-        is_linked = await self.bot.api.check_link_status(str(interaction.user.id))
-        if not is_linked:
-            await interaction.followup.send("Sua conta não está vinculada.", ephemeral=True)
-            return
-
-        success = await self.bot.api.unlink_account(str(interaction.user.id))
-        if success:
-            await interaction.followup.send("✅ Conta desvinculada com sucesso.", ephemeral=True)
-        else:
-            await interaction.followup.send("❌ Erro ao desvincular. Tente novamente.", ephemeral=True)
+            success = await self.bot.api.unlink_account(str(interaction.user.id))
+            if success:
+                await interaction.followup.send("✅ Conta desvinculada com sucesso.", ephemeral=True)
+            else:
+                await interaction.followup.send("❌ Erro ao desvincular. Tente novamente.", ephemeral=True)
+        except Exception as e:
+            print(f"[unlink_command] Erro: {e}")
+            await interaction.followup.send("❌ Erro interno. Tente novamente.", ephemeral=True)
 
     # ------------------------------------------------------------------
     # Lógica interna de vinculação
@@ -92,29 +97,31 @@ class AuthCog(commands.Cog):
 
     async def _start_link_flow(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
+        try:
+            discord_id = str(interaction.user.id)
 
-        discord_id = str(interaction.user.id)
+            is_linked = await self.bot.api.check_link_status(discord_id)
+            if is_linked:
+                await interaction.followup.send("✅ Sua conta já está vinculada!", ephemeral=True)
+                return
 
-        is_linked = await self.bot.api.check_link_status(discord_id)
-        if is_linked:
-            await interaction.followup.send("✅ Sua conta já está vinculada!", ephemeral=True)
-            return
+            token = await self.bot.api.generate_link_token(discord_id)
+            if not token:
+                await interaction.followup.send(
+                    "❌ Erro ao gerar o link. Tente novamente em instantes.",
+                    ephemeral=True,
+                )
+                return
 
-        token = await self.bot.api.generate_link_token(discord_id)
-        if not token:
+            link_url = f"{self.bot.frontend_url}/discord/link?token={token}"
             await interaction.followup.send(
-                "❌ Erro ao gerar o link. Tente novamente em instantes.",
+                f"🔗 Clique no link abaixo para vincular sua conta "
+                f"**(válido por 10 minutos)**:\n{link_url}",
                 ephemeral=True,
             )
-            return
-
-        link_url = f"{self.bot.frontend_url}/discord/link?token={token}"
-
-        await interaction.followup.send(
-            f"🔗 Clique no link abaixo para vincular sua conta "
-            f"**(válido por 10 minutos)**:\n{link_url}",
-            ephemeral=True,
-        )
+        except Exception as e:
+            print(f"[_start_link_flow] Erro: {e}")
+            await interaction.followup.send("❌ Erro interno. Tente novamente.", ephemeral=True)
 
 
 async def setup(bot: commands.Bot):
