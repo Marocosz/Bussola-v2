@@ -6,6 +6,7 @@ import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmDialogContext';
 import { AiAssistant } from '../../components/AiAssistant'; // [NOVO] Import da IA
 import './styles.css';
+import { logger } from '../../utils/logger';
 
 // --- SUB-COMPONENTES MEMOIZADOS (PERFORMANCE FIX) ---
 
@@ -105,7 +106,7 @@ export function Agenda() {
                 });
             }
         } catch (err) {
-            console.error(err);
+            logger.error("Erro inesperado", { error: String(err) });
             addToast({ type: 'error', title: 'Erro', description: 'Não foi possível carregar a agenda.' });
         } finally {
             if (!silent) setLoading(false);

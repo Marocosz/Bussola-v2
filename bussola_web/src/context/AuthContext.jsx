@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import api, { updateUser, logoutSession } from '../services/api';
+import { logger } from '../utils/logger';
 
 export const AuthContext = createContext();
 
@@ -55,7 +56,7 @@ export const AuthProvider = ({ children }) => {
             setAuthenticated(true);
             return { success: true };
         } catch (error) {
-            console.error("Erro no login:", error);
+            logger.error("Erro no login", { error: String(error) });
             // Verifica rate limit (429) ou erro de credencial
             if (error.response?.status === 429) {
                 return { success: false, message: "Muitas tentativas. Tente novamente em alguns minutos." };
@@ -80,7 +81,7 @@ export const AuthProvider = ({ children }) => {
             setAuthenticated(true);
             return { success: true };
         } catch (error) {
-            console.error("Erro no login Google:", error);
+            logger.error("Erro no login Google", { error: String(error) });
             return { success: false, message: "Falha ao autenticar com Google." };
         }
     };
@@ -92,7 +93,7 @@ export const AuthProvider = ({ children }) => {
             setUser(updatedUser);
             return { success: true };
         } catch (error) {
-            console.error("Erro ao atualizar usuário:", error);
+            logger.error("Erro ao atualizar usuário", { error: String(error) });
             return { success: false, message: error.response?.data?.detail };
         }
     };

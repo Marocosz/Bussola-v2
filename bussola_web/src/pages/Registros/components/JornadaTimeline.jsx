@@ -3,6 +3,7 @@ import { toggleCheckinHabito, toggleStatusHabito, deleteHabito } from '../../../
 import { useToast } from '../../../context/ToastContext';
 import { useConfirm } from '../../../context/ConfirmDialogContext';
 import '../styles.css';
+import { logger } from '../../../utils/logger';
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
 
@@ -249,7 +250,7 @@ export function JornadaTimeline({ habitos, onUpdate, onEdit }) {
             await toggleCheckinHabito(habito.id, formatarData(new Date()));
             onUpdate();
         } catch (err) {
-            console.error(err);
+            logger.error("Erro inesperado", { error: String(err) });
             addToast({ type: 'error', title: 'Erro', description: 'Não foi possível registrar o check-in.' });
         }
     };

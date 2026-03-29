@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { createDieta, updateDieta, searchLocalFoods } from '../../../services/api'; 
+import { createDieta, updateDieta, searchLocalFoods } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
+import { logger } from '../../../utils/logger';
 import { CustomSelect } from '../../../components/CustomSelect'; 
 import { BaseModal } from '../../../components/BaseModal';
 
@@ -37,7 +38,7 @@ export function DietaModal({ onClose, onSuccess, initialData }) {
                 try {
                     const data = await searchLocalFoods(searchQuery);
                     setSearchResults(data);
-                } catch { console.error("Erro busca"); } finally { setSearching(false); }
+                } catch { logger.error("Erro na busca de alimentos"); } finally { setSearching(false); }
             } else { setSearchResults([]); setSearching(false); }
         }, 400);
         return () => clearTimeout(delayDebounceFn);

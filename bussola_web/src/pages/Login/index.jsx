@@ -6,6 +6,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google'; // Importando Hook Google
 
 import './styles.css';
+import { logger } from '../../utils/logger';
 
 import loginImageLight from '../../assets/images/loginimage1.svg';
 import loginImageDark from '../../assets/images/loginimage1-dark.svg';
@@ -42,7 +43,7 @@ export function Login() {
                     addToast({ type: 'error', title: 'Falha', description: 'Não foi possível autenticar com o Google.' });
                 }
             } catch (error) {
-                console.error(error);
+                logger.error("Erro inesperado", { error: String(error) });
                 addToast({ type: 'error', title: 'Erro', description: 'Erro na comunicação com o Google.' });
             } finally {
                 setLoading(false);

@@ -4,6 +4,7 @@ import { resetPassword } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import zxcvbn from 'zxcvbn';
 import '../Login/styles.css'; // Usando o mesmo CSS global de auth
+import { logger } from '../../utils/logger';
 
 export function ResetPassword() {
     const [password, setPassword] = useState('');
@@ -79,7 +80,7 @@ export function ResetPassword() {
             navigate('/login');
 
         } catch (error) {
-            console.error(error);
+            logger.error("Erro inesperado", { error: String(error) });
             addToast({
                 type: 'error',
                 title: 'Erro ao alterar',

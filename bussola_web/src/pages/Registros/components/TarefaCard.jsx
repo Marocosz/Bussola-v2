@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { updateTarefaStatus, deleteTarefa, toggleSubtarefa, addSubtarefa } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 import { useConfirm } from '../../../context/ConfirmDialogContext';
+import { logger } from '../../../utils/logger';
 
 // --- COMPONENTE RECURSIVO (Item de Subtarefa) ---
 const SubtaskItem = ({ sub, tarefaId, onToggle, onUpdate, level = 0 }) => {
@@ -16,7 +17,7 @@ const SubtaskItem = ({ sub, tarefaId, onToggle, onUpdate, level = 0 }) => {
             setNewSubTitle("");
             setIsAdding(false);
         } catch (error) {
-            console.error("Erro ao criar sub-etapa", error);
+            logger.error("Erro ao criar sub-etapa", { error: String(error) });
         }
     };
 
@@ -113,7 +114,7 @@ export function TarefaCard({ tarefa, onUpdate, onEdit }) {
             setNewRootTitle("");
             setIsAddingRoot(false);
         } catch (error) {
-            console.error(error);
+            logger.error("Erro inesperado", { error: String(error) });
             addToast({ type: 'error', title: 'Erro', description: 'Erro ao adicionar etapa.' });
         }
     };
@@ -134,7 +135,7 @@ export function TarefaCard({ tarefa, onUpdate, onEdit }) {
                 onUpdate();
             }
         } catch (error) {
-            console.error(error);
+            logger.error("Erro inesperado", { error: String(error) });
             addToast({ type: 'error', title: 'Erro', description: 'Não foi possível atualizar a tarefa.' });
         }
     };
@@ -161,7 +162,7 @@ export function TarefaCard({ tarefa, onUpdate, onEdit }) {
         try {
             await toggleSubtarefa(subId);
             onUpdate();
-        } catch (error) { console.error(error); }
+        } catch (error) { logger.error("Erro inesperado", { error: String(error) }); }
     };
 
     const calculateProgress = (subs) => {

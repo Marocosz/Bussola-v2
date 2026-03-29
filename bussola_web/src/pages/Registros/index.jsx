@@ -40,6 +40,7 @@ import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmDialogContext';
 import { AiAssistant } from '../../components/AiAssistant';
 import './styles.css';
+import { logger } from '../../utils/logger';
 
 export function Registros() {
     const [data, setData] = useState(null);
@@ -75,7 +76,7 @@ export function Registros() {
     const [openGroups, setOpenGroups] = useState(() => {
         const savedState = localStorage.getItem('@Bussola:registros_accordions');
         if (savedState) {
-            try { return JSON.parse(savedState); } catch (e) { console.error("Erro ao ler localStorage", e); }
+            try { return JSON.parse(savedState); } catch (e) { logger.error("Erro ao ler localStorage", { error: String(e) }); }
         }
         return { 'fixados': true };
     });
@@ -98,7 +99,7 @@ export function Registros() {
             setData(result);
             setError(null);
         } catch (err) {
-            console.error("Erro dashboard:", err);
+            logger.error("Erro no dashboard", { error: String(err) });
             setError("Não foi possível carregar os registros.");
             addToast({ type: 'error', title: 'Erro', description: 'Falha ao sincronizar dados.' });
         } finally {
@@ -264,7 +265,7 @@ export function Registros() {
             if (filtroGrupo !== 'Todos') setFiltroGrupo('Todos');
             fetchData(true);
         } catch (error) {
-            console.error(error);
+            logger.error("Erro inesperado", { error: String(error) });
             addToast({
                 type: 'error',
                 title: 'Erro',

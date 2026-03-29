@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createTransacao, createCategoria, updateTransacao, updateCategoria } from '../../../services/api';
+import { logger } from '../../../utils/logger';
 import { useToast } from '../../../context/ToastContext';
 import { CustomSelect } from '../../../components/CustomSelect';
 import { BaseModal } from '../../../components/BaseModal';
@@ -94,7 +95,7 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
             onUpdate(); 
             closeModal(); 
         } catch (error) {
-            console.error(error);
+            logger.error("Erro inesperado", { error: String(error) });
             addToast({ type: 'error', title: 'Erro', description: 'Erro ao salvar.' });
         }
     };

@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { getWeather, getNews } from '../../services/api'; // [NOVO] Importando funções separadas
-import { useToast } from '../../context/ToastContext'; 
+import { useToast } from '../../context/ToastContext';
 import { useSystem } from '../../context/SystemContext';
 import { AuthContext } from '../../context/AuthContext';
+import { logger } from '../../utils/logger';
 
 import './styles.css';
 
@@ -45,7 +46,7 @@ export function Home() {
                 const data = await getWeather();
                 setWeatherData(data);
             } catch (error) {
-                console.error("Erro ao carregar clima:", error);
+                logger.error("Erro ao carregar clima", { error: String(error) });
             } finally {
                 setLoadingWeather(false);
             }
@@ -64,7 +65,7 @@ export function Home() {
                 const data = await getNews();
                 setNewsData(data || []);
             } catch (error) {
-                console.error("Erro ao carregar notícias:", error);
+                logger.error("Erro ao carregar notícias", { error: String(error) });
             } finally {
                 setLoadingNews(false);
             }

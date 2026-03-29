@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './styles.css';
+import { logger } from '../../../utils/logger';
 
 export function CitySelector({ value, onChange }) {
     const [inputValue, setInputValue] = useState(value || '');
@@ -48,7 +49,7 @@ export function CitySelector({ value, onChange }) {
                 setSuggestions([]);
             }
         } catch (error) {
-            console.error("Erro ao buscar cidades:", error);
+            logger.error("Erro ao buscar cidades", { error: String(error) });
         } finally {
             setLoading(false);
         }

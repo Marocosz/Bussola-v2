@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getPanoramaData, getCategoryHistory } from '../../services/api';
+import { logger } from '../../utils/logger';
 import { KpiCard } from './components/KpiCard';
 import { ProvisoesModal, RoteiroModal, RegistrosModal } from './components/PanoramaModals';
 import { useToast } from '../../context/ToastContext';
@@ -58,7 +59,7 @@ export function Panorama() {
             const history = await getCategoryHistory(id);
             setDynamicChartData(history);
         } catch (error) { 
-            console.error("Erro ao buscar histórico da categoria:", error);
+            logger.error("Erro ao buscar histórico da categoria", { error: String(error) });
             addToast({ type: 'warning', title: 'Atenção', description: 'Não foi possível carregar o histórico detalhado.' });
         }
     };
@@ -83,7 +84,7 @@ export function Panorama() {
                     await fetchCategoryHistory(targetId);
                 }
             } catch (error) {
-                console.error("Erro", error);
+                logger.error("Erro inesperado", { error: String(error) });
                 addToast({ type: 'error', title: 'Erro', description: 'Falha ao carregar o Panorama Geral.' });
             } finally {
                 setLoading(false);

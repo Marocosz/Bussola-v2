@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useToast } from '../../context/ToastContext';
 import { useSystem } from '../../context/SystemContext';
-import { registerUser } from '../../services/api'; 
+import { registerUser } from '../../services/api';
 import { useNavigate, Link, Navigate } from 'react-router-dom';
 import zxcvbn from 'zxcvbn'; // Biblioteca de força de senha
+import { logger } from '../../utils/logger';
 
 import '../Login/styles.css'; 
 import loginImageLight from '../../assets/images/loginimage1.svg';
@@ -84,7 +85,7 @@ export function Register() {
             }
 
         } catch (error) {
-            console.error(error);
+            logger.error("Erro inesperado", { error: String(error) });
             const msg = error?.response?.data?.detail || 'Não foi possível criar a conta. Tente outro e-mail.';
             addToast({ type: 'error', title: 'Erro no Registro', description: msg });
         } finally {

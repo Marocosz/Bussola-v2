@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { getFinancasDashboard, deleteCategoria } from '../../services/api';
+import { logger } from '../../utils/logger';
 import { TransactionCard } from './components/TransactionCard';
 import { CategoryCard } from './components/CategoryCard';
 import { FinancasModals } from './components/FinancasModals';
@@ -83,7 +84,7 @@ export function Financas() {
                 });
             }
         } catch (error) {
-            console.error(error);
+            logger.error("Erro inesperado", { error: String(error) });
             addToast({ type: 'error', title: 'Erro', description: 'Falha ao carregar dados financeiros.' });
         } finally {
             setLoading(false);

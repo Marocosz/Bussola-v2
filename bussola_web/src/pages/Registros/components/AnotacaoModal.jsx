@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import TurndownService from 'turndown';
 import { createAnotacao, updateAnotacao } from '../../../services/api';
+import { logger } from '../../../utils/logger';
 import { BaseModal } from '../../../components/BaseModal';
 import { MarkdownViewer } from './MarkdownViewer';
 import '../styles.css';
@@ -145,7 +146,7 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
             onUpdate();
             closeModal();
         } catch (err) {
-            console.error('Erro ao salvar:', err);
+            logger.error("Erro ao salvar anotação", { error: String(err) });
             alert('Erro ao salvar anotação.');
         } finally {
             setLoading(false);

@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'; // Adicionado useRef
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { verifyUserEmail } from '../../services/api'; // Importa a função que criamos no api.ts
 import { useToast } from '../../context/ToastContext';
+import { logger } from '../../utils/logger';
 
 // Importe o logo para manter a identidade visual
 import logoBussola from '../../assets/images/bussola.svg';
@@ -58,7 +59,7 @@ export function VerifyEmail() {
 
             } catch (error) {
                 setStatus('error');
-                console.error(error);
+                logger.error("Erro inesperado", { error: String(error) });
                 
                 // Tenta pegar a mensagem de erro específica do backend
                 const errorMsg = error?.response?.data?.detail || 'Não foi possível verificar o e-mail.';

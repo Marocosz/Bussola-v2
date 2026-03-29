@@ -4,6 +4,7 @@ import { useToast } from '../../../context/ToastContext';
 import { BaseModal } from '../../../components/BaseModal';
 import { TimePicker } from '../../../components/Pickers';
 import '../styles.css';
+import { logger } from '../../../utils/logger';
 
 const DIAS = [
     { key: 'seg', label: 'S' },
@@ -104,7 +105,7 @@ export function HabitoModal({ active, closeModal, onUpdate, editingData }) {
             onUpdate();
             closeModal();
         } catch (err) {
-            console.error(err);
+            logger.error("Erro inesperado", { error: String(err) });
             addToast({ type: 'error', title: 'Erro', description: 'Não foi possível salvar o hábito.' });
         } finally {
             setLoading(false);

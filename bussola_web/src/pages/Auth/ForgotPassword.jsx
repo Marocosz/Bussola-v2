@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { requestPasswordRecovery } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import './styles.css';
+import { logger } from '../../utils/logger';
 
 export function ForgotPassword() {
     const [email, setEmail] = useState('');
@@ -39,7 +40,7 @@ export function ForgotPassword() {
                 });
             }
         } catch (error) {
-            console.error(error);
+            logger.error("Erro inesperado", { error: String(error) });
             addToast({
                 type: 'error',
                 title: 'Erro ao solicitar',

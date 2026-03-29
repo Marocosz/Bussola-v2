@@ -3,6 +3,7 @@ import { createGrupo, updateGrupo } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 import { BaseModal } from '../../../components/BaseModal';
 import '../styles.css';
+import { logger } from '../../../utils/logger';
 
 const PRESET_COLORS = [
     '#ef4444', '#f97316', '#f59e0b', '#eab308', 
@@ -66,7 +67,7 @@ export function GrupoModal({ active, closeModal, onUpdate, editingData, existing
             onUpdate();
             closeModal();
         } catch (error) {
-            console.error(error);
+            logger.error("Erro inesperado", { error: String(error) });
             addToast({type:'error', title:'Erro', description:'Falha ao salvar grupo.'});
         } finally {
             setLoading(false);

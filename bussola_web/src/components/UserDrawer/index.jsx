@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from '../../context/ToastContext';
+import { logger } from '../../../utils/logger';
 import { CitySelector } from '../CitySelector';
 import { getNewsTopics } from '../../services/api';
 import zxcvbn from 'zxcvbn'; // Importando lib de força de senha
@@ -39,7 +40,7 @@ export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
                     ]);
                 }
             } catch (err) {
-                console.error("Falha ao carregar tópicos:", err);
+                logger.error("Falha ao carregar tópicos", { error: String(err) });
             }
         }
         loadTopics();

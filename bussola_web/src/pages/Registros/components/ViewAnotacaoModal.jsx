@@ -3,6 +3,7 @@ import { BaseModal } from '../../../components/BaseModal';
 import { MarkdownViewer } from './MarkdownViewer';
 import '../styles.css';
 import '../styles/markdown.css';
+import { logger } from '../../../utils/logger';
 
 const isHtmlContent = (str) => str && /<[a-z][\s\S]*>/i.test(str);
 
@@ -45,7 +46,7 @@ export function ViewAnotacaoModal({ active, closeModal, nota, onEdit }) {
             setCopyState(type);
             setTimeout(() => setCopyState(null), 2000);
         } catch (e) {
-            console.error('Erro ao copiar:', e);
+            logger.error("Erro ao copiar", { error: String(e) });
         }
     };
 

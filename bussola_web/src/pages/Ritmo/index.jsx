@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useToast } from '../../context/ToastContext';
 // [NOVO] Import do Hook de Confirmação (Ajuste o caminho se o arquivo tiver outro nome)
 import { useConfirm } from '../../context/ConfirmDialogContext';
+import { logger } from '../../utils/logger';
 import { AiAssistant } from '../../components/AiAssistant';
 
 import {
@@ -115,7 +116,7 @@ export function Ritmo() {
             }
 
         } catch (error) {
-            console.error("Erro crítico ao carregar Ritmo:", error);
+            logger.error("Erro crítico ao carregar Ritmo", { error: String(error) });
             addToast({ type: 'error', title: 'Erro', description: 'Falha ao sincronizar dados.' });
         } finally {
             setLoading(false);

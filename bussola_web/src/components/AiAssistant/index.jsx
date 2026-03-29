@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { aiService } from '../../services/api';
 import './styles.css';
+import { logger } from '../../../utils/logger';
 
 const COOLDOWN_HOURS = 3;
 const COOLDOWN_MS = COOLDOWN_HOURS * 60 * 60 * 1000;
@@ -53,7 +54,7 @@ export const AiAssistant = ({ context }) => {
           // Formato inválido ou antigo, poderia limpar se quisesse
         }
       } catch (e) {
-        console.error("Erro ao ler cache local da IA", e);
+        logger.error("Erro ao ler cache local da IA", { error: String(e) });
       }
     }
 
@@ -101,7 +102,7 @@ export const AiAssistant = ({ context }) => {
       else setTimeLeft(0);
 
     } catch (error) {
-      console.error(error);
+      logger.error("Erro inesperado", { error: String(error) });
     } finally {
       setLoading(false);
     }

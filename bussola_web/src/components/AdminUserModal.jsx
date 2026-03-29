@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { adminCreateUser } from '../services/api';
 import { useToast } from '../context/ToastContext';
-import { BaseModal } from './BaseModal'; 
+import { BaseModal } from './BaseModal';
 import './AdminUserModal.css';
+import { logger } from '../../utils/logger';
 
 export function AdminUserModal({ isOpen, onClose }) {
     const [email, setEmail] = useState('');
@@ -35,7 +36,7 @@ export function AdminUserModal({ isOpen, onClose }) {
             onClose();
 
         } catch (error) {
-            console.error(error);
+            logger.error("Erro inesperado", { error: String(error) });
             addToast({
                 type: 'error',
                 title: 'Erro ao criar',

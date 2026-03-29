@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getSegredos, deleteSegredo } from '../../services/api'; // Removemos getSegredoValor daqui
+import { logger } from '../../utils/logger';
 import { SegredoModal } from './components/SegredoModal';
 import { ViewSecretModal } from './components/ViewSecretModal'; // Novo Import
 import { ViewNotesModal } from './components/ViewNotesModal';   // Novo Import
@@ -26,7 +27,7 @@ export function Cofre() {
             const data = await getSegredos();
             setSegredos(data);
         } catch(err) {
-            console.error(err);
+            logger.error("Erro inesperado", { error: String(err) });
             addToast({type:'error', title:'Erro', description:'Falha ao carregar segredos.'});
         } finally {
             setLoading(false);
