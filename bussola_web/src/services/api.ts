@@ -7,6 +7,7 @@
  */
 
 import axios from 'axios';
+import { logger } from '../utils/logger';
 
 // ==========================================================
 // 1. CONFIGURAÇÃO BASE & INTERCEPTORES
@@ -114,6 +115,7 @@ api.interceptors.response.use(
             } catch (refreshError) {
                 processQueue(refreshError, null);
                 isRefreshing = false;
+                logger.error("Falha ao renovar token de acesso", { url: originalRequest.url });
                 handleLogout();
                 return Promise.reject(refreshError);
             }
@@ -145,7 +147,7 @@ export const logoutSession = async () => {
     try {
         await api.post('/auth/logout', {}, config);
     } catch (error) {
-        console.warn("Erro logout:", error);
+        logger.warn("Erro logout", { error: String(error) });
     }
 };
 
@@ -205,7 +207,7 @@ export const getWeather = async () => {
         const response = await api.get('/home/weather');
         return response.data;
     } catch (error) {
-        console.error("Erro ao buscar clima:", error);
+        logger.error("Erro ao buscar clima", { error: String(error) });
         return null;
     }
 };
@@ -215,7 +217,7 @@ export const getNews = async () => {
         const response = await api.get('/home/news');
         return response.data;
     } catch (error) {
-        console.error("Erro ao buscar notícias:", error);
+        logger.error("Erro ao buscar notícias", { error: String(error) });
         return [];
     }
 };
@@ -226,7 +228,7 @@ export const getNewsTopics = async () => {
         const response = await api.get('/home/news/topics');
         return response.data; // Retorna array de {id, label}
     } catch (error) {
-        console.error("Erro ao buscar tópicos:", error);
+        logger.error("Erro ao buscar tópicos", { error: String(error) });
         return [];
     }
 };
@@ -831,7 +833,7 @@ export const getSystemConfig = async () => {
         const response = await api.get('/system/config');
         return response.data;
     } catch (error) {
-        console.error("Erro ao carregar configurações do sistema", error);
+        logger.error("Erro ao carregar configurações do sistema", { error: String(error) });
         return {
             deployment_mode: "SELF_HOSTED",
             public_registration: false,
@@ -877,13 +879,13 @@ export const aiService = {
       // A URL dinâmica funciona perfeitamente para os dois casos:
       // context='ritmo'  -> GET /ai/ritmo/insight
       // context='agenda' -> GET /ai/agenda/insight
-      const endpoint = `/ai/${context}/insight`; 
-      
+      const endpoint = `/ai/${context}/insight`;
+
       const response = await api.get(endpoint);
       return response.data;
     } catch (error) {
-      console.error(`Erro ao buscar insight IA para ${context}:`, error);
-      throw error; 
+      logger.error(`Erro ao buscar insight IA para ${context}`, { error: String(error) });
+      throw error;
     }
   },
 };
