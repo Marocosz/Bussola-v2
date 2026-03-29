@@ -35,10 +35,12 @@ class AuthCog(commands.Cog):
     @app_commands.command(name="start", description="Começar a usar o Bússola Bot")
     async def start_command(self, interaction: discord.Interaction):
         """Exibe boas-vindas se não vinculado, ou confirma se já estiver vinculado."""
+        await interaction.response.defer(ephemeral=True)
+
         is_linked = await self.bot.api.check_link_status(str(interaction.user.id))
 
         if is_linked:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "✅ Sua conta já está vinculada! Use `/ajuda` para ver os comandos disponíveis.",
                 ephemeral=True,
             )
@@ -55,7 +57,7 @@ class AuthCog(commands.Cog):
             color=WELCOME_COLOR,
         )
         embed.set_footer(text="O link de vinculação expira em 10 minutos.")
-        await interaction.response.send_message(embed=embed, view=LinkView(self, interaction.user), ephemeral=True)
+        await interaction.followup.send(embed=embed, view=LinkView(self, interaction.user), ephemeral=True)
 
     # ------------------------------------------------------------------
     # Slash command: /link — gera novo link de vinculação
@@ -71,40 +73,36 @@ class AuthCog(commands.Cog):
 
     @app_commands.command(name="desvincular", description="Remove o vínculo entre seu Discord e o Bússola")
     async def unlink_command(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+
         is_linked = await self.bot.api.check_link_status(str(interaction.user.id))
         if not is_linked:
-            await interaction.response.send_message(
-                "Sua conta não está vinculada.", ephemeral=True
-            )
+            await interaction.followup.send("Sua conta não está vinculada.", ephemeral=True)
             return
 
         success = await self.bot.api.unlink_account(str(interaction.user.id))
         if success:
-            await interaction.response.send_message(
-                "✅ Conta desvinculada com sucesso.", ephemeral=True
-            )
+            await interaction.followup.send("✅ Conta desvinculada com sucesso.", ephemeral=True)
         else:
-            await interaction.response.send_message(
-                "❌ Erro ao desvincular. Tente novamente.", ephemeral=True
-            )
+            await interaction.followup.send("❌ Erro ao desvincular. Tente novamente.", ephemeral=True)
 
     # ------------------------------------------------------------------
     # Lógica interna de vinculação
     # ------------------------------------------------------------------
 
     async def _start_link_flow(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+
         discord_id = str(interaction.user.id)
 
         is_linked = await self.bot.api.check_link_status(discord_id)
         if is_linked:
-            await interaction.response.send_message(
-                "✅ Sua conta já está vinculada!", ephemeral=True
-            )
+            await interaction.followup.send("✅ Sua conta já está vinculada!", ephemeral=True)
             return
 
         token = await self.bot.api.generate_link_token(discord_id)
         if not token:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "❌ Erro ao gerar o link. Tente novamente em instantes.",
                 ephemeral=True,
             )
@@ -112,7 +110,7 @@ class AuthCog(commands.Cog):
 
         link_url = f"{self.bot.frontend_url}/discord/link?token={token}"
 
-        await interaction.response.send_message(
+        await interaction.followup.send(
             f"🔗 Clique no link abaixo para vincular sua conta "
             f"**(válido por 10 minutos)**:\n{link_url}",
             ephemeral=True,
