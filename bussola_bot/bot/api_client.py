@@ -47,3 +47,17 @@ class ApiClient:
                 return False
             except httpx.RequestError:
                 return False
+
+    async def unlink_account(self, discord_id: str) -> bool:
+        """Remove o vínculo entre discord_id e a conta Bussola."""
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.delete(
+                    f"{self.base_url}/api/v1/bot/auth/unlink",
+                    json={"discord_id": discord_id},
+                    headers=self._headers,
+                    timeout=10.0,
+                )
+                return response.status_code == 200
+            except httpx.RequestError:
+                return False

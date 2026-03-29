@@ -70,3 +70,21 @@ def check_link_status(discord_id: str, db: Session = Depends(get_db)):
     """Verifica se um discord_id já está vinculado a alguma conta."""
     user = db.query(User).filter(User.discord_id == discord_id).first()
     return {"linked": user is not None}
+
+
+class UnlinkRequest(BaseModel):
+    discord_id: str
+
+
+@router.delete(
+    "/auth/unlink",
+    dependencies=[Depends(require_bot_token)],
+)
+def unlink_account(payload: UnlinkRequest, db: Session = Depends(get_db)):
+    """Remove o vínculo discord_id de uma conta Bussola."""
+    user = db.query(User).filter(User.discord_id == payload.discord_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Conta não vinculada")
+    user.discord_id = None
+    db.commit()
+    return {"message": "Conta desvinculada com sucesso"}

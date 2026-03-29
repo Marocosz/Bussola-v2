@@ -29,29 +29,23 @@ class LinkView(discord.ui.View):
 class AuthCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        # Controla quem já recebeu a mensagem de boas-vindas nesta sessão
-        # para evitar spam quando o usuário manda várias mensagens sem vincular.
-        self._welcomed: set[int] = set()
 
     # ------------------------------------------------------------------
-    # Evento: primeira mensagem no DM → boas-vindas se não vinculado
+    # Slash command: /start — ponto de entrada principal
     # ------------------------------------------------------------------
 
-    @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
-        if message.author.bot:
-            return
-        if not isinstance(message.channel, discord.DMChannel):
-            return
-        if message.author.id in self._welcomed:
+    @app_commands.command(name="start", description="Começar a usar o Bússola Bot")
+    async def start_command(self, interaction: discord.Interaction):
+        """Exibe boas-vindas se não vinculado, ou confirma se já estiver vinculado."""
+        is_linked = await self.bot.api.check_link_status(str(interaction.user.id))
+
+        if is_linked:
+            await interaction.response.send_message(
+                "✅ Sua conta já está vinculada! Use `/ajuda` para ver os comandos disponíveis.",
+                ephemeral=True,
+            )
             return
 
-        is_linked = await self.bot.api.check_link_status(str(message.author.id))
-        if not is_linked:
-            self._welcomed.add(message.author.id)
-            await self._send_welcome(message.channel, message.author)
-
-    async def _send_welcome(self, channel: discord.DMChannel, user: discord.User):
         embed = discord.Embed(
             title="Olá! Sou o Bússola Bot 🧭",
             description=(
@@ -63,15 +57,42 @@ class AuthCog(commands.Cog):
             color=WELCOME_COLOR,
         )
         embed.set_footer(text="O link de vinculação expira em 10 minutos.")
-        await channel.send(embed=embed, view=LinkView(self, user))
+        await interaction.response.send_message(embed=embed, view=LinkView(self, interaction.user), ephemeral=True)
 
     # ------------------------------------------------------------------
-    # Slash command: /link
+    # Slash command: /link — gera novo link de vinculação
     # ------------------------------------------------------------------
 
     @app_commands.command(name="link", description="Vincule sua conta Bússola ao Discord")
     async def link_command(self, interaction: discord.Interaction):
         await self._start_link_flow(interaction)
+
+    # ------------------------------------------------------------------
+    # Slash command: /desvincular
+    # ------------------------------------------------------------------
+
+    @app_commands.command(name="desvincular", description="Remove o vínculo entre seu Discord e o Bússola")
+    async def unlink_command(self, interaction: discord.Interaction):
+        is_linked = await self.bot.api.check_link_status(str(interaction.user.id))
+        if not is_linked:
+            await interaction.response.send_message(
+                "Sua conta não está vinculada.", ephemeral=True
+            )
+            return
+
+        success = await self.bot.api.unlink_account(str(interaction.user.id))
+        if success:
+            await interaction.response.send_message(
+                "✅ Conta desvinculada com sucesso.", ephemeral=True
+            )
+        else:
+            await interaction.response.send_message(
+                "❌ Erro ao desvincular. Tente novamente.", ephemeral=True
+            )
+
+    # ------------------------------------------------------------------
+    # Lógica interna de vinculação
+    # ------------------------------------------------------------------
 
     async def _start_link_flow(self, interaction: discord.Interaction):
         discord_id = str(interaction.user.id)
@@ -99,7 +120,6 @@ class AuthCog(commands.Cog):
             ephemeral=True,
         )
 
-        # Inicia polling em background — não bloqueia o bot
         asyncio.create_task(self._poll_link(interaction.user, discord_id))
 
     async def _poll_link(self, user: discord.User, discord_id: str):
@@ -110,14 +130,12 @@ class AuthCog(commands.Cog):
         for _ in range(200):
             await asyncio.sleep(3)
             if await self.bot.api.check_link_status(discord_id):
-                self._welcomed.add(user.id)
                 await user.send(
                     "✅ **Conta vinculada com sucesso!**\n\n"
                     "Você já pode usar todos os comandos. "
-                    "Digite `/ajuda` para ver o que está disponível."
+                    "Digite `/start` para começar."
                 )
                 return
-        # Timeout silencioso — o link expirou, usuário pode usar /link novamente
 
 
 async def setup(bot: commands.Bot):
