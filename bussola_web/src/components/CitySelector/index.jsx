@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './styles.css';
-import { logger } from '../../../utils/logger';
+import { logger } from '../../utils/logger';
 
 export function CitySelector({ value, onChange }) {
     const [inputValue, setInputValue] = useState(value || '');

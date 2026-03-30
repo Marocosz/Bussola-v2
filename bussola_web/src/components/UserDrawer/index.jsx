@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from '../../context/ToastContext';
-import { logger } from '../../../utils/logger';
+import { logger } from '../../utils/logger';
 import { CitySelector } from '../CitySelector';
 import { getNewsTopics } from '../../services/api';
 import zxcvbn from 'zxcvbn'; // Importando lib de força de senha

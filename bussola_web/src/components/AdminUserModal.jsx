@@ -3,7 +3,7 @@ import { adminCreateUser } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { BaseModal } from './BaseModal';
 import './AdminUserModal.css';
-import { logger } from '../../utils/logger';
+import { logger } from '../utils/logger';
 
 export function AdminUserModal({ isOpen, onClose }) {
     const [email, setEmail] = useState('');

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { aiService } from '../../services/api';
 import './styles.css';
-import { logger } from '../../../utils/logger';
+import { logger } from '../../utils/logger';
 
 const COOLDOWN_HOURS = 3;
 const COOLDOWN_MS = COOLDOWN_HOURS * 60 * 60 * 1000;
