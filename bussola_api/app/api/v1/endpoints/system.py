@@ -32,6 +32,11 @@ from app.models.user import User
 
 router = APIRouter()
 
+@router.get("/health")
+def health_check():
+    """Endpoint leve para health check do container."""
+    return {"status": "ok"}
+
 @router.get("/config", response_model=SystemConfig)
 def get_system_info(db: Session = Depends(deps.get_db)):
     """
