@@ -462,6 +462,21 @@ export const toggleFixarAnotacao = async (id: number) => {
     return response.data;
 };
 
+export interface ExportPdfData {
+    titulo: string;
+    conteudo: string;
+    grupo_nome?: string | null;
+    grupo_cor?: string | null;
+    data_criacao: string;
+}
+
+export const exportAnotacaoPdf = async (data: ExportPdfData): Promise<Blob> => {
+    const response = await api.post('/registros/anotacoes/export-pdf', data, {
+        responseType: 'blob',
+    });
+    return response.data;
+};
+
 export const createTarefa = async (data: any) => {
     const response = await api.post('/registros/tarefas', data);
     return response.data;
