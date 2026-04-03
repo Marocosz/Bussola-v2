@@ -24,6 +24,7 @@ COMUNICAÇÃO:
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Body, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from typing import List, Any, Optional
 from datetime import date
@@ -34,6 +35,7 @@ from app.schemas.registros import (
     TarefaCreate, TarefaResponse, TarefaUpdate,
     GrupoCreate, GrupoResponse,
     HabitoCreate, HabitoUpdate, HabitoResponse, HabitoRegistroResponse,
+    ExportPdfRequest,
 )
 from app.services.registros import registros_service
 
@@ -146,6 +148,27 @@ def toggle_fixar_anotacao(
     if not reg:
         raise HTTPException(status_code=404, detail="Anotação não encontrada")
     return reg
+
+@router.post("/anotacoes/export-pdf")
+def export_anotacao_pdf(
+    dados: ExportPdfRequest,
+    current_user = Depends(deps.get_current_user)
+):
+    """Gera e retorna um PDF a partir do conteúdo Markdown de uma anotação."""
+    from app.services.pdf_service import generate_pdf
+
+    buffer, filename = generate_pdf(
+        titulo=dados.titulo,
+        conteudo=dados.conteudo,
+        grupo_nome=dados.grupo_nome,
+        grupo_cor=dados.grupo_cor,
+        data_criacao=dados.data_criacao,
+    )
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 # --------------------------------------------------------------------------------------
 # TAREFAS (TO-DO LIST)

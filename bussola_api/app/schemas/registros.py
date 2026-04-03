@@ -194,6 +194,17 @@ class HabitoResponse(HabitoBase):
 
 
 # --------------------------------------------------------------------------------------
+# EXPORT PDF
+# --------------------------------------------------------------------------------------
+class ExportPdfRequest(BaseModel):
+    titulo: str
+    conteudo: str
+    grupo_nome: Optional[str] = None
+    grupo_cor: Optional[str] = None
+    data_criacao: str
+
+
+# --------------------------------------------------------------------------------------
 # DASHBOARD REGISTROS
 # --------------------------------------------------------------------------------------
 class RegistrosDashboardResponse(BaseModel):
