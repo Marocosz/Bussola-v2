@@ -74,7 +74,7 @@ export function ViewAnotacaoModal({ active, closeModal, nota, onEdit }) {
             URL.revokeObjectURL(url);
         } catch (e) {
             logger.error("Erro ao gerar PDF", { error: String(e) });
-            addToast('Erro ao gerar o PDF. Tente novamente.', 'error');
+            addToast({ type: 'error', title: 'Erro', description: 'Erro ao gerar o PDF. Tente novamente.' });
         } finally {
             setPdfLoading(false);
         }
