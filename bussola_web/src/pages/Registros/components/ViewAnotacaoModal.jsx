@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { BaseModal } from '../../../components/BaseModal';
 import { MarkdownViewer } from './MarkdownViewer';
+import { exportAnotacaoPdf } from '../../../services/api';
+import { useToast } from '../../../context/ToastContext';
 import '../styles.css';
 import '../styles/markdown.css';
 import { logger } from '../../../utils/logger';
@@ -22,6 +24,8 @@ const markdownToPlainText = (md) =>
 
 export function ViewAnotacaoModal({ active, closeModal, nota, onEdit }) {
     const [copyState, setCopyState] = useState(null); // null | 'md' | 'text'
+    const [pdfLoading, setPdfLoading] = useState(false);
+    const { addToast } = useToast();
 
     if (!active || !nota) return null;
 
@@ -47,6 +51,32 @@ export function ViewAnotacaoModal({ active, closeModal, nota, onEdit }) {
             setTimeout(() => setCopyState(null), 2000);
         } catch (e) {
             logger.error("Erro ao copiar", { error: String(e) });
+        }
+    };
+
+    const handleDownloadPdf = async () => {
+        setPdfLoading(true);
+        try {
+            const blob = await exportAnotacaoPdf({
+                titulo: nota.titulo || 'Sem título',
+                conteudo: nota.conteudo || '',
+                grupo_nome: nota.grupo?.nome || null,
+                grupo_cor: nota.grupo?.cor || null,
+                data_criacao: nota.data_criacao,
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${(nota.titulo || 'nota').replace(/[^a-zA-Z0-9\u00C0-\u024F\s-]/g, '').trim().replace(/\s+/g, '-').toLowerCase() || 'nota'}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            logger.error("Erro ao gerar PDF", { error: String(e) });
+            addToast('Erro ao gerar o PDF. Tente novamente.', 'error');
+        } finally {
+            setPdfLoading(false);
         }
     };
 
@@ -106,6 +136,26 @@ export function ViewAnotacaoModal({ active, closeModal, nota, onEdit }) {
                                     {copyState === 'text'
                                         ? <><i className="fa-solid fa-check"></i> Copiado!</>
                                         : <><i className="fa-regular fa-copy"></i> Copiar texto</>
+                                    }
+                                </button>
+                                <button
+                                    className="md-icon-btn"
+                                    onClick={handleDownloadPdf}
+                                    disabled={pdfLoading}
+                                    title="Baixar como PDF"
+                                    style={{
+                                        fontSize: '0.78rem',
+                                        padding: '3px 10px',
+                                        border: '1px solid rgba(74,109,255,0.3)',
+                                        borderRadius: '6px',
+                                        background: 'rgba(74,109,255,0.1)',
+                                        color: 'var(--cor-azul-primario)',
+                                        cursor: pdfLoading ? 'wait' : 'pointer',
+                                    }}
+                                >
+                                    {pdfLoading
+                                        ? <><i className="fa-solid fa-spinner fa-spin"></i> Gerando...</>
+                                        : <><i className="fa-solid fa-download"></i> Download</>
                                     }
                                 </button>
                             </div>
