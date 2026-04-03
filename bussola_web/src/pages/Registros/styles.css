@@ -512,7 +512,7 @@
 .registros-scope .view-modal {
     background: var(--cor-card-principal);
     width: 95%;
-    max-width: 700px;
+    max-width: 900px;
     border-radius: 16px;
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
     border: 1px solid var(--cor-borda);
@@ -573,7 +573,7 @@
 
 /* Modal Grande */
 .registros-scope .large-modal {
-    max-width: 800px;
+    max-width: 1000px;
     height: 85vh;
 }
 
