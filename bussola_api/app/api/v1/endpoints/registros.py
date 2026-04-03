@@ -157,13 +157,16 @@ def export_anotacao_pdf(
     """Gera e retorna um PDF a partir do conteúdo Markdown de uma anotação."""
     from app.services.pdf_service import generate_pdf
 
-    buffer, filename = generate_pdf(
-        titulo=dados.titulo,
-        conteudo=dados.conteudo,
-        grupo_nome=dados.grupo_nome,
-        grupo_cor=dados.grupo_cor,
-        data_criacao=dados.data_criacao,
-    )
+    try:
+        buffer, filename = generate_pdf(
+            titulo=dados.titulo,
+            conteudo=dados.conteudo,
+            grupo_nome=dados.grupo_nome,
+            grupo_cor=dados.grupo_cor,
+            data_criacao=dados.data_criacao,
+        )
+    except Exception:
+        raise HTTPException(status_code=500, detail="Erro ao gerar PDF")
     return StreamingResponse(
         buffer,
         media_type="application/pdf",

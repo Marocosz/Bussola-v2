@@ -12,7 +12,7 @@ PARTE DO SISTEMA:
 =======================================================================================
 """
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional, ForwardRef, Any
 from datetime import datetime, date
 
@@ -198,7 +198,7 @@ class HabitoResponse(HabitoBase):
 # --------------------------------------------------------------------------------------
 class ExportPdfRequest(BaseModel):
     titulo: str
-    conteudo: str
+    conteudo: str = Field(..., max_length=500_000)
     grupo_nome: Optional[str] = None
     grupo_cor: Optional[str] = None
     data_criacao: str

@@ -67,7 +67,7 @@ export function ViewAnotacaoModal({ active, closeModal, nota, onEdit }) {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${(nota.titulo || 'nota').replace(/[^a-zA-Z0-9\u00C0-\u024F\s-]/g, '').trim().replace(/\s+/g, '-').toLowerCase() || 'nota'}.pdf`;
+            a.download = `${(nota.titulo || 'nota').toLowerCase().replace(/\s+/g, '-')}.pdf`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
