@@ -94,3 +94,6 @@ websockets==15.0.1
 wrapt==2.0.1
 xxhash==3.6.0
 zstandard==0.25.0
+markdown==3.7
+weasyprint==63.1
+Pygments==2.19.1
