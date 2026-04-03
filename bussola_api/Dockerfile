@@ -15,19 +15,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
     tzdata \
-    libpango-1.0-0 \
-    libpangocairo-1.0-0 \
-    libcairo2 \
-    libgdk-pixbuf-2.0-0 \
-    libffi-dev \
-    shared-mime-info \
-    fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
 # Copia e instala as dependências Python
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
+
+# Instala Chromium para geração de PDF via Playwright
+RUN playwright install --with-deps chromium
 
 # Copia o código fonte da aplicação
 COPY . .

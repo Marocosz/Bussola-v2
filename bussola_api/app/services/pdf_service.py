@@ -1,8 +1,9 @@
 """
 PDF generation service for notebook notes.
-Converts Markdown content to a styled PDF using WeasyPrint.
+Converts Markdown content to a styled PDF using Playwright + Chromium.
 """
 
+import asyncio
 import re
 import unicodedata
 from io import BytesIO
@@ -10,7 +11,6 @@ from datetime import datetime
 
 import markdown
 from pygments.formatters import HtmlFormatter
-from weasyprint import HTML
 
 
 def generate_pdf(
@@ -23,13 +23,43 @@ def generate_pdf(
     """Generate a PDF from markdown content. Returns (buffer, filename)."""
     html_body = _markdown_to_html(conteudo)
     full_html = _build_full_html(titulo, html_body, grupo_nome, grupo_cor, data_criacao)
+    export_date = datetime.now().strftime("%d/%m/%Y")
 
-    buffer = BytesIO()
-    HTML(string=full_html).write_pdf(buffer)
-    buffer.seek(0)
+    pdf_bytes = asyncio.run(_render_pdf(full_html, export_date))
 
+    buffer = BytesIO(pdf_bytes)
     filename = _slugify(titulo) + ".pdf"
     return buffer, filename
+
+
+async def _render_pdf(html: str, export_date: str) -> bytes:
+    """Render HTML to PDF using Playwright Chromium."""
+    from playwright.async_api import async_playwright
+
+    async with async_playwright() as p:
+        browser = await p.chromium.launch()
+        page = await browser.new_page()
+        await page.set_content(html, wait_until="networkidle")
+
+        footer_html = (
+            '<div style="width:100%; font-size:8px; color:#999; '
+            'display:flex; justify-content:space-between; padding:0 20px;">'
+            f'<span>Bussola · Exportado em {export_date}</span>'
+            '<span class="pageNumber"></span>'
+            '</div>'
+        )
+
+        pdf_bytes = await page.pdf(
+            format="A4",
+            margin={"top": "20mm", "bottom": "20mm", "left": "20mm", "right": "20mm"},
+            print_background=True,
+            display_header_footer=True,
+            header_template='<span></span>',
+            footer_template=footer_html,
+        )
+
+        await browser.close()
+        return pdf_bytes
 
 
 def _markdown_to_html(conteudo: str) -> str:
@@ -76,8 +106,6 @@ def _build_full_html(
     except (ValueError, TypeError):
         data_fmt = data_criacao
 
-    export_date = datetime.now().strftime("%d/%m/%Y")
-
     # Pygments CSS for syntax highlighting
     pygments_css = HtmlFormatter(style="monokai").get_style_defs(".codehilite")
 
@@ -93,22 +121,6 @@ def _build_full_html(
 <head>
 <meta charset="utf-8">
 <style>
-/* ---------- Page ---------- */
-@page {{
-    size: A4;
-    margin: 2cm;
-    @bottom-center {{
-        content: "Bussola · Exportado em {export_date}";
-        font-size: 8pt;
-        color: #999;
-    }}
-    @bottom-right {{
-        content: counter(page);
-        font-size: 8pt;
-        color: #999;
-    }}
-}}
-
 /* ---------- Base ---------- */
 body {{
     font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -269,6 +281,12 @@ img {{
     max-width: 100%;
     height: auto;
     border-radius: 6px;
+}}
+
+/* ---------- Print ---------- */
+@media print {{
+    h2, h3 {{ page-break-after: avoid; }}
+    table, blockquote {{ page-break-inside: avoid; }}
 }}
 </style>
 </head>
