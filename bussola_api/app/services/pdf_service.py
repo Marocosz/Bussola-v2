@@ -81,12 +81,30 @@ def _markdown_to_html(conteudo: str) -> str:
             "noclasses": False,
         },
     }
-    return markdown.markdown(
+    html = markdown.markdown(
         conteudo,
         extensions=extensions,
         extension_configs=extension_configs,
         output_format="html",
     )
+    return _process_task_lists(html)
+
+
+def _process_task_lists(html: str) -> str:
+    """Convert [ ] and [x] patterns into styled task list checkboxes."""
+    # Unchecked: [ ]
+    html = re.sub(
+        r'<li>\s*\[ ?\]',
+        '<li class="task-item"><span class="task-check unchecked"></span>',
+        html,
+    )
+    # Checked: [x] or [X]
+    html = re.sub(
+        r'<li>\s*\[[xX]\]',
+        '<li class="task-item"><span class="task-check checked"></span>',
+        html,
+    )
+    return html
 
 
 def _build_full_html(
@@ -251,29 +269,41 @@ hr {{
     margin: 24px 0;
 }}
 
-/* ---------- Checkboxes ---------- */
-input[type="checkbox"] {{
-    appearance: none;
-    -webkit-appearance: none;
-    width: 14px;
-    height: 14px;
-    border: 2px solid #999;
-    border-radius: 3px;
+/* ---------- Task Lists ---------- */
+.task-item {{
+    list-style: none;
+    margin-left: -20px;
+    padding: 4px 0;
+}}
+.task-check {{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    margin-right: 8px;
     vertical-align: middle;
-    margin-right: 6px;
     position: relative;
+    top: -1px;
 }}
-input[type="checkbox"]:checked {{
+.task-check.unchecked {{
+    border: 2px solid #c0c0c0;
+    background: #fff;
+}}
+.task-check.checked {{
+    border: 2px solid #22c55e;
     background: #22c55e;
-    border-color: #22c55e;
 }}
-input[type="checkbox"]:checked::after {{
+.task-check.checked::after {{
     content: "\\2713";
     color: #fff;
-    font-size: 10px;
-    position: absolute;
-    top: -1px;
-    left: 1px;
+    font-size: 12px;
+    font-weight: 700;
+}}
+.task-item {{
+    padding: 3px 0;
+    line-height: 1.5;
 }}
 
 /* ---------- Images ---------- */
