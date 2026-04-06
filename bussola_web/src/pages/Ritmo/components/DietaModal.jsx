@@ -117,7 +117,7 @@ export function DietaModal({ onClose, onSuccess, initialData }) {
 
     return (
         <BaseModal onClose={onClose} className="ritmo-scope">
-            <div className="modal-content" style={{ maxWidth: '900px', width: '95%' }}>
+            <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '900px', width: '95%' }}>
                 <div className="modal-header">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                         <h2 style={{ margin: 0, fontSize: '1.2rem' }}>{initialData ? `Editar: ${initialData.nome}` : 'Configurar Dieta'}</h2>

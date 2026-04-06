@@ -85,7 +85,7 @@ main.container {
     border-radius: 10px;
     border: 1px solid var(--cor-borda);
     min-height: 90px; /* EVITA PULO DE LAYOUT */
-    transition: all 0.3s ease;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .weather-widget i {
@@ -268,7 +268,7 @@ main.container {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
     height: 100%;
     min-height: 180px;
     text-decoration: none;

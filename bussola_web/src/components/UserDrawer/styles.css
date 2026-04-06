@@ -6,7 +6,7 @@
     z-index: 9999;
     opacity: 0;
     visibility: hidden;
-    transition: all 0.3s ease;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 .drawer-overlay.active {
@@ -66,7 +66,7 @@
     color: var(--cor-texto-secundario);
     font-size: 1.5rem;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -170,7 +170,7 @@
     padding: 12px 18px; /* Tags maiores */
     font-size: 0.95rem;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
     background: transparent;
     color: var(--cor-texto-secundario);
     flex-grow: 1; /* Ocupam espaço uniformemente */

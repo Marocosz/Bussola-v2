@@ -92,7 +92,7 @@ export function SegredoModal({ active, closeModal, onUpdate, editingData }) {
 
     return (
         <BaseModal onClose={closeModal} className="modal">
-            <div className="modal-content">
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <h3>{editingData ? 'Editar Segredo' : 'Guardar Novo Segredo'}</h3>
                     <span className="close-btn" onClick={closeModal}>&times;</span>

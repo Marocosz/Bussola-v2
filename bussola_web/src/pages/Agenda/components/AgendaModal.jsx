@@ -56,7 +56,7 @@ export function AgendaModal({ active, closeModal, onUpdate, editingData }) {
 
     return (
         <BaseModal onClose={closeModal} className="modal">
-            <div className="modal-content">
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <h3>{editingData ? 'Editar Compromisso' : 'Novo Compromisso'}</h3>
                     <span className="close-btn" onClick={closeModal}>&times;</span>

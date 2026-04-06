@@ -255,7 +255,7 @@
     justify-content: center;
     cursor: pointer;
     font-size: 0.72rem;
-    transition: all 0.15s;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
     flex-shrink: 0;
 }
 
@@ -349,7 +349,7 @@
     font-weight: 600;
     padding: 4px 8px;
     border-radius: 6px;
-    transition: all 0.15s;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
 }
 
 .pk-cal-today-btn {

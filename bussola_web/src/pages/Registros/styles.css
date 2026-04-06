@@ -66,7 +66,7 @@
     color: var(--cor-texto-secundario);
     cursor: pointer;
     border-radius: 6px;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -116,7 +116,7 @@
     gap: 10px;
     min-width: 180px;
     justify-content: space-between;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
 }
 
 .registros-scope .dropdown-trigger-btn:hover {
@@ -279,7 +279,7 @@
     width: 100%;
     border-bottom: 1px solid var(--cor-borda);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
     user-select: none;
     position: relative;
     z-index: 2;
@@ -785,7 +785,7 @@
     border-radius: 8px;
     text-decoration: none;
     color: var(--cor-azul-primario);
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
     font-size: 0.9rem;
 }
 
@@ -805,7 +805,7 @@
     justify-content: center;
     cursor: pointer;
     padding: 0;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
 }
 
 .registros-scope .btn-edit:hover {
@@ -923,7 +923,7 @@
     border: 1px solid var(--cor-borda);
     border-radius: 16px;
     padding: 1.2rem;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
     display: flex;
     flex-direction: column;
@@ -974,7 +974,7 @@
     justify-content: center;
     color: white;
     flex-shrink: 0;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
     margin-top: 3px;
 }
 
@@ -1188,7 +1188,7 @@
     background: var(--cor-fundo);
     border: 1px solid var(--cor-borda);
     border-radius: 8px;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
 }
 
 .registros-scope .tree-item-content:hover {
@@ -1228,7 +1228,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
     padding: 0;
 }
 
@@ -1440,7 +1440,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
 }
 
 .registros-scope .remove-link-btn:hover {
@@ -1466,7 +1466,7 @@
     cursor: pointer;
     font-size: 1rem;
     color: var(--cor-texto-principal);
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
     user-select: none;
 }
 
@@ -1547,7 +1547,7 @@
     cursor: pointer;
     background: var(--cor-fundo);
     font-size: 1.2rem;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
     box-sizing: border-box;
 }
 
@@ -1658,7 +1658,7 @@
     background-color: var(--cor-fundo);
     color: var(--cor-texto-principal);
     border-radius: 8px;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
 }
 
 .registros-scope .header-search-input:focus {
@@ -1768,7 +1768,7 @@
     font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1785,7 +1785,7 @@
     font-size: 0.75rem;
     color: var(--cor-texto-secundario);
     cursor: pointer;
-    transition: all 0.15s;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
 }
 .registros-scope .habito-freq-preset:hover { border-color: var(--cor-azul-primario); color: var(--cor-texto-principal); }
 
@@ -1807,7 +1807,7 @@
     position: relative; overflow: hidden;
     color: var(--cor-texto-secundario);
     font-size: 0.8rem;
-    transition: all 0.15s;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
     margin: 0 !important;
 }
 
@@ -2048,7 +2048,7 @@
     justify-content: center;
     cursor: pointer;
     position: relative;
-    transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    transition: background-color 0.25s cubic-bezier(0.34,1.56,0.64,1), color 0.25s cubic-bezier(0.34,1.56,0.64,1);
     flex-shrink: 0;
     font-size: 1rem;
     margin: 4px 0;
@@ -2381,7 +2381,7 @@
     font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.18s;
+    transition: background-color 0.18s, color 0.18s, border-color 0.18s;
     white-space: nowrap;
 }
 
@@ -2611,7 +2611,7 @@
     align-items: center;
     justify-content: center;
     cursor: default;
-    transition: all 0.15s;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
     opacity: 0.35;
 }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import './pickers.css';
 
@@ -93,7 +93,7 @@ function buildCalendar(year, month) {
  *   required    — bool
  *   size        — "sm" para variante compacta (filtros)
  */
-export function DatePicker({
+export const DatePicker = React.memo(function DatePicker({
     value,
     onChange,
     name,
@@ -171,35 +171,35 @@ export function DatePicker({
     }, [open]);
 
     // ── Navegação de mês ────────────────────────────────────────────────────
-    const prevMonth = () => {
+    const prevMonth = useCallback(() => {
         if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
         else setViewMonth(m => m - 1);
-    };
-    const nextMonth = () => {
+    }, [viewMonth]);
+    const nextMonth = useCallback(() => {
         if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
         else setViewMonth(m => m + 1);
-    };
+    }, [viewMonth]);
 
     // ── Selecionar dia ──────────────────────────────────────────────────────
-    const selectDay = (cell) => {
+    const selectDay = useCallback((cell) => {
         const d   = new Date(cell.year, cell.month, cell.day);
         const val = formatDate(d);
         onChange({ target: { name, value: val } });
         setOpen(false);
-    };
+    }, [onChange, name]);
 
-    const selectToday = () => {
+    const selectToday = useCallback(() => {
         onChange({ target: { name, value: todayStr } });
         setOpen(false);
-    };
+    }, [onChange, name, todayStr]);
 
-    const clearValue = () => {
+    const clearValue = useCallback(() => {
         onChange({ target: { name, value: '' } });
         setOpen(false);
-    };
+    }, [onChange, name]);
 
-    // ── Grid ────────────────────────────────────────────────────────────────
-    const cells = buildCalendar(viewYear, viewMonth);
+    // ── Grid (memoizado para evitar recálculo a cada render) ────────────────
+    const cells = useMemo(() => buildCalendar(viewYear, viewMonth), [viewYear, viewMonth]);
 
     // ── Display ─────────────────────────────────────────────────────────────
     const displayValue = formatDisplay(value);
@@ -311,4 +311,4 @@ export function DatePicker({
             {createPortal(panel, document.body)}
         </div>
     );
-}
+});

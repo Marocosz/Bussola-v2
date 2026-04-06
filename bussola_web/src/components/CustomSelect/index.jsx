@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import './styles.css'; // Vamos criar esse CSS no Passo 2
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import './styles.css';
 
-export function CustomSelect({ label, options, value, onChange, placeholder = "Selecione...", name }) {
+export const CustomSelect = React.memo(function CustomSelect({ label, options, value, onChange, placeholder = "Selecione...", name }) {
     const [isOpen, setIsOpen] = useState(false);
     const wrapperRef = useRef(null);
 
@@ -15,13 +15,18 @@ export function CustomSelect({ label, options, value, onChange, placeholder = "S
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const selectedOpt = options.find(opt => String(opt.value) === String(value));
+    const selectedOpt = useMemo(
+        () => options.find(opt => String(opt.value) === String(value)),
+        [options, value]
+    );
     const selectedLabel = selectedOpt?.label || placeholder;
 
-    const handleSelect = (selectedValue) => {
+    const handleSelect = useCallback((selectedValue) => {
         onChange({ target: { name, value: selectedValue } });
         setIsOpen(false);
-    };
+    }, [onChange, name]);
+
+    const toggleOpen = useCallback(() => setIsOpen(prev => !prev), []);
 
     return (
         <div className="custom-select-wrapper" ref={wrapperRef} style={{ position: 'relative', zIndex: isOpen ? 100 : 1, width: '100%' }}>
@@ -29,7 +34,7 @@ export function CustomSelect({ label, options, value, onChange, placeholder = "S
 
             <div
                 className={`custom-select-trigger ${isOpen ? 'open' : ''}`}
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={toggleOpen}
             >
                 <span className="cs-selected-content" style={{ color: value ? 'var(--cor-texto-principal)' : 'var(--cor-texto-secundario)' }}>
                     {selectedOpt?.color && (
@@ -64,4 +69,4 @@ export function CustomSelect({ label, options, value, onChange, placeholder = "S
             )}
         </div>
     );
-}
+});

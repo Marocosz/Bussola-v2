@@ -154,7 +154,7 @@ export function BioModal({ onClose, onSuccess, initialData }) {
 
     return (
         <BaseModal onClose={onClose} className="ritmo-scope">
-            <div className="modal-content" style={{maxWidth: '900px', width: '95%'}}>
+            <div className="modal-content" onClick={e => e.stopPropagation()} style={{maxWidth: '900px', width: '95%'}}>
                 <div className="modal-header-flex">
                     <h2 className="modal-title">Perfil Biológico & Metas</h2>
                     <button className="close-btn-styled" onClick={onClose}>&times;</button>

@@ -56,7 +56,7 @@ export function ViewSecretModal({ segredoId, onClose, titulo }) {
 
     return (
         <BaseModal onClose={onClose} className="modal view-secret-modal">
-            <div className="modal-content" style={{ maxWidth: '450px' }}>
+            <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '450px' }}>
                 <div className="modal-header">
                     <h3>Visualizar: {titulo}</h3>
                     <span className="close-btn" onClick={onClose}>&times;</span>

@@ -26,7 +26,7 @@
     cursor: pointer;
     font-size: 0.95rem;
     color: var(--cor-texto-principal);
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
     user-select: none;
     box-sizing: border-box;
     overflow: hidden;
@@ -210,7 +210,7 @@
     cursor: pointer;
     box-sizing: border-box !important;
     font-size: 0.95rem;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
 }
 
 /* Estado Hover/Open (Opcional, para feedback visual) */

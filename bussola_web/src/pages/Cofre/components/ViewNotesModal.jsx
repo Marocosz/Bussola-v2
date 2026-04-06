@@ -6,7 +6,7 @@ export function ViewNotesModal({ notas, titulo, onClose }) {
 
     return (
         <BaseModal onClose={onClose} className="modal">
-            <div className="modal-content">
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <h3>Notas: {titulo}</h3>
                     <span className="close-btn" onClick={onClose}>&times;</span>

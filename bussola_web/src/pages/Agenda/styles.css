@@ -102,7 +102,7 @@
     background-color: var(--cor-fundo);
     color: var(--cor-texto-principal);
     border-radius: 8px;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
 }
 
 .header-search-input:focus {
@@ -132,7 +132,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
     font-size: 0.9rem;
 }
 
@@ -181,7 +181,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
 }
 
 .btn-nav-arrow:hover {
@@ -243,7 +243,7 @@
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
 }
 
 .month-header:hover,
@@ -422,7 +422,7 @@
     justify-content: center;
     cursor: pointer;
     padding: 0;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
 }
 
 .btn-action-icon.btn-edit-transacao:hover {
@@ -540,7 +540,7 @@
     font-weight: 600;
     cursor: pointer;
     border: none;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
 }
 
 .btn-concluir-action.complete {
@@ -585,7 +585,7 @@
     background: transparent;
     border: 1px solid var(--cor-vermelho-delete);
     color: var(--cor-vermelho-delete);
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
 }
 
 .btn-cancelar-action:hover {
@@ -762,7 +762,7 @@ textarea.form-input {
     justify-content: center;
     aspect-ratio: 1 / 1;
     position: relative;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
 }
 
 .dia-card.dia-padding {

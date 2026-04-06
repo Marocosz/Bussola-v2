@@ -105,7 +105,7 @@
     font-size: 0.82rem;
     font-weight: 600;
     white-space: nowrap;
-    transition: all 0.15s;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
     flex-shrink: 0;
 }
 
@@ -400,7 +400,7 @@
     justify-content: center;
     gap: 8px;
     min-width: 100px;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
 }
 
 .ritmo-scope .btn-adjust-profile-square:hover {
@@ -515,7 +515,7 @@
     color: var(--cor-texto-secundario);
     cursor: pointer;
     border-radius: 6px;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -574,7 +574,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     gap: 10px;
 }
 
@@ -613,7 +613,7 @@
     border-radius: 6px;
     cursor: pointer;
     font-size: 0.7rem;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1152,7 +1152,7 @@
     border-radius: 6px;
     cursor: pointer;
     font-weight: 600;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -1256,7 +1256,7 @@
     pointer-events: none;
     opacity: 0;
     visibility: hidden;
-    transition: all 0.2s ease-in-out;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, border-color 0.2s ease-in-out;
     z-index: 9999;
     border: 1px solid var(--cor-borda);
     line-height: 1.5;
@@ -1277,7 +1277,7 @@
     border-color: #1f1f1f transparent transparent transparent;
     opacity: 0;
     visibility: hidden;
-    transition: all 0.2s ease-in-out;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, border-color 0.2s ease-in-out;
     z-index: 9999;
 }
 

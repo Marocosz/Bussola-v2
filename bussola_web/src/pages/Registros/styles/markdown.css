@@ -279,7 +279,7 @@ body.light-theme .md-viewer pre code {
     color: var(--cor-texto-secundario);
     cursor: pointer;
     border-radius: 6px;
-    transition: all 0.15s;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
     text-transform: uppercase;
     letter-spacing: 0.4px;
 }
@@ -308,7 +308,7 @@ body.light-theme .md-viewer pre code {
     cursor: pointer;
     border-radius: 6px;
     font-size: 0.85rem;
-    transition: all 0.15s;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
     display: flex;
     align-items: center;
     gap: 5px;
@@ -406,7 +406,7 @@ body.light-theme .md-viewer pre code {
     cursor: pointer;
     font-size: 0.82rem;
     font-weight: 600;
-    transition: all 0.15s;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
     font-family: inherit;
     min-width: 28px;
     text-align: center;
