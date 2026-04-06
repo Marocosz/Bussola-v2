@@ -150,7 +150,7 @@ def toggle_fixar_anotacao(
     return reg
 
 @router.post("/anotacoes/export-pdf")
-def export_anotacao_pdf(
+async def export_anotacao_pdf(
     dados: ExportPdfRequest,
     current_user = Depends(deps.get_current_user)
 ):
@@ -158,7 +158,7 @@ def export_anotacao_pdf(
     from app.services.pdf_service import generate_pdf
 
     try:
-        buffer, filename = generate_pdf(
+        buffer, filename = await generate_pdf(
             titulo=dados.titulo,
             conteudo=dados.conteudo,
             grupo_nome=dados.grupo_nome,

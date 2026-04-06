@@ -13,7 +13,7 @@ import markdown
 from pygments.formatters import HtmlFormatter
 
 
-def generate_pdf(
+async def generate_pdf(
     titulo: str,
     conteudo: str,
     grupo_nome: str | None,
@@ -25,7 +25,7 @@ def generate_pdf(
     full_html = _build_full_html(titulo, html_body, grupo_nome, grupo_cor, data_criacao)
     export_date = datetime.now().strftime("%d/%m/%Y")
 
-    pdf_bytes = asyncio.run(_render_pdf(full_html, export_date))
+    pdf_bytes = await _render_pdf(full_html, export_date)
 
     buffer = BytesIO(pdf_bytes)
     filename = _slugify(titulo) + ".pdf"

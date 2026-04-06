@@ -23,7 +23,7 @@ COMUNICAÇÃO:
 =======================================================================================
 """
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
 from app.core.config import settings
@@ -47,10 +47,20 @@ if "sqlite" in settings.DATABASE_URL:
 # - Em produção (Postgres/MySQL), evita erros 500 caso o banco tenha reiniciado
 #   ou a conexão tenha caído por timeout no firewall.
 engine = create_engine(
-    settings.DATABASE_URL, 
+    settings.DATABASE_URL,
     connect_args=connect_args,
-    pool_pre_ping=True 
+    pool_pre_ping=True
 )
+
+# Habilita WAL mode no SQLite para permitir leituras concorrentes durante escritas.
+# Sem isso, múltiplos workers/threads podem causar "database is locked" erros.
+if "sqlite" in settings.DATABASE_URL:
+    @event.listens_for(engine, "connect")
+    def _set_sqlite_wal(dbapi_conn, connection_record):
+        cursor = dbapi_conn.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA busy_timeout=5000")
+        cursor.close()
 
 # --------------------------------------------------------------------------------------
 # FÁBRICA DE SESSÕES
