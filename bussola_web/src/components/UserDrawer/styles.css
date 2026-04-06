@@ -2,8 +2,7 @@
 .drawer-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6); /* Um pouco mais escuro para foco */
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.65);
     z-index: 9999;
     opacity: 0;
     visibility: hidden;

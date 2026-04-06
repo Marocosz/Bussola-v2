@@ -248,7 +248,6 @@ a {
     position: relative;
     overflow: hidden;
     cursor: pointer;
-    backdrop-filter: blur(10px);
 }
 
 @keyframes slideIn {
@@ -373,7 +372,6 @@ a {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(4px);
     z-index: 100000;
     display: flex;
     align-items: center;

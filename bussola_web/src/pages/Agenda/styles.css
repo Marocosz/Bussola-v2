@@ -608,7 +608,6 @@
     background-color: rgba(0, 0, 0, 0.7);
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(4px);
     animation: fadeIn 0.2s ease-out;
 }
 
