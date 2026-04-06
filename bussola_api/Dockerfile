@@ -23,7 +23,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Instala Chromium para geração de PDF via Playwright
-RUN playwright install --with-deps chromium
+RUN python -m playwright install --with-deps chromium
 
 # Copia o código fonte da aplicação
 COPY . .
