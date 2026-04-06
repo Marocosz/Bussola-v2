@@ -96,7 +96,7 @@ const SubtaskItem = ({ sub, tarefaId, onToggle, onUpdate, level = 0 }) => {
 };
 
 // --- CARD PRINCIPAL DA TAREFA ---
-export function TarefaCard({ tarefa, onUpdate, onEdit }) {
+export const TarefaCard = React.memo(function TarefaCard({ tarefa, onUpdate, onEdit }) {
     const { addToast } = useToast();
     const confirm = useConfirm(); 
     const isConcluido = tarefa.status === 'Concluído';
@@ -311,4 +311,4 @@ export function TarefaCard({ tarefa, onUpdate, onEdit }) {
             </div>
         </div>
     );
-}
+});

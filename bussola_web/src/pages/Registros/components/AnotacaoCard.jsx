@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { deleteAnotacao, toggleFixarAnotacao } from '../../../services/api';
 import { useConfirm } from '../../../context/ConfirmDialogContext';
 
-export function AnotacaoCard({ anotacao, onUpdate, onEdit, onView }) {
+export const AnotacaoCard = React.memo(function AnotacaoCard({ anotacao, onUpdate, onEdit, onView }) {
     const confirm = useConfirm();
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -41,19 +41,21 @@ export function AnotacaoCard({ anotacao, onUpdate, onEdit, onView }) {
     const dateStr = dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
 
     // Remove tags HTML (legado) ou sintaxe markdown para o preview
-    const isHtml = anotacao.conteudo && /<[a-z][\s\S]*>/i.test(anotacao.conteudo);
-    const rawText = isHtml
-        ? anotacao.conteudo.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
-        : (anotacao.conteudo || '')
-            .replace(/#{1,6}\s+/g, '')
-            .replace(/(\*\*|__)(.*?)\1/g, '$2')
-            .replace(/(\*|_)(.*?)\1/g, '$2')
-            .replace(/~~(.*?)~~/g, '$1')
-            .replace(/`{1,3}[^`]*`{1,3}/g, '')
-            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-            .replace(/^[>-]\s+/gm, '')
-            .replace(/\n{2,}/g, ' ')
-            .trim();
+    const rawText = useMemo(() => {
+        const isHtml = anotacao.conteudo && /<[a-z][\s\S]*>/i.test(anotacao.conteudo);
+        return isHtml
+            ? anotacao.conteudo.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+            : (anotacao.conteudo || '')
+                .replace(/#{1,6}\s+/g, '')
+                .replace(/(\*\*|__)(.*?)\1/g, '$2')
+                .replace(/(\*|_)(.*?)\1/g, '$2')
+                .replace(/~~(.*?)~~/g, '$1')
+                .replace(/`{1,3}[^`]*`{1,3}/g, '')
+                .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+                .replace(/^[>-]\s+/gm, '')
+                .replace(/\n{2,}/g, ' ')
+                .trim();
+    }, [anotacao.conteudo]);
     
     return (
         <div
@@ -97,4 +99,4 @@ export function AnotacaoCard({ anotacao, onUpdate, onEdit, onView }) {
             </div>
         </div>
     );
-}
+});

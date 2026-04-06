@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { getRegistrosDashboard, deleteGrupo } from '../../services/api';
 
 // ── Helpers de Jornada ──────────────────────────────────────────────────────
@@ -41,6 +41,21 @@ import { useConfirm } from '../../context/ConfirmDialogContext';
 import { AiAssistant } from '../../components/AiAssistant';
 import './styles.css';
 import { logger } from '../../utils/logger';
+
+const PRIORIDADES = [
+    { label: 'Crítica', color: '#ef4444' },
+    { label: 'Alta', color: '#f59e0b' },
+    { label: 'Média', color: '#3b82f6' },
+    { label: 'Baixa', color: '#10b981' }
+];
+
+const FILTROS_DATA = [
+    { label: 'Hoje', icon: 'fa-calendar-day' },
+    { label: 'Semana', icon: 'fa-calendar-week' },
+    { label: 'Mês', icon: 'fa-calendar' },
+    { label: 'Atrasadas', icon: 'fa-triangle-exclamation' },
+    { label: 'Sem prazo', icon: 'fa-calendar-xmark' },
+];
 
 export function Registros() {
     const [data, setData] = useState(null);
@@ -110,7 +125,7 @@ export function Registros() {
     useEffect(() => { fetchData(false); }, []);
 
     // --- PROCESSAMENTO DE DADOS (ANOTAÇÕES) ---
-    const processDataByGroup = () => {
+    const groupedNotes = useMemo(() => {
         if (!data) return {};
         const grouped = {};
         let allNotes = [];
@@ -136,20 +151,19 @@ export function Registros() {
             grouped[grupoNome].push(nota);
         });
         return grouped;
-    };
+    }, [data, searchTerm, filtroGrupo]);
 
-    const groupedNotes = data ? processDataByGroup() : {};
-
-    const fixadas = (data?.anotacoes_fixadas || []).filter(nota => {
-        if (!searchTerm) return true;
-        const term = searchTerm.toLowerCase();
-        const rawContent = nota.conteudo?.replace(/<[^>]+>/g, ' ').toLowerCase() || '';
-        return nota.titulo?.toLowerCase().includes(term) || rawContent.includes(term);
-    });
-
-    const fixadasFiltered = filtroGrupo === 'Todos'
-        ? fixadas
-        : fixadas.filter(n => n.grupo?.nome === filtroGrupo);
+    const fixadasFiltered = useMemo(() => {
+        const fixadas = (data?.anotacoes_fixadas || []).filter(nota => {
+            if (!searchTerm) return true;
+            const term = searchTerm.toLowerCase();
+            const rawContent = nota.conteudo?.replace(/<[^>]+>/g, ' ').toLowerCase() || '';
+            return nota.titulo?.toLowerCase().includes(term) || rawContent.includes(term);
+        });
+        return filtroGrupo === 'Todos'
+            ? fixadas
+            : fixadas.filter(n => n.grupo?.nome === filtroGrupo);
+    }, [data, searchTerm, filtroGrupo]);
 
     const grupos = data?.grupos_disponiveis || [];
 
@@ -157,93 +171,85 @@ export function Registros() {
     const tarefasPendentesRaw = data?.tarefas_pendentes || [];
     const tarefasConcluidasRaw = data?.tarefas_concluidas || [];
 
-    const filterByPrio = (list) => {
-        if (filtroPrioridade === 'Todas') return list;
-        return list.filter(t => t.prioridade === filtroPrioridade);
-    };
+    const { tarefasPendentes, tarefasConcluidas } = useMemo(() => {
+        const filterByPrio = (list) => {
+            if (filtroPrioridade === 'Todas') return list;
+            return list.filter(t => t.prioridade === filtroPrioridade);
+        };
 
-    const filterByData = (list) => {
-        if (filtroData === 'Todas') return list;
-        const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0);
-        const fimSemana = new Date(hoje);
-        fimSemana.setDate(hoje.getDate() + 7);
-        return list.filter(t => {
-            if (filtroData === 'Sem prazo') return !t.prazo;
-            if (!t.prazo) return false;
-            const prazo = new Date(t.prazo);
-            prazo.setHours(0, 0, 0, 0);
-            if (filtroData === 'Hoje') return prazo.getTime() === hoje.getTime();
-            if (filtroData === 'Semana') return prazo >= hoje && prazo <= fimSemana;
-            if (filtroData === 'Mês') return prazo.getMonth() === hoje.getMonth() && prazo.getFullYear() === hoje.getFullYear();
-            if (filtroData === 'Atrasadas') return prazo < hoje;
-            return true;
-        });
-    };
+        const filterByData = (list) => {
+            if (filtroData === 'Todas') return list;
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+            const fimSemana = new Date(hoje);
+            fimSemana.setDate(hoje.getDate() + 7);
+            return list.filter(t => {
+                if (filtroData === 'Sem prazo') return !t.prazo;
+                if (!t.prazo) return false;
+                const prazo = new Date(t.prazo);
+                prazo.setHours(0, 0, 0, 0);
+                if (filtroData === 'Hoje') return prazo.getTime() === hoje.getTime();
+                if (filtroData === 'Semana') return prazo >= hoje && prazo <= fimSemana;
+                if (filtroData === 'Mês') return prazo.getMonth() === hoje.getMonth() && prazo.getFullYear() === hoje.getFullYear();
+                if (filtroData === 'Atrasadas') return prazo < hoje;
+                return true;
+            });
+        };
 
-    const tarefasPendentes = filterByData(filterByPrio(tarefasPendentesRaw));
-    const tarefasConcluidas = filterByData(filterByPrio(tarefasConcluidasRaw));
+        return {
+            tarefasPendentes: filterByData(filterByPrio(tarefasPendentesRaw)),
+            tarefasConcluidas: filterByData(filterByPrio(tarefasConcluidasRaw)),
+        };
+    }, [tarefasPendentesRaw, tarefasConcluidasRaw, filtroPrioridade, filtroData]);
 
-    const prioridades = [
-        { label: 'Crítica', color: '#ef4444' },
-        { label: 'Alta', color: '#f59e0b' },
-        { label: 'Média', color: '#3b82f6' },
-        { label: 'Baixa', color: '#10b981' }
-    ];
-
-    const filtrosData = [
-        { label: 'Hoje', icon: 'fa-calendar-day' },
-        { label: 'Semana', icon: 'fa-calendar-week' },
-        { label: 'Mês', icon: 'fa-calendar' },
-        { label: 'Atrasadas', icon: 'fa-triangle-exclamation' },
-        { label: 'Sem prazo', icon: 'fa-calendar-xmark' },
-    ];
 
     // --- HANDLERS ---
-    const toggleAccordion = (key) => {
+    const handleSilentRefresh = useCallback(() => fetchData(true), []);
+
+    const toggleAccordion = useCallback((key) => {
         setOpenGroups(prev => ({ ...prev, [key]: !prev[key] }));
-    };
+    }, []);
 
-    const handleNewNota = () => { setEditingNota(null); setNotaModalOpen(true); };
-    const handleEditNota = (nota) => { setEditingNota(nota); setNotaModalOpen(true); };
+    const handleNewNota = useCallback(() => { setEditingNota(null); setNotaModalOpen(true); }, []);
+    const handleEditNota = useCallback((nota) => { setEditingNota(nota); setNotaModalOpen(true); }, []);
 
-    const handleViewNota = (nota) => {
+    const handleViewNota = useCallback((nota) => {
         setViewingNota(nota);
         setViewModalOpen(true);
-    };
+    }, []);
 
-    const handleNewTarefa = () => {
+    const handleNewTarefa = useCallback(() => {
         setEditingTarefa(null);
         setTarefaModalOpen(true);
-    };
+    }, []);
 
-    const handleEditTarefa = (tarefa) => {
+    const handleEditTarefa = useCallback((tarefa) => {
         setEditingTarefa(tarefa);
         setTarefaModalOpen(true);
-    };
+    }, []);
 
-    const handleNewHabito = () => { setEditingHabito(null); setHabitoModalOpen(true); };
-    const handleEditHabito = (habito) => { setEditingHabito(habito); setHabitoModalOpen(true); };
-    const handleEditHabitoFromLista = (habito) => {
+    const handleNewHabito = useCallback(() => { setEditingHabito(null); setHabitoModalOpen(true); }, []);
+    const handleEditHabito = useCallback((habito) => { setEditingHabito(habito); setHabitoModalOpen(true); }, []);
+    const handleEditHabitoFromLista = useCallback((habito) => {
         setHabitoListaModalOpen(false);
         setEditingHabito(habito);
         setHabitoModalOpen(true);
-    };
+    }, []);
 
-    const handleNewGrupo = () => {
+    const handleNewGrupo = useCallback(() => {
         setEditingGrupo(null);
         setGrupoModalOpen(true);
         setDropdownOpen(false);
-    };
+    }, []);
 
-    const handleEditGrupo = (grupo, e) => {
+    const handleEditGrupo = useCallback((grupo, e) => {
         e.stopPropagation();
         setEditingGrupo(grupo);
         setGrupoModalOpen(true);
         setDropdownOpen(false);
-    };
+    }, []);
 
-    const handleDeleteGrupo = async (grupoId, e) => {
+    const handleDeleteGrupo = useCallback(async (grupoId, e) => {
         e.stopPropagation();
 
         const isConfirmed = await dialogConfirm({
@@ -272,7 +278,7 @@ export function Registros() {
                 description: 'Não foi possível excluir o grupo.'
             });
         }
-    };
+    }, [dialogConfirm, addToast, filtroGrupo]);
 
     const LoadingState = () => (
         <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--cor-texto-secundario)' }}>
@@ -445,7 +451,7 @@ export function Registros() {
                                                 </div>
                                             </div>
                                             <div className="dropdown-divider"></div>
-                                            {filtrosData.map(f => (
+                                            {FILTROS_DATA.map(f => (
                                                 <div key={f.label} className={`dropdown-item ${filtroData === f.label ? 'selected' : ''}`} onClick={() => { setFiltroData(f.label); setDataDropdownOpen(false); }}>
                                                     <div className="dropdown-item-info">
                                                         <i className={`fa-solid ${f.icon}`} style={{ width: '14px', color: f.label === 'Atrasadas' ? 'var(--cor-vermelho-delete)' : 'var(--cor-texto-secundario)', fontSize: '0.8rem' }}></i>
@@ -475,10 +481,10 @@ export function Registros() {
                                         <div className="dropdown-backdrop" onClick={() => setPrioDropdownOpen(false)}></div>
                                         <div className="custom-dropdown-menu" style={{ width: '200px' }}>
                                             <div className={`dropdown-item ${filtroPrioridade === 'Todas' ? 'selected' : ''}`} onClick={() => { setFiltroPrioridade('Todas'); setPrioDropdownOpen(false); }}>
-                                                <span>Todas as prioridades</span>
+                                                <span>Todas as PRIORIDADES</span>
                                             </div>
                                             <div className="dropdown-divider"></div>
-                                            {prioridades.map(p => (
+                                            {PRIORIDADES.map(p => (
                                                 <div key={p.label} className={`dropdown-item ${filtroPrioridade === p.label ? 'selected' : ''}`} onClick={() => { setFiltroPrioridade(p.label); setPrioDropdownOpen(false); }}>
                                                     <div className="dropdown-item-info">
                                                         <span className="dot" style={{ backgroundColor: p.color }}></span>
@@ -525,7 +531,7 @@ export function Registros() {
                                                             <AnotacaoCard
                                                                 key={n.id}
                                                                 anotacao={n}
-                                                                onUpdate={() => fetchData(true)}
+                                                                onUpdate={handleSilentRefresh}
                                                                 onEdit={handleEditNota}
                                                                 onView={handleViewNota}
                                                             />
@@ -563,7 +569,7 @@ export function Registros() {
                                                                 <AnotacaoCard
                                                                     key={n.id}
                                                                     anotacao={n}
-                                                                    onUpdate={() => fetchData(true)}
+                                                                    onUpdate={handleSilentRefresh}
                                                                     onEdit={handleEditNota}
                                                                     onView={handleViewNota}
                                                                 />
@@ -605,7 +611,7 @@ export function Registros() {
                                             <TarefaCard
                                                 key={t.id}
                                                 tarefa={t}
-                                                onUpdate={() => fetchData(true)}
+                                                onUpdate={handleSilentRefresh}
                                                 onEdit={handleEditTarefa}
                                             />
                                         ))}
@@ -630,7 +636,7 @@ export function Registros() {
                                                             <TarefaCard
                                                                 key={t.id}
                                                                 tarefa={t}
-                                                                onUpdate={() => fetchData(true)}
+                                                                onUpdate={handleSilentRefresh}
                                                                 onEdit={handleEditTarefa}
                                                             />
                                                         ))}
@@ -653,7 +659,7 @@ export function Registros() {
                         ) : (
                             <JornadaTimeline
                                 habitos={data?.habitos || []}
-                                onUpdate={() => fetchData(true)}
+                                onUpdate={handleSilentRefresh}
                                 onEdit={handleEditHabito}
                             />
                         )}
@@ -663,23 +669,23 @@ export function Registros() {
             </div>
 
             {/* MODAIS */}
-            <AnotacaoModal active={notaModalOpen} closeModal={() => setNotaModalOpen(false)} onUpdate={() => fetchData(true)} editingData={editingNota} gruposDisponiveis={grupos} />
-            <TarefaModal active={tarefaModalOpen} closeModal={() => setTarefaModalOpen(false)} onUpdate={() => fetchData(true)} editingData={editingTarefa} />
+            <AnotacaoModal active={notaModalOpen} closeModal={() => setNotaModalOpen(false)} onUpdate={handleSilentRefresh} editingData={editingNota} gruposDisponiveis={grupos} />
+            <TarefaModal active={tarefaModalOpen} closeModal={() => setTarefaModalOpen(false)} onUpdate={handleSilentRefresh} editingData={editingTarefa} />
             <GrupoModal
                 active={grupoModalOpen}
                 closeModal={() => setGrupoModalOpen(false)}
-                onUpdate={() => fetchData(true)}
+                onUpdate={handleSilentRefresh}
                 editingData={editingGrupo}
                 existingGroups={grupos}
             />
             <ViewAnotacaoModal active={viewModalOpen} closeModal={() => setViewModalOpen(false)} nota={viewingNota} onEdit={handleEditNota} />
-            <HabitoModal active={habitoModalOpen} closeModal={() => setHabitoModalOpen(false)} onUpdate={() => fetchData(true)} editingData={editingHabito} />
+            <HabitoModal active={habitoModalOpen} closeModal={() => setHabitoModalOpen(false)} onUpdate={handleSilentRefresh} editingData={editingHabito} />
             <HabitoListaModal
                 active={habitoListaModalOpen}
                 closeModal={() => setHabitoListaModalOpen(false)}
                 habitos={data?.habitos || []}
                 onEdit={handleEditHabitoFromLista}
-                onUpdate={() => fetchData(true)}
+                onUpdate={handleSilentRefresh}
             />
 
             <AiAssistant context="registros" />

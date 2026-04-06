@@ -8,7 +8,7 @@ import '../styles/markdown.css';
 // Detecta se o conteúdo é HTML legado
 const isHtmlContent = (str) => str && /<[a-z][\s\S]*>/i.test(str);
 
-export function MarkdownViewer({ content = '' }) {
+export const MarkdownViewer = React.memo(function MarkdownViewer({ content = '' }) {
     // Conteúdo legado (HTML) — renderiza diretamente com aviso discreto
     if (isHtmlContent(content)) {
         return (
@@ -50,4 +50,4 @@ export function MarkdownViewer({ content = '' }) {
             </ReactMarkdown>
         </div>
     );
-}
+});
