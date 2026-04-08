@@ -50,7 +50,14 @@ reusable_oauth2 = OAuth2PasswordBearer(
 # Conexão Global com Redis (Connection Pool)
 # Se o Redis não estiver disponível, o app continua funcionando sem blacklist de tokens.
 try:
-    redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
+    redis_client = redis.from_url(
+        settings.REDIS_URL,
+        decode_responses=True,
+        socket_timeout=5,           # Timeout de 5s para operações
+        socket_connect_timeout=5,   # Timeout de 5s para conexão
+        retry_on_timeout=True,      # Retry automático em timeout
+        health_check_interval=30,   # Ping automático a cada 30s (mantém conexão viva)
+    )
     redis_client.ping()
 except Exception as e:
     logger.warning(f"Redis indisponível: {e}. Blacklist de tokens desativada.")

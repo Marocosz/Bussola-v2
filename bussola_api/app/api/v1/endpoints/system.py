@@ -33,9 +33,34 @@ from app.models.user import User
 router = APIRouter()
 
 @router.get("/health")
-def health_check():
-    """Endpoint leve para health check do container."""
-    return {"status": "ok"}
+def health_check(db: Session = Depends(deps.get_db)):
+    """
+    Health check profundo para monitoramento.
+    Verifica conectividade com DB e Redis.
+    """
+    from sqlalchemy import text
+    from fastapi.responses import JSONResponse
+
+    checks = {"status": "ok", "db": "ok", "redis": "skip"}
+
+    # Verificar DB
+    try:
+        db.execute(text("SELECT 1"))
+    except Exception:
+        checks["status"] = "degraded"
+        checks["db"] = "error"
+
+    # Verificar Redis (se configurado)
+    if deps.redis_client:
+        try:
+            deps.redis_client.ping()
+            checks["redis"] = "ok"
+        except Exception:
+            checks["status"] = "degraded"
+            checks["redis"] = "error"
+
+    status_code = 200 if checks["status"] == "ok" else 503
+    return JSONResponse(content=checks, status_code=status_code)
 
 @router.get("/config", response_model=SystemConfig)
 def get_system_info(db: Session = Depends(deps.get_db)):
