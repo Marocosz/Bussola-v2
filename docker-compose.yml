@@ -30,8 +30,7 @@ services:
     container_name: bussola_frontend
     restart: unless-stopped
     depends_on:
-      bussola_backend:
-        condition: service_healthy
+      - bussola_backend
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:80/"]
       interval: 30s
@@ -58,8 +57,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     restart: unless-stopped
     depends_on:
-      bussola_backend:
-        condition: service_healthy
+      - bussola_backend
     healthcheck:
       test: ["CMD", "python", "-c", "print('ok')"]
       interval: 60s
