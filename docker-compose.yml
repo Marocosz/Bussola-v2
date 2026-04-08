@@ -11,12 +11,6 @@ services:
     volumes:
       - ./bussola_api/data:/app/data
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     logging:
       driver: "json-file"
       options:
@@ -31,12 +25,6 @@ services:
     restart: unless-stopped
     depends_on:
       - bussola_backend
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:80/"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
     logging:
       driver: "json-file"
       options:
@@ -58,12 +46,6 @@ services:
     restart: unless-stopped
     depends_on:
       - bussola_backend
-    healthcheck:
-      test: ["CMD", "python", "-c", "print('ok')"]
-      interval: 60s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
     logging:
       driver: "json-file"
       options:
@@ -75,3 +57,4 @@ services:
 networks:
   coolify:
     external: true
+
