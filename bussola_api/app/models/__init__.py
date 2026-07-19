@@ -23,6 +23,7 @@ COMUNICAÇÃO:
 
 from .user import User
 from .financas import Categoria, Transacao, HistoricoGastoMensal
+from .metas import Meta, MovimentacaoMeta
 from .agenda import Compromisso
 
 # Módulo Registros (Produtividade)
