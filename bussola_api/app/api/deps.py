@@ -99,11 +99,23 @@ def get_current_user(session: SessionDep, token: TokenDep) -> User:
     """
     
     # [CHECK BLACKLIST] Se o token foi revogado, nega acesso instantaneamente.
-    if redis_client and redis_client.exists(f"blacklist:{token}"):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Sessão revogada. Faça login novamente.",
-        )
+    # Fail-open: uma queda do Redis (rede/DNS/reboot) NÃO pode derrubar a auth inteira.
+    # A blacklist é best-effort; se o Redis estiver inalcançável em runtime, seguimos
+    # confiando apenas na validação do JWT (assinatura + expiração) em vez de dar 500.
+    if redis_client:
+        try:
+            token_revoked = redis_client.exists(f"blacklist:{token}")
+        except redis.exceptions.RedisError as e:
+            logger.warning(
+                f"Redis indisponível na checagem de blacklist: {e}. Ignorando blacklist para este request."
+            )
+            token_revoked = False
+
+        if token_revoked:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Sessão revogada. Faça login novamente.",
+            )
 
     try:
         # Decodifica e valida assinatura/expiração do token

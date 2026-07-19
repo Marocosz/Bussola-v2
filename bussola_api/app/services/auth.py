@@ -28,8 +28,9 @@ COMUNICAÇÃO:
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, BackgroundTasks
-import httpx 
+import httpx
 from jose import jwt, JWTError
+import redis
 
 import logging
 
@@ -190,9 +191,18 @@ class AuthService:
         """
         Valida o Refresh Token e emite um novo par Access/Refresh.
         """
-        # Checa Blacklist
-        if redis_client and redis_client.exists(f"blacklist:{refresh_token}"):
-            raise HTTPException(status_code=401, detail="Refresh token revogado.")
+        # Checa Blacklist (fail-open: queda do Redis não pode bloquear o refresh)
+        if redis_client:
+            try:
+                token_revoked = redis_client.exists(f"blacklist:{refresh_token}")
+            except redis.exceptions.RedisError as e:
+                logger.warning(
+                    f"Redis indisponível na checagem de blacklist do refresh: {e}. Ignorando blacklist."
+                )
+                token_revoked = False
+
+            if token_revoked:
+                raise HTTPException(status_code=401, detail="Refresh token revogado.")
 
         try:
             payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
