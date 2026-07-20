@@ -55,9 +55,10 @@ def update_meta(meta_id: int, meta_in: MetaUpdate, db: Session = Depends(deps.ge
 
 @router.delete("/{meta_id}")
 def delete_meta(meta_id: int, db: Session = Depends(deps.get_db), current_user=Depends(deps.get_current_user)):
+    # Soft delete: arquiva a meta (preserva histórico, devolve valor ao Disponível).
     if not metas_service.deletar_meta(db, meta_id, current_user.id):
         raise HTTPException(status_code=404, detail="Meta não encontrada")
-    return {"ok": True}
+    return {"ok": True, "arquivada": True}
 
 
 @router.post("/{meta_id}/movimentacoes", response_model=MovimentacaoResponse)

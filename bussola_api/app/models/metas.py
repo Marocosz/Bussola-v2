@@ -16,6 +16,7 @@ RESPONSABILIDADES:
 from sqlalchemy import Column, Integer, String, Float, DateTime, Date, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
+from app.db.types import MoneyCents  # dinheiro = centavos inteiros no banco, reais no Python
 from app.core.timezone import now_utc
 
 
@@ -25,10 +26,10 @@ class Meta(Base):
 
     id = Column(Integer, primary_key=True)
     nome = Column(String(150), nullable=False)
-    valor_alvo = Column(Float, nullable=False)
+    valor_alvo = Column(MoneyCents, nullable=False)
 
     # Cache denormalizado: soma das movimentações efetivadas (aporte − retirada).
-    saldo_atual = Column(Float, nullable=False, default=0.0)
+    saldo_atual = Column(MoneyCents, nullable=False, default=0.0)
 
     data_alvo = Column(Date, nullable=True)
 
@@ -39,7 +40,7 @@ class Meta(Base):
     trancada = Column(Boolean, nullable=False, default=False)
     status = Column(String(50), nullable=False, default="ativa")  # ativa|concluida|arquivada
 
-    aporte_mensal_valor = Column(Float, nullable=True)
+    aporte_mensal_valor = Column(MoneyCents, nullable=True)
     aporte_mensal_dia = Column(Integer, nullable=True)
 
     created_at = Column(DateTime, nullable=False, default=now_utc)
@@ -65,7 +66,7 @@ class MovimentacaoMeta(Base):
     user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
 
     tipo = Column(String(20), nullable=False)  # aporte|retirada
-    valor = Column(Float, nullable=False)       # sempre positivo; 'tipo' define o sinal
+    valor = Column(MoneyCents, nullable=False)  # centavos no banco; reais no Python
     data = Column(DateTime, nullable=False, default=now_utc)
 
     status = Column(String(50), nullable=False, default="Efetivada")  # Pendente|Efetivada

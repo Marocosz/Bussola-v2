@@ -24,6 +24,7 @@ COMUNICAÇÃO:
 from sqlalchemy import Column, Integer, String, Float, DateTime, Date, ForeignKey, func, Boolean
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
+from app.db.types import MoneyCents  # dinheiro = centavos inteiros no banco, reais no Python
 from app.core.timezone import now_utc # [NOVO]
 
 class Categoria(Base):
@@ -40,7 +41,7 @@ class Categoria(Base):
     tipo = Column(String(50), nullable=False, default='despesa') 
     
     # Usado para alertas de orçamento estourado.
-    meta_limite = Column(Float, nullable=False, default=0.0)
+    meta_limite = Column(MoneyCents, nullable=False, default=0.0)
     
     # UI Helpers (ícone e cor para o frontend)
     icone = Column(String(50), nullable=True)
@@ -63,7 +64,7 @@ class Transacao(Base):
 
     id = Column(Integer, primary_key=True)
     descricao = Column(String(200), nullable=False)
-    valor = Column(Float, nullable=False)
+    valor = Column(MoneyCents, nullable=False)
     
     # Uso de Lambda no default executa a função no momento da inserção (INSERT)
     # [CORREÇÃO] Usando now_utc da autoridade de tempo
@@ -80,7 +81,7 @@ class Transacao(Base):
     total_parcelas = Column(Integer, nullable=True)
     
     # Armazena o valor total da compra original para exibição correta no frontend
-    valor_total_parcelamento = Column(Float, nullable=True)
+    valor_total_parcelamento = Column(MoneyCents, nullable=True)
     
     frequencia = Column(String(50), nullable=True)
     
@@ -103,7 +104,7 @@ class HistoricoGastoMensal(Base):
     __tablename__ = 'historico_gasto_mensal'
 
     id = Column(Integer, primary_key=True)
-    total_gasto = Column(Float, nullable=False, default=0.0)
+    total_gasto = Column(MoneyCents, nullable=False, default=0.0)
     
     # Define o mês/ano de competência
     data_referencia = Column(Date, nullable=False, index=True)

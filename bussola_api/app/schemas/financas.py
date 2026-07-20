@@ -17,7 +17,7 @@ from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 
-from app.schemas.metas import ResumoPatrimonio
+from app.schemas.metas import ResumoPatrimonio, CofreGrupo
 
 # --------------------------------------------------------------------------------------
 # ENUMS (Domínios de Valores)
@@ -131,3 +131,6 @@ class FinancasDashboardResponse(BaseModel):
     cores_disponiveis: List[str]
 
     resumo_patrimonio: Optional[ResumoPatrimonio] = None
+
+    # Cofrinhos como linhas (transferência neutra — não entra nos totais de receita/despesa)
+    transacoes_cofre: List[CofreGrupo] = []

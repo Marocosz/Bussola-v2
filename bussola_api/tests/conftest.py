@@ -1,3 +1,8 @@
+import os
+# Desliga o create_all do app no import (os testes criam o próprio schema em
+# SQLite in-memory). Precisa vir ANTES de importar app.main.
+os.environ["SKIP_DB_CREATE_ALL"] = "1"
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker

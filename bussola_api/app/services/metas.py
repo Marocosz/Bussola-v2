@@ -50,13 +50,11 @@ class MetasService:
         db.refresh(meta)
         return meta
 
-    def listar_metas(self, db, user_id: int):
-        return (
-            db.query(Meta)
-            .filter(Meta.user_id == user_id)
-            .order_by(Meta.created_at.desc())
-            .all()
-        )
+    def listar_metas(self, db, user_id: int, include_arquivadas: bool = False):
+        query = db.query(Meta).filter(Meta.user_id == user_id)
+        if not include_arquivadas:
+            query = query.filter(Meta.status != "arquivada")
+        return query.order_by(Meta.created_at.desc()).all()
 
     def atualizar_meta(self, db, meta_id, meta_in: MetaUpdate, user_id) -> Meta | None:
         meta = self._get_meta(db, meta_id, user_id)
@@ -71,10 +69,13 @@ class MetasService:
         return meta
 
     def deletar_meta(self, db, meta_id, user_id) -> bool:
+        """Arquiva a meta (soft delete): preserva o histórico de movimentações e
+        devolve o valor guardado ao Disponível — como 'encerrar' uma recorrência.
+        Não conta mais em total_guardado (que só soma metas 'ativa')."""
         meta = self._get_meta(db, meta_id, user_id)
         if not meta:
             return False
-        db.delete(meta)
+        meta.status = "arquivada"
         db.commit()
         return True
 
@@ -205,13 +206,50 @@ class MetasService:
         ).all()
         return round(sum(m.saldo_atual for m in metas), 2)
 
+    def listar_grupos_cofre(self, db, user_id: int) -> list:
+        """
+        Monta os cofrinhos como 'grupos' para a lista de transações (exibição).
+        Cada cofre com ≥1 movimentação vira 1 linha representante (movimentação
+        mais recente) + a lista de movimentações para expandir. NÃO é uma
+        Transacao real — não afeta os totais de receita/despesa (transferência neutra).
+        """
+        metas = db.query(Meta).filter(Meta.user_id == user_id).all()
+        grupos = []
+        for m in metas:
+            movs = sorted(m.movimentacoes, key=lambda x: x.data, reverse=True)
+            if not movs:
+                continue
+            rep = movs[0]
+            grupos.append({
+                "id_grupo": f"cofre-{m.id}",
+                "meta_id": m.id,
+                "nome": m.nome,
+                "icone": m.icone,
+                "cor": m.cor,
+                "descricao": f"{'Aporte' if rep.tipo == 'aporte' else 'Retirada'} · {m.nome}",
+                "data": rep.data,
+                "valor": rep.valor,
+                "tipo": rep.tipo,
+                "status": rep.status,
+                "arquivada": (m.status == "arquivada"),
+                "movimentacoes": [
+                    {"id": x.id, "data": x.data, "valor": x.valor, "tipo": x.tipo, "status": x.status}
+                    for x in movs
+                ],
+            })
+        return grupos
+
     def calcular_resumo(self, db, user_id: int, saldo_bruto: float) -> dict:
         guardado = self.total_guardado(db, user_id)
         total = round(saldo_bruto, 2)
+        qtd_metas = db.query(Meta).filter(
+            Meta.user_id == user_id, Meta.status != "arquivada"
+        ).count()
         return {
             "disponivel": round(total - guardado, 2),
             "guardado": guardado,
             "total": total,
+            "qtd_metas": qtd_metas,
         }
 
 

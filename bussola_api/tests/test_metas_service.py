@@ -60,10 +60,45 @@ def test_atualizar_meta(db, user):
     assert out.nome == "Y" and out.valor_alvo == 2.0
 
 
-def test_deletar_meta(db, user):
+def test_deletar_meta_arquiva_e_some_do_grid(db, user):
+    """Soft delete: a meta é arquivada, não removida — some do grid mas persiste no DB."""
     m = metas_service.criar_meta(db, MetaCreate(nome="X", valor_alvo=1.0), user.id)
     assert metas_service.deletar_meta(db, m.id, user.id) is True
+    # não aparece mais no grid (listagem padrão)
     assert metas_service.listar_metas(db, user.id) == []
+    # mas continua no banco, agora com status arquivada
+    persistida = metas_service._get_meta(db, m.id, user.id)
+    assert persistida is not None
+    assert persistida.status == "arquivada"
+    # aparece com include_arquivadas=True
+    assert len(metas_service.listar_metas(db, user.id, include_arquivadas=True)) == 1
+
+
+def test_deletar_meta_inexistente_retorna_false(db, user):
+    assert metas_service.deletar_meta(db, 99999, user.id) is False
+
+
+def test_arquivar_preserva_movimentacoes_e_devolve_disponivel(db, user):
+    m = metas_service.criar_meta(db, MetaCreate(nome="Cofre", valor_alvo=1000.0), user.id)
+    metas_service.criar_movimentacao(db, m.id, MovimentacaoCreate(tipo="aporte", valor=300.0), user.id)
+    # antes de arquivar: 300 guardado, disponível = 2000 - 300
+    assert metas_service.total_guardado(db, user.id) == 300.0
+    assert metas_service.calcular_resumo(db, user.id, saldo_bruto=2000.0)["disponivel"] == 1700.0
+
+    metas_service.deletar_meta(db, m.id, user.id)
+
+    # guardado zera → disponível volta ao total (patrimônio intacto)
+    assert metas_service.total_guardado(db, user.id) == 0.0
+    resumo = metas_service.calcular_resumo(db, user.id, saldo_bruto=2000.0)
+    assert resumo["guardado"] == 0.0
+    assert resumo["disponivel"] == 2000.0
+    # histórico de movimentações preservado
+    movs = metas_service.listar_movimentacoes(db, m.id, user.id)
+    assert len(movs) == 1
+    # cofre ainda aparece na lista de transações, marcado como arquivada
+    grupos = metas_service.listar_grupos_cofre(db, user.id)
+    grupo = next(g for g in grupos if g["meta_id"] == m.id)
+    assert grupo["arquivada"] is True
 
 
 import pytest

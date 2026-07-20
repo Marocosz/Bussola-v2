@@ -59,11 +59,22 @@ from app.api.middleware.logging_middleware import RequestLoggingMiddleware
 # --------------------------------------------------------------------------------------
 # INICIALIZAÇÃO DO BANCO DE DADOS
 # --------------------------------------------------------------------------------------
-# O comando create_all verifica os metadados (tabelas registradas em app.db.base)
-# e cria as tabelas que ainda não existem no banco de dados.
-# Nota: Em ambientes de produção com Alembic configurado, isso pode ser redundante,
-# mas é útil para garantir que o banco exista em desenvolvimento/testes.
-base.Base.metadata.create_all(bind=engine)
+# create_all cria as tabelas que ainda não existem (idempotente). É o criador de
+# tabelas no boot deste deploy; o Alembic mantém o histórico/evolução do schema.
+#
+# GOVERNANÇA (importante):
+#   - `create_all` NÃO altera tabelas existentes (não adiciona colunas). Mudanças de
+#     schema em tabelas já criadas DEVEM ir por migration Alembic aplicada em prod.
+#   - Caminho para tornar o Alembic autoritativo no boot (evita a ambiguidade de duas
+#     fontes de verdade), SEM derrubar prod (ver ~/.claude/COOLIFY-DEPLOY-CHECKLIST 7.6½):
+#       1) `alembic stamp head` no container de prod (marca a versão atual, já que as
+#          tabelas foram criadas por create_all e o alembic_version pode estar atrás);
+#       2) depois: rodar `alembic upgrade head` no entrypoint + SKIP_DB_CREATE_ALL=1.
+#
+# SKIP_DB_CREATE_ALL=1 desliga o create_all (usado nos testes, que criam o próprio
+# schema em SQLite in-memory, e ao rodar `alembic revision --autogenerate`).
+if os.getenv("SKIP_DB_CREATE_ALL", "").lower() not in ("1", "true", "yes"):
+    base.Base.metadata.create_all(bind=engine)
 
 # --------------------------------------------------------------------------------------
 # DEFINIÇÃO DA APLICAÇÃO
@@ -122,6 +133,10 @@ if settings.BACKEND_CORS_ORIGINS:
         CORSMiddleware,
         # Lista de origens permitidas (definida no .env/config)
         allow_origins=settings.BACKEND_CORS_ORIGINS,
+        # DEV: libera qualquer porta localhost/127.0.0.1 (o Vite pode subir em
+        # 5173, 5174, 5175… conforme a porta esteja livre). Nunca casa com o
+        # domínio de produção, então é seguro manter aqui.
+        allow_origin_regex=r"http://(localhost|127\.0\.0\.1):\d+",
         # Permite envio de cookies/credenciais
         allow_credentials=True,
         # Permite todos os métodos HTTP (GET, POST, PUT, DELETE, etc)

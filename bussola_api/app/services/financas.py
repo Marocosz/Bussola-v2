@@ -247,7 +247,7 @@ class FinancasService:
             ).first()
 
             cat.total_historico = stats[0] or 0.0
-            cat.media_valor = stats[1] or 0.0
+            cat.media_valor = (stats[1] or 0) / 100  # func.avg não herda MoneyCents → volta centavos
             cat.qtd_transacoes = stats[2] or 0
 
         # Totais Receitas
@@ -268,7 +268,7 @@ class FinancasService:
             ).first()
 
             cat.total_historico = stats[0] or 0.0
-            cat.media_valor = stats[1] or 0.0
+            cat.media_valor = (stats[1] or 0) / 100  # func.avg não herda MoneyCents → volta centavos
             cat.qtd_transacoes = stats[2] or 0
 
         transacoes = db.query(Transacao).filter(Transacao.user_id == user_id).order_by(desc(Transacao.data)).all()
@@ -294,6 +294,7 @@ class FinancasService:
         _total_despesa = sum(float(getattr(c, "total_gasto", 0) or 0) for c in cats_despesa)
         _saldo_bruto = _total_receita - _total_despesa
         _resumo = metas_service.calcular_resumo(db, user_id, _saldo_bruto)
+        _grupos_cofre = metas_service.listar_grupos_cofre(db, user_id)
 
         return {
             "categorias_despesa": cats_despesa,
@@ -303,6 +304,7 @@ class FinancasService:
             "icones_disponiveis": ICONES_DISPONIVEIS,
             "cores_disponiveis": self.gerar_paleta_cores(),
             "resumo_patrimonio": _resumo,
+            "transacoes_cofre": _grupos_cofre,
         }
         
     def encerrar_recorrencia(self, db: Session, transacao_id: int, user_id: int):

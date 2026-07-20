@@ -101,6 +101,7 @@ class ResumoPatrimonio(BaseModel):
     disponivel: float
     guardado: float
     total: float
+    qtd_metas: int = 0
 
 
 class MetasDashboardResponse(BaseModel):
@@ -108,3 +109,30 @@ class MetasDashboardResponse(BaseModel):
     resumo: ResumoPatrimonio
     icones_disponiveis: List[str]
     cores_disponiveis: List[str]
+
+
+# --------------------------------------------------------------------------------------
+# LINHAS DE COFRE NA LISTA DE TRANSAÇÕES (transferência neutra, apenas exibição)
+# --------------------------------------------------------------------------------------
+class CofreMovRow(BaseModel):
+    id: int
+    data: datetime
+    valor: float
+    tipo: TipoMovimentacao
+    status: StatusMov
+
+class CofreGrupo(BaseModel):
+    """Um cofrinho como 'grupo' na lista de transações — linha representante +
+    movimentações para expandir (igual recorrentes). NÃO conta em receita/despesa."""
+    id_grupo: str            # "cofre-{meta_id}"
+    meta_id: int
+    nome: str
+    icone: Optional[str] = None
+    cor: Optional[str] = None
+    descricao: str           # título automático
+    data: datetime           # data da movimentação representante (mais recente)
+    valor: float
+    tipo: TipoMovimentacao
+    status: StatusMov
+    arquivada: bool = False   # cofre arquivado (soft delete) — histórico preservado
+    movimentacoes: List[CofreMovRow]
