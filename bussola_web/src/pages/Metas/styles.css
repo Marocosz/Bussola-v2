@@ -68,3 +68,11 @@
   border-color: var(--cor-vermelho-delete) !important;
   color: #fff !important;
 }
+
+.mov-toggle { display: flex; gap: .5rem; margin-bottom: 1rem; }
+.mov-toggle button {
+  flex: 1; padding: .5rem; border-radius: 8px; cursor: pointer;
+  background: var(--cor-fundo-input, #2a2a32); color: var(--cor-texto-secundario, #9aa0aa);
+  border: 1px solid var(--cor-borda, #333); font-weight: 600;
+}
+.mov-toggle button.active { background: var(--cor-azul-primario, #4f46e5); color: #fff; border-color: transparent; }

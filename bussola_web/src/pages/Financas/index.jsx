@@ -246,6 +246,9 @@ export function Financas() {
     const totalReceita = (data?.categorias_receita || []).reduce((sum, c) => sum + Number(c.total_ganho || 0), 0);
     const totalDespesa = (data?.categorias_despesa || []).reduce((sum, c) => sum + Number(c.total_gasto || 0), 0);
     const saldo = totalReceita - totalDespesa;
+    const resumoPat = data?.resumo_patrimonio;
+    const disponivel = resumoPat ? resumoPat.disponivel : saldo;
+    const guardado = resumoPat ? resumoPat.guardado : 0;
 
     return (
         <div className="container main-container financas-scope">
@@ -256,7 +259,10 @@ export function Financas() {
                 <div className="page-header-kpis">
                     <span className="ph-kpi receita"><i className="fa-solid fa-arrow-trend-up"></i> {fmtCurrency(totalReceita)}</span>
                     <span className="ph-kpi despesa"><i className="fa-solid fa-arrow-trend-down"></i> {fmtCurrency(totalDespesa)}</span>
-                    <span className={`ph-kpi ${saldo >= 0 ? 'positivo' : 'negativo'}`}><i className="fa-solid fa-scale-balanced"></i> {fmtCurrency(saldo)}</span>
+                    <span className={`ph-kpi ${disponivel >= 0 ? 'positivo' : 'negativo'}`} title="Saldo disponível (fora das metas)"><i className="fa-solid fa-scale-balanced"></i> {fmtCurrency(disponivel)}</span>
+                    {guardado > 0 && (
+                        <span className="ph-kpi" title="Guardado em metas" style={{ color: 'var(--cor-azul-primario, #4f46e5)' }}><i className="fa-solid fa-piggy-bank"></i> {fmtCurrency(guardado)}</span>
+                    )}
                 </div>
             </div>
 

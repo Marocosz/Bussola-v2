@@ -3,7 +3,7 @@ import { getMetasDashboard, deleteMeta } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmDialogContext';
 import { MetaCard } from './components/MetaCard';
-import { MetaModals } from './components/MetaModals';
+import { MetaModals, MovimentacaoModal } from './components/MetaModals';
 import './styles.css';
 
 const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
@@ -13,6 +13,7 @@ export function Metas() {
   const [loading, setLoading] = useState(true);
   const [activeModal, setActiveModal] = useState(null);
   const [editingData, setEditingData] = useState(null);
+  const [selectedMeta, setSelectedMeta] = useState(null);
   const { addToast } = useToast();
   const dialogConfirm = useConfirm();
 
@@ -29,7 +30,8 @@ export function Metas() {
 
   const handleNew = () => { setEditingData(null); setActiveModal('meta'); };
   const handleEdit = (meta) => { setEditingData(meta); setActiveModal('meta'); };
-  const handleCloseModal = () => { setActiveModal(null); setEditingData(null); };
+  const handleOpenCofre = (meta) => { setSelectedMeta(meta); setActiveModal('movimentacao'); };
+  const handleCloseModal = () => { setActiveModal(null); setEditingData(null); setSelectedMeta(null); };
 
   const handleDelete = async (meta) => {
     const ok = await dialogConfirm({
@@ -72,7 +74,7 @@ export function Metas() {
       ) : (data?.metas?.length ? (
         <div className="metas-grid">
           {data.metas.map((m) => (
-            <MetaCard key={m.id} meta={m} onOpen={handleEdit} onEdit={handleEdit} onDelete={handleDelete} />
+            <MetaCard key={m.id} meta={m} onOpen={handleOpenCofre} onEdit={handleEdit} onDelete={handleDelete} />
           ))}
         </div>
       ) : (
@@ -80,6 +82,9 @@ export function Metas() {
       ))}
 
       <MetaModals activeModal={activeModal} closeModal={handleCloseModal} onUpdate={fetchData} editingData={editingData} />
+      {activeModal === 'movimentacao' && selectedMeta && (
+        <MovimentacaoModal key={selectedMeta.id} meta={selectedMeta} closeModal={handleCloseModal} onUpdate={fetchData} />
+      )}
     </div>
   );
 }
