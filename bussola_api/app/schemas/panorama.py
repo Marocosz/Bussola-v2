@@ -57,6 +57,16 @@ class ChartData(BaseModel):
     data: List[float]
     colors: Optional[List[str]] = None
 
+
+class ForecastData(BaseModel):
+    """Projeção de fim de período — só quando hoje está dentro do intervalo."""
+    elapsed_days: int
+    total_days: int
+    realizado: float
+    projetado: float
+    conhecido_pendente: float
+    status: str  # 'safe' | 'danger'
+
 # --------------------------------------------------------------------------------------
 # ITENS DE DETALHE (Tabelas e Listas)
 # --------------------------------------------------------------------------------------
@@ -95,11 +105,14 @@ class RegistroItem(BaseModel):
 # --------------------------------------------------------------------------------------
 class PanoramaResponse(BaseModel):
     kpis: KpiData
-    
+    forecast: Optional[ForecastData] = None
+
     # Gráficos
     gastos_por_categoria: ChartData
+    receitas_por_categoria: ChartData = ChartData(labels=[], data=[], colors=[])
     evolucao_mensal_receita: List[float]
     evolucao_mensal_despesa: List[float]
+    evolucao_caixa_real: List[float] = []
     evolucao_labels: List[str]
     gasto_semanal: ChartData
     categorias_para_filtro: List[CategoriaResponse]

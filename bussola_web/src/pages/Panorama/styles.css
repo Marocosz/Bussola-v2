@@ -536,6 +536,27 @@
     font-weight: 600;
 }
 
+.chart-subtitle {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--cor-texto-secundario);
+}
+
+/* Estado vazio dentro de um card de gráfico (ex.: período fechado) */
+.panorama-empty-note {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    color: var(--cor-texto-secundario);
+    text-align: center;
+}
+.panorama-empty-note i { font-size: 1.8rem; opacity: 0.5; }
+.panorama-empty-note p { margin: 0; font-weight: 600; color: var(--cor-texto-principal); }
+.panorama-empty-note span { font-size: 0.9rem; }
+
 .chart-select {
     padding: 8px 12px;
     border-radius: 8px;

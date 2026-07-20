@@ -62,19 +62,22 @@ class PanoramaService:
         # ==============================================================================
         # 1. BLOCO DE FINANÇAS
         # ==============================================================================
-        # Regra de Negócio: Consideramos 'Efetivadas' E 'Pendentes'.
-        
+        # [P0] Só EFETIVADAS — sincroniza com o header de Finanças (total_ganho/gasto),
+        # que conta apenas Efetivada. Pendentes/futuras aparecem em Provisões/forecast.
+
         receita = db.query(func.sum(Transacao.valor)).join(Categoria).filter(
-            Categoria.tipo == 'receita', 
-            Transacao.user_id == user_id, # [SEGURANÇA] Isolamento de dados
-            Transacao.data >= start_date, 
+            Categoria.tipo == 'receita',
+            Transacao.user_id == user_id,  # [SEGURANÇA] Isolamento de dados
+            Transacao.status == 'Efetivada',
+            Transacao.data >= start_date,
             Transacao.data < end_date
         ).scalar() or 0.0
 
         despesa = db.query(func.sum(Transacao.valor)).join(Categoria).filter(
             Categoria.tipo == 'despesa',
-            Transacao.user_id == user_id, # [SEGURANÇA]
-            Transacao.data >= start_date, 
+            Transacao.user_id == user_id,  # [SEGURANÇA]
+            Transacao.status == 'Efetivada',
+            Transacao.data >= start_date,
             Transacao.data < end_date
         ).scalar() or 0.0
 
@@ -182,11 +185,40 @@ class PanoramaService:
             chaves_expiradas = 0
 
         # ==============================================================================
+        # FORECAST (P0) — só quando HOJE ∈ [start, end). Usa ritmo realizado +
+        # expõe compromissos já conhecidos no resto do período. Período fechado → None.
+        # ==============================================================================
+        forecast = None
+        if start_date <= today < end_date:
+            despesa_ate_hoje = db.query(func.sum(Transacao.valor)).join(Categoria).filter(
+                Categoria.tipo == 'despesa', Transacao.user_id == user_id,
+                Transacao.status == 'Efetivada',
+                Transacao.data >= start_date, Transacao.data <= today,
+            ).scalar() or 0.0
+            conhecido_pendente = db.query(func.sum(Transacao.valor)).join(Categoria).filter(
+                Categoria.tipo == 'despesa', Transacao.user_id == user_id,
+                Transacao.status == 'Pendente',
+                Transacao.data > today, Transacao.data < end_date,
+            ).scalar() or 0.0
+            elapsed = max(1, (today - start_date).days + 1)
+            total = max(elapsed, (end_date - start_date).days)
+            projetado = round((despesa_ate_hoje / elapsed) * total, 2)
+            forecast = {
+                "elapsed_days": elapsed,
+                "total_days": total,
+                "realizado": round(despesa_ate_hoje, 2),
+                "projetado": projetado,
+                "conhecido_pendente": round(conhecido_pendente, 2),
+                "status": "danger" if projetado > receita else "safe",
+            }
+
+        # ==============================================================================
         # MONTAGEM FINAL DOS KPIS
         # ==============================================================================
         # Caixa acumulado (patrimônio): saldo inicial + receitas − despesas
         # efetivadas de todos os tempos. Não é mensal (independe da janela).
         from app.services.financas import financas_service
+        from app.models.caixa import AjusteCaixa
         caixa = financas_service.calcular_caixa(db, user_id)
 
         kpis = {
@@ -206,73 +238,91 @@ class PanoramaService:
         }
 
         # ==============================================================================
-        # 5. GERAÇÃO DE GRÁFICOS (Aggregation Layer)
+        # 5. GERAÇÃO DE GRÁFICOS (Aggregation Layer) — tudo EFETIVADA (realizado)
         # ==============================================================================
-        
-        # Gráfico de Rosca (Donut): Gastos por Categoria
-        gastos_cat = db.query(Categoria.nome, Categoria.cor, func.sum(Transacao.valor))\
-            .join(Transacao).filter(
-                Categoria.tipo == 'despesa',
-                Transacao.user_id == user_id,
-                Transacao.data >= start_date,
-                Transacao.data < end_date
-            ).group_by(Categoria.id).all()
-        
-        rosca_labels = [g[0] for g in gastos_cat]
-        rosca_colors = [g[1] for g in gastos_cat]
-        rosca_data = [g[2] for g in gastos_cat]
+        meses_pt = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
 
-        # Gráfico de Linha: Evolução Financeira (Últimos 6 meses fixos relativos a hoje, ou adaptável)
-        # Mantendo últimos 6 meses a partir de HOJE para dar contexto histórico geral
-        evolucao_labels, evol_rec, evol_desp = [], [], []
-        
-        for i in range(5, -1, -1):
-            mes_alvo = today - relativedelta(months=i)
-            ini = mes_alvo.replace(day=1, hour=0, minute=0, second=0)
+        def _por_categoria(tipo, top_n=8):
+            rows = db.query(Categoria.nome, Categoria.cor, func.sum(Transacao.valor))\
+                .join(Transacao).filter(
+                    Categoria.tipo == tipo, Transacao.user_id == user_id,
+                    Transacao.status == 'Efetivada',
+                    Transacao.data >= start_date, Transacao.data < end_date,
+                ).group_by(Categoria.id).all()
+            rows = [(n, c, float(v or 0.0)) for (n, c, v) in rows if (v or 0) > 0]
+            rows.sort(key=lambda r: r[2], reverse=True)
+            if len(rows) > top_n:
+                resto = sum(r[2] for r in rows[top_n:])
+                rows = rows[:top_n] + [("Outros", "#94a3b8", resto)]
+            return {"labels": [r[0] for r in rows], "colors": [r[1] for r in rows], "data": [r[2] for r in rows]}
+
+        gastos_por_categoria = _por_categoria('despesa')
+        receitas_por_categoria = _por_categoria('receita')
+
+        # --- Tendência: 12 meses terminando no mês do fim da janela (ou hoje) ---
+        # caixa_real[i] = patrimônio REAL no fim de cada mês (baseline + acumulado),
+        # não uma soma-corrente que começa do zero.
+        anchor = today if today >= end_date else end_date
+        anchor_ini = anchor.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        win_start = anchor_ini - relativedelta(months=11)
+
+        def _sum_tx(tipo, ini, fim):
+            q = db.query(func.sum(Transacao.valor)).join(Categoria).filter(
+                Categoria.tipo == tipo, Transacao.user_id == user_id,
+                Transacao.status == 'Efetivada')
+            if ini is not None:
+                q = q.filter(Transacao.data >= ini)
+            if fim is not None:
+                q = q.filter(Transacao.data < fim)
+            return q.scalar() or 0.0
+
+        def _sum_ajuste(tipo, ini, fim):
+            q = db.query(func.sum(AjusteCaixa.valor)).filter(
+                AjusteCaixa.user_id == user_id, AjusteCaixa.tipo == tipo)
+            if ini is not None:
+                q = q.filter(AjusteCaixa.data >= ini)
+            if fim is not None:
+                q = q.filter(AjusteCaixa.data < fim)
+            return q.scalar() or 0.0
+
+        # Baseline = caixa no instante imediatamente anterior à janela.
+        caixa_running = (_sum_ajuste('entrada', None, win_start) - _sum_ajuste('saida', None, win_start)) \
+            + _sum_tx('receita', None, win_start) - _sum_tx('despesa', None, win_start)
+
+        evolucao_labels, evol_rec, evol_desp, evol_caixa = [], [], [], []
+        for i in range(12):
+            ini = win_start + relativedelta(months=i)
             fim = ini + relativedelta(months=1)
-            
-            meses_pt = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
             evolucao_labels.append(f"{meses_pt[ini.month-1]}/{ini.year % 100}")
-
-            r = db.query(func.sum(Transacao.valor)).join(Categoria).filter(
-                Categoria.tipo == 'receita', 
-                Transacao.user_id == user_id,
-                Transacao.data >= ini, Transacao.data < fim
-            ).scalar() or 0.0
-            
-            d = db.query(func.sum(Transacao.valor)).join(Categoria).filter(
-                Categoria.tipo == 'despesa', 
-                Transacao.user_id == user_id,
-                Transacao.data >= ini, Transacao.data < fim
-            ).scalar() or 0.0
-            
+            r = _sum_tx('receita', ini, fim)
+            d = _sum_tx('despesa', ini, fim)
+            aj = _sum_ajuste('entrada', ini, fim) - _sum_ajuste('saida', ini, fim)
+            caixa_running += aj + r - d
             evol_rec.append(r)
             evol_desp.append(d)
+            evol_caixa.append(round(caixa_running, 2))
 
-        # Gráfico de Barras: Gasto Semanal (Média Real)
-        # Lógica: Agrupa todas as despesas do período pelo dia da semana
-        # Python: 0=Segunda, 6=Domingo. ChartJS (nosso label): 0=Dom, 1=Seg...
-        semanal_map = {0: 0.0, 1: 0.0, 2: 0.0, 3: 0.0, 4: 0.0, 5: 0.0, 6: 0.0}
-        
-        todas_despesas = db.query(Transacao.data, Transacao.valor).join(Categoria).filter(
-            Categoria.tipo == 'despesa',
-            Transacao.user_id == user_id,
-            Transacao.data >= start_date,
-            Transacao.data < end_date
+        # --- Padrão semanal: MÉDIA por dia da semana (não soma) ---
+        semanal_soma = {i: 0.0 for i in range(7)}
+        despesas_periodo = db.query(Transacao.data, Transacao.valor).join(Categoria).filter(
+            Categoria.tipo == 'despesa', Transacao.user_id == user_id,
+            Transacao.status == 'Efetivada',
+            Transacao.data >= start_date, Transacao.data < end_date,
         ).all()
-
-        for t in todas_despesas:
-            # weekday(): 0=Seg, 6=Dom
-            dia_semana_py = t.data.weekday()
-            
-            # Conversão para formato [Dom, Seg, Ter...]
-            # Se py=6(Dom) -> map=0. Se py=0(Seg) -> map=1
-            idx_chart = 0 if dia_semana_py == 6 else dia_semana_py + 1
-            semanal_map[idx_chart] += t.valor
-
+        for t in despesas_periodo:
+            idx = 0 if t.data.weekday() == 6 else t.data.weekday() + 1  # [Dom..Sáb]
+            semanal_soma[idx] += t.valor
+        # nº de ocorrências de cada dia da semana no range (para a média)
+        semanal_cont = {i: 0 for i in range(7)}
+        dia = start_date.date()
+        fim_dia = end_date.date()
+        while dia < fim_dia:
+            idx = 0 if dia.weekday() == 6 else dia.weekday() + 1
+            semanal_cont[idx] += 1
+            dia += relativedelta(days=1)
         semanal_labels = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
-        semanal_data = [semanal_map[i] for i in range(7)]
-        
+        semanal_data = [round(semanal_soma[i] / semanal_cont[i], 2) if semanal_cont[i] else 0.0 for i in range(7)]
+
         # Categorias auxiliares para filtros no frontend
         cats_filtro = db.query(Categoria).filter(
             Categoria.tipo == 'despesa',
@@ -281,9 +331,12 @@ class PanoramaService:
 
         return {
             "kpis": kpis,
-            "gastos_por_categoria": {"labels": rosca_labels, "data": rosca_data, "colors": rosca_colors},
+            "forecast": forecast,
+            "gastos_por_categoria": gastos_por_categoria,
+            "receitas_por_categoria": receitas_por_categoria,
             "evolucao_mensal_receita": evol_rec,
             "evolucao_mensal_despesa": evol_desp,
+            "evolucao_caixa_real": evol_caixa,
             "evolucao_labels": evolucao_labels,
             "gasto_semanal": {"labels": semanal_labels, "data": semanal_data},
             "categorias_para_filtro": cats_filtro

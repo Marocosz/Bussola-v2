@@ -7,6 +7,7 @@ import { useToast } from '../../context/ToastContext';
 import { CustomSelect } from '../../components/CustomSelect'; // Reaproveitando componente
 import { DateRangeFilter } from '../../components/DateRangeFilter';
 import { computeRange } from '../../utils/dateRange';
+import { useThemeColors } from '../../hooks/useThemeColors';
 import './styles.css';
 
 import {
@@ -43,6 +44,7 @@ export function Panorama() {
 
     // Hooks de Contexto
     const { addToast } = useToast();
+    const C = useThemeColors();
 
     // Toggle Privacy
     const togglePrivacy = () => {
@@ -124,37 +126,26 @@ export function Panorama() {
     const poupanca = receitaTotal - despesaTotal;
     let taxaPoupanca = receitaTotal > 0 ? (poupanca / receitaTotal) * 100 : 0;
     const taxaPoupancaVisual = Math.max(0, Math.min(100, taxaPoupanca));
-    const corPoupanca = poupanca >= 0 ? '#10b981' : '#ef4444'; 
+    const corPoupanca = poupanca >= 0 ? C.verde : C.vermelho;
     const restoPoupanca = 100 - taxaPoupancaVisual;
 
-    const tarefasPendentesTotal = 
-        kpis.tarefas_pendentes.critica + 
-        kpis.tarefas_pendentes.alta + 
-        kpis.tarefas_pendentes.media + 
+    const tarefasPendentesTotal =
+        kpis.tarefas_pendentes.critica +
+        kpis.tarefas_pendentes.alta +
+        kpis.tarefas_pendentes.media +
         kpis.tarefas_pendentes.baixa;
     const tarefasConcluidas = kpis.tarefas_concluidas || 0;
     const totalTarefas = tarefasPendentesTotal + tarefasConcluidas;
     const taxaExecucao = totalTarefas > 0 ? (tarefasConcluidas / totalTarefas) * 100 : 0;
 
-    let acumuladoAtual = 0;
-    const saldoAcumuladoData = data.evolucao_mensal_receita.map((receita, index) => {
-        const despesa = data.evolucao_mensal_despesa[index] || 0;
-        const saldoMes = receita - despesa;
-        acumuladoAtual += saldoMes;
-        return acumuladoAtual;
-    });
+    // [P0] Linha de Caixa REAL vinda do backend (patrimônio, com baseline) —
+    // não mais uma soma-corrente falsa começando do zero.
+    const saldoAcumuladoData = data.evolucao_caixa_real || [];
 
-    const today = new Date();
-    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-    const currentDay = Math.max(1, today.getDate());
-    
-    // Projeção simples baseada na média diária (só faz sentido se estivermos vendo o mês atual)
-    const mediaGastoDiario = despesaTotal / currentDay;
-    const despesaProjetada = mediaGastoDiario * daysInMonth;
-    const statusProjecao = despesaProjetada > receitaTotal ? 'danger' : 'safe';
-
-    const weekLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-    const weeklySpendData = data.gasto_semanal.data; // Dados reais do backend agora
+    // [P0] Forecast honesto: só existe quando hoje ∈ período (senão, período fechado).
+    const fc = data.forecast;
+    const statusProjecao = fc?.status || 'safe';
+    const weeklySpendData = data.gasto_semanal.data; // média por dia da semana (backend)
 
     // ==========================================
     // CONFIGURAÇÃO DOS GRÁFICOS
@@ -164,7 +155,7 @@ export function Panorama() {
         labels: ['Poupado', 'Gasto'],
         datasets: [{
             data: [taxaPoupancaVisual, restoPoupanca],
-            backgroundColor: [corPoupanca, 'rgba(255, 255, 255, 0.1)'],
+            backgroundColor: [corPoupanca, C.trilho],
             borderWidth: 0,
             cutout: '75%', circumference: 180, rotation: 270,
         }]
@@ -174,7 +165,7 @@ export function Panorama() {
         labels: ['Concluído', 'Pendente'],
         datasets: [{
             data: [tarefasConcluidas, tarefasPendentesTotal],
-            backgroundColor: ['#3b82f6', 'rgba(59, 130, 246, 0.2)'],
+            backgroundColor: [C.azul, C.trilho],
             borderWidth: 0, cutout: '70%'
         }]
     };
@@ -182,9 +173,9 @@ export function Panorama() {
     const evolucaoData = {
         labels: data.evolucao_labels,
         datasets: [
-            { type: 'line', label: 'Saldo Acumulado', data: saldoAcumuladoData, borderColor: '#4A6DFF', borderWidth: 2, pointRadius: 3, tension: 0.4, order: 0 },
-            { type: 'bar', label: 'Receitas', data: data.evolucao_mensal_receita, backgroundColor: '#27ae60', borderRadius: 4, order: 1 },
-            { type: 'bar', label: 'Despesas', data: data.evolucao_mensal_despesa, backgroundColor: '#e74c3c', borderRadius: 4, order: 1 },
+            { type: 'line', label: 'Caixa (patrimônio)', data: saldoAcumuladoData, borderColor: C.azul, borderWidth: 2, pointRadius: 2, tension: 0.4, order: 0 },
+            { type: 'bar', label: 'Receitas', data: data.evolucao_mensal_receita, backgroundColor: C.verde, borderRadius: 4, order: 1 },
+            { type: 'bar', label: 'Despesas', data: data.evolucao_mensal_despesa, backgroundColor: C.vermelho, borderRadius: 4, order: 1 },
         ],
     };
 
@@ -193,12 +184,12 @@ export function Panorama() {
         datasets: [{
             label: 'Risco (Pendências)',
             data: [kpis.tarefas_pendentes.critica, kpis.tarefas_pendentes.alta, kpis.tarefas_pendentes.media, kpis.tarefas_pendentes.baixa],
-            backgroundColor: 'rgba(239, 68, 68, 0.2)', borderColor: '#ef4444', pointBackgroundColor: '#ef4444', pointBorderColor: '#fff',
+            backgroundColor: 'rgba(239, 68, 68, 0.2)', borderColor: C.vermelho, pointBackgroundColor: C.vermelho, pointBorderColor: C.texto,
         }]
     };
 
     const radarOptions = {
-        scales: { r: { angleLines: { color: 'rgba(255,255,255,0.1)' }, grid: { color: 'rgba(255,255,255,0.1)' }, pointLabels: { color: 'var(--cor-texto-secundario)', font: { size: 10 } }, ticks: { display: false, backdropColor: 'transparent' } } },
+        scales: { r: { angleLines: { color: C.grid }, grid: { color: C.grid }, pointLabels: { color: C.textoSec, font: { size: 10 } }, ticks: { display: false, backdropColor: 'transparent' } } },
         plugins: { legend: { display: false } }, maintainAspectRatio: false
     };
 
@@ -207,26 +198,26 @@ export function Panorama() {
         datasets: [{ data: data.gastos_por_categoria.data, backgroundColor: data.gastos_por_categoria.colors, borderWidth: 0, hoverOffset: 4 }],
     };
 
-    const projecaoData = {
-        labels: ['Gasto Atual', 'Projeção (Fim Mês)'],
+    const projecaoData = fc ? {
+        labels: ['Realizado', 'Projeção (fim período)'],
         datasets: [{
             label: 'Valores (R$)',
-            data: [despesaTotal, despesaProjetada],
-            backgroundColor: ['#3b82f6', statusProjecao === 'danger' ? '#ef4444' : '#f59e0b'],
+            data: [fc.realizado, fc.projetado],
+            backgroundColor: [C.azul, statusProjecao === 'danger' ? C.vermelho : C.laranja],
             borderRadius: 6,
             barThickness: 25,
         }]
-    };
+    } : null;
 
     const weeklyPatternData = {
-        labels: weekLabels,
+        labels: data.gasto_semanal.labels,
         datasets: [{
-            label: 'Total Gasto (R$)',
+            label: 'Média por dia (R$)',
             data: weeklySpendData,
             backgroundColor: (ctx) => {
                 const value = ctx.raw;
                 const max = Math.max(...weeklySpendData, 1); // Evita divisão por zero
-                const opacity = 0.3 + (value / max) * 0.7; 
+                const opacity = 0.3 + (value / max) * 0.7;
                 return `rgba(245, 158, 11, ${opacity})`;
             },
             borderRadius: 4,
@@ -235,7 +226,7 @@ export function Panorama() {
 
     const dynamicDataConfig = dynamicChartData ? {
         labels: dynamicChartData.labels,
-        datasets: [{ label: `Evolução Histórica`, data: dynamicChartData.data, borderColor: '#4A6DFF', backgroundColor: 'rgba(74, 109, 255, 0.1)', fill: true, tension: 0.4, pointRadius: 4 }]
+        datasets: [{ label: `Evolução Histórica`, data: dynamicChartData.data, borderColor: C.azul, backgroundColor: 'rgba(74, 109, 255, 0.1)', fill: true, tension: 0.4, pointRadius: 4 }]
     } : null;
 
     return (
@@ -335,7 +326,7 @@ export function Panorama() {
                     
                     {/* A. FLUXO DE CAIXA + ACUMULADO */}
                     <div className="chart-wrapper span-8">
-                        <div className="chart-header"><h3>Fluxo de Caixa & Acumulado</h3></div>
+                        <div className="chart-header"><h3>Fluxo & Caixa <span className="chart-subtitle">· últimos 12 meses</span></h3></div>
                         <div className={`chart-body ${privacyMode ? 'privacy-blur' : ''}`}>
                             <Bar data={evolucaoData} options={{ maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'top' } } }} />
                         </div>
@@ -353,31 +344,41 @@ export function Panorama() {
                         </div>
                     </div>
 
-                    {/* C. PROJEÇÃO DE FIM DE MÊS (FORECASTING) */}
+                    {/* C. PROJEÇÃO DE FIM DE PERÍODO (FORECASTING) */}
                     <div className="chart-wrapper span-6">
                         <div className="chart-header">
-                            <h3>Forecasting (Projeção)</h3>
-                            <span className={`forecast-status ${statusProjecao}`}>
-                                {statusProjecao === 'danger' ? 'ALERTA: Risco de fechar no negativo' : 'Ritmo Seguro'}
-                            </span>
+                            <h3>Projeção do período</h3>
+                            {fc && (
+                                <span className={`forecast-status ${statusProjecao}`}>
+                                    {statusProjecao === 'danger' ? 'ALERTA: ritmo acima da receita' : 'Ritmo seguro'}
+                                </span>
+                            )}
                         </div>
                         <div className={`chart-body ${privacyMode ? 'privacy-blur' : ''}`}>
-                            <Bar 
-                                data={projecaoData} 
-                                options={{ 
-                                    indexAxis: 'y', 
-                                    maintainAspectRatio: false,
-                                    plugins: { legend: { display: false } },
-                                    scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' } } }
-                                }} 
-                            />
+                            {fc ? (
+                                <Bar
+                                    data={projecaoData}
+                                    options={{
+                                        indexAxis: 'y',
+                                        maintainAspectRatio: false,
+                                        plugins: { legend: { display: false } },
+                                        scales: { x: { grid: { color: C.grid } } }
+                                    }}
+                                />
+                            ) : (
+                                <div className="panorama-empty-note">
+                                    <i className="fa-solid fa-calendar-check"></i>
+                                    <p>Período fechado</p>
+                                    <span>Balanço realizado: <strong>{fmt(kpis.balanco_mes)}</strong></span>
+                                </div>
+                            )}
                         </div>
                     </div>
 
                     {/* D. PADRÕES DE GASTO (HEATMAP SEMANAL) */}
                     <div className="chart-wrapper span-6">
                         <div className="chart-header">
-                            <h3>Padrão Semanal de Gastos</h3>
+                            <h3>Média por dia da semana</h3>
                         </div>
                         <div className={`chart-body ${privacyMode ? 'privacy-blur' : ''}`}>
                             <Bar 
