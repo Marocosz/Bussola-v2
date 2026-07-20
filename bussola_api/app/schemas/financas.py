@@ -17,6 +17,8 @@ from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 
+from app.schemas.metas import ResumoPatrimonio
+
 # --------------------------------------------------------------------------------------
 # ENUMS (Domínios de Valores)
 # --------------------------------------------------------------------------------------
@@ -127,3 +129,5 @@ class FinancasDashboardResponse(BaseModel):
     # Metadados de UI
     icones_disponiveis: List[str]
     cores_disponiveis: List[str]
+
+    resumo_patrimonio: Optional[ResumoPatrimonio] = None

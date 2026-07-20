@@ -906,3 +906,44 @@ export const aiService = {
 };
 
 export default api;
+
+// --- METAS & COFRINHOS ---
+export const getMetasDashboard = async (): Promise<any> => {
+    const response = await api.get('/financas/metas');
+    return response.data;
+};
+
+export const createMeta = async (data: any) => {
+    const response = await api.post('/financas/metas', data);
+    return response.data;
+};
+
+export const updateMeta = async (id: number, data: any) => {
+    const response = await api.put(`/financas/metas/${id}`, data);
+    return response.data;
+};
+
+export const deleteMeta = async (id: number) => {
+    const response = await api.delete(`/financas/metas/${id}`);
+    return response.data;
+};
+
+export const createMovimentacao = async (metaId: number, data: any) => {
+    const response = await api.post(`/financas/metas/${metaId}/movimentacoes`, data);
+    return response.data;
+};
+
+export const listMovimentacoes = async (metaId: number) => {
+    const response = await api.get(`/financas/metas/${metaId}/movimentacoes`);
+    return response.data;
+};
+
+export const toggleMovimentacao = async (metaId: number, movId: number) => {
+    const response = await api.put(`/financas/metas/${metaId}/movimentacoes/${movId}/toggle-status`);
+    return response.data;
+};
+
+export const deleteMovimentacao = async (metaId: number, movId: number) => {
+    const response = await api.delete(`/financas/metas/${metaId}/movimentacoes/${movId}`);
+    return response.data;
+};

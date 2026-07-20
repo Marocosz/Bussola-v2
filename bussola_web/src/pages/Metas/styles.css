@@ -1,0 +1,121 @@
+.metas-scope .metas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.metas-scope .ph-kpi.guardado { color: var(--cor-azul-primario, #4f46e5); }
+.meta-card-placeholder {
+  padding: 1rem; border-radius: 12px;
+  background: var(--cor-fundo-card, #1e1e24);
+  border: 1px solid var(--cor-borda, #333);
+}
+
+.metas-scope .metas-toolbar { margin: 1rem 0; }
+
+.meta-card {
+  padding: 1.1rem; border-radius: 14px;
+  background: var(--cor-fundo-card, #1e1e24);
+  border: 1px solid var(--cor-borda, #333);
+  display: flex; flex-direction: column; gap: .75rem;
+}
+.meta-card-head { display: flex; align-items: center; gap: .7rem; cursor: pointer; }
+.meta-card-icon {
+  width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--meta-cor) 22%, transparent);
+  color: var(--meta-cor); font-size: 1.1rem;
+}
+.meta-card-title { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+.meta-badge-done { font-size: .72rem; color: #22c55e; margin-left: .3rem; }
+
+.meta-progress-bar {
+  height: 10px; border-radius: 999px; overflow: hidden;
+  background: var(--cor-borda, #333);
+}
+.meta-progress-bar span { display: block; height: 100%; background: var(--meta-cor); border-radius: 999px; transition: width .4s ease; }
+.meta-progress-labels { display: flex; justify-content: space-between; font-size: .85rem; margin-top: .35rem; }
+.meta-proj { font-size: .78rem; }
+.muted { color: var(--cor-texto-secundario, #9aa0aa); }
+
+.meta-card-actions { display: flex; gap: .5rem; align-items: center; margin-top: .3rem; }
+.meta-card-actions .btn-primary { flex: 1; }
+.meta-check { display: flex; align-items: center; gap: .4rem; font-size: .85rem; }
+
+/* Botões de ação (ícone) — mesmo padrão unificado usado em Financas/Registros */
+.metas-scope .btn-action-icon {
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 0.8rem;
+  color: var(--cor-texto-secundario);
+  background: transparent;
+  border: 1px solid var(--cor-borda) !important;
+  border-radius: 6px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
+}
+.metas-scope .btn-edit:hover {
+  background-color: #f59e0b !important;
+  border-color: #f59e0b !important;
+  color: #fff !important;
+}
+.metas-scope .btn-delete:hover {
+  background-color: var(--cor-vermelho-delete) !important;
+  border-color: var(--cor-vermelho-delete) !important;
+  color: #fff !important;
+}
+
+.mov-toggle { display: flex; gap: .5rem; margin-bottom: 1rem; }
+.mov-toggle button {
+  flex: 1; padding: .5rem; border-radius: 8px; cursor: pointer;
+  background: var(--cor-fundo-input, #2a2a32); color: var(--cor-texto-secundario, #9aa0aa);
+  border: 1px solid var(--cor-borda, #333); font-weight: 600;
+}
+.mov-toggle button.active { background: var(--cor-azul-primario, #4f46e5); color: #fff; border-color: transparent; }
+
+.cofre-modal { position: relative; overflow: hidden; }
+.cofre-progress { margin: .25rem 0 1rem; }
+.cofre-stage { display: flex; flex-direction: column; align-items: center; gap: 1.75rem; min-height: 320px; padding: 1.5rem 0; perspective: 900px; }
+.cofre-valor-input { font-size: 1.15rem; text-align: center; padding: .55rem 1rem; border-radius: 10px; width: min(280px, 90%);
+  background: var(--cor-fundo-input, #2a2a32); color: var(--cor-texto, #fff); border: 1px solid var(--cor-borda, #333); }
+
+.coin-draggable { cursor: grab; touch-action: none; z-index: 5; }
+.coin-draggable:active { cursor: grabbing; }
+.coin-3d { width: 84px; height: 84px; border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, #ffe07a, #f5b301 55%, #b8860b);
+  box-shadow: 0 8px 18px rgba(0,0,0,.35), inset 0 2px 4px rgba(255,255,255,.6), inset 0 -6px 10px rgba(0,0,0,.25);
+  display: flex; align-items: center; justify-content: center; transform: rotateX(12deg); }
+.coin-face { display: flex; flex-direction: column; align-items: center; color: #7a5901; font-weight: 800; line-height: 1; }
+.coin-symbol { font-size: .7rem; } .coin-value { font-size: .85rem; margin-top: 2px; }
+
+.bau-drop { width: 200px; height: 130px; border-radius: 14px;
+  background: linear-gradient(160deg, #6b4423, #4a2f18); border: 3px solid #3a2412;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: #f5d18a; box-shadow: 0 12px 24px rgba(0,0,0,.4); transform: rotateX(8deg); transition: transform .15s; }
+.bau-drop.bau-open { transform: rotateX(8deg) scale(1.05); }
+.bau-drop .bau-icon { font-size: 2.4rem; margin-bottom: .4rem; }
+.bau-drop.bau-open .bau-icon { color: #ffe07a; }
+.bau-label { font-size: .8rem; opacity: .85; }
+
+.confetti-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 20; }
+.confetti-piece { position: absolute; top: -10px; width: 9px; height: 14px; border-radius: 2px;
+  animation: confetti-fall 1.3s ease-in forwards; }
+@keyframes confetti-fall { to { transform: translateY(380px) rotate(540deg); opacity: 0; } }
+
+.cofre-retirar { padding-top: .5rem; }
+@media (max-width: 640px) { .bau-drop { width: 160px; } .cofre-stage { min-height: 280px; } }
+
+.meta-historico { margin-top: 1.25rem; border-top: 1px solid var(--cor-borda, #333); padding-top: 1rem; }
+.meta-chart { height: 160px; margin-bottom: 1rem; }
+.meta-timeline { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .4rem; max-height: 220px; overflow-y: auto; }
+.meta-timeline li { display: flex; align-items: center; gap: .6rem; font-size: .85rem; padding: .35rem .5rem; border-radius: 8px; background: var(--cor-fundo-input, #2a2a32); }
+.meta-timeline li.pendente { opacity: .7; border: 1px dashed var(--cor-borda, #444); }
+.meta-timeline li strong { margin-left: auto; }
+.meta-timeline li .btn-action-icon { margin-left: .25rem; }
+
+.meta-mensal { font-size: .78rem; display: flex; align-items: center; gap: .35rem; }
+.meta-timeline .btn-confirm { color: #22c55e; }

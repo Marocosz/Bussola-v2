@@ -288,13 +288,21 @@ class FinancasService:
             else:
                 recorrentes_map[mes_key].append(t)
 
+        # [METAS] Resumo de patrimônio (transferência neutra): disponível vs guardado.
+        from app.services.metas import metas_service  # import local evita ciclo de import
+        _total_receita = sum(float(getattr(c, "total_ganho", 0) or 0) for c in cats_receita)
+        _total_despesa = sum(float(getattr(c, "total_gasto", 0) or 0) for c in cats_despesa)
+        _saldo_bruto = _total_receita - _total_despesa
+        _resumo = metas_service.calcular_resumo(db, user_id, _saldo_bruto)
+
         return {
             "categorias_despesa": cats_despesa,
             "categorias_receita": cats_receita,
             "transacoes_pontuais": pontuais_map,
             "transacoes_recorrentes": recorrentes_map,
             "icones_disponiveis": ICONES_DISPONIVEIS,
-            "cores_disponiveis": self.gerar_paleta_cores()
+            "cores_disponiveis": self.gerar_paleta_cores(),
+            "resumo_patrimonio": _resumo,
         }
         
     def encerrar_recorrencia(self, db: Session, transacao_id: int, user_id: int):

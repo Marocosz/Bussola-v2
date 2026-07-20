@@ -28,6 +28,7 @@ from app.api.v1.endpoints import (
     auth,
     home,
     financas,
+    metas,
     agenda,
     registros,
     ritmo,
@@ -57,6 +58,7 @@ api_router.include_router(auth.router, prefix="/auth", tags=["login"])
 # Módulos de Domínio (Funcionalidades principais)
 api_router.include_router(home.router, prefix="/home", tags=["home"])
 api_router.include_router(financas.router, prefix="/financas", tags=["financas"])
+api_router.include_router(metas.router, prefix="/financas/metas", tags=["metas"])
 api_router.include_router(agenda.router, prefix="/agenda", tags=["agenda"])
 api_router.include_router(registros.router, prefix="/registros", tags=["registros"])
 api_router.include_router(ritmo.router, prefix="/ritmo", tags=["ritmo"])
