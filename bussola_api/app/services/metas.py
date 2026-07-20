@@ -8,6 +8,9 @@ OBJETIVO:
 =======================================================================================
 """
 
+from datetime import date
+from dateutil.relativedelta import relativedelta
+
 from app.core.timezone import now_utc
 from app.models.metas import Meta, MovimentacaoMeta
 from app.schemas.metas import MetaCreate, MetaUpdate, MovimentacaoCreate
@@ -142,6 +145,75 @@ class MetasService:
         db.refresh(meta)
         self._recompute_saldo(db, meta)
         return True
+
+    # ---------- projeção & KPIs ----------
+    def _media_aporte_mensal(self, meta: Meta) -> float:
+        """Média mensal dos aportes efetivados desde a criação da meta."""
+        aportes = [m for m in meta.movimentacoes
+                   if m.status == "Efetivada" and m.tipo == "aporte" and m.valor > 0]
+        if not aportes:
+            return 0.0
+        primeira = min(m.data for m in aportes)
+        meses = max(1, (now_utc().replace(tzinfo=None) - primeira.replace(tzinfo=None)).days / 30.0)
+        return round(sum(m.valor for m in aportes) / meses, 2)
+
+    def enriquecer_meta(self, db, meta: Meta) -> dict:
+        faltante = max(0.0, round(meta.valor_alvo - meta.saldo_atual, 2))
+        progresso = 0.0
+        if meta.valor_alvo > 0:
+            progresso = round(min(100.0, (meta.saldo_atual / meta.valor_alvo) * 100), 1)
+
+        meses_restantes = None
+        aporte_sugerido = None
+        if meta.data_alvo:
+            hoje = now_utc().date()
+            delta = relativedelta(meta.data_alvo, hoje)
+            meses_restantes = max(0, delta.years * 12 + delta.months + (1 if delta.days > 0 else 0))
+            if meses_restantes > 0:
+                aporte_sugerido = round(faltante / meses_restantes, 2)
+
+        data_projetada = None
+        if faltante > 0:
+            ritmo = self._media_aporte_mensal(meta)
+            if ritmo > 0:
+                meses_ate = faltante / ritmo
+                data_projetada = (now_utc().date() + relativedelta(months=int(meses_ate) + 1))
+
+        return {
+            "id": meta.id,
+            "nome": meta.nome,
+            "valor_alvo": meta.valor_alvo,
+            "saldo_atual": meta.saldo_atual,
+            "data_alvo": meta.data_alvo,
+            "icone": meta.icone,
+            "cor": meta.cor,
+            "imagem_url": meta.imagem_url,
+            "trancada": meta.trancada,
+            "status": meta.status,
+            "aporte_mensal_valor": meta.aporte_mensal_valor,
+            "aporte_mensal_dia": meta.aporte_mensal_dia,
+            "created_at": meta.created_at,
+            "concluida_em": meta.concluida_em,
+            "progresso_pct": progresso,
+            "aporte_sugerido": aporte_sugerido,
+            "data_projetada": data_projetada,
+            "meses_restantes": meses_restantes,
+        }
+
+    def total_guardado(self, db, user_id: int) -> float:
+        metas = db.query(Meta).filter(
+            Meta.user_id == user_id, Meta.status == "ativa"
+        ).all()
+        return round(sum(m.saldo_atual for m in metas), 2)
+
+    def calcular_resumo(self, db, user_id: int, saldo_bruto: float) -> dict:
+        guardado = self.total_guardado(db, user_id)
+        total = round(saldo_bruto, 2)
+        return {
+            "disponivel": round(total - guardado, 2),
+            "guardado": guardado,
+            "total": total,
+        }
 
 
 metas_service = MetasService()

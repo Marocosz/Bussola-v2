@@ -113,3 +113,42 @@ def test_deletar_movimentacao_recalcula_saldo(db, user):
     mov = metas_service.criar_movimentacao(db, m.id, MovimentacaoCreate(tipo="aporte", valor=200.0), user.id)
     metas_service.deletar_movimentacao(db, m.id, mov.id, user.id)
     assert metas_service._get_meta(db, m.id, user.id).saldo_atual == 0.0
+
+
+from datetime import date, timedelta
+
+
+def test_aporte_sugerido_divide_faltante_por_meses(db, user):
+    alvo_data = date.today() + timedelta(days=300)  # ~10 meses
+    m = metas_service.criar_meta(
+        db, MetaCreate(nome="V", valor_alvo=10000.0, data_alvo=alvo_data), user.id
+    )
+    metas_service.criar_movimentacao(db, m.id, MovimentacaoCreate(tipo="aporte", valor=0.0), user.id)
+    dados = metas_service.enriquecer_meta(db, m)
+    assert dados["meses_restantes"] >= 9
+    # faltante 10000 / ~10 meses ≈ 1000/mês (tolerância ampla)
+    assert 800 <= dados["aporte_sugerido"] <= 1200
+
+
+def test_progresso_pct(db, user):
+    m = metas_service.criar_meta(db, MetaCreate(nome="V", valor_alvo=200.0), user.id)
+    metas_service.criar_movimentacao(db, m.id, MovimentacaoCreate(tipo="aporte", valor=50.0), user.id)
+    assert metas_service.enriquecer_meta(db, m)["progresso_pct"] == 25.0
+
+
+def test_total_guardado_soma_metas_ativas(db, user):
+    a = metas_service.criar_meta(db, MetaCreate(nome="A", valor_alvo=1000.0), user.id)
+    b = metas_service.criar_meta(db, MetaCreate(nome="B", valor_alvo=1000.0), user.id)
+    metas_service.criar_movimentacao(db, a.id, MovimentacaoCreate(tipo="aporte", valor=300.0), user.id)
+    metas_service.criar_movimentacao(db, b.id, MovimentacaoCreate(tipo="aporte", valor=150.0), user.id)
+    assert metas_service.total_guardado(db, user.id) == 450.0
+
+
+def test_resumo_respeita_invariante(db, user):
+    a = metas_service.criar_meta(db, MetaCreate(nome="A", valor_alvo=1000.0), user.id)
+    metas_service.criar_movimentacao(db, a.id, MovimentacaoCreate(tipo="aporte", valor=300.0), user.id)
+    resumo = metas_service.calcular_resumo(db, user.id, saldo_bruto=2000.0)
+    assert resumo["guardado"] == 300.0
+    assert resumo["total"] == 2000.0
+    assert resumo["disponivel"] == 1700.0
+    assert resumo["disponivel"] + resumo["guardado"] == resumo["total"]
