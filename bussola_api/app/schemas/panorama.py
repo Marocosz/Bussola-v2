@@ -67,6 +67,46 @@ class ForecastData(BaseModel):
     conhecido_pendente: float
     status: str  # 'safe' | 'danger'
 
+
+class ComparativoData(BaseModel):
+    receita: float
+    despesa: float
+    balanco: float
+
+
+class OrcamentoItem(BaseModel):
+    nome: str
+    cor: Optional[str] = None
+    icone: Optional[str] = None
+    gasto: float
+    limite: float
+    pct: Optional[float] = None  # None quando a categoria não tem limite
+
+
+class CofreMetaItem(BaseModel):
+    id: int
+    nome: str
+    cor: Optional[str] = None
+    icone: Optional[str] = None
+    saldo_atual: float
+    valor_alvo: float
+    progresso_pct: float = 0.0
+    data_projetada: Optional[Any] = None
+
+
+class CofrinhosResumo(BaseModel):
+    total_guardado: float = 0.0
+    qtd: int = 0
+    metas: List[CofreMetaItem] = []
+
+
+class RitmoResumo(BaseModel):
+    peso_atual: Optional[float] = None
+    peso_delta: Optional[float] = None
+    objetivo: Optional[str] = None
+    plano_ativo: Optional[str] = None
+    dieta_calorias: Optional[float] = None
+
 # --------------------------------------------------------------------------------------
 # ITENS DE DETALHE (Tabelas e Listas)
 # --------------------------------------------------------------------------------------
@@ -106,6 +146,10 @@ class RegistroItem(BaseModel):
 class PanoramaResponse(BaseModel):
     kpis: KpiData
     forecast: Optional[ForecastData] = None
+    comparativo: Optional[ComparativoData] = None
+    orcamento: List[OrcamentoItem] = []
+    cofrinhos: CofrinhosResumo = CofrinhosResumo()
+    ritmo: Optional[RitmoResumo] = None
 
     # Gráficos
     gastos_por_categoria: ChartData

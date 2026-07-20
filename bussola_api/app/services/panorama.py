@@ -329,9 +329,82 @@ class PanoramaService:
             Categoria.user_id == user_id
         ).all()
 
+        # ==============================================================================
+        # P1 — VALOR: comparativo, orçamento, cofrinhos, ritmo
+        # ==============================================================================
+        # Comparativo com o período anterior de MESMO tamanho (para deltas ▲/▼).
+        prev_start = start_date - (end_date - start_date)
+        prev_rec = _sum_tx('receita', prev_start, start_date)
+        prev_desp = _sum_tx('despesa', prev_start, start_date)
+        comparativo = {
+            "receita": round(prev_rec, 2),
+            "despesa": round(prev_desp, 2),
+            "balanco": round(prev_rec - prev_desp, 2),
+        }
+
+        # Orçamento por categoria (gasto do período vs meta_limite). O front só
+        # exibe quando o range é ~1 mês (limite é mensal).
+        gasto_por_cat = dict(db.query(Transacao.categoria_id, func.sum(Transacao.valor)).join(Categoria).filter(
+            Categoria.tipo == 'despesa', Transacao.user_id == user_id,
+            Transacao.status == 'Efetivada',
+            Transacao.data >= start_date, Transacao.data < end_date,
+        ).group_by(Transacao.categoria_id).all())
+        orcamento = []
+        for c in db.query(Categoria).filter(Categoria.tipo == 'despesa', Categoria.user_id == user_id).all():
+            limite = float(c.meta_limite or 0)
+            gasto = float(gasto_por_cat.get(c.id, 0) or 0)
+            if limite <= 0 and gasto <= 0:
+                continue
+            pct = round((gasto / limite) * 100, 1) if limite > 0 else None
+            orcamento.append({"nome": c.nome, "cor": c.cor, "icone": c.icone,
+                              "gasto": gasto, "limite": limite, "pct": pct})
+        orcamento.sort(key=lambda o: (o["pct"] is None, -(o["pct"] or 0)))
+
+        # Cofrinhos (Metas ativas) — base para as mini-jarras / Reservatório.
+        from app.services.metas import metas_service
+        metas_ativas = [m for m in metas_service.listar_metas(db, user_id) if m.status == "ativa"]
+        cofrinhos = {
+            "total_guardado": metas_service.total_guardado(db, user_id),
+            "qtd": len(metas_ativas),
+            "metas": [],
+        }
+        for m in metas_ativas[:8]:
+            e = metas_service.enriquecer_meta(db, m)
+            cofrinhos["metas"].append({
+                "id": m.id, "nome": m.nome, "cor": m.cor, "icone": m.icone,
+                "saldo_atual": m.saldo_atual, "valor_alvo": m.valor_alvo,
+                "progresso_pct": e["progresso_pct"], "data_projetada": e["data_projetada"],
+            })
+
+        # Ritmo (saúde) — resumo compacto.
+        from app.models.ritmo import RitmoBio, RitmoPlanoTreino, RitmoDietaConfig
+        ritmo = None
+        bios = db.query(RitmoBio).filter(RitmoBio.user_id == user_id)\
+            .order_by(RitmoBio.data_registro.desc()).limit(2).all()
+        if bios:
+            atual = bios[0]
+            peso_delta = None
+            if len(bios) > 1 and atual.peso and bios[1].peso:
+                peso_delta = round(atual.peso - bios[1].peso, 1)
+            plano = db.query(RitmoPlanoTreino).filter(
+                RitmoPlanoTreino.user_id == user_id, RitmoPlanoTreino.ativo == True).first()  # noqa: E712
+            dieta = db.query(RitmoDietaConfig).filter(
+                RitmoDietaConfig.user_id == user_id, RitmoDietaConfig.ativo == True).first()  # noqa: E712
+            ritmo = {
+                "peso_atual": atual.peso,
+                "peso_delta": peso_delta,
+                "objetivo": atual.objetivo,
+                "plano_ativo": plano.nome if plano else None,
+                "dieta_calorias": (dieta.calorias_calculadas if dieta else atual.gasto_calorico_total),
+            }
+
         return {
             "kpis": kpis,
             "forecast": forecast,
+            "comparativo": comparativo,
+            "orcamento": orcamento,
+            "cofrinhos": cofrinhos,
+            "ritmo": ritmo,
             "gastos_por_categoria": gastos_por_categoria,
             "receitas_por_categoria": receitas_por_categoria,
             "evolucao_mensal_receita": evol_rec,

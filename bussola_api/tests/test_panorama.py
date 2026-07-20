@@ -83,3 +83,43 @@ def test_media_semanal_e_media_nao_soma(db, user):
     assert len(semanal) == 7
     # nenhum valor diário deve exceder 100 (é média, não soma acumulada)
     assert max(semanal) <= 100.0
+
+
+# ---- P1: comparativo, orçamento, cofrinhos, ritmo ----
+
+def test_comparativo_periodo_anterior(db, user):
+    desp = _cat(db, user, "Mercado", "despesa")
+    mes_passado = _mes_atual_dia(10) - relativedelta(months=1)
+    _tx(db, user, desp, 400.0, mes_passado)
+    _tx(db, user, desp, 100.0, _mes_atual_dia(10))
+    dash = panorama_service.get_dashboard_data(db, user.id)  # mês atual
+    assert dash["comparativo"]["despesa"] == 400.0   # mês anterior
+    assert dash["kpis"]["despesa_mes"] == 100.0       # mês atual
+
+
+def test_orcamento_por_categoria(db, user):
+    desp = Categoria(nome="Mercado", tipo="despesa", meta_limite=500.0, user_id=user.id)
+    db.add(desp); db.commit(); db.refresh(desp)
+    _tx(db, user, desp, 250.0, _mes_atual_dia(5))
+    dash = panorama_service.get_dashboard_data(db, user.id)
+    item = next(o for o in dash["orcamento"] if o["nome"] == "Mercado")
+    assert item["gasto"] == 250.0 and item["limite"] == 500.0 and item["pct"] == 50.0
+
+
+def test_cofrinhos_no_payload(db, user):
+    from app.services.metas import metas_service
+    from app.schemas.metas import MetaCreate, MovimentacaoCreate
+    m = metas_service.criar_meta(db, MetaCreate(nome="Viagem", valor_alvo=1000.0), user.id)
+    metas_service.criar_movimentacao(db, m.id, MovimentacaoCreate(tipo="aporte", valor=300.0), user.id)
+    dash = panorama_service.get_dashboard_data(db, user.id)
+    assert dash["cofrinhos"]["total_guardado"] == 300.0
+    assert dash["cofrinhos"]["qtd"] == 1
+    assert dash["cofrinhos"]["metas"][0]["nome"] == "Viagem"
+
+
+def test_endpoint_serializa_payload_completo(client):
+    r = client.get("/api/v1/panorama/")
+    assert r.status_code == 200
+    body = r.json()
+    for campo in ("kpis", "comparativo", "orcamento", "cofrinhos", "receitas_por_categoria", "evolucao_caixa_real"):
+        assert campo in body
