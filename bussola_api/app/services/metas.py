@@ -10,7 +10,7 @@ OBJETIVO:
 
 from app.core.timezone import now_utc
 from app.models.metas import Meta, MovimentacaoMeta
-from app.schemas.metas import MetaCreate, MetaUpdate
+from app.schemas.metas import MetaCreate, MetaUpdate, MovimentacaoCreate
 
 
 class MetasService:
@@ -74,6 +74,73 @@ class MetasService:
             return False
         db.delete(meta)
         db.commit()
+        return True
+
+    # ---------- movimentações ----------
+    def _pode_retirar(self, meta: Meta) -> bool:
+        """Meta trancada só libera retirada se concluída ou se a data-alvo já passou."""
+        if not meta.trancada:
+            return True
+        if meta.status == "concluida":
+            return True
+        if meta.data_alvo and meta.data_alvo <= now_utc().date():
+            return True
+        return False
+
+    def criar_movimentacao(self, db, meta_id, mov_in: MovimentacaoCreate, user_id):
+        meta = self._get_meta(db, meta_id, user_id)
+        if not meta:
+            raise ValueError("Meta não encontrada")
+
+        if mov_in.tipo == "retirada":
+            if not self._pode_retirar(meta):
+                raise ValueError("Meta trancada: retirada bloqueada")
+            if round(mov_in.valor, 2) > meta.saldo_atual:
+                raise ValueError("Retirada maior que o saldo disponível")
+
+        mov = MovimentacaoMeta(
+            meta_id=meta.id,
+            user_id=user_id,
+            tipo=mov_in.tipo.value,
+            valor=round(mov_in.valor, 2),
+            data=mov_in.data or now_utc(),
+            status="Efetivada",
+            origem="manual",
+            observacao=mov_in.observacao,
+        )
+        db.add(mov)
+        db.commit()
+        db.refresh(meta)
+        self._recompute_saldo(db, meta)
+        db.refresh(mov)
+        return mov
+
+    def listar_movimentacoes(self, db, meta_id, user_id):
+        meta = self._get_meta(db, meta_id, user_id)
+        if not meta:
+            return []
+        return (
+            db.query(MovimentacaoMeta)
+            .filter(MovimentacaoMeta.meta_id == meta_id)
+            .order_by(MovimentacaoMeta.data.desc())
+            .all()
+        )
+
+    def deletar_movimentacao(self, db, meta_id, mov_id, user_id) -> bool:
+        meta = self._get_meta(db, meta_id, user_id)
+        if not meta:
+            return False
+        mov = (
+            db.query(MovimentacaoMeta)
+            .filter(MovimentacaoMeta.id == mov_id, MovimentacaoMeta.meta_id == meta_id)
+            .first()
+        )
+        if not mov:
+            return False
+        db.delete(mov)
+        db.commit()
+        db.refresh(meta)
+        self._recompute_saldo(db, meta)
         return True
 
 

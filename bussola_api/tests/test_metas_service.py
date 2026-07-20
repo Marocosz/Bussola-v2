@@ -65,3 +65,51 @@ def test_deletar_meta(db, user):
     m = metas_service.criar_meta(db, MetaCreate(nome="X", valor_alvo=1.0), user.id)
     assert metas_service.deletar_meta(db, m.id, user.id) is True
     assert metas_service.listar_metas(db, user.id) == []
+
+
+import pytest
+from app.schemas.metas import MovimentacaoCreate
+
+
+def test_aporte_incrementa_saldo(db, user):
+    m = metas_service.criar_meta(db, MetaCreate(nome="V", valor_alvo=1000.0), user.id)
+    metas_service.criar_movimentacao(
+        db, m.id, MovimentacaoCreate(tipo="aporte", valor=250.0), user.id
+    )
+    assert metas_service._get_meta(db, m.id, user.id).saldo_atual == 250.0
+
+
+def test_aporte_que_bate_alvo_conclui(db, user):
+    m = metas_service.criar_meta(db, MetaCreate(nome="V", valor_alvo=100.0), user.id)
+    metas_service.criar_movimentacao(
+        db, m.id, MovimentacaoCreate(tipo="aporte", valor=100.0), user.id
+    )
+    out = metas_service._get_meta(db, m.id, user.id)
+    assert out.status == "concluida" and out.concluida_em is not None
+
+
+def test_retirada_alem_do_saldo_falha(db, user):
+    m = metas_service.criar_meta(db, MetaCreate(nome="V", valor_alvo=1000.0), user.id)
+    metas_service.criar_movimentacao(db, m.id, MovimentacaoCreate(tipo="aporte", valor=50.0), user.id)
+    with pytest.raises(ValueError, match="saldo"):
+        metas_service.criar_movimentacao(
+            db, m.id, MovimentacaoCreate(tipo="retirada", valor=80.0), user.id
+        )
+
+
+def test_retirada_em_meta_trancada_falha(db, user):
+    m = metas_service.criar_meta(
+        db, MetaCreate(nome="V", valor_alvo=1000.0, trancada=True), user.id
+    )
+    metas_service.criar_movimentacao(db, m.id, MovimentacaoCreate(tipo="aporte", valor=200.0), user.id)
+    with pytest.raises(ValueError, match="trancada"):
+        metas_service.criar_movimentacao(
+            db, m.id, MovimentacaoCreate(tipo="retirada", valor=100.0), user.id
+        )
+
+
+def test_deletar_movimentacao_recalcula_saldo(db, user):
+    m = metas_service.criar_meta(db, MetaCreate(nome="V", valor_alvo=1000.0), user.id)
+    mov = metas_service.criar_movimentacao(db, m.id, MovimentacaoCreate(tipo="aporte", valor=200.0), user.id)
+    metas_service.deletar_movimentacao(db, m.id, mov.id, user.id)
+    assert metas_service._get_meta(db, m.id, user.id).saldo_atual == 0.0
