@@ -8,6 +8,7 @@ OBJETIVO:
 =======================================================================================
 """
 
+import uuid
 from datetime import date
 from dateutil.relativedelta import relativedelta
 
@@ -214,6 +215,58 @@ class MetasService:
             "guardado": guardado,
             "total": total,
         }
+
+
+    # ---------- aporte mensal agendado ----------
+    def gerar_aportes_agendados(self, db, user_id: int) -> None:
+        """Idempotente: garante 1 aporte Pendente no mês corrente por meta configurada."""
+        hoje = now_utc()
+        metas = db.query(Meta).filter(
+            Meta.user_id == user_id,
+            Meta.status == "ativa",
+            Meta.aporte_mensal_valor.isnot(None),
+        ).all()
+        for meta in metas:
+            ja_existe = any(
+                m.origem == "agendado"
+                and m.status == "Pendente"
+                and m.data.year == hoje.year
+                and m.data.month == hoje.month
+                for m in meta.movimentacoes
+            )
+            if ja_existe:
+                continue
+            dia = min(meta.aporte_mensal_dia or 1, 28)
+            data_mov = hoje.replace(day=dia, hour=0, minute=0, second=0, microsecond=0)
+            db.add(MovimentacaoMeta(
+                meta_id=meta.id,
+                user_id=user_id,
+                tipo="aporte",
+                valor=round(meta.aporte_mensal_valor, 2),
+                data=data_mov,
+                status="Pendente",
+                origem="agendado",
+                id_grupo_recorrencia=f"agendado-{meta.id}",
+            ))
+        db.commit()
+
+    def toggle_status_movimentacao(self, db, meta_id, mov_id, user_id):
+        meta = self._get_meta(db, meta_id, user_id)
+        if not meta:
+            return None
+        mov = (
+            db.query(MovimentacaoMeta)
+            .filter(MovimentacaoMeta.id == mov_id, MovimentacaoMeta.meta_id == meta_id)
+            .first()
+        )
+        if not mov:
+            return None
+        mov.status = "Efetivada" if mov.status == "Pendente" else "Pendente"
+        db.commit()
+        db.refresh(meta)
+        self._recompute_saldo(db, meta)
+        db.refresh(mov)
+        return mov
 
 
 metas_service = MetasService()

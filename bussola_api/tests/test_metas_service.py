@@ -152,3 +152,31 @@ def test_resumo_respeita_invariante(db, user):
     assert resumo["total"] == 2000.0
     assert resumo["disponivel"] == 1700.0
     assert resumo["disponivel"] + resumo["guardado"] == resumo["total"]
+
+
+def test_gerar_aporte_agendado_e_idempotente(db, user):
+    m = metas_service.criar_meta(
+        db,
+        MetaCreate(nome="V", valor_alvo=10000.0, aporte_mensal_valor=500.0, aporte_mensal_dia=5),
+        user.id,
+    )
+    metas_service.gerar_aportes_agendados(db, user.id)
+    metas_service.gerar_aportes_agendados(db, user.id)  # 2ª vez não duplica
+    movs = metas_service.listar_movimentacoes(db, m.id, user.id)
+    pendentes = [x for x in movs if x.status == "Pendente" and x.origem == "agendado"]
+    assert len(pendentes) == 1
+    assert pendentes[0].valor == 500.0
+    # ainda pendente: saldo intocado
+    assert metas_service._get_meta(db, m.id, user.id).saldo_atual == 0.0
+
+
+def test_confirmar_aporte_pendente_aplica_no_saldo(db, user):
+    m = metas_service.criar_meta(
+        db,
+        MetaCreate(nome="V", valor_alvo=10000.0, aporte_mensal_valor=500.0, aporte_mensal_dia=5),
+        user.id,
+    )
+    metas_service.gerar_aportes_agendados(db, user.id)
+    mov = [x for x in metas_service.listar_movimentacoes(db, m.id, user.id) if x.status == "Pendente"][0]
+    metas_service.toggle_status_movimentacao(db, m.id, mov.id, user.id)
+    assert metas_service._get_meta(db, m.id, user.id).saldo_atual == 500.0
