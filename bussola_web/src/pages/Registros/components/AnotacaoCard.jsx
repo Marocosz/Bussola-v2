@@ -59,10 +59,14 @@ export const AnotacaoCard = React.memo(function AnotacaoCard({ anotacao, onUpdat
     
     return (
         <div
-            className={`anotacao-card ${anotacao.fixado ? 'fixado' : ''} ${isDeleting ? 'card-deleting' : ''}`}
+            className={`anotacao-card selo-card ${anotacao.fixado ? 'fixado' : ''} ${isDeleting ? 'card-deleting' : ''}`}
             onClick={() => onView(anotacao)}
-            style={{ borderLeftColor: grupoCor }}
+            style={{ '--card-accent': grupoCor }}
         >
+            <span className="selo-badge" style={{ '--selo-cor': grupoCor }}>
+                <i className="fa-solid fa-note-sticky"></i>
+            </span>
+
             {/* Header: Título, Data e Ações (Edit/Delete) */}
             <div className="anotacao-header">
                 <div className="anotacao-title-group">

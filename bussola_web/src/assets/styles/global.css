@@ -728,3 +728,46 @@ textarea:focus:invalid {
 .ph-kpi.despesa  { color: #ef4444; border-color: rgba(239, 68, 68, 0.25); }
 .ph-kpi.positivo { color: #10b981; border-color: rgba(16, 185, 129, 0.25); }
 .ph-kpi.negativo { color: #ef4444; border-color: rgba(239, 68, 68, 0.25); }
+
+/* ========================================================= */
+/* SELO FLUTUANTE — marcador de cor unificado dos cards       */
+/* Um "quadradinho" arredondado que sobressai do topo do card */
+/* carregando o ícone/identidade e a cor da entidade.         */
+/* Uso: adicionar `selo-card` no card e um <span class="selo- */
+/* badge" style="--selo-cor: <cor>"> com um <i> dentro.       */
+/* O card DEVE ter padding-top suficiente (~26px) e margem no */
+/* topo (~26px) pra acomodar o selo sem cortar/sobrepor.      */
+/* ========================================================= */
+.selo-card { position: relative; overflow: visible; }
+
+.selo-badge {
+    position: absolute;
+    top: -22px;
+    left: 16px;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-size: 1.15rem;
+    color: #fff;
+    background: var(--selo-cor, var(--cor-azul-primario));
+    /* anel na cor do card = ilusão de "recortado/flutuando" + sombra de elevação */
+    box-shadow:
+        0 0 0 4px var(--cor-card-principal),
+        0 8px 16px -6px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    z-index: 3;
+    transition: transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease;
+    pointer-events: none;
+}
+.selo-badge i { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25)); }
+
+/* leve "levantada" e giro do selo no hover do card */
+.selo-card:hover .selo-badge {
+    transform: translateY(-3px) rotate(-4deg);
+    box-shadow:
+        0 0 0 4px var(--cor-card-principal),
+        0 12px 22px -6px rgba(0, 0, 0, 0.55),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}

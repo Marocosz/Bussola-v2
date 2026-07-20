@@ -4,6 +4,8 @@ import { logger } from '../../utils/logger';
 import { TransactionCard } from './components/TransactionCard';
 import { CategoryCard } from './components/CategoryCard';
 import { FinancasModals } from './components/FinancasModals';
+import { MetasModal } from '../Metas/MetasModal';
+import { BaseModal } from '../../components/BaseModal';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmDialogContext';
 import { AiAssistant } from '../../components/AiAssistant';
@@ -18,18 +20,11 @@ export function Financas() {
     const { addToast } = useToast();
     const dialogConfirm = useConfirm();
 
-    // Accordions das categorias
-    const [openMonths, setOpenMonths] = useState(() => {
-        try {
-            const saved = localStorage.getItem('bussola_financas_accordions');
-            return saved ? JSON.parse(saved) : { 'resumo-despesas': true, 'resumo-receitas': true };
-        } catch (e) {
-            return { 'resumo-despesas': true, 'resumo-receitas': true };
-        }
-    });
-
     const [activeModal, setActiveModal] = useState(null);
     const [editingData, setEditingData] = useState(null);
+    const [showMetas, setShowMetas] = useState(false);
+    const [showCategorias, setShowCategorias] = useState(false);
+    const [catView, setCatView] = useState('despesa');
     const [showDropdown, setShowDropdown] = useState(false);
 
     const [orderTransacoes, setOrderTransacoes] = useState(() => {
@@ -49,10 +44,6 @@ export function Financas() {
     const [currentPage, setCurrentPage] = useState(1);
 
     const dropdownRef = useRef(null);
-
-    useEffect(() => {
-        localStorage.setItem('bussola_financas_accordions', JSON.stringify(openMonths));
-    }, [openMonths]);
 
     useEffect(() => {
         localStorage.setItem('bussola_financas_order', orderTransacoes);
@@ -93,10 +84,6 @@ export function Financas() {
 
     useEffect(() => { fetchData(); }, []);
 
-    const toggleAccordion = (key) => {
-        setOpenMonths(prev => ({ ...prev, [key]: !prev[key] }));
-    };
-
     const handleToggleExpand = (grupoId) => {
         setExpandedGroups(prev => {
             const next = new Set(prev);
@@ -111,7 +98,29 @@ export function Financas() {
         if (!data) return [];
         const pontuais = Object.values(data.transacoes_pontuais || {}).flat();
         const recorrentes = Object.values(data.transacoes_recorrentes || {}).flat();
-        let all = [...pontuais, ...recorrentes];
+
+        // Cofre: CADA movimentação vira uma linha própria (transferência neutra — não
+        // conta em receita/despesa). Guarda o grupo inteiro para o expand ver o histórico.
+        const cofreRows = (data.transacoes_cofre || []).flatMap(g =>
+            (g.movimentacoes || []).map(mv => ({
+                _isCofre: true,
+                id: `cofremov-${mv.id}`,
+                _movId: mv.id,
+                id_grupo_recorrencia: g.id_grupo,
+                tipo_recorrencia: 'cofre',
+                descricao: `${mv.tipo === 'aporte' ? 'Aporte' : 'Retirada'} · ${g.nome}`,
+                data: mv.data,
+                valor: mv.valor,
+                status: mv.status,
+                tipo_mov: mv.tipo,
+                categoria: { nome: g.nome, icone: g.icone, cor: g.cor },
+                meta_id: g.meta_id,
+                _cofreArquivada: !!g.arquivada,
+                _cofreMovs: (g.movimentacoes || []).length > 1 ? g.movimentacoes : undefined,
+            }))
+        );
+
+        let all = [...pontuais, ...recorrentes, ...cofreRows];
 
         if (filterTipo !== 'todos') {
             all = all.filter(t => (t.tipo_recorrencia || 'pontual') === filterTipo);
@@ -151,46 +160,29 @@ export function Financas() {
             }
         }
 
-        // Agrupa parceladas e recorrentes pelo id_grupo_recorrencia
-        const groups = {};
-        const others = [];
-        for (const t of all) {
-            if ((t.tipo_recorrencia === 'parcelada' || t.tipo_recorrencia === 'recorrente') && t.id_grupo_recorrencia) {
-                if (!groups[t.id_grupo_recorrencia]) groups[t.id_grupo_recorrencia] = [];
-                groups[t.id_grupo_recorrencia].push(t);
-            } else {
-                others.push(t);
+        // NÃO colapsa grupos: toda ocorrência é uma linha própria (30/07, 30/06, 30/05…).
+        // Cada linha de parcelada/recorrente carrega o histórico COMPLETO do grupo
+        // (todas as ocorrências) apenas para o expand — sem esconder nenhuma linha.
+        const groupHistory = {};
+        for (const t of recorrentes) {
+            if (t.id_grupo_recorrencia) {
+                if (!groupHistory[t.id_grupo_recorrencia]) groupHistory[t.id_grupo_recorrencia] = [];
+                groupHistory[t.id_grupo_recorrencia].push(t);
             }
         }
+        Object.values(groupHistory).forEach(list =>
+            list.sort((a, b) => new Date(b.data) - new Date(a.data))  // histórico: mais recente primeiro
+        );
 
-        const today = new Date();
-        const currentMonth = today.getMonth();
-        const currentYear = today.getFullYear();
-
-        const representatives = Object.values(groups).map(items => {
-            const tipoGrupo = items[0].tipo_recorrencia;
-            items.sort((a, b) => new Date(a.data) - new Date(b.data));
-
-            const currentMonthItem = items.find(p => {
-                const d = new Date(p.data);
-                return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-            });
-
-            let rep, expandItems;
-            if (tipoGrupo === 'parcelada') {
-                rep = currentMonthItem || items.find(p => p.status === 'Pendente') || items[items.length - 1];
-                expandItems = items;
-            } else {
-                // recorrente: só histórico (passado + atual), sem futuras
-                const history = items.filter(t => new Date(t.data) <= today);
-                rep = currentMonthItem || (history.length > 0 ? history[history.length - 1] : items[items.length - 1]);
-                expandItems = [...history].sort((a, b) => new Date(b.data) - new Date(a.data));
+        all = all.map(t => {
+            if ((t.tipo_recorrencia === 'parcelada' || t.tipo_recorrencia === 'recorrente') && t.id_grupo_recorrencia) {
+                const grupo = groupHistory[t.id_grupo_recorrencia];
+                if (grupo && grupo.length > 1) return { ...t, _allParcelas: grupo };
             }
-
-            return { ...rep, _allParcelas: expandItems };
+            return t;
         });
 
-        return [...others, ...representatives].sort((a, b) => {
+        return all.sort((a, b) => {
             const dateA = new Date(a.data);
             const dateB = new Date(b.data);
             return orderTransacoes === 'desc' ? dateB - dateA : dateA - dateB;
@@ -249,6 +241,10 @@ export function Financas() {
     const resumoPat = data?.resumo_patrimonio;
     const disponivel = resumoPat ? resumoPat.disponivel : saldo;
     const guardado = resumoPat ? resumoPat.guardado : 0;
+    const qtdMetas = resumoPat ? (resumoPat.qtd_metas || 0) : 0;
+    const qtdDespesa = (data?.categorias_despesa || []).length;
+    const qtdReceita = (data?.categorias_receita || []).length;
+    const qtdCategorias = qtdDespesa + qtdReceita;
 
     return (
         <div className="container main-container financas-scope">
@@ -259,9 +255,9 @@ export function Financas() {
                 <div className="page-header-kpis">
                     <span className="ph-kpi receita"><i className="fa-solid fa-arrow-trend-up"></i> {fmtCurrency(totalReceita)}</span>
                     <span className="ph-kpi despesa"><i className="fa-solid fa-arrow-trend-down"></i> {fmtCurrency(totalDespesa)}</span>
-                    <span className={`ph-kpi ${disponivel >= 0 ? 'positivo' : 'negativo'}`} title="Saldo disponível (fora das metas)"><i className="fa-solid fa-scale-balanced"></i> {fmtCurrency(disponivel)}</span>
+                    <span className={`ph-kpi ${disponivel >= 0 ? 'positivo' : 'negativo'}`} title="Disponível: dinheiro livre pra gastar (Total − Guardado). Guardar numa meta reduz isto, mas não é gasto."><i className="fa-solid fa-scale-balanced"></i> {fmtCurrency(disponivel)}</span>
                     {guardado > 0 && (
-                        <span className="ph-kpi" title="Guardado em metas" style={{ color: 'var(--cor-azul-primario, #4f46e5)' }}><i className="fa-solid fa-piggy-bank"></i> {fmtCurrency(guardado)}</span>
+                        <span className="ph-kpi" title="Guardado nas metas/cofrinhos. Continua sendo seu — só saiu do disponível (não é gasto). O patrimônio total não muda ao guardar." style={{ color: 'var(--cor-azul-primario, #4f46e5)' }}><i className="fa-solid fa-piggy-bank"></i> {fmtCurrency(guardado)}</span>
                     )}
                 </div>
             </div>
@@ -288,7 +284,7 @@ export function Financas() {
                                     <>
                                         <div className="filter-backdrop" onClick={() => setOpenFilterDropdown(null)}></div>
                                         <div className="filter-dropdown-menu">
-                                            {[['todos','Todos'],['pontual','Pontual'],['parcelada','Parcelada'],['recorrente','Recorrente']].map(([val, label]) => (
+                                            {[['todos','Todos'],['pontual','Pontual'],['parcelada','Parcelada'],['recorrente','Recorrente'],['cofre','Cofre']].map(([val, label]) => (
                                                 <div key={val} className={`filter-dropdown-item ${filterTipo === val ? 'selected' : ''}`} onClick={() => { setFilterTipo(val); setCurrentPage(1); setOpenFilterDropdown(null); }}>{label}</div>
                                             ))}
                                         </div>
@@ -419,11 +415,11 @@ export function Financas() {
                                 </div>
                                 {pagedTransactions.map(t => (
                                     <TransactionCard
-                                        key={t._allParcelas ? t.id_grupo_recorrencia : t.id}
+                                        key={t.id}
                                         transacao={t}
                                         onUpdate={fetchData}
                                         onEdit={handleEditTransaction}
-                                        isExpanded={t.id_grupo_recorrencia ? expandedGroups.has(t.id_grupo_recorrencia) : false}
+                                        isExpanded={expandedGroups.has(t.id)}
                                         onToggleExpand={handleToggleExpand}
                                     />
                                 ))}
@@ -477,68 +473,86 @@ export function Financas() {
 
                 {/* --- COLUNA 2: CATEGORIAS --- */}
                 <div className="agenda-column" id="category-column">
-                    <div className="column-header-flex">
-                        <h2>Categorias</h2>
-                        <button className="btn-primary" onClick={() => { setEditingData(null); setActiveModal('category'); }}>
-                            <i className="fa-solid fa-plus"></i> Categoria
+                    {/* Duas caixas sticky: Metas & Cofrinhos + Categorias */}
+                    <div className="metas-cat-row">
+                        <button className="metas-entry" onClick={() => setShowMetas(true)}>
+                            <i className="fa-solid fa-piggy-bank metas-entry-bg" aria-hidden="true"></i>
+                            <div className="metas-entry-head">
+                                <span className="metas-entry-icon"><i className="fa-solid fa-piggy-bank"></i></span>
+                                <span className="metas-entry-badge">{qtdMetas} {qtdMetas === 1 ? 'cofrinho' : 'cofrinhos'}</span>
+                            </div>
+                            <div className="metas-entry-body">
+                                <strong className="metas-entry-title">Metas &amp; Cofrinhos</strong>
+                                <span className="metas-entry-value">{fmtCurrency(guardado)}</span>
+                                <span className="metas-entry-sub">{guardado > 0 ? 'guardado' : 'comece a guardar'}</span>
+                            </div>
+                            <span className="metas-entry-cta">Abrir <i className="fa-solid fa-arrow-right"></i></span>
+                        </button>
+
+                        <button className="metas-entry cat-entry" onClick={() => setShowCategorias(true)}>
+                            <i className="fa-solid fa-tags metas-entry-bg" aria-hidden="true"></i>
+                            <div className="metas-entry-head">
+                                <span className="metas-entry-icon"><i className="fa-solid fa-tags"></i></span>
+                                <span className="metas-entry-badge">{qtdDespesa} gasto · {qtdReceita} receita</span>
+                            </div>
+                            <div className="metas-entry-body">
+                                <strong className="metas-entry-title">Categorias</strong>
+                                <span className="metas-entry-value">{qtdCategorias}</span>
+                                <span className="metas-entry-sub">{qtdCategorias === 1 ? 'categoria cadastrada' : 'categorias cadastradas'}</span>
+                            </div>
+                            <span className="metas-entry-cta">Gerenciar <i className="fa-solid fa-arrow-right"></i></span>
                         </button>
                     </div>
-
-                    {loading ? (
-                        <LoadingState />
-                    ) : (
-                        <>
-                            <h3
-                                className={`month-header ${openMonths['resumo-despesas'] ? 'active' : ''}`}
-                                onClick={() => toggleAccordion('resumo-despesas')}
-                            >
-                                <span>Despesas do Mês</span>
-                                <i className={`fa-solid fa-chevron-down ${openMonths['resumo-despesas'] ? 'rotate' : ''}`}></i>
-                            </h3>
-                            <div className={`accordion-wrapper ${openMonths['resumo-despesas'] ? 'open' : ''}`}>
-                                <div className="accordion-inner">
-                                    <div className="category-grid">
-                                        {(data.categorias_despesa || []).map(cat => (
-                                            <CategoryCard
-                                                key={cat.id}
-                                                categoria={cat}
-                                                onEdit={handleEditCategory}
-                                                onDelete={handleDeleteCategory}
-                                            />
-                                        ))}
-                                        {(!data.categorias_despesa || data.categorias_despesa.length === 0) && <p className="empty-list-msg">Sem despesas.</p>}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <h3
-                                className={`month-header ${openMonths['resumo-receitas'] ? 'active' : ''}`}
-                                onClick={() => toggleAccordion('resumo-receitas')}
-                                style={{ marginTop: '0.5rem' }}
-                            >
-                                <span>Receitas do Mês</span>
-                                <i className={`fa-solid fa-chevron-down ${openMonths['resumo-receitas'] ? 'rotate' : ''}`}></i>
-                            </h3>
-                            <div className={`accordion-wrapper ${openMonths['resumo-receitas'] ? 'open' : ''}`}>
-                                <div className="accordion-inner">
-                                    <div className="category-grid">
-                                        {(data.categorias_receita || []).map(cat => (
-                                            <CategoryCard
-                                                key={cat.id}
-                                                categoria={cat}
-                                                onEdit={handleEditCategory}
-                                                onDelete={handleDeleteCategory}
-                                            />
-                                        ))}
-                                        {(!data.categorias_receita || data.categorias_receita.length === 0) && <p className="empty-list-msg">Sem receitas.</p>}
-                                    </div>
-                                </div>
-                            </div>
-                        </>
-                    )}
                 </div>
             </div>
 
+            {showMetas && (
+                <MetasModal onClose={() => setShowMetas(false)} onUpdate={fetchData} />
+            )}
+
+            {showCategorias && (() => {
+                const catList = catView === 'receita' ? (data?.categorias_receita || []) : (data?.categorias_despesa || []);
+                return (
+                    <BaseModal onClose={() => setShowCategorias(false)} className="modal">
+                        <div className="modal-content categorias-modal financas-scope" onClick={e => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <h3><i className="fa-solid fa-tags" style={{ marginRight: 8, color: 'var(--cor-azul-primario)' }}></i> Categorias</h3>
+                                <span className="close-btn" onClick={() => setShowCategorias(false)}>&times;</span>
+                            </div>
+
+                            <div className="cat-toolbar">
+                                <div className="cat-toolbar-select">
+                                    <CustomSelect
+                                        name="catView"
+                                        value={catView}
+                                        options={[
+                                            { value: 'despesa', label: 'Despesas', icon: 'fa-solid fa-arrow-trend-down', color: '#ef4444' },
+                                            { value: 'receita', label: 'Receitas', icon: 'fa-solid fa-arrow-trend-up', color: '#22c55e' },
+                                        ]}
+                                        onChange={(e) => setCatView(e.target.value)}
+                                    />
+                                </div>
+                                <button className="btn-primary" onClick={() => { setEditingData(null); setActiveModal('category'); }}>
+                                    <i className="fa-solid fa-plus"></i> Nova Categoria
+                                </button>
+                            </div>
+
+                            <div className="modal-body categorias-modal-body">
+                                <div className="categoria-list">
+                                    {catList.map(cat => (
+                                        <CategoryCard key={cat.id} categoria={cat} onEdit={handleEditCategory} onDelete={handleDeleteCategory} />
+                                    ))}
+                                    {!catList.length && (
+                                        <p className="empty-list-msg">Nenhuma categoria de {catView === 'receita' ? 'receita' : 'despesa'}.</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </BaseModal>
+                );
+            })()}
+
+            {/* FinancasModals por último → o form de categoria empilha sobre o modal de Categorias */}
             <FinancasModals
                 activeModal={activeModal}
                 closeModal={handleCloseModal}

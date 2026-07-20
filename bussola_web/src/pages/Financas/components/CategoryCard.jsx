@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
 
+const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
+
+/**
+ * Linha (item) de categoria — usada na lista `.categoria-list` do modal de Categorias.
+ * Conceito "Selo flutuante": um selo (ícone + cor da categoria) transborda o topo-esquerdo
+ * do card. Corpo limpo: nome + chip de tipo, valor do mês (herói, colorido por tipo) e barra
+ * de limite/meta. Expansível para exibir estatísticas (histórico / média / qtd de transações).
+ */
 export function CategoryCard({ categoria, onEdit, onDelete }) {
     const [expanded, setExpanded] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -8,144 +16,91 @@ export function CategoryCard({ categoria, onEdit, onDelete }) {
         e.stopPropagation();
         if (!onDelete) return;
         setIsDeleting(true);
-        setTimeout(() => onDelete(categoria.id), 450);
+        setTimeout(() => onDelete(categoria.id), 400);
     };
 
-    // Helpers de formatação
-    const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
-    
-    // 1. Define o valor atual
-    const valorAtual = categoria.tipo === 'despesa' ? Number(categoria.total_gasto || 0) : Number(categoria.total_ganho || 0);
+    const cor = categoria.cor || '#8b90a0';
+    const isDespesa = categoria.tipo === 'despesa';
+    const valorAtual = isDespesa ? Number(categoria.total_gasto || 0) : Number(categoria.total_ganho || 0);
     const metaLimite = Number(categoria.meta_limite || 0);
-    
-    // 2. Verifica se tem meta definida
     const hasMeta = metaLimite > 0;
-    
-    // 3. Cálculo da porcentagem
-    const percentMeta = hasMeta ? Math.min((valorAtual / metaLimite) * 100, 100) : 0;
-    
-    const isOverLimit = hasMeta && categoria.tipo === 'despesa' && valorAtual > metaLimite;
-    const labelMeta = categoria.tipo === 'despesa' ? 'Limite' : 'Meta';
-
-    // Verifica se é categoria de sistema
+    const percentRaw = hasMeta ? (valorAtual / metaLimite) * 100 : 0;
+    const percentBar = Math.min(percentRaw, 100);
+    const isOverLimit = hasMeta && isDespesa && valorAtual > metaLimite;
+    const labelMeta = isDespesa ? 'Limite' : 'Meta';
     const isSystemCategory = categoria.nome && categoria.nome.toLowerCase().includes('indefinida');
 
     return (
-        <div className={`categoria-card ${expanded ? 'expanded' : ''} ${isDeleting ? 'card-deleting' : ''}`}>
-            
-            <div 
-                className="categoria-card-header" 
-                onClick={() => setExpanded(!expanded)}
-                style={{ cursor: 'pointer' }}
-            >
-                {/* 1. Ícone */}
-                <div className="categoria-icon-box" style={{ backgroundColor: categoria.cor + '20' }}>
-                    <i className={categoria.icone} style={{ color: categoria.cor }}></i>
+        <div className={`catcard selo-card ${isDeleting ? 'catcard-deleting' : ''} ${expanded ? 'catcard-open' : ''}`}>
+            <span className="selo-badge" style={{ '--selo-cor': cor }}>
+                <i className={categoria.icone || 'fa-solid fa-tag'}></i>
+            </span>
+
+            <div className="catcard-head">
+                <div className="catcard-id">
+                    <div className="catcard-name-line">
+                        <strong className="catcard-name" title={categoria.nome}>{categoria.nome}</strong>
+                        <span className={`catcard-chip catcard-chip-${categoria.tipo}`}>
+                            {isDespesa ? 'Despesa' : 'Receita'}
+                        </span>
+                    </div>
+                    <span className={`catcard-value ${categoria.tipo}`}>{fmt(valorAtual)}</span>
                 </div>
 
-                {/* 2. Informações (Centro) */}
-                <div className="categoria-info">
-                    <div className="categoria-main-row">
-                        <h4>{categoria.nome}</h4>
-                        
-                        {/* NOVA LÓGICA: 
-                           Se for categoria NORMAL, o valor aparece aqui (ao lado do nome).
-                           Se for de SISTEMA, o valor some daqui (vai pra direita).
-                        */}
-                        {!isSystemCategory && (
-                            <span className={`categoria-valor ${categoria.tipo}`}>
-                                {formatCurrency(valorAtual)}
-                            </span>
-                        )}
-                    </div>
-
-                    <div className="categoria-meta-line">
-                        {hasMeta ? (
-                            <span className="meta-text">
-                                {labelMeta}: <strong>{formatCurrency(metaLimite)}</strong>
-                            </span>
-                        ) : (
-                            <span className="meta-text-empty">Sem {labelMeta.toLowerCase()} definido</span>
-                        )}
-                    </div>
-
-                    {hasMeta && (
-                        <div className="progress-bar-container">
-                            <div 
-                                className="progress-bar-fill" 
-                                style={{ 
-                                    width: `${percentMeta}%`,
-                                    backgroundColor: isOverLimit ? 'var(--cor-vermelho-delete)' : categoria.cor 
-                                }}
-                            ></div>
-                        </div>
+                <div className="catcard-actions">
+                    {!isSystemCategory && (
+                        <>
+                            <button className="btn-action-icon btn-edit-transacao" title="Editar categoria"
+                                onClick={() => onEdit && onEdit(categoria)}>
+                                <i className="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button className="btn-action-icon btn-delete-transacao" title="Excluir categoria"
+                                onClick={handleDelete}>
+                                <i className="fa-solid fa-trash-can"></i>
+                            </button>
+                        </>
                     )}
-                </div>
-
-                {/* 3. Coluna Direita */}
-                <div className="header-right-column">
-                    
-                    {/* Topo da Direita: Botões OU Valor (se for sistema) */}
-                    <div className="header-actions-top" onClick={(e) => e.stopPropagation()}>
-                        
-                        {/* Se NÃO for sistema: Mostra os botões de editar/excluir */}
-                        {!isSystemCategory ? (
-                            <>
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); onEdit && onEdit(categoria); }} 
-                                    className="btn-action-icon btn-edit-transacao"
-                                    title="Editar Categoria"
-                                >
-                                    <i className="fa-solid fa-pen-to-square"></i>
-                                </button>
-                                <button
-                                    onClick={handleDelete}
-                                    className="btn-action-icon btn-delete-transacao"
-                                    title="Excluir Categoria"
-                                >
-                                    <i className="fa-solid fa-trash-can"></i>
-                                </button>
-                            </>
-                        ) : (
-                            /* NOVA LÓGICA:
-                               Se FOR sistema: O valor aparece AQUI, ocupando o lugar dos botões
-                               e ficando alinhado totalmente à direita.
-                            */
-                            <span className={`categoria-valor ${categoria.tipo}`} style={{ fontSize: '1rem' }}>
-                                {formatCurrency(valorAtual)}
-                            </span>
-                        )}
-                    </div>
-
-                    {/* Seta (Fundo) */}
-                    <button 
-                        className={`btn-expand-card ${expanded ? 'rotate' : ''}`}
-                        onClick={(e) => {
-                            e.stopPropagation(); 
-                            setExpanded(!expanded);
-                        }}
-                    >
+                    <button className={`catcard-expand ${expanded ? 'open' : ''}`} title="Detalhes"
+                        onClick={() => setExpanded(v => !v)}>
                         <i className="fa-solid fa-chevron-down"></i>
                     </button>
                 </div>
             </div>
 
-            {/* Detalhes... (Mantido igual) */}
-            <div className={`categoria-details-wrapper ${expanded ? 'open' : ''}`}>
-                <div className="categoria-details-inner">
-                    <div className="stats-separator"></div>
-                    <div className="categoria-stats-grid">
-                        <div className="stat-item">
-                            <span className="stat-label">Histórico Total</span>
-                            <span className="stat-value">{formatCurrency(categoria.total_historico)}</span>
+            {hasMeta ? (
+                <div className="catcard-progress">
+                    <div className="catcard-progress-top">
+                        <span className="catcard-progress-label">
+                            {labelMeta}: <strong>{fmt(metaLimite)}</strong>
+                        </span>
+                        <span className={`catcard-progress-pct ${isOverLimit ? 'over' : ''}`}>
+                            {Math.round(percentRaw)}%
+                        </span>
+                    </div>
+                    <div className="catcard-bar">
+                        <span style={{ width: `${percentBar}%`, backgroundColor: isOverLimit ? 'var(--cor-vermelho-delete)' : cor }}></span>
+                    </div>
+                </div>
+            ) : (
+                <span className="catcard-nometa">
+                    <i className="fa-regular fa-circle-dot"></i> sem {labelMeta.toLowerCase()} definido
+                </span>
+            )}
+
+            <div className={`catcard-details ${expanded ? 'open' : ''}`}>
+                <div className="catcard-details-inner">
+                    <div className="catcard-stats">
+                        <div className="catcard-stat">
+                            <span className="catcard-stat-label">Histórico</span>
+                            <strong>{fmt(categoria.total_historico)}</strong>
                         </div>
-                        <div className="stat-item">
-                            <span className="stat-label">Média</span>
-                            <span className="stat-value">{formatCurrency(categoria.media_valor)}</span>
+                        <div className="catcard-stat">
+                            <span className="catcard-stat-label">Média</span>
+                            <strong>{fmt(categoria.media_valor)}</strong>
                         </div>
-                        <div className="stat-item">
-                            <span className="stat-label">Qtd. Trans.</span>
-                            <span className="stat-value">{categoria.qtd_transacoes || 0}</span>
+                        <div className="catcard-stat">
+                            <span className="catcard-stat-label">Transações</span>
+                            <strong>{categoria.qtd_transacoes || 0}</strong>
                         </div>
                     </div>
                 </div>

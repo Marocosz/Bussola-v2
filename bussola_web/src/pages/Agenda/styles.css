@@ -304,7 +304,11 @@
 .compromissos-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    /* row-gap folgado (>22px) evita colisão do selo com o card acima;
+       padding-top dá espaço p/ o selo da 1ª linha (o .accordion-inner
+       usa overflow:hidden e cortaria o selo saliente). */
+    gap: 2rem 1rem;
+    padding-top: 26px;
 }
 
 .compromissos-grid>.compromisso-card-modern:last-child:nth-child(odd) {
@@ -316,14 +320,15 @@
 /* ============================================= */
 
 .compromisso-card-modern {
+    --card-accent: var(--cor-azul-primario);
     background-color: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
     border-radius: 16px;
-    padding: 1.2rem;
+    padding: 1.9rem 1.2rem 1.2rem;
     display: flex;
     flex-direction: column;
     gap: 0.8rem;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
     position: relative;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     height: 100%;
@@ -332,24 +337,32 @@
 
 .compromisso-card-modern:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    border-color: color-mix(in srgb, var(--card-accent) 45%, var(--cor-borda));
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1),
+        0 0 0 3px color-mix(in srgb, var(--card-accent) 12%, transparent);
 }
 
+/* Selo flutuante herda a cor de status do card */
+.compromisso-card-modern .selo-badge {
+    --selo-cor: var(--card-accent);
+}
+
+/* Identidade de cor por status (usada no selo flutuante e no glow do hover) */
 .compromisso-card-modern.pendente {
-    border-left: 5px solid var(--cor-azul-primario);
+    --card-accent: var(--cor-azul-primario);
 }
 
 .compromisso-card-modern.realizado {
-    border-left: 5px solid var(--cor-verde-sucesso);
+    --card-accent: var(--cor-verde-sucesso);
     opacity: 0.8;
 }
 
 .compromisso-card-modern.perdido {
-    border-left: 5px solid var(--cor-vermelho-delete);
+    --card-accent: var(--cor-vermelho-delete);
 }
 
 .compromisso-card-modern.cancelado {
-    border-left: 5px solid #6b7280;
+    --card-accent: #6b7280;
     opacity: 0.8;
 }
 
@@ -493,41 +506,37 @@
 /* --- 4. Footer --- */
 .card-footer-row {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     margin-top: auto;
-    padding-top: 2rem;
+    padding-top: 1rem;
     position: relative;
 }
 
-.status-badge-modern {
-    position: static;
-    font-size: 0.85rem;
-    padding: 6px 14px;
-    border-radius: 8px;
+/* Tag de estado — "sai de trás" do selo formando um único lockup:
+   canto esquerdo reto (fica escondido atrás do selo) e só o direito
+   arredondado. Fica atrás do selo (z-index menor) e herda a cor do
+   status via --card-accent (mesmo do selo). */
+.selo-status-tag {
+    position: absolute;
+    top: -13px;
+    left: 50px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    /* padding-left maior: o texto começa depois da parte que fica sob o selo */
+    padding: 0 14px 0 22px;
+    border-radius: 0 999px 999px 0;
+    font-size: 0.72rem;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-}
-
-.status-badge-modern.pendente {
-    background: rgba(255, 193, 7, 0.15);
-    color: #f59e0b;
-}
-
-.status-badge-modern.realizado {
-    background: rgba(40, 167, 69, 0.15);
-    color: #28a745;
-}
-
-.status-badge-modern.perdido {
-    background: rgba(231, 76, 60, 0.15);
-    color: #e74c3c;
-}
-
-.status-badge-modern.cancelado {
-    background: rgba(107, 114, 128, 0.15);
-    color: #9ca3af;
+    color: var(--card-accent);
+    background: color-mix(in srgb, var(--card-accent) 16%, var(--cor-card-principal));
+    box-shadow: 0 4px 10px -5px rgba(0, 0, 0, 0.4);
+    z-index: 2;
+    pointer-events: none;
+    white-space: nowrap;
 }
 
 .btn-concluir-action {

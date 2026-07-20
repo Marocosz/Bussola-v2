@@ -16,7 +16,7 @@ export function TransactionCard({ transacao, onUpdate, onEdit, isExpanded, onTog
         try {
             await toggleStatusTransacao(transacao.id);
             onUpdate();
-        } catch (error) {
+        } catch {
             addToast({ type: 'error', title: 'Erro', description: 'Não foi possível alterar o status.' });
         }
     };
@@ -62,10 +62,77 @@ export function TransactionCard({ transacao, onUpdate, onEdit, isExpanded, onTog
     const rawTotal = transacao.valor_total_parcelamento || (transacao.valor * transacao.total_parcelas);
     const valorTotalStr = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(rawTotal);
 
-    const today = new Date();
+    // ── Linha de COFRE (transferência neutra — só exibição) ──────────────────
+    if (transacao._isCofre) {
+        const movs = transacao._cofreMovs || [];
+        const cofreExpandable = movs.length > 1;
+        const isAporte = transacao.tipo_mov === 'aporte';
+        const isArquivada = transacao._cofreArquivada === true;
+        const fmtC = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
+        return (
+            <div className={`transacao-row-wrapper ${isExpanded && cofreExpandable ? 'row-wrapper-expanded' : ''}`}>
+                <div className={`transacao-row transacao-row-cofre ${isArquivada ? 'row-encerrado' : ''}`}>
+                    <div className="row-cells">
+                        <div className="row-cat-icon">
+                            <i className={transacao.categoria?.icone || 'fa-solid fa-piggy-bank'}
+                               style={{ color: isArquivada ? '#9ca3af' : (transacao.categoria?.cor || 'var(--cor-azul-primario)') }} />
+                        </div>
+                        <div className="row-main">
+                            <span className={`row-descricao ${isArquivada ? 'row-descricao-encerrada' : ''}`}>{transacao.descricao}</span>
+                        </div>
+                        <span className="row-categoria-nome">{transacao.categoria?.nome || '—'}</span>
+                        <span className="row-data">{dateStr}</span>
+                        <div className="row-tags">
+                            <span className="tag tag-cofre"><i className="fa-solid fa-piggy-bank"></i> Cofre</span>
+                            {isArquivada && (
+                                <span className="tag tag-arquivada"><i className="fa-solid fa-box-archive"></i> Arquivado</span>
+                            )}
+                            {transacao.status === 'Pendente' && (
+                                <span className="tag tag-status tag-pendente">Pendente</span>
+                            )}
+                        </div>
+                        <div className="row-valor-cell">
+                            <span className={`row-valor row-valor-cofre ${isArquivada ? 'row-valor-encerrado' : ''}`}>{isAporte ? '+' : '−'} {valorStr}</span>
+                        </div>
+                    </div>
+                    <div className="row-actions">
+                        <div className="row-actions-inner">
+                            {cofreExpandable && (
+                                <button
+                                    onClick={() => onToggleExpand && onToggleExpand(transacao.id)}
+                                    className="btn-action-icon btn-expand-parcelas"
+                                >
+                                    <i className={`fa-solid fa-chevron-${isExpanded ? 'up' : 'down'}`}></i>
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {isExpanded && cofreExpandable && (
+                    <div className="parcela-expanded-list">
+                        {movs.map(mv => {
+                            const d = new Date(mv.data);
+                            const isSelf = mv.id === transacao._movId;
+                            return (
+                                <div key={mv.id} className={`parcela-sub-row ${isSelf ? 'parcela-sub-current' : ''}`}>
+                                    <span className="parcela-sub-badge">{mv.tipo === 'aporte' ? 'Aporte' : 'Retirada'}</span>
+                                    <span className="parcela-sub-data">{d.toLocaleDateString('pt-BR')}</span>
+                                    <span className={`tag tag-status tag-${mv.status.toLowerCase()}`}>{mv.status}</span>
+                                    <span className="parcela-sub-valor row-valor-cofre">
+                                        {mv.tipo === 'aporte' ? '+' : '−'} {fmtC(mv.valor)}
+                                    </span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+        );
+    }
 
     return (
-        <div className={`transacao-row-wrapper ${isDeleting ? 'row-wrapper-deleting' : ''}`}>
+        <div className={`transacao-row-wrapper ${isDeleting ? 'row-wrapper-deleting' : ''} ${isExpanded && isExpandableGroup ? 'row-wrapper-expanded' : ''}`}>
             <div className={`transacao-row ${transacao.status.toLowerCase()} ${isEncerrada ? 'row-encerrado' : ''}`}>
 
                 {/* Células principais */}
@@ -94,22 +161,24 @@ export function TransactionCard({ transacao, onUpdate, onEdit, isExpanded, onTog
 
                     {/* Col 5: Tags */}
                     <div className="row-tags">
+                        {/* Tag de TIPO — permanece mesmo quando encerrada (igual Cofre+Arquivado) */}
+                        {tipo === 'pontual' ? (
+                            <span className="tag tag-tipo tag-pontual">Pontual</span>
+                        ) : (
+                            <span className={`tag tag-tipo tag-${tipo}`}>
+                                {tipo === 'parcelada' ? 'Parcelada' : 'Recorrente'}
+                            </span>
+                        )}
+                        {/* Tag de ESTADO — encerrada, ou status normal quando é série ativa */}
                         {isEncerrada ? (
                             <span className="tag tag-encerrada">
                                 <i className="fa-solid fa-ban"></i> Encerrada
                             </span>
-                        ) : tipo === 'pontual' ? (
-                            <span className="tag tag-tipo tag-pontual">Pontual</span>
-                        ) : (
-                            <>
-                                <span className={`tag tag-tipo tag-${tipo}`}>
-                                    {tipo === 'parcelada' ? 'Parcelada' : 'Recorrente'}
-                                </span>
-                                <span className={`tag tag-status tag-${transacao.status.toLowerCase()}`}>
-                                    {transacao.status}
-                                </span>
-                            </>
-                        )}
+                        ) : tipo !== 'pontual' ? (
+                            <span className={`tag tag-status tag-${transacao.status.toLowerCase()}`}>
+                                {transacao.status}
+                            </span>
+                        ) : null}
                     </div>
 
                     {/* Col 6: Valor */}
@@ -144,7 +213,7 @@ export function TransactionCard({ transacao, onUpdate, onEdit, isExpanded, onTog
                     </button>
                     {isExpandableGroup && (
                         <button
-                            onClick={() => onToggleExpand && onToggleExpand(transacao.id_grupo_recorrencia)}
+                            onClick={() => onToggleExpand && onToggleExpand(transacao.id)}
                             className="btn-action-icon btn-expand-parcelas"
                         >
                             <i className={`fa-solid fa-chevron-${isExpanded ? 'up' : 'down'}`}></i>
@@ -159,10 +228,10 @@ export function TransactionCard({ transacao, onUpdate, onEdit, isExpanded, onTog
                 <div className="parcela-expanded-list">
                     {transacao._allParcelas.map(p => {
                         const d = new Date(p.data);
-                        const isCurrentMonth = d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+                        const isSelf = p.id === transacao.id;  // destaca a linha que foi clicada
                         const pValorStr = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.valor);
                         return (
-                            <div key={p.id} className={`parcela-sub-row ${isCurrentMonth ? 'parcela-sub-current' : ''}`}>
+                            <div key={p.id} className={`parcela-sub-row ${isSelf ? 'parcela-sub-current' : ''}`}>
                                 {tipo === 'parcelada' ? (
                                     <span className="parcela-sub-badge">{p.parcela_atual}/{p.total_parcelas}</span>
                                 ) : (

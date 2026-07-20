@@ -85,7 +85,7 @@ export function ViewAnotacaoModal({ active, closeModal, nota, onEdit }) {
             <div className="modal-content view-modal" onClick={e => e.stopPropagation()}>
 
                 {/* ── Header ──────────────────────────────────────── */}
-                <div className="view-modal-header" style={{ borderLeft: `6px solid ${grupoCor}` }}>
+                <div className="view-modal-header">
                     <div className="view-header-top-row">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             {grupoNome && (
@@ -107,7 +107,10 @@ export function ViewAnotacaoModal({ active, closeModal, nota, onEdit }) {
                         <span className="close-btn" onClick={closeModal} title="Fechar">&times;</span>
                     </div>
                     <div className="view-header-main">
-                        <h2 className="view-title">{nota.titulo}</h2>
+                        <div className="view-title-row">
+                            <span className="view-cor-marker" style={{ backgroundColor: grupoCor }} />
+                            <h2 className="view-title">{nota.titulo}</h2>
+                        </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                             <span className="view-date">
                                 <i className="fa-regular fa-clock"></i> {dataFormatada}

@@ -6,7 +6,7 @@ import { Navbar } from '../components/Navbar';
 import { Login } from '../pages/Login';
 import { Home } from '../pages/Home';
 import { Financas } from '../pages/Financas';
-import { Metas } from '../pages/Metas';
+// Metas é acessada por um modal dentro de Provisões (sem rota/navbar próprios).
 import { Agenda } from '../pages/Agenda';
 import { Registros } from '../pages/Registros';
 import { Panorama } from '../pages/Panorama';
@@ -59,8 +59,6 @@ export function AppRoutes() {
             <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
             <Route path="/panorama" element={<PrivateRoute><Panorama /></PrivateRoute>} />
             <Route path="/financas" element={<PrivateRoute><Financas /></PrivateRoute>} />
-            <Route path="/metas" element={<PrivateRoute><Metas /></PrivateRoute>} />
-            <Route path="/metas/:id" element={<PrivateRoute><Metas /></PrivateRoute>} />
             <Route path="/agenda" element={<PrivateRoute><Agenda /></PrivateRoute>} />
             <Route path="/registros" element={<PrivateRoute><Registros /></PrivateRoute>} />
             <Route path="/ritmo" element={<PrivateRoute><Ritmo /></PrivateRoute>} />

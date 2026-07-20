@@ -45,15 +45,9 @@
     border-right: none;
 }
 
+/* Linha divisória pontilhada removida a pedido. */
 .financas-scope .agenda-column:first-child::after {
-    content: "";
-    position: absolute;
-    top: 3.6rem;
-    bottom: 0;
-    right: -1px;
-    width: 1px;
-    border-right: 1px dashed var(--cor-borda);
-    z-index: 0;
+    content: none;
 }
 
 /* Mensagem de lista vazia */
@@ -88,8 +82,9 @@
 /* 1. Coluna Transações (Esquerda) */
 .financas-scope .agenda-column:first-child .column-header-flex {
     margin-left: 0;
-    margin-right: -1.2rem;
-    border-radius: 12px 0 0 12px;
+    margin-right: 0;
+    border-radius: 12px;
+    border-right: none;
     z-index: 2;
 }
 
@@ -369,6 +364,387 @@
     transform: rotate(180deg);
 }
 
+/* --- Linha sticky com as duas caixas (Metas & Cofrinhos + Categorias) --- */
+.financas-scope .metas-cat-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.9rem;
+    align-self: flex-start;
+    width: 100%;
+    /* margin-left maior afasta as caixas da linha pontilhada divisória das colunas */
+    margin: 0.25rem 0.35rem 1.25rem 0.85rem;
+    /* Sticky: as caixas continuam na tela ao rolar a lista de transações */
+    position: sticky;
+    top: 0.75rem;
+    z-index: 3;
+}
+
+/* --- Card de entrada (Metas & Cofrinhos / Categorias) --- */
+.financas-scope .metas-entry {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.85rem;
+    width: auto;
+    min-height: 150px;
+    text-align: left;
+    padding: 1.1rem 1.25rem;
+    margin: 0;
+    border-radius: 16px;
+    border: 1px solid var(--cor-borda);
+    background:
+        radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--cor-azul-primario) 16%, transparent), transparent 60%),
+        var(--cor-card-secundario);
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+.financas-scope .metas-entry:hover {
+    border-color: var(--cor-azul-primario);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px color-mix(in srgb, var(--cor-azul-primario) 18%, transparent);
+}
+
+/* Flourish decorativo (ícone grande translúcido ao fundo) */
+.financas-scope .metas-entry-bg {
+    position: absolute;
+    right: -10px;
+    bottom: -18px;
+    font-size: 7rem;
+    color: var(--cor-azul-primario);
+    opacity: 0.07;
+    transform: rotate(-12deg);
+    pointer-events: none;
+}
+
+.financas-scope .metas-entry-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    z-index: 1;
+}
+.financas-scope .metas-entry-icon {
+    width: 54px;
+    height: 54px;
+    flex-shrink: 0;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.7rem;
+    color: #fff;
+    background: linear-gradient(135deg, var(--cor-azul-primario), var(--cor-acento));
+    box-shadow: 0 6px 16px color-mix(in srgb, var(--cor-azul-primario) 35%, transparent);
+}
+.financas-scope .metas-entry-badge {
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 0.24rem 0.5rem;
+    border-radius: 999px;
+    color: var(--cor-texto-secundario);
+    background: var(--cor-fundo-hover);
+    border: 1px solid var(--cor-borda);
+    white-space: nowrap;
+}
+
+.financas-scope .metas-entry-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    position: relative;
+    z-index: 1;
+}
+.financas-scope .metas-entry-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--cor-texto-principal);
+}
+.financas-scope .metas-entry-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--cor-azul-primario);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.financas-scope .metas-entry-sub {
+    font-size: 0.78rem;
+    color: var(--cor-texto-secundario);
+}
+
+.financas-scope .metas-entry-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--cor-azul-primario);
+    position: relative;
+    z-index: 1;
+}
+.financas-scope .metas-entry-cta i { transition: transform 0.2s; }
+.financas-scope .metas-entry:hover .metas-entry-cta i { transform: translateX(4px); }
+
+/* Variante da caixa de Categorias (accent roxo p/ diferenciar do cofrinho azul) */
+.financas-scope .cat-entry {
+    background:
+        radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--cor-acento) 16%, transparent), transparent 60%),
+        var(--cor-card-secundario);
+}
+.financas-scope .cat-entry:hover {
+    border-color: var(--cor-acento);
+    box-shadow: 0 10px 24px color-mix(in srgb, var(--cor-acento) 18%, transparent);
+}
+.financas-scope .cat-entry .metas-entry-icon {
+    background: linear-gradient(135deg, var(--cor-acento), var(--cor-azul-primario));
+    box-shadow: 0 6px 16px color-mix(in srgb, var(--cor-acento) 35%, transparent);
+}
+.financas-scope .cat-entry .metas-entry-bg,
+.financas-scope .cat-entry .metas-entry-value,
+.financas-scope .cat-entry .metas-entry-cta {
+    color: var(--cor-acento);
+}
+
+/* Responsivo: em telas estreitas, empilha as duas caixas */
+@media (max-width: 600px) {
+    .financas-scope .metas-cat-row { grid-template-columns: 1fr; }
+}
+
+/* --- Modal de Categorias --- */
+.financas-scope .categorias-modal { max-width: 640px !important; }
+.financas-scope .cat-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--cor-borda);
+    flex-shrink: 0;
+}
+.financas-scope .cat-toolbar-select { width: 210px; max-width: 55%; }
+.financas-scope .categorias-modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto !important;
+    padding: 1.25rem 1.5rem;
+}
+
+/* Lista de categorias — conceito "Selo flutuante".
+   padding-top afasta o topo do 1º selo da borda de scroll do body (senão o selo é cortado). */
+.financas-scope .categoria-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    padding-top: 28px;
+}
+
+/* Item da categoria — card com selo transbordando o topo-esquerdo.
+   margin-top + padding-top acomodam o selo (44px @ top:-22px) sem colidir/sobrepor o item anterior. */
+.financas-scope .catcard {
+    position: relative;
+    background: var(--cor-card-secundario);
+    border: 1px solid var(--cor-borda);
+    border-radius: 16px;
+    margin-top: 28px;
+    padding: 30px 1rem 0.9rem 1rem;
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease,
+                opacity 0.35s ease, transform 0.35s ease;
+}
+.financas-scope .catcard:hover {
+    border-color: color-mix(in srgb, var(--cor-azul-primario) 45%, var(--cor-borda));
+    background: var(--cor-fundo-hover);
+}
+.financas-scope .catcard.catcard-open {
+    border-color: color-mix(in srgb, var(--cor-azul-primario) 45%, var(--cor-borda));
+}
+.financas-scope .catcard.catcard-deleting {
+    opacity: 0;
+    transform: translateX(28px);
+}
+
+/* Cabeçalho: info (nome/chip + valor herói) · ações */
+.financas-scope .catcard-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+/* Zona esquerda (nome + valor herói) */
+.financas-scope .catcard-id {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+.financas-scope .catcard-name-line {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+.financas-scope .catcard-name {
+    font-size: 1rem;
+    font-weight: 650;
+    color: var(--cor-texto-principal);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+.financas-scope .catcard-chip {
+    flex-shrink: 0;
+    font-size: 0.64rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+}
+.financas-scope .catcard-chip-despesa {
+    color: var(--cor-vermelho-delete);
+    background: color-mix(in srgb, var(--cor-vermelho-delete) 12%, transparent);
+    border-color: color-mix(in srgb, var(--cor-vermelho-delete) 28%, transparent);
+}
+.financas-scope .catcard-chip-receita {
+    color: var(--cor-verde-sucesso);
+    background: color-mix(in srgb, var(--cor-verde-sucesso) 12%, transparent);
+    border-color: color-mix(in srgb, var(--cor-verde-sucesso) 28%, transparent);
+}
+
+/* Valor do mês — número herói, colorido por tipo */
+.financas-scope .catcard-value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1.15;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+.financas-scope .catcard-value.despesa { color: var(--cor-vermelho-delete); }
+.financas-scope .catcard-value.receita { color: var(--cor-verde-sucesso); }
+
+/* Ações (editar / excluir / expandir) — no topo-direito do corpo */
+.financas-scope .catcard-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+.financas-scope .catcard-expand {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--cor-texto-secundario);
+    padding: 4px 6px;
+    font-size: 0.8rem;
+    line-height: 1;
+    border-radius: 6px;
+    transition: transform 0.3s ease, color 0.2s ease, background 0.2s ease;
+}
+.financas-scope .catcard-expand:hover {
+    color: var(--cor-texto-principal);
+    background: color-mix(in srgb, var(--cor-texto-secundario) 14%, transparent);
+}
+.financas-scope .catcard-expand.open { transform: rotate(180deg); }
+
+/* Progresso do limite/meta — barra fina rotulada */
+.financas-scope .catcard-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin-top: 0.7rem;
+}
+.financas-scope .catcard-progress-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+.financas-scope .catcard-progress-label {
+    font-size: 0.72rem;
+    color: var(--cor-texto-secundario);
+}
+.financas-scope .catcard-progress-label strong {
+    color: var(--cor-texto-principal);
+    font-weight: 600;
+}
+.financas-scope .catcard-progress-pct {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--cor-texto-secundario);
+    font-variant-numeric: tabular-nums;
+}
+.financas-scope .catcard-progress-pct.over {
+    color: var(--cor-vermelho-delete);
+}
+.financas-scope .catcard-bar {
+    height: 6px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--cor-texto-secundario) 20%, transparent);
+    width: 100%;
+}
+.financas-scope .catcard-bar span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.financas-scope .catcard-nometa {
+    font-size: 0.72rem;
+    color: var(--cor-texto-secundario);
+    opacity: 0.85;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 0.7rem;
+}
+.financas-scope .catcard-nometa i { font-size: 0.62rem; opacity: 0.7; }
+
+/* Detalhes expansíveis (histórico / média / qtd) */
+.financas-scope .catcard-details {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.32s ease;
+}
+.financas-scope .catcard-details.open { grid-template-rows: 1fr; }
+.financas-scope .catcard-details-inner { overflow: hidden; }
+.financas-scope .catcard-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--cor-borda);
+}
+.financas-scope .catcard-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 3px;
+    padding: 0.5rem 0.4rem;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--cor-texto-secundario) 7%, transparent);
+}
+.financas-scope .catcard-stat-label {
+    font-size: 0.64rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--cor-texto-secundario);
+}
+.financas-scope .catcard-stat strong {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--cor-texto-principal);
+    font-variant-numeric: tabular-nums;
+}
+
 .financas-scope .month-content {
     padding-top: 0.5rem;
     padding-bottom: 0;
@@ -438,6 +814,40 @@
 @keyframes rowFadeOut {
     to { opacity: 0; transform: translateX(-10px); }
 }
+
+/* --- Grupo EXPANDIDO (recorrente/parcelada) destacado como bloco --- */
+.financas-scope .transacao-row-wrapper.row-wrapper-expanded {
+    position: relative;
+    margin: 6px 0;
+    border-radius: 10px;
+    border: 1px solid var(--cor-borda);
+    background: var(--cor-fundo-hover);
+    overflow: hidden;
+}
+/* Barra de acento sutil à esquerda */
+.financas-scope .transacao-row-wrapper.row-wrapper-expanded::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0; width: 2px; z-index: 2;
+    background: color-mix(in srgb, var(--cor-azul-primario) 50%, transparent);
+}
+/* Some com o separador padrão ao redor do bloco expandido */
+.financas-scope .row-wrapper-expanded + .transacao-row-wrapper { border-top: none; }
+/* Linha-mãe e lista herdam o fundo do bloco */
+.financas-scope .row-wrapper-expanded .transacao-row { background: transparent; }
+.financas-scope .row-wrapper-expanded .transacao-row:hover {
+    background: rgba(127, 127, 127, 0.06);
+}
+.financas-scope .row-wrapper-expanded .parcela-expanded-list {
+    background: transparent;
+}
+
+/* --- Linhas de Cofre na lista (transferência neutra) --- */
+.financas-scope .tag-cofre {
+    background: color-mix(in srgb, var(--cor-azul-primario) 16%, transparent);
+    color: var(--cor-azul-primario);
+}
+.financas-scope .row-valor-cofre { color: var(--cor-azul-primario) !important; }
 
 /* Linha da tabela */
 .financas-scope .transacao-row {
@@ -575,6 +985,13 @@
     background: rgba(239, 68, 68, 0.1);
     color: #f87171;
     border-color: rgba(239, 68, 68, 0.25);
+}
+
+/* Tag de cofre arquivado (soft-delete) — neutra, sem conotação de erro */
+.financas-scope .tag-arquivada {
+    background: rgba(120, 120, 120, 0.12);
+    color: var(--cor-texto-secundario);
+    border-color: rgba(120, 120, 120, 0.28);
 }
 
 /* Coluna valor */

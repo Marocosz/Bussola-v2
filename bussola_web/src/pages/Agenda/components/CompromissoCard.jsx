@@ -45,9 +45,19 @@ export function CompromissoCard({ comp, onUpdate, onEdit }) {
     if(comp.status === 'Perdido') statusClass = 'perdido';
     if(comp.status === 'Cancelado') statusClass = 'cancelado';
 
+    // Ícone do selo flutuante por status
+    let statusIcon = 'fa-solid fa-clock';
+    if(comp.status === 'Realizado') statusIcon = 'fa-solid fa-check';
+    if(comp.status === 'Cancelado') statusIcon = 'fa-solid fa-xmark';
+    if(comp.status === 'Perdido') statusIcon = 'fa-solid fa-triangle-exclamation';
+
     return (
-        <div className={`compromisso-card-modern ${statusClass} ${isDeleting ? 'card-deleting' : ''}`}>
-            
+        <div className={`compromisso-card-modern selo-card ${statusClass} ${isDeleting ? 'card-deleting' : ''}`}>
+
+            {/* Selo flutuante de status + tag de estado integrada à direita dele */}
+            <span className="selo-badge"><i className={statusIcon}></i></span>
+            <span className={`selo-status-tag ${statusClass}`}>{comp.status}</span>
+
             {/* 1. TOPO: Data, Hora, Dia da Semana e Botões */}
             <div className="card-header-row">
                 <div className="date-highlight">
@@ -92,71 +102,27 @@ export function CompromissoCard({ comp, onUpdate, onEdit }) {
                 )}
             </div>
             
-            {/* 4. RODAPÉ (Status Esquerda | Botões Direita) */}
+            {/* 4. RODAPÉ — só ações que fazem sentido pra cada estado.
+                • Pendente / Perdido = desfecho ainda em aberto → Cancelar + Concluir.
+                • Realizado / Cancelado = terminal deliberado → só Reabrir (desfazer engano).
+                Perdido não oferece "Reabrir": o backend re-marca como Perdido qualquer
+                pendente vencido, então reabrir voltaria ao mesmo lugar. */}
             <div className="card-footer-row">
-
-                {/* Status na Esquerda */}
-                <span className={`status-badge-modern ${statusClass}`}>
-                    {comp.status}
-                </span>
-
-                {/* Botões na Direita */}
                 <div className="footer-actions">
-                    {comp.status === 'Pendente' && (
+                    {(comp.status === 'Pendente' || comp.status === 'Perdido') && (
                         <>
-                            <button
-                                className="btn-cancelar-action"
-                                onClick={() => handleSetStatus('Cancelado')}
-                            >
+                            <button className="btn-cancelar-action" onClick={() => handleSetStatus('Cancelado')}>
                                 <i className="fa-solid fa-xmark"></i> Cancelar
                             </button>
-                            <button
-                                className="btn-concluir-action complete"
-                                onClick={() => handleSetStatus('Realizado')}
-                            >
+                            <button className="btn-concluir-action complete" onClick={() => handleSetStatus('Realizado')}>
                                 Concluir <i className="fa-solid fa-check"></i>
                             </button>
                         </>
                     )}
-                    {comp.status === 'Realizado' && (
-                        <button
-                            className="btn-concluir-action undo"
-                            onClick={() => handleSetStatus('Pendente')}
-                        >
+                    {(comp.status === 'Realizado' || comp.status === 'Cancelado') && (
+                        <button className="btn-concluir-action undo" onClick={() => handleSetStatus('Pendente')}>
                             <i className="fa-solid fa-rotate-left"></i> Reabrir
                         </button>
-                    )}
-                    {comp.status === 'Perdido' && (
-                        <>
-                            <button
-                                className="btn-cancelar-action"
-                                onClick={() => handleSetStatus('Cancelado')}
-                            >
-                                <i className="fa-solid fa-xmark"></i> Cancelar
-                            </button>
-                            <button
-                                className="btn-concluir-action complete"
-                                onClick={() => handleSetStatus('Realizado')}
-                            >
-                                Concluir <i className="fa-solid fa-check"></i>
-                            </button>
-                        </>
-                    )}
-                    {comp.status === 'Cancelado' && (
-                        <>
-                            <button
-                                className="btn-concluir-action complete"
-                                onClick={() => handleSetStatus('Realizado')}
-                            >
-                                Concluir <i className="fa-solid fa-check"></i>
-                            </button>
-                            <button
-                                className="btn-concluir-action undo"
-                                onClick={() => handleSetStatus('Pendente')}
-                            >
-                                <i className="fa-solid fa-rotate-left"></i> Reabrir
-                            </button>
-                        </>
                     )}
                 </div>
             </div>

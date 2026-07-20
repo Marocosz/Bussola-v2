@@ -354,31 +354,39 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1.5rem;
+    /* Espaco para o selo flutuante das notas da primeira linha nao ser cortado */
+    padding-top: 28px;
+    overflow: visible;
 }
 
 /* ============================================= */
 /* 6. CARD DE ANOTAÇÃO                           */
 /* ============================================= */
 .registros-scope .anotacao-card {
+    --card-accent: var(--cor-azul-primario);
     background: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
     border-radius: 16px;
-    border-left-width: 6px;
-    border-left-style: solid;
-    padding: 1.5rem;
+    /* padding-top maior p/ o selo flutuante nao colidir com o header */
+    padding: 30px 1.5rem 1.5rem;
+    /* margin-top p/ o selo que transborda nao sobrepor o card acima */
+    margin-top: 28px;
     cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
     display: flex;
     flex-direction: column;
     gap: 1rem;
     position: relative;
-    overflow: hidden;
+    /* overflow visivel p/ o selo transbordar o topo do card */
+    overflow: visible;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
 }
 
 .registros-scope .anotacao-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+    border-color: color-mix(in srgb, var(--card-accent) 40%, var(--cor-borda));
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08),
+        0 0 0 3px color-mix(in srgb, var(--card-accent) 12%, transparent);
 }
 
 .registros-scope .anotacao-card.fixado {
@@ -743,10 +751,26 @@
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
+.registros-scope .view-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 0.5rem;
+}
+
+.registros-scope .view-cor-marker {
+    flex-shrink: 0;
+    width: 5px;
+    align-self: stretch;
+    min-height: 1.6rem;
+    border-radius: 999px;
+    background-color: var(--cor-azul-primario);
+}
+
 .registros-scope .view-title {
     font-size: 1.8rem;
     color: var(--cor-texto-principal);
-    margin: 0 0 0.5rem 0;
+    margin: 0;
     font-weight: 800;
     line-height: 1.2;
 }
