@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { getMetasDashboard } from '../../services/api';
+import { getMetasDashboard, deleteMeta } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import { useConfirm } from '../../context/ConfirmDialogContext';
+import { MetaCard } from './components/MetaCard';
+import { MetaModals } from './components/MetaModals';
 import './styles.css';
 
 const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
@@ -8,7 +11,10 @@ const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency:
 export function Metas() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeModal, setActiveModal] = useState(null);
+  const [editingData, setEditingData] = useState(null);
   const { addToast } = useToast();
+  const dialogConfirm = useConfirm();
 
   const fetchData = async () => {
     try {
@@ -20,6 +26,27 @@ export function Metas() {
     }
   };
   useEffect(() => { fetchData(); }, []);
+
+  const handleNew = () => { setEditingData(null); setActiveModal('meta'); };
+  const handleEdit = (meta) => { setEditingData(meta); setActiveModal('meta'); };
+  const handleCloseModal = () => { setActiveModal(null); setEditingData(null); };
+
+  const handleDelete = async (meta) => {
+    const ok = await dialogConfirm({
+      title: 'Excluir meta?',
+      description: `O valor guardado em "${meta.nome}" volta a ficar disponível. Esta ação não pode ser desfeita.`,
+      confirmLabel: 'Sim, excluir',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await deleteMeta(meta.id);
+      addToast({ type: 'success', title: 'Removida', description: 'Meta excluída.' });
+      fetchData();
+    } catch (err) {
+      addToast({ type: 'error', title: 'Erro', description: err.response?.data?.detail || 'Falha ao excluir.' });
+    }
+  };
 
   const resumo = data?.resumo || { disponivel: 0, guardado: 0, total: 0 };
 
@@ -36,17 +63,23 @@ export function Metas() {
         </div>
       </div>
 
+      <div className="metas-toolbar">
+        <button className="btn-primary" onClick={handleNew}><i className="fa-solid fa-plus"></i> Nova meta</button>
+      </div>
+
       {loading ? (
         <p className="empty-list-msg">Carregando metas...</p>
       ) : (data?.metas?.length ? (
         <div className="metas-grid">
           {data.metas.map((m) => (
-            <div key={m.id} className="meta-card-placeholder">{m.nome} — {fmt(m.saldo_atual)} / {fmt(m.valor_alvo)}</div>
+            <MetaCard key={m.id} meta={m} onOpen={handleEdit} onEdit={handleEdit} onDelete={handleDelete} />
           ))}
         </div>
       ) : (
         <p className="empty-list-msg">Nenhuma meta ainda. Crie seu primeiro cofrinho!</p>
       ))}
+
+      <MetaModals activeModal={activeModal} closeModal={handleCloseModal} onUpdate={fetchData} editingData={editingData} />
     </div>
   );
 }

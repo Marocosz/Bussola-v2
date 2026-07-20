@@ -10,3 +10,61 @@
   background: var(--cor-fundo-card, #1e1e24);
   border: 1px solid var(--cor-borda, #333);
 }
+
+.metas-scope .metas-toolbar { margin: 1rem 0; }
+
+.meta-card {
+  padding: 1.1rem; border-radius: 14px;
+  background: var(--cor-fundo-card, #1e1e24);
+  border: 1px solid var(--cor-borda, #333);
+  display: flex; flex-direction: column; gap: .75rem;
+}
+.meta-card-head { display: flex; align-items: center; gap: .7rem; cursor: pointer; }
+.meta-card-icon {
+  width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--meta-cor) 22%, transparent);
+  color: var(--meta-cor); font-size: 1.1rem;
+}
+.meta-card-title { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+.meta-badge-done { font-size: .72rem; color: #22c55e; margin-left: .3rem; }
+
+.meta-progress-bar {
+  height: 10px; border-radius: 999px; overflow: hidden;
+  background: var(--cor-borda, #333);
+}
+.meta-progress-bar span { display: block; height: 100%; background: var(--meta-cor); border-radius: 999px; transition: width .4s ease; }
+.meta-progress-labels { display: flex; justify-content: space-between; font-size: .85rem; margin-top: .35rem; }
+.meta-proj { font-size: .78rem; }
+.muted { color: var(--cor-texto-secundario, #9aa0aa); }
+
+.meta-card-actions { display: flex; gap: .5rem; align-items: center; margin-top: .3rem; }
+.meta-card-actions .btn-primary { flex: 1; }
+.meta-check { display: flex; align-items: center; gap: .4rem; font-size: .85rem; }
+
+/* Botões de ação (ícone) — mesmo padrão unificado usado em Financas/Registros */
+.metas-scope .btn-action-icon {
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 0.8rem;
+  color: var(--cor-texto-secundario);
+  background: transparent;
+  border: 1px solid var(--cor-borda) !important;
+  border-radius: 6px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
+}
+.metas-scope .btn-edit:hover {
+  background-color: #f59e0b !important;
+  border-color: #f59e0b !important;
+  color: #fff !important;
+}
+.metas-scope .btn-delete:hover {
+  background-color: var(--cor-vermelho-delete) !important;
+  border-color: var(--cor-vermelho-delete) !important;
+  color: #fff !important;
+}
