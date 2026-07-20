@@ -20,10 +20,10 @@ docker compose down -v --rmi all  # Full reset (destroys volumes)
 
 ### Backend (bussola_api/)
 ```bash
-# Setup
+# Setup — the venv dir is `venvbussola` (NOT venvbussola2)
 cd bussola_api
-python -m venv venvbussola2
-source venvbussola2/bin/activate   # Windows: venvbussola2\Scripts\activate
+python -m venv venvbussola
+source venvbussola/bin/activate   # Windows: venvbussola\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env
 
@@ -39,6 +39,15 @@ alembic downgrade -1
 python scripts/populate_db.py     # Seed demo data
 python scripts/create_user.py --email admin@example.com --password secret
 ```
+
+**Tests** (`bussola_api/`, pytest — deps in `requirements-dev.txt`, config in `pytest.ini`):
+```bash
+# Windows (invoke through the venv explicitly):
+venvbussola/Scripts/python.exe -m pytest -q                 # whole suite
+venvbussola/Scripts/python.exe -m pytest tests/test_metas_service.py -q   # one file
+venvbussola/Scripts/python.exe -m pytest tests/test_metas_api.py::test_criar_e_listar_via_api -v  # one test
+```
+`tests/conftest.py` provides an in-memory SQLite `db` fixture, a persisted `user`, and a `client` (FastAPI `TestClient`) that overrides `deps.get_db` + `deps.get_current_user`. Only the `metas`/`financas` layers currently have tests; other modules have none.
 
 ### Frontend (bussola_web/)
 ```bash
@@ -73,6 +82,7 @@ All routes are prefixed `/api/v1` and registered centrally in `app/api/v1/router
 | Module | Prefix | Description |
 |--------|--------|-------------|
 | Financas | `/financas` | Expense/income tracking, categories, recurring transactions |
+| Metas | `/financas/metas` | Savings goals ("cofrinhos"): deposits/withdrawals as neutral transfers, scheduled monthly aportes, projection, locked goals |
 | Ritmo | `/ritmo` | Health: biometrics, workout plans, diet, meals |
 | Registros | `/registros` | Notes (rich text), tasks/subtasks, links |
 | Agenda | `/agenda` | Calendar events |
@@ -99,6 +109,23 @@ All routes are prefixed `/api/v1` and registered centrally in `app/api/v1/router
 - Social: Google OAuth2 verified server-side
 - Two deployment modes: `SELF_HOSTED` (first user = admin, no email verification) and `SAAS` (strict rate limiting, email verification required)
 - Password vault entries encrypted with Fernet (`ENCRYPTION_KEY`)
+
+---
+
+## Conventions & Gotchas (non-obvious)
+
+- **`app/main.py` calls `Base.metadata.create_all()` at import time.** Two consequences: (1) a brand-new model's table is auto-created on app/container boot, so a new table works in prod even without running its migration; (2) `alembic revision --autogenerate` can emit an **empty** migration because importing the app (tests do this via `conftest.py`) already created the table — in that case hand-write the migration's `upgrade()`/`downgrade()` and reconcile an already-populated DB with `alembic stamp head` instead of `upgrade head`.
+- **Backend services are singletons** created at module end (`financas_service = FinancasService()`, `metas_service = MetasService()`). Methods take `(db, ..., user_id)` and every query filters by `user_id` for tenant isolation. Follow this shape for new domains.
+- **Frontend services are TypeScript (`src/services/api.ts`) even though pages are `.jsx`.** New API wrappers go in `api.ts`: `const response = await api.get(...); return response.data;` — loose typing (`data: any`) is the norm here.
+- **Judge frontend changes by build, not lint.** `npm run build` = `vite build` (esbuild strips types, no `tsc` typecheck). `npm run lint` scans only `.js/.jsx` (so `.ts` services aren't linted) and the repo already has ~40 pre-existing errors — the real gate is "build passes + no NEW errors on files you touched".
+- **ESLint is strict (eslint-plugin-react-hooks v7) — these are ERRORS:** `react-hooks/set-state-in-effect` (don't `setState` synchronously inside `useEffect`; reset form state via a render-time adjustment guarded by a "prev key" instead), `react-hooks/immutability` (no mutating accumulators inside `map`/`reduce` — hoist to a pure helper), `no-unused-vars` (use bare `catch {` when the error variable is unused).
+- **Modals** use the shared `<BaseModal onClose={} className="modal">` (`src/components/BaseModal.jsx`) wrapping `.modal-content` → `.modal-header`/`.modal-body`/`.modal-footer`; fields use `.form-row`/`.form-group`/`.form-input`; icon buttons use `.btn-action-icon .btn-edit`/`.btn-delete`. Mirror `pages/Financas/components/FinancasModals.jsx`.
+- **Chart.js has no global registration** — each charting page calls `ChartJS.register(...)` for the elements it needs (idempotent across modules).
+
+## Production (Coolify)
+
+- Deployed on the **Coolify "marocos"** instance at **https://bussola.marocos.dev** (Traefik v3.6 + Let's Encrypt). Build-pack: docker-compose, 3 services — `bussola_backend` (:8000), `frontend` (nginx serving the SPA and proxying `/api/v1` → backend), `bussola_bot` (Discord). The compose uses the external **`coolify`** network. **Auto-deploys on push to `main`** (GitHub webhook). SQLite persists on the mounted volume at `bussola_api/data/`.
+- Before changing compose / Dockerfile / healthcheck / network / service name / domain, read `~/.claude/COOLIFY-DEPLOY-CHECKLIST.md`.
 
 ---
 
@@ -132,3 +159,4 @@ Detailed module documentation lives in `docs/`:
 - `docs/AI.md` — agent design and orchestration patterns
 - `docs/SECURITY.md` — auth architecture, JWT flow, RBAC
 - `docs/FINANCE.md`, `docs/RITMO.md`, `docs/REGISTROS.md`, `docs/AGENDA.md`, `docs/COFRE.md`, `docs/PANORAMA.md` — module-specific logic
+- Metas has no `docs/METAS.md` yet; its design spec and implementation plan live in `docs/superpowers/specs/2026-07-19-metas-cofrinhos-design.md` and `docs/superpowers/plans/2026-07-19-metas-cofrinhos.md`
