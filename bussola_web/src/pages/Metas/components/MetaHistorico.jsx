@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Chart as ChartJS, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { listMovimentacoes, deleteMovimentacao } from '../../../services/api';
+import { listMovimentacoes, deleteMovimentacao, toggleMovimentacao } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 
 ChartJS.register(LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip);
@@ -54,6 +54,11 @@ export function MetaHistorico({ meta, onChange }) {
     catch { addToast({ type: 'error', title: 'Erro', description: 'Falha ao excluir.' }); }
   };
 
+  const confirmar = async (id) => {
+    try { await toggleMovimentacao(meta.id, id); await load(); onChange?.(); }
+    catch { addToast({ type: 'error', title: 'Erro', description: 'Falha ao confirmar aporte.' }); }
+  };
+
   return (
     <div className="meta-historico">
       {pontos.length > 1 && (
@@ -68,6 +73,11 @@ export function MetaHistorico({ meta, onChange }) {
             <span>{m.tipo === 'aporte' ? 'Aporte' : 'Retirada'} {m.origem === 'agendado' ? '(mensal)' : ''}</span>
             <strong>{fmt(m.valor)}</strong>
             <span className="muted">{new Date(m.data).toLocaleDateString('pt-BR')}</span>
+            {m.status === 'Pendente' && (
+              <button className="btn-action-icon btn-confirm" onClick={() => confirmar(m.id)} title="Confirmar aporte">
+                <i className="fa-solid fa-check"></i>
+              </button>
+            )}
             <button className="btn-action-icon btn-delete" onClick={() => remove(m.id)} title="Excluir"><i className="fa-solid fa-xmark"></i></button>
           </li>
         ))}

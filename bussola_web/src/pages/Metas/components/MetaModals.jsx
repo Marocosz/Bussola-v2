@@ -3,7 +3,7 @@ import { createMeta, updateMeta } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 import { BaseModal } from '../../../components/BaseModal';
 
-const EMPTY = { nome: '', valor_alvo: '', data_alvo: '', icone: 'fa-solid fa-piggy-bank', cor: '#4f46e5', trancada: false };
+const EMPTY = { nome: '', valor_alvo: '', data_alvo: '', icone: 'fa-solid fa-piggy-bank', cor: '#4f46e5', trancada: false, aporte_mensal_valor: '', aporte_mensal_dia: '' };
 
 const buildForm = (editingData) => editingData ? {
   nome: editingData.nome || '',
@@ -12,6 +12,8 @@ const buildForm = (editingData) => editingData ? {
   icone: editingData.icone || 'fa-solid fa-piggy-bank',
   cor: editingData.cor || '#4f46e5',
   trancada: !!editingData.trancada,
+  aporte_mensal_valor: editingData.aporte_mensal_valor || '',
+  aporte_mensal_dia: editingData.aporte_mensal_dia || '',
 } : EMPTY;
 
 export function MetaModals({ activeModal, closeModal, onUpdate, editingData }) {
@@ -40,6 +42,8 @@ export function MetaModals({ activeModal, closeModal, onUpdate, editingData }) {
       icone: form.icone,
       cor: form.cor,
       trancada: form.trancada,
+      aporte_mensal_valor: form.aporte_mensal_valor ? Number(form.aporte_mensal_valor) : null,
+      aporte_mensal_dia: form.aporte_mensal_dia ? Number(form.aporte_mensal_dia) : null,
     };
     try {
       if (editingData) await updateMeta(editingData.id, payload);
@@ -87,6 +91,18 @@ export function MetaModals({ activeModal, closeModal, onUpdate, editingData }) {
                   <input type="checkbox" checked={form.trancada} onChange={(e) => setForm({ ...form, trancada: e.target.checked })} />
                   Trancar (bloqueia retirada)
                 </label>
+              </div>
+            </div>
+            <div className="form-row grid-50-50">
+              <div className="form-group">
+                <label>Aporte mensal (R$) — opcional</label>
+                <input className="form-input" type="number" step="0.01" min="0" value={form.aporte_mensal_valor}
+                  onChange={(e) => setForm({ ...form, aporte_mensal_valor: e.target.value })} placeholder="Ex: 500" />
+              </div>
+              <div className="form-group">
+                <label>Dia do mês (1–28)</label>
+                <input className="form-input" type="number" min="1" max="28" value={form.aporte_mensal_dia}
+                  onChange={(e) => setForm({ ...form, aporte_mensal_dia: e.target.value })} placeholder="Ex: 5" />
               </div>
             </div>
           </div>

@@ -116,3 +116,6 @@
 .meta-timeline li.pendente { opacity: .7; border: 1px dashed var(--cor-borda, #444); }
 .meta-timeline li strong { margin-left: auto; }
 .meta-timeline li .btn-action-icon { margin-left: .25rem; }
+
+.meta-mensal { font-size: .78rem; display: flex; align-items: center; gap: .35rem; }
+.meta-timeline .btn-confirm { color: #22c55e; }

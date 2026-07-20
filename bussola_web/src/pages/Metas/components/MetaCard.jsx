@@ -29,6 +29,13 @@ export function MetaCard({ meta, onOpen, onEdit, onDelete }) {
         </div>
       )}
 
+      {meta.aporte_mensal_valor ? (
+        <div className="meta-mensal muted">
+          <i className="fa-solid fa-rotate"></i> Aporte mensal: {fmt(meta.aporte_mensal_valor)}
+          {meta.aporte_mensal_dia ? ` · dia ${meta.aporte_mensal_dia}` : ''}
+        </div>
+      ) : null}
+
       <div className="meta-card-actions">
         <button className="btn-primary" onClick={() => onOpen(meta)}><i className="fa-solid fa-hand-holding-dollar"></i> Guardar</button>
         <button className="btn-action-icon btn-edit" onClick={() => onEdit(meta)} title="Editar"><i className="fa-solid fa-pen"></i></button>
