@@ -58,6 +58,7 @@ export function Navbar() {
                                 <li><Link to="/home" onClick={closeMobileMenu}>Início</Link></li>
                                 <li><Link to="/panorama" onClick={closeMobileMenu}>Panorama</Link></li>
                                 <li><Link to="/financas" onClick={closeMobileMenu}>Provisões</Link></li>
+                                <li><Link to="/metas" onClick={closeMobileMenu}>Metas</Link></li>
                                 <li><Link to="/agenda" onClick={closeMobileMenu}>Roteiro</Link></li>
                                 <li><Link to="/registros" onClick={closeMobileMenu}>Registros</Link></li>
                                 <li><Link to="/ritmo" onClick={closeMobileMenu}>Ritmo</Link></li>

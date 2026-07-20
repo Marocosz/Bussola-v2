@@ -1,0 +1,12 @@
+.metas-scope .metas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.metas-scope .ph-kpi.guardado { color: var(--cor-azul-primario, #4f46e5); }
+.meta-card-placeholder {
+  padding: 1rem; border-radius: 12px;
+  background: var(--cor-fundo-card, #1e1e24);
+  border: 1px solid var(--cor-borda, #333);
+}
