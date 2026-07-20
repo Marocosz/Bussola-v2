@@ -398,11 +398,67 @@ class PanoramaService:
                 "dieta_calorias": (dieta.calorias_calculadas if dieta else atual.gasto_calorico_total),
             }
 
+        # ==============================================================================
+        # P2 — "ATENÇÃO AGORA": insights determinísticos (sem LLM)
+        # ==============================================================================
+        insights = []
+        if forecast and forecast["status"] == "danger":
+            insights.append({
+                "id": "ritmo", "tipo": "financas", "severidade": "aviso",
+                "titulo": "Ritmo de gasto acima da receita",
+                "detalhe": "No ritmo atual, a projeção do período supera a receita.",
+                "acao": "/financas",
+            })
+        for o in orcamento:
+            if o["pct"] is not None and o["pct"] > 100:
+                insights.append({
+                    "id": f"orc-{o['nome']}", "tipo": "financas", "severidade": "perigo",
+                    "titulo": f"Orçamento estourado: {o['nome']}",
+                    "detalhe": f"{o['pct']:.0f}% do limite usado no período.",
+                    "acao": "/financas",
+                })
+        prox = db.query(func.count(Transacao.id), func.sum(Transacao.valor)).join(Categoria).filter(
+            Categoria.tipo == 'despesa', Transacao.user_id == user_id, Transacao.status == 'Pendente',
+            Transacao.data >= today, Transacao.data < today + relativedelta(days=7),
+        ).first()
+        if prox and (prox[0] or 0) > 0:
+            insights.append({
+                "id": "vencer", "tipo": "financas", "severidade": "aviso",
+                "titulo": f"{prox[0]} conta(s) vencendo em 7 dias",
+                "detalhe": "Confira as provisões para não perder o prazo.",
+                "acao": "/financas",
+            })
+        from app.models.metas import MovimentacaoMeta
+        aportes_pend = db.query(func.count(MovimentacaoMeta.id)).filter(
+            MovimentacaoMeta.user_id == user_id, MovimentacaoMeta.origem == 'agendado',
+            MovimentacaoMeta.status == 'Pendente',
+        ).scalar() or 0
+        if aportes_pend > 0:
+            insights.append({
+                "id": "aportes", "tipo": "metas", "severidade": "info",
+                "titulo": f"{aportes_pend} aporte(s) automático(s) a confirmar",
+                "detalhe": "Confirme para efetivar nos seus cofrinhos.",
+                "acao": "/financas",
+            })
+        for m in cofrinhos["metas"]:
+            dp = m["data_projetada"]
+            if dp and dp.year == today.year and dp.month == today.month:
+                insights.append({
+                    "id": f"meta-{m['id']}", "tipo": "metas", "severidade": "info",
+                    "titulo": f"Cofrinho '{m['nome']}' perto da meta",
+                    "detalhe": "No ritmo atual, deve concluir ainda este mês.",
+                    "acao": "/financas",
+                })
+        ordem_sev = {"perigo": 0, "aviso": 1, "info": 2}
+        insights.sort(key=lambda i: ordem_sev.get(i["severidade"], 3))
+        insights = insights[:4]
+
         return {
             "kpis": kpis,
             "forecast": forecast,
             "comparativo": comparativo,
             "orcamento": orcamento,
+            "insights": insights,
             "cofrinhos": cofrinhos,
             "ritmo": ritmo,
             "gastos_por_categoria": gastos_por_categoria,

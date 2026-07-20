@@ -107,6 +107,15 @@ class RitmoResumo(BaseModel):
     plano_ativo: Optional[str] = None
     dieta_calorias: Optional[float] = None
 
+
+class InsightItem(BaseModel):
+    id: str
+    tipo: str                 # financas | metas | agenda | ...
+    severidade: str           # info | aviso | perigo
+    titulo: str
+    detalhe: Optional[str] = None
+    acao: Optional[str] = None  # rota para navegar
+
 # --------------------------------------------------------------------------------------
 # ITENS DE DETALHE (Tabelas e Listas)
 # --------------------------------------------------------------------------------------
@@ -147,6 +156,7 @@ class PanoramaResponse(BaseModel):
     kpis: KpiData
     forecast: Optional[ForecastData] = None
     comparativo: Optional[ComparativoData] = None
+    insights: List[InsightItem] = []
     orcamento: List[OrcamentoItem] = []
     cofrinhos: CofrinhosResumo = CofrinhosResumo()
     ritmo: Optional[RitmoResumo] = None

@@ -117,9 +117,17 @@ def test_cofrinhos_no_payload(db, user):
     assert dash["cofrinhos"]["metas"][0]["nome"] == "Viagem"
 
 
+def test_orcamento_estourado_gera_insight(db, user):
+    desp = Categoria(nome="Delivery", tipo="despesa", meta_limite=100.0, user_id=user.id)
+    db.add(desp); db.commit(); db.refresh(desp)
+    _tx(db, user, desp, 250.0, _mes_atual_dia(5))  # 250% do limite
+    dash = panorama_service.get_dashboard_data(db, user.id)
+    assert any(i["id"] == "orc-Delivery" and i["severidade"] == "perigo" for i in dash["insights"])
+
+
 def test_endpoint_serializa_payload_completo(client):
     r = client.get("/api/v1/panorama/")
     assert r.status_code == 200
     body = r.json()
-    for campo in ("kpis", "comparativo", "orcamento", "cofrinhos", "receitas_por_categoria", "evolucao_caixa_real"):
+    for campo in ("kpis", "comparativo", "insights", "orcamento", "cofrinhos", "receitas_por_categoria", "evolucao_caixa_real"):
         assert campo in body
