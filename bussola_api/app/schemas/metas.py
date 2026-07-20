@@ -1,6 +1,6 @@
 """Schemas (DTOs) do módulo Metas & Cofrinhos."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime, date
 from enum import Enum
@@ -30,14 +30,14 @@ class StatusMov(str, Enum):
 # ---------- META ----------
 class MetaBase(BaseModel):
     nome: str
-    valor_alvo: float
+    valor_alvo: float = Field(gt=0)
     data_alvo: Optional[date] = None
     icone: Optional[str] = "fa-solid fa-piggy-bank"
     cor: Optional[str] = "#4f46e5"
     imagem_url: Optional[str] = None
     trancada: bool = False
     aporte_mensal_valor: Optional[float] = None
-    aporte_mensal_dia: Optional[int] = None
+    aporte_mensal_dia: Optional[int] = Field(default=None, ge=1, le=28)
 
 
 class MetaCreate(MetaBase):
@@ -54,7 +54,7 @@ class MetaUpdate(BaseModel):
     trancada: Optional[bool] = None
     status: Optional[StatusMeta] = None
     aporte_mensal_valor: Optional[float] = None
-    aporte_mensal_dia: Optional[int] = None
+    aporte_mensal_dia: Optional[int] = Field(default=None, ge=1, le=28)
 
 
 class MetaResponse(MetaBase):
@@ -77,7 +77,7 @@ class MetaResponse(MetaBase):
 # ---------- MOVIMENTAÇÃO ----------
 class MovimentacaoCreate(BaseModel):
     tipo: TipoMovimentacao
-    valor: float
+    valor: float = Field(gt=0)
     data: Optional[datetime] = None
     observacao: Optional[str] = None
 

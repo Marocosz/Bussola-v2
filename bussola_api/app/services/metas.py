@@ -8,8 +8,6 @@ OBJETIVO:
 =======================================================================================
 """
 
-import uuid
-from datetime import date
 from dateutil.relativedelta import relativedelta
 
 from app.core.timezone import now_utc

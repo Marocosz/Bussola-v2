@@ -32,3 +32,19 @@ def test_retirada_bloqueada_retorna_400(client):
         f"/api/v1/financas/metas/{meta_id}/movimentacoes", json={"tipo": "retirada", "valor": 50}
     )
     assert r.status_code == 400
+
+
+def test_aporte_negativo_rejeitado(client):
+    meta_id = client.post("/api/v1/financas/metas", json={"nome": "V", "valor_alvo": 1000}).json()["id"]
+    r = client.post(f"/api/v1/financas/metas/{meta_id}/movimentacoes", json={"tipo": "aporte", "valor": -500})
+    assert r.status_code == 422
+
+
+def test_valor_alvo_nao_positivo_rejeitado(client):
+    r = client.post("/api/v1/financas/metas", json={"nome": "V", "valor_alvo": 0})
+    assert r.status_code == 422
+
+
+def test_aporte_mensal_dia_fora_de_faixa_rejeitado(client):
+    r = client.post("/api/v1/financas/metas", json={"nome": "V", "valor_alvo": 1000, "aporte_mensal_dia": -5})
+    assert r.status_code == 422

@@ -1,4 +1,3 @@
-from datetime import date
 from app.models.metas import Meta, MovimentacaoMeta
 
 
@@ -123,7 +122,7 @@ def test_aporte_sugerido_divide_faltante_por_meses(db, user):
     m = metas_service.criar_meta(
         db, MetaCreate(nome="V", valor_alvo=10000.0, data_alvo=alvo_data), user.id
     )
-    metas_service.criar_movimentacao(db, m.id, MovimentacaoCreate(tipo="aporte", valor=0.0), user.id)
+    metas_service.criar_movimentacao(db, m.id, MovimentacaoCreate(tipo="aporte", valor=1.0), user.id)
     dados = metas_service.enriquecer_meta(db, m)
     assert dados["meses_restantes"] >= 9
     # faltante 10000 / ~10 meses ≈ 1000/mês (tolerância ampla)
