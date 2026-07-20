@@ -229,7 +229,6 @@ class MetasService:
         for meta in metas:
             ja_existe = any(
                 m.origem == "agendado"
-                and m.status == "Pendente"
                 and m.data.year == hoje.year
                 and m.data.month == hoje.month
                 for m in meta.movimentacoes

@@ -180,3 +180,18 @@ def test_confirmar_aporte_pendente_aplica_no_saldo(db, user):
     mov = [x for x in metas_service.listar_movimentacoes(db, m.id, user.id) if x.status == "Pendente"][0]
     metas_service.toggle_status_movimentacao(db, m.id, mov.id, user.id)
     assert metas_service._get_meta(db, m.id, user.id).saldo_atual == 500.0
+
+
+def test_gerar_nao_duplica_apos_confirmar(db, user):
+    m = metas_service.criar_meta(
+        db,
+        MetaCreate(nome="V", valor_alvo=10000.0, aporte_mensal_valor=500.0, aporte_mensal_dia=5),
+        user.id,
+    )
+    metas_service.gerar_aportes_agendados(db, user.id)
+    mov = [x for x in metas_service.listar_movimentacoes(db, m.id, user.id) if x.status == "Pendente"][0]
+    metas_service.toggle_status_movimentacao(db, m.id, mov.id, user.id)  # confirma
+    metas_service.gerar_aportes_agendados(db, user.id)  # não deve criar 2º aporte do mês
+    agendados = [x for x in metas_service.listar_movimentacoes(db, m.id, user.id) if x.origem == "agendado"]
+    assert len(agendados) == 1
+    assert metas_service._get_meta(db, m.id, user.id).saldo_atual == 500.0
