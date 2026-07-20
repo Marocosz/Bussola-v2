@@ -3,7 +3,8 @@ import { getMetasDashboard, deleteMeta } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmDialogContext';
 import { MetaCard } from './components/MetaCard';
-import { MetaModals, MovimentacaoModal } from './components/MetaModals';
+import { MetaModals } from './components/MetaModals';
+import { CofreScene } from './CofreScene';
 import './styles.css';
 
 const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
@@ -83,7 +84,7 @@ export function Metas() {
 
       <MetaModals activeModal={activeModal} closeModal={handleCloseModal} onUpdate={fetchData} editingData={editingData} />
       {activeModal === 'movimentacao' && selectedMeta && (
-        <MovimentacaoModal key={selectedMeta.id} meta={selectedMeta} closeModal={handleCloseModal} onUpdate={fetchData} />
+        <CofreScene key={selectedMeta.id} meta={selectedMeta} closeModal={handleCloseModal} onUpdate={fetchData} />
       )}
     </div>
   );

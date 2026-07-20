@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { createMeta, updateMeta, createMovimentacao } from '../../../services/api';
+import { createMeta, updateMeta } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 import { BaseModal } from '../../../components/BaseModal';
 
@@ -93,55 +93,6 @@ export function MetaModals({ activeModal, closeModal, onUpdate, editingData }) {
           <div className="modal-footer">
             <button type="button" className="btn-secondary" onClick={closeModal}>Cancelar</button>
             <button type="submit" className="btn-primary">Salvar</button>
-          </div>
-        </form>
-      </div>
-    </BaseModal>
-  );
-}
-
-export function MovimentacaoModal({ closeModal, onUpdate, meta }) {
-  const [tipo, setTipo] = useState('aporte');
-  const [valor, setValor] = useState('');
-  const { addToast } = useToast();
-
-  if (!meta) return null;
-
-  const submit = async (e) => {
-    e.preventDefault();
-    try {
-      await createMovimentacao(meta.id, { tipo, valor: Number(valor), observacao: null });
-      addToast({ type: 'success', title: 'Pronto', description: tipo === 'aporte' ? 'Aporte guardado!' : 'Retirada feita.' });
-      onUpdate();
-      closeModal();
-    } catch (err) {
-      addToast({ type: 'error', title: 'Ops', description: err.response?.data?.detail || 'Falha.' });
-    }
-  };
-
-  return (
-    <BaseModal onClose={closeModal} className="modal">
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>{meta.nome}</h2>
-          <span className="close-btn" onClick={closeModal}>&times;</span>
-        </div>
-        <form onSubmit={submit}>
-          <div className="modal-body">
-            <div className="mov-toggle">
-              <button type="button" className={tipo === 'aporte' ? 'active' : ''} onClick={() => setTipo('aporte')}>Guardar</button>
-              <button type="button" className={tipo === 'retirada' ? 'active' : ''} onClick={() => setTipo('retirada')}>Retirar</button>
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Valor (R$)</label>
-                <input className="form-input" type="number" step="0.01" min="0" value={valor} onChange={(e) => setValor(e.target.value)} required autoFocus />
-              </div>
-            </div>
-          </div>
-          <div className="modal-footer">
-            <button type="button" className="btn-secondary" onClick={closeModal}>Cancelar</button>
-            <button type="submit" className="btn-primary">Confirmar</button>
           </div>
         </form>
       </div>
