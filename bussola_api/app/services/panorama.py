@@ -39,29 +39,25 @@ from app.models.cofre import Segredo
 
 class PanoramaService:
     
-    def get_dashboard_data(self, db: Session, user_id: int, month: int = None, year: int = None, period_length: int = 1):
+    def get_dashboard_data(self, db: Session, user_id: int, start_date: datetime = None, end_date: datetime = None):
         """
         Gera o payload principal do Dashboard (Home/Panorama).
-        
+
         Lógica Temporal (Atualizada):
-            Recebe mês/ano de início e a duração do período (1, 3 ou 6 meses).
-            Se não fornecido, usa o mês/ano atual como padrão.
+            Recebe um intervalo [start_date, end_date) livre (presets ou personalizado,
+            estilo Provisões). Se não fornecido, usa o mês atual como padrão.
+            O fim é EXCLUSIVO (usa `< end_date`).
 
         Segurança (Multi-tenancy):
             Todas as sub-queries aplicam estritamente o filtro `user_id`, garantindo
             que dados de um usuário nunca vazem para o dashboard de outro.
         """
         today = datetime.now()
-        
-        # Define Data de Início
-        if month and year:
-            start_date = datetime(year, month, 1)
-        else:
+
+        if not start_date:
             start_date = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-            
-        # Define Data de Fim (Start + Duração)
-        # Ex: Se start=Jan e length=3 (Trimestral) -> End=Abril 1st (Jan+3 meses)
-        end_date = start_date + relativedelta(months=period_length)
+        if not end_date:
+            end_date = start_date + relativedelta(months=1)
 
         # ==============================================================================
         # 1. BLOCO DE FINANÇAS
@@ -188,10 +184,16 @@ class PanoramaService:
         # ==============================================================================
         # MONTAGEM FINAL DOS KPIS
         # ==============================================================================
+        # Caixa acumulado (patrimônio): saldo inicial + receitas − despesas
+        # efetivadas de todos os tempos. Não é mensal (independe da janela).
+        from app.services.financas import financas_service
+        caixa = financas_service.calcular_caixa(db, user_id)
+
         kpis = {
             "receita_mes": receita,
             "despesa_mes": despesa,
-            "balanco_mes": receita - despesa, 
+            "balanco_mes": receita - despesa,
+            "caixa": caixa,
             "compromissos_realizados": comp_realizados,
             "compromissos_pendentes": comp_pendentes,
             "compromissos_perdidos": comp_perdidos,

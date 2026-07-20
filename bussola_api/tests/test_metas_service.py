@@ -83,13 +83,13 @@ def test_arquivar_preserva_movimentacoes_e_devolve_disponivel(db, user):
     metas_service.criar_movimentacao(db, m.id, MovimentacaoCreate(tipo="aporte", valor=300.0), user.id)
     # antes de arquivar: 300 guardado, disponível = 2000 - 300
     assert metas_service.total_guardado(db, user.id) == 300.0
-    assert metas_service.calcular_resumo(db, user.id, saldo_bruto=2000.0)["disponivel"] == 1700.0
+    assert metas_service.calcular_resumo(db, user.id, caixa=2000.0)["disponivel"] == 1700.0
 
     metas_service.deletar_meta(db, m.id, user.id)
 
     # guardado zera → disponível volta ao total (patrimônio intacto)
     assert metas_service.total_guardado(db, user.id) == 0.0
-    resumo = metas_service.calcular_resumo(db, user.id, saldo_bruto=2000.0)
+    resumo = metas_service.calcular_resumo(db, user.id, caixa=2000.0)
     assert resumo["guardado"] == 0.0
     assert resumo["disponivel"] == 2000.0
     # histórico de movimentações preservado
@@ -102,7 +102,45 @@ def test_arquivar_preserva_movimentacoes_e_devolve_disponivel(db, user):
 
 
 import pytest
-from app.schemas.metas import MovimentacaoCreate
+from app.schemas.metas import MovimentacaoCreate, MovimentacaoUpdate
+
+
+def test_atualizar_movimentacao_valor_recomputa_saldo(db, user):
+    m = metas_service.criar_meta(db, MetaCreate(nome="V", valor_alvo=1000.0), user.id)
+    mov = metas_service.criar_movimentacao(db, m.id, MovimentacaoCreate(tipo="aporte", valor=200.0), user.id)
+    metas_service.atualizar_movimentacao(db, m.id, mov.id, MovimentacaoUpdate(valor=350.0), user.id)
+    assert metas_service._get_meta(db, m.id, user.id).saldo_atual == 350.0
+
+
+def test_atualizar_movimentacao_flip_tipo_recomputa(db, user):
+    m = metas_service.criar_meta(db, MetaCreate(nome="V", valor_alvo=1000.0), user.id)
+    metas_service.criar_movimentacao(db, m.id, MovimentacaoCreate(tipo="aporte", valor=500.0), user.id)
+    mov = metas_service.criar_movimentacao(db, m.id, MovimentacaoCreate(tipo="aporte", valor=200.0), user.id)
+    metas_service.atualizar_movimentacao(db, m.id, mov.id, MovimentacaoUpdate(tipo="retirada"), user.id)
+    # 500 (aporte) − 200 (agora retirada) = 300
+    assert metas_service._get_meta(db, m.id, user.id).saldo_atual == 300.0
+
+
+def test_atualizar_movimentacao_saldo_negativo_falha(db, user):
+    m = metas_service.criar_meta(db, MetaCreate(nome="V", valor_alvo=1000.0), user.id)
+    a = metas_service.criar_movimentacao(db, m.id, MovimentacaoCreate(tipo="aporte", valor=100.0), user.id)
+    with pytest.raises(ValueError, match="negativo"):
+        metas_service.atualizar_movimentacao(db, m.id, a.id, MovimentacaoUpdate(tipo="retirada"), user.id)
+    # rollback preservou o aporte original
+    assert metas_service._get_meta(db, m.id, user.id).saldo_atual == 100.0
+
+
+def test_atualizar_movimentacao_retirada_trancada_falha(db, user):
+    m = metas_service.criar_meta(db, MetaCreate(nome="V", valor_alvo=1000.0, trancada=True), user.id)
+    metas_service.criar_movimentacao(db, m.id, MovimentacaoCreate(tipo="aporte", valor=500.0), user.id)
+    mov = metas_service.criar_movimentacao(db, m.id, MovimentacaoCreate(tipo="aporte", valor=100.0), user.id)
+    with pytest.raises(ValueError, match="trancada"):
+        metas_service.atualizar_movimentacao(db, m.id, mov.id, MovimentacaoUpdate(tipo="retirada"), user.id)
+
+
+def test_atualizar_movimentacao_inexistente_retorna_none(db, user):
+    m = metas_service.criar_meta(db, MetaCreate(nome="V", valor_alvo=1000.0), user.id)
+    assert metas_service.atualizar_movimentacao(db, m.id, 99999, MovimentacaoUpdate(valor=10.0), user.id) is None
 
 
 def test_aporte_incrementa_saldo(db, user):
@@ -181,7 +219,7 @@ def test_total_guardado_soma_metas_ativas(db, user):
 def test_resumo_respeita_invariante(db, user):
     a = metas_service.criar_meta(db, MetaCreate(nome="A", valor_alvo=1000.0), user.id)
     metas_service.criar_movimentacao(db, a.id, MovimentacaoCreate(tipo="aporte", valor=300.0), user.id)
-    resumo = metas_service.calcular_resumo(db, user.id, saldo_bruto=2000.0)
+    resumo = metas_service.calcular_resumo(db, user.id, caixa=2000.0)
     assert resumo["guardado"] == 300.0
     assert resumo["total"] == 2000.0
     assert resumo["disponivel"] == 1700.0

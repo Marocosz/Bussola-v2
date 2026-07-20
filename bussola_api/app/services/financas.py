@@ -33,7 +33,9 @@ from sqlalchemy.exc import IntegrityError # Import para tratamento de concorrên
 from collections import defaultdict
 
 from app.models.financas import Transacao, Categoria
+from app.models.caixa import AjusteCaixa
 from app.schemas.financas import TransacaoCreate, TransacaoUpdate
+from app.schemas.caixa import AjusteCaixaCreate, AjusteCaixaUpdate
 
 # Catálogo de ícones FontAwesome disponíveis para escolha no frontend
 ICONES_DISPONIVEIS = [
@@ -288,12 +290,11 @@ class FinancasService:
             else:
                 recorrentes_map[mes_key].append(t)
 
-        # [METAS] Resumo de patrimônio (transferência neutra): disponível vs guardado.
+        # [METAS] Resumo de patrimônio: Caixa acumulado (saldo inicial + receitas −
+        # despesas efetivadas de todos os tempos), disponível = caixa − guardado.
         from app.services.metas import metas_service  # import local evita ciclo de import
-        _total_receita = sum(float(getattr(c, "total_ganho", 0) or 0) for c in cats_receita)
-        _total_despesa = sum(float(getattr(c, "total_gasto", 0) or 0) for c in cats_despesa)
-        _saldo_bruto = _total_receita - _total_despesa
-        _resumo = metas_service.calcular_resumo(db, user_id, _saldo_bruto)
+        _caixa = self.calcular_caixa(db, user_id)
+        _resumo = metas_service.calcular_resumo(db, user_id, _caixa)
         _grupos_cofre = metas_service.listar_grupos_cofre(db, user_id)
 
         return {
@@ -412,12 +413,17 @@ class FinancasService:
 
     def atualizar_transacao(self, db: Session, id: int, dados: TransacaoUpdate, user_id: int):
         """
-        Atualização com Propagação (Cascata) APENAS PARA RECORRENTES.
-        
-        Regra:
-        1. Recorrente (Netflix): Muda a atual e todas as futuras (plano mudou).
-        2. Parcelada (TV): Muda APENAS a atual (desconto pontual na parcela).
-        3. Pontual: Muda APENAS a atual.
+        Atualização com propagação POR NATUREZA DO CAMPO em grupos
+        (parcelada/recorrente):
+
+        - categoria_id / descricao: reclassificação/renome → propaga ao GRUPO
+          INTEIRO (passado + futuro), automaticamente.
+        - valor: aplica na alvo; se `escopo_valor == 'futuras'`, também nas
+          ocorrências posteriores (data > data original). Em parceladas, o
+          `valor_total_parcelamento` é recalculado como a soma real das parcelas.
+        - data / status / recorrencia_encerrada: só na ocorrência alvo.
+
+        Transações 'pontual' (ou sem grupo) só alteram a própria linha.
         """
         # 1. Busca a transação original
         transacao = db.query(Transacao).filter(Transacao.id == id, Transacao.user_id == user_id).first()
@@ -428,30 +434,130 @@ class FinancasService:
         grupo_id = transacao.id_grupo_recorrencia
         data_original = transacao.data
         tipo = transacao.tipo_recorrencia
+        is_grupo = bool(grupo_id) and tipo in ('recorrente', 'parcelada')
 
-        # 2. Atualiza a transação alvo
+        # `escopo_valor` é só de controle — não vira atributo da transação.
         update_data = dados.model_dump(exclude_unset=True)
+        escopo_valor = update_data.pop('escopo_valor', 'apenas')
+
+        # 2. Atualiza a transação alvo (todos os campos enviados)
         for key, value in update_data.items():
             setattr(transacao, key, value)
-            
-        # 3. Propagação para o Futuro
-        # [MODIFICADO] Só propaga se for estritamente 'recorrente'.
-        # 'parcelada' agora é tratada como indivíduo, pois valores são contratuais fixos.
-        campos_para_propagar = {
-            k: v for k, v in update_data.items() 
-            if k in ['valor', 'descricao', 'categoria_id']
-        }
 
-        if grupo_id and campos_para_propagar and tipo == 'recorrente':
-            # Atualiza transações do mesmo grupo que possuem data maior que a atual
-            db.query(Transacao).filter(
-                Transacao.id_grupo_recorrencia == grupo_id,
-                Transacao.user_id == user_id,
-                Transacao.data > data_original
-            ).update(campos_para_propagar, synchronize_session=False)
+        if is_grupo:
+            # 3a. Atributos de classificação → grupo inteiro (passado + futuro).
+            atributos_grupo = {
+                k: update_data[k] for k in ('categoria_id', 'descricao')
+                if k in update_data
+            }
+            if atributos_grupo:
+                db.query(Transacao).filter(
+                    Transacao.id_grupo_recorrencia == grupo_id,
+                    Transacao.user_id == user_id,
+                    Transacao.id != transacao.id,
+                ).update(atributos_grupo, synchronize_session=False)
+
+            # 3b. Valor → alvo (já aplicada) + posteriores se escopo 'futuras'.
+            if 'valor' in update_data and escopo_valor == 'futuras':
+                db.query(Transacao).filter(
+                    Transacao.id_grupo_recorrencia == grupo_id,
+                    Transacao.user_id == user_id,
+                    Transacao.data > data_original,
+                ).update({'valor': update_data['valor']}, synchronize_session=False)
+
+            # 3c. Parcelada: total exibido = soma real das parcelas do grupo.
+            if tipo == 'parcelada' and 'valor' in update_data:
+                db.flush()  # garante que os updates acima entrem na soma
+                novo_total = db.query(func.sum(Transacao.valor)).filter(
+                    Transacao.id_grupo_recorrencia == grupo_id,
+                    Transacao.user_id == user_id,
+                ).scalar() or 0.0
+                db.query(Transacao).filter(
+                    Transacao.id_grupo_recorrencia == grupo_id,
+                    Transacao.user_id == user_id,
+                ).update({'valor_total_parcelamento': novo_total}, synchronize_session=False)
 
         db.commit()
         db.refresh(transacao)
         return transacao
+
+    # ----------------------------------------------------------------------------------
+    # CAIXA ACUMULADO + AJUSTES DE CAIXA (saldo inicial / dinheiro histórico)
+    # ----------------------------------------------------------------------------------
+    def calcular_caixa(self, db: Session, user_id: int) -> float:
+        """
+        Caixa (patrimônio acumulado) =
+            Σ ajustes(entrada − saída)
+            + Σ receitas efetivadas (todos os tempos)
+            − Σ despesas efetivadas (todos os tempos).
+
+        Movimentações de cofrinho NÃO entram (transferência neutra). Pendentes/
+        futuras não entram (só 'Efetivada'). func.sum(MoneyCents) volta em reais.
+        """
+        receita = db.query(func.sum(Transacao.valor)).join(Categoria).filter(
+            Categoria.tipo == 'receita',
+            Transacao.user_id == user_id,
+            Transacao.status == 'Efetivada',
+        ).scalar() or 0.0
+        despesa = db.query(func.sum(Transacao.valor)).join(Categoria).filter(
+            Categoria.tipo == 'despesa',
+            Transacao.user_id == user_id,
+            Transacao.status == 'Efetivada',
+        ).scalar() or 0.0
+
+        entradas = db.query(func.sum(AjusteCaixa.valor)).filter(
+            AjusteCaixa.user_id == user_id, AjusteCaixa.tipo == 'entrada',
+        ).scalar() or 0.0
+        saidas = db.query(func.sum(AjusteCaixa.valor)).filter(
+            AjusteCaixa.user_id == user_id, AjusteCaixa.tipo == 'saida',
+        ).scalar() or 0.0
+
+        return round((entradas - saidas) + receita - despesa, 2)
+
+    def listar_ajustes(self, db: Session, user_id: int):
+        return db.query(AjusteCaixa).filter(
+            AjusteCaixa.user_id == user_id
+        ).order_by(desc(AjusteCaixa.data)).all()
+
+    def criar_ajuste(self, db: Session, dados: AjusteCaixaCreate, user_id: int) -> AjusteCaixa:
+        ajuste = AjusteCaixa(
+            user_id=user_id,
+            tipo=dados.tipo.value if hasattr(dados.tipo, 'value') else dados.tipo,
+            valor=round(dados.valor, 2),
+            data=dados.data or datetime.now(),
+            observacao=dados.observacao,
+        )
+        db.add(ajuste)
+        db.commit()
+        db.refresh(ajuste)
+        return ajuste
+
+    def atualizar_ajuste(self, db: Session, ajuste_id: int, dados: AjusteCaixaUpdate, user_id: int):
+        ajuste = db.query(AjusteCaixa).filter(
+            AjusteCaixa.id == ajuste_id, AjusteCaixa.user_id == user_id
+        ).first()
+        if not ajuste:
+            return None
+        update_data = dados.model_dump(exclude_unset=True)
+        if 'tipo' in update_data and update_data['tipo'] is not None:
+            t = update_data['tipo']
+            update_data['tipo'] = t.value if hasattr(t, 'value') else t
+        if 'valor' in update_data and update_data['valor'] is not None:
+            update_data['valor'] = round(update_data['valor'], 2)
+        for key, value in update_data.items():
+            setattr(ajuste, key, value)
+        db.commit()
+        db.refresh(ajuste)
+        return ajuste
+
+    def deletar_ajuste(self, db: Session, ajuste_id: int, user_id: int) -> bool:
+        ajuste = db.query(AjusteCaixa).filter(
+            AjusteCaixa.id == ajuste_id, AjusteCaixa.user_id == user_id
+        ).first()
+        if not ajuste:
+            return False
+        db.delete(ajuste)
+        db.commit()
+        return True
 
 financas_service = FinancasService()

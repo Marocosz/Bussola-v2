@@ -32,7 +32,8 @@ class KpiData(BaseModel):
     receita_mes: float
     despesa_mes: float
     balanco_mes: float
-    
+    caixa: float = 0.0  # patrimônio acumulado (saldo inicial + receitas − despesas efetivadas)
+
     # Agenda
     compromissos_realizados: int
     compromissos_pendentes: int

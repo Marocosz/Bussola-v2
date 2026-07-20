@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.api import deps
 from app.schemas.metas import (
     MetaCreate, MetaUpdate, MetaResponse,
-    MovimentacaoCreate, MovimentacaoResponse,
+    MovimentacaoCreate, MovimentacaoUpdate, MovimentacaoResponse,
     MetasDashboardResponse, ResumoPatrimonio,
 )
 from app.services.metas import metas_service
@@ -15,21 +15,14 @@ from app.services.financas import financas_service, ICONES_DISPONIVEIS, CORES_DI
 router = APIRouter()
 
 
-def _saldo_bruto(db: Session, user_id: int) -> float:
-    """Saldo bruto de Finanças: receitas − despesas efetivadas do mês (igual ao header atual)."""
-    dash = financas_service.get_dashboard_data(db, user_id)
-    receita = sum(float(getattr(c, "total_ganho", 0) or 0) for c in dash["categorias_receita"])
-    despesa = sum(float(getattr(c, "total_gasto", 0) or 0) for c in dash["categorias_despesa"])
-    return receita - despesa
-
-
 @router.get("", response_model=MetasDashboardResponse)
 @router.get("/", response_model=MetasDashboardResponse)
 def get_metas_dashboard(db: Session = Depends(deps.get_db), current_user=Depends(deps.get_current_user)):
     metas_service.gerar_aportes_agendados(db, current_user.id)
     metas = metas_service.listar_metas(db, current_user.id)
     metas_out = [MetaResponse(**metas_service.enriquecer_meta(db, m)) for m in metas]
-    resumo = metas_service.calcular_resumo(db, current_user.id, _saldo_bruto(db, current_user.id))
+    caixa = financas_service.calcular_caixa(db, current_user.id)
+    resumo = metas_service.calcular_resumo(db, current_user.id, caixa)
     return MetasDashboardResponse(
         metas=metas_out,
         resumo=ResumoPatrimonio(**resumo),
@@ -72,6 +65,17 @@ def create_movimentacao(meta_id: int, mov_in: MovimentacaoCreate, db: Session = 
 @router.get("/{meta_id}/movimentacoes", response_model=list[MovimentacaoResponse])
 def list_movimentacoes(meta_id: int, db: Session = Depends(deps.get_db), current_user=Depends(deps.get_current_user)):
     return metas_service.listar_movimentacoes(db, meta_id, current_user.id)
+
+
+@router.put("/{meta_id}/movimentacoes/{mov_id}", response_model=MovimentacaoResponse)
+def update_movimentacao(meta_id: int, mov_id: int, mov_in: MovimentacaoUpdate, db: Session = Depends(deps.get_db), current_user=Depends(deps.get_current_user)):
+    try:
+        mov = metas_service.atualizar_movimentacao(db, meta_id, mov_id, mov_in, current_user.id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if not mov:
+        raise HTTPException(status_code=404, detail="Movimentação não encontrada")
+    return mov
 
 
 @router.put("/{meta_id}/movimentacoes/{mov_id}/toggle-status", response_model=MovimentacaoResponse)

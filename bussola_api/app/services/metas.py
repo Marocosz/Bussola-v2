@@ -100,6 +100,9 @@ class MetasService:
                 raise ValueError("Meta trancada: retirada bloqueada")
             if round(mov_in.valor, 2) > meta.saldo_atual:
                 raise ValueError("Retirada maior que o saldo disponível")
+        elif mov_in.tipo == "aporte":
+            if round(meta.saldo_atual + mov_in.valor, 2) > meta.valor_alvo:
+                raise ValueError("Aporte ultrapassa o limite do cofre")
 
         mov = MovimentacaoMeta(
             meta_id=meta.id,
@@ -112,6 +115,63 @@ class MetasService:
             observacao=mov_in.observacao,
         )
         db.add(mov)
+        db.commit()
+        db.refresh(meta)
+        self._recompute_saldo(db, meta)
+        db.refresh(mov)
+        return mov
+
+    def atualizar_movimentacao(self, db, meta_id, mov_id, mov_in, user_id):
+        """Edita um aporte/retirada e ressincroniza o saldo do cofre.
+
+        Regras:
+        - Se a movimentação resultar em `retirada` numa meta trancada sem
+          liberação, bloqueia (mesma regra do create).
+        - Bloqueia edição que deixaria o saldo consolidado (efetivadas) negativo.
+        - Não altera o template `aporte_mensal_valor`: editar uma ocorrência
+          `agendado` afeta só ela.
+        """
+        meta = self._get_meta(db, meta_id, user_id)
+        if not meta:
+            return None
+        mov = (
+            db.query(MovimentacaoMeta)
+            .filter(MovimentacaoMeta.id == mov_id, MovimentacaoMeta.meta_id == meta_id)
+            .first()
+        )
+        if not mov:
+            return None
+
+        update_data = mov_in.model_dump(exclude_unset=True)
+        # Enums → valores crus (tipo). `data`/`valor`/`observacao` passam direto.
+        if "tipo" in update_data and update_data["tipo"] is not None:
+            tipo_novo = update_data["tipo"]
+            update_data["tipo"] = tipo_novo.value if hasattr(tipo_novo, "value") else tipo_novo
+        if "valor" in update_data and update_data["valor"] is not None:
+            update_data["valor"] = round(update_data["valor"], 2)
+
+        for key, value in update_data.items():
+            setattr(mov, key, value)
+
+        # Retirada em meta trancada?
+        if mov.tipo == "retirada" and not self._pode_retirar(meta):
+            db.rollback()
+            raise ValueError("Meta trancada: retirada bloqueada")
+
+        # Saldo consolidado não pode ficar negativo nem ultrapassar o alvo.
+        db.flush()
+        novo_saldo = sum(
+            (m.valor if m.tipo == "aporte" else -m.valor)
+            for m in meta.movimentacoes
+            if m.status == "Efetivada"
+        )
+        if round(novo_saldo, 2) < 0:
+            db.rollback()
+            raise ValueError("Edição deixaria o saldo do cofre negativo")
+        if round(novo_saldo, 2) > meta.valor_alvo:
+            db.rollback()
+            raise ValueError("Edição ultrapassa o limite do cofre")
+
         db.commit()
         db.refresh(meta)
         self._recompute_saldo(db, meta)
@@ -233,15 +293,18 @@ class MetasService:
                 "status": rep.status,
                 "arquivada": (m.status == "arquivada"),
                 "movimentacoes": [
-                    {"id": x.id, "data": x.data, "valor": x.valor, "tipo": x.tipo, "status": x.status}
+                    {"id": x.id, "data": x.data, "valor": x.valor, "tipo": x.tipo,
+                     "status": x.status, "origem": x.origem}
                     for x in movs
                 ],
             })
         return grupos
 
-    def calcular_resumo(self, db, user_id: int, saldo_bruto: float) -> dict:
+    def calcular_resumo(self, db, user_id: int, caixa: float) -> dict:
+        """`caixa` = patrimônio acumulado (saldo inicial + receitas − despesas
+        efetivadas de todos os tempos). Disponível = caixa − guardado."""
         guardado = self.total_guardado(db, user_id)
-        total = round(saldo_bruto, 2)
+        total = round(caixa, 2)
         qtd_metas = db.query(Meta).filter(
             Meta.user_id == user_id, Meta.status != "arquivada"
         ).count()
@@ -271,13 +334,18 @@ class MetasService:
             )
             if ja_existe:
                 continue
+            # Capa o aporte gerado ao que falta pro alvo; pula se já concluído.
+            restante = round(meta.valor_alvo - meta.saldo_atual, 2)
+            if restante <= 0:
+                continue
+            valor_gerado = round(min(meta.aporte_mensal_valor, restante), 2)
             dia = min(meta.aporte_mensal_dia or 1, 28)
             data_mov = hoje.replace(day=dia, hour=0, minute=0, second=0, microsecond=0)
             db.add(MovimentacaoMeta(
                 meta_id=meta.id,
                 user_id=user_id,
                 tipo="aporte",
-                valor=round(meta.aporte_mensal_valor, 2),
+                valor=valor_gerado,
                 data=data_mov,
                 status="Pendente",
                 origem="agendado",

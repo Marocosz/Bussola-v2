@@ -35,10 +35,11 @@ from collections import defaultdict
 from app.api import deps
 from app.models.financas import Transacao, Categoria 
 from app.schemas.financas import (
-    CategoriaCreate, CategoriaUpdate, CategoriaResponse, 
-    TransacaoCreate, TransacaoUpdate, TransacaoResponse, 
+    CategoriaCreate, CategoriaUpdate, CategoriaResponse,
+    TransacaoCreate, TransacaoUpdate, TransacaoResponse,
     FinancasDashboardResponse
 )
+from app.schemas.caixa import AjusteCaixaCreate, AjusteCaixaUpdate, AjusteCaixaResponse
 from app.services.financas import financas_service
 
 router = APIRouter()
@@ -157,6 +158,51 @@ def stop_recurrence(
         raise HTTPException(status_code=resultado["code"], detail=resultado["error"])
     
     return resultado
+
+# --------------------------------------------------------------------------------------
+# CAIXA / AJUSTES (saldo inicial + dinheiro histórico — fora do mês)
+# --------------------------------------------------------------------------------------
+
+@router.get("/caixa/ajustes", response_model=list[AjusteCaixaResponse])
+def list_ajustes_caixa(
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_user)
+):
+    return financas_service.listar_ajustes(db, current_user.id)
+
+
+@router.post("/caixa/ajustes", response_model=AjusteCaixaResponse)
+def create_ajuste_caixa(
+    ajuste_in: AjusteCaixaCreate,
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_user)
+):
+    return financas_service.criar_ajuste(db, ajuste_in, current_user.id)
+
+
+@router.put("/caixa/ajustes/{id}", response_model=AjusteCaixaResponse)
+def update_ajuste_caixa(
+    id: int,
+    ajuste_in: AjusteCaixaUpdate,
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_user)
+):
+    ajuste = financas_service.atualizar_ajuste(db, id, ajuste_in, current_user.id)
+    if not ajuste:
+        raise HTTPException(status_code=404, detail="Ajuste não encontrado")
+    return ajuste
+
+
+@router.delete("/caixa/ajustes/{id}")
+def delete_ajuste_caixa(
+    id: int,
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_user)
+):
+    if not financas_service.deletar_ajuste(db, id, current_user.id):
+        raise HTTPException(status_code=404, detail="Ajuste não encontrado")
+    return {"status": "success"}
+
 
 # --------------------------------------------------------------------------------------
 # CATEGORIAS (CRUD)

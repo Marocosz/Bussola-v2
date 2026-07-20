@@ -98,6 +98,12 @@ class TransacaoBase(BaseModel):
 class TransacaoCreate(TransacaoBase):
     pass
 
+class EscopoValor(str, Enum):
+    """Alcance da mudança de VALOR em uma transação agrupada."""
+    APENAS = 'apenas'      # só esta ocorrência
+    FUTURAS = 'futuras'    # esta e as posteriores (data > data original)
+
+
 class TransacaoUpdate(BaseModel):
     descricao: Optional[str] = None
     valor: Optional[float] = None
@@ -105,6 +111,11 @@ class TransacaoUpdate(BaseModel):
     categoria_id: Optional[int] = None
     status: Optional[StatusTransacao] = None
     recorrencia_encerrada: Optional[bool] = None
+
+    # Controla APENAS a propagação de `valor` em grupos (parcelada/recorrente).
+    # Categoria/descrição sempre propagam ao grupo inteiro; demais campos ficam
+    # só na ocorrência alvo. Não é coluna — só request.
+    escopo_valor: EscopoValor = EscopoValor.APENAS
 
 class TransacaoResponse(TransacaoBase):
     id: int

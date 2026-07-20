@@ -94,6 +94,7 @@ class User(Base):
     categorias_financas = relationship("Categoria", back_populates="user", cascade="all, delete-orphan")
     transacoes = relationship("Transacao", back_populates="user", cascade="all, delete-orphan")
     metas = relationship("Meta", back_populates="user", cascade="all, delete-orphan")
+    ajustes_caixa = relationship("AjusteCaixa", back_populates="user", cascade="all, delete-orphan")
 
     grupos_anotacao = relationship("GrupoAnotacao", back_populates="user", cascade="all, delete-orphan")
     anotacoes = relationship("Anotacao", back_populates="user", cascade="all, delete-orphan")

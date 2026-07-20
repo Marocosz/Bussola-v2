@@ -24,9 +24,10 @@ COMUNICAÇÃO:
 =======================================================================================
 """
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from datetime import datetime
 from app.api import deps
 from app.schemas.panorama import PanoramaResponse, ProvisaoItem, RoteiroItem, RegistroItem
 from app.services.panorama import panorama_service
@@ -39,32 +40,33 @@ router = APIRouter()
 
 @router.get("/", response_model=PanoramaResponse)
 def get_panorama(
-    month: Optional[int] = Query(None, description="Mês de início (1-12)"),
-    year: Optional[int] = Query(None, description="Ano de referência"),
-    period_length: int = Query(1, description="Duração do período em meses (1=Mensal, 3=Trimestral, 6=Semestral)"),
+    start: Optional[str] = Query(None, description="Início do período (ISO: YYYY-MM-DD). Padrão: início do mês atual."),
+    end: Optional[str] = Query(None, description="Fim EXCLUSIVO do período (ISO: YYYY-MM-DD). Padrão: início do próximo mês."),
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):
     """
     Retorna o payload mestre do Dashboard.
-    
-    Funcionalidade:
-        Consolida Finanças, Agenda, Tarefas e Saúde do Cofre em uma única resposta.
-        
-    Filtros (Novos):
-        - month: Mês de início da análise. Se não informado, usa o mês atual.
-        - year: Ano da análise. Se não informado, usa o ano atual.
-        - period_length: Define quantos meses a frente calcular (1, 3 ou 6).
-    
+
+    Filtro temporal (estilo Provisões): intervalo livre [start, end) via presets
+    (mês, últimos 3 meses, ano) ou personalizado. Sem parâmetros → mês atual.
+
     Segurança:
         O `current_user.id` é passado obrigatoriamente para garantir isolamento de dados.
     """
+    def _parse(v):
+        if not v:
+            return None
+        try:
+            return datetime.fromisoformat(v)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Data inválida: {v}")
+
     return panorama_service.get_dashboard_data(
-        db, 
-        current_user.id, 
-        month=month, 
-        year=year, 
-        period_length=period_length
+        db,
+        current_user.id,
+        start_date=_parse(start),
+        end_date=_parse(end),
     )
 
 # --------------------------------------------------------------------------------------

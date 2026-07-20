@@ -82,6 +82,14 @@ class MovimentacaoCreate(BaseModel):
     observacao: Optional[str] = None
 
 
+class MovimentacaoUpdate(BaseModel):
+    """Edição de um aporte/retirada. Todos opcionais; status fica no toggle."""
+    tipo: Optional[TipoMovimentacao] = None
+    valor: Optional[float] = Field(default=None, gt=0)
+    data: Optional[datetime] = None
+    observacao: Optional[str] = None
+
+
 class MovimentacaoResponse(BaseModel):
     id: int
     meta_id: int
@@ -120,6 +128,7 @@ class CofreMovRow(BaseModel):
     valor: float
     tipo: TipoMovimentacao
     status: StatusMov
+    origem: OrigemMovimentacao = OrigemMovimentacao.MANUAL
 
 class CofreGrupo(BaseModel):
     """Um cofrinho como 'grupo' na lista de transações — linha representante +
