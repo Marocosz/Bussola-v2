@@ -7,6 +7,7 @@ import { useToast } from '../../context/ToastContext';
 import { BaseModal } from '../../components/BaseModal';
 import { Coin } from './components/Coin';
 import { Confetti } from './components/Confetti';
+import { MetaHistorico } from './components/MetaHistorico';
 
 const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 
@@ -109,6 +110,8 @@ export function CofreScene({ meta, closeModal, onUpdate }) {
             </div>
           </form>
         )}
+
+        <MetaHistorico meta={meta} onChange={onUpdate} />
       </div>
     </BaseModal>
   );
