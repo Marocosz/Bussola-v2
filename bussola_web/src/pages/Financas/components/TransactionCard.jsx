@@ -3,7 +3,7 @@ import { toggleStatusTransacao, deleteTransacao, stopRecorrencia } from '../../.
 import { useToast } from '../../../context/ToastContext';
 import { useConfirm } from '../../../context/ConfirmDialogContext';
 
-export function TransactionCard({ transacao, onUpdate, onEdit, isExpanded, onToggleExpand }) {
+export function TransactionCard({ transacao, onUpdate, onEdit, onEditCofre, onToggleCofre, onDeleteCofre, isExpanded, onToggleExpand }) {
     const { addToast } = useToast();
     const confirm = useConfirm();
     const [isDeleting, setIsDeleting] = React.useState(false);
@@ -68,6 +68,8 @@ export function TransactionCard({ transacao, onUpdate, onEdit, isExpanded, onTog
         const cofreExpandable = movs.length > 1;
         const isAporte = transacao.tipo_mov === 'aporte';
         const isArquivada = transacao._cofreArquivada === true;
+        const isAgendado = transacao.origem === 'agendado';
+        const isPendente = transacao.status === 'Pendente';
         const fmtC = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
         return (
             <div className={`transacao-row-wrapper ${isExpanded && cofreExpandable ? 'row-wrapper-expanded' : ''}`}>
@@ -84,10 +86,13 @@ export function TransactionCard({ transacao, onUpdate, onEdit, isExpanded, onTog
                         <span className="row-data">{dateStr}</span>
                         <div className="row-tags">
                             <span className="tag tag-cofre"><i className="fa-solid fa-piggy-bank"></i> Cofre</span>
+                            <span className={`tag tag-origem ${isAgendado ? 'tag-origem-auto' : ''}`}>
+                                <i className={`fa-solid ${isAgendado ? 'fa-robot' : 'fa-hand'}`}></i> {isAgendado ? 'Automático' : 'Manual'}
+                            </span>
                             {isArquivada && (
                                 <span className="tag tag-arquivada"><i className="fa-solid fa-box-archive"></i> Arquivado</span>
                             )}
-                            {transacao.status === 'Pendente' && (
+                            {isPendente && (
                                 <span className="tag tag-status tag-pendente">Pendente</span>
                             )}
                         </div>
@@ -97,6 +102,32 @@ export function TransactionCard({ transacao, onUpdate, onEdit, isExpanded, onTog
                     </div>
                     <div className="row-actions">
                         <div className="row-actions-inner">
+                            {!isArquivada && (
+                                <button
+                                    onClick={() => onToggleCofre && onToggleCofre(transacao)}
+                                    className={isPendente ? 'btn-sm-pagar' : 'btn-sm-desmarcar'}
+                                >
+                                    {isPendente ? 'Efetivar' : 'Desmarcar'}
+                                </button>
+                            )}
+                            {!isArquivada && (
+                                <button
+                                    onClick={() => onEditCofre && onEditCofre(transacao)}
+                                    className="btn-action-icon btn-edit-transacao"
+                                    title="Editar movimentação"
+                                >
+                                    <i className="fa-solid fa-pen-to-square"></i>
+                                </button>
+                            )}
+                            {!isArquivada && (
+                                <button
+                                    onClick={() => onDeleteCofre && onDeleteCofre(transacao)}
+                                    className="btn-action-icon btn-delete-transacao"
+                                    title="Excluir movimentação"
+                                >
+                                    <i className="fa-solid fa-trash-can"></i>
+                                </button>
+                            )}
                             {cofreExpandable && (
                                 <button
                                     onClick={() => onToggleExpand && onToggleExpand(transacao.id)}

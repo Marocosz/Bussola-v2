@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createTransacao, createCategoria, updateTransacao, updateCategoria } from '../../../services/api';
 import { logger } from '../../../utils/logger';
 import { useToast } from '../../../context/ToastContext';
+import { useConfirm } from '../../../context/ConfirmDialogContext';
 import { CustomSelect } from '../../../components/CustomSelect';
 import { BaseModal } from '../../../components/BaseModal';
 import { DatePicker } from '../../../components/Pickers';
 
 export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardData, editingData }) {
     const { addToast } = useToast();
+    const confirm = useConfirm();
     const [formData, setFormData] = useState({});
     const [showIconPicker, setShowIconPicker] = useState(false);
     const [showColorPicker, setShowColorPicker] = useState(false);
@@ -85,6 +87,27 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
             } else {
                 let payload = { ...formData, tipo_recorrencia: activeModal };
                 if (editingData) {
+                    // Grupo (parcelada/recorrente): mudança de VALOR pergunta o alcance.
+                    // Categoria/descrição já propagam ao grupo inteiro no backend.
+                    const isGrupo = !!editingData.id_grupo_recorrencia
+                        && (activeModal === 'parcelada' || activeModal === 'recorrente');
+                    const valorMudou = Number(formData.valor) !== Number(editingData.valor);
+
+                    if (isGrupo && valorMudou) {
+                        const escopo = await confirm({
+                            title: 'Aplicar mudança de valor a quais lançamentos?',
+                            description: 'Categoria e descrição sempre mudam em toda a série. O novo valor pode valer só para este lançamento ou também para os próximos.',
+                            variant: 'info',
+                            cancelLabel: 'Cancelar',
+                            options: [
+                                { label: 'Somente esta', value: 'apenas', variant: 'info' },
+                                { label: 'Esta e as futuras', value: 'futuras', variant: 'info' },
+                            ],
+                        });
+                        if (!escopo) return; // cancelou
+                        payload.escopo_valor = escopo;
+                    }
+
                     await updateTransacao(editingData.id, payload);
                 } else {
                     await createTransacao(payload);

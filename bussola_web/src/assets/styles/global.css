@@ -520,6 +520,10 @@ a {
     }
 }
 
+/* Rodapé com múltiplas opções (seletor de alcance) — quebra em telas estreitas */
+.confirm-footer-options { flex-wrap: wrap; }
+.confirm-footer-options button { flex: 1 1 auto; min-width: 120px; }
+
 .confirm-footer .btn-confirm.info {
     background: var(--cor-azul-primario);
     border: none;
@@ -728,6 +732,50 @@ textarea:focus:invalid {
 .ph-kpi.despesa  { color: #ef4444; border-color: rgba(239, 68, 68, 0.25); }
 .ph-kpi.positivo { color: #10b981; border-color: rgba(16, 185, 129, 0.25); }
 .ph-kpi.negativo { color: #ef4444; border-color: rgba(239, 68, 68, 0.25); }
+
+/* Chip-botão (ex.: Caixa clicável para abrir ajustes) */
+.ph-kpi-btn {
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--cor-azul-primario);
+    border-color: color-mix(in srgb, var(--cor-azul-primario) 30%, var(--cor-borda));
+    transition: background 0.15s, border-color 0.15s;
+}
+.ph-kpi-btn:hover { background: color-mix(in srgb, var(--cor-azul-primario) 12%, var(--cor-card-secundario)); }
+.ph-kpi-btn-hint { opacity: 0.55; margin-left: 0.1rem; }
+
+/* ===== Filtro de intervalo de datas reutilizável (DateRangeFilter) ===== */
+.drf-wrapper { position: relative; }
+.drf-trigger {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--cor-fundo); border: 1px solid var(--cor-borda);
+    color: var(--cor-texto-principal); padding: 6px 12px; height: 34px;
+    border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-family: inherit;
+    transition: border-color 0.15s, color 0.15s;
+}
+.drf-trigger:hover { border-color: var(--cor-texto-secundario); }
+.drf-trigger.active { border-color: var(--cor-azul-primario); color: var(--cor-azul-primario); }
+.drf-trigger i { font-size: 0.8rem; opacity: 0.7; }
+.drf-backdrop { position: fixed; inset: 0; z-index: 98; }
+.drf-menu {
+    position: absolute; top: calc(100% + 6px); right: 0; min-width: 180px;
+    background: var(--cor-card-principal); border: 1px solid var(--cor-borda);
+    border-radius: 10px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    z-index: 999; padding: 0.5rem; animation: fadeInFilter 0.15s ease;
+    max-height: min(70vh, 460px); overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: var(--cor-borda) transparent;
+}
+.drf-menu::-webkit-scrollbar { width: 6px; }
+.drf-menu::-webkit-scrollbar-thumb { background-color: var(--cor-borda); border-radius: 4px; }
+.drf-item {
+    padding: 0.7rem 0.9rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem;
+    color: var(--cor-texto-secundario); transition: background 0.12s, color 0.12s;
+    white-space: nowrap;
+}
+.drf-item:hover { background: var(--cor-fundo-hover); color: var(--cor-texto-principal); }
+.drf-item.selected { color: var(--cor-azul-primario); font-weight: 600; }
+.drf-range { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 6px 8px; border-top: 1px solid var(--cor-borda); margin-top: 4px; }
+.drf-range-sep { color: var(--cor-texto-secundario); flex-shrink: 0; }
 
 /* ========================================================= */
 /* SELO FLUTUANTE — marcador de cor unificado dos cards       */

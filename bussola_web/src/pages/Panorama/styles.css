@@ -29,7 +29,9 @@
     border-radius: 16px;
     padding: 1.5rem;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-    overflow: hidden;
+    /* overflow visível para o dropdown de datas (que é maior que o painel) não
+       ser cortado; o arredondamento do card é mantido pelo header e pelo grid. */
+    overflow: visible;
 }
 
 .panel-header {
@@ -40,6 +42,8 @@
     margin: -1.5rem -1.5rem 0 -1.5rem;
     padding: 1.5rem;
     margin-bottom: 0;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
 }
 
 .panel-header h2 {
@@ -171,11 +175,13 @@
 .kpi-grid-horizontal {
     display: flex;
     align-items: stretch;
-    overflow-x: hidden;
+    overflow: hidden;                 /* mantém os cantos inferiores recortados no card */
     flex-wrap: nowrap;
     margin: 0 -1.5rem -1.5rem -1.5rem;
     width: calc(100% + 3rem);
     gap: 0;
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 16px;
 }
 
 .kpi-group {
@@ -495,10 +501,16 @@
     grid-column: 1 / -1;
 }
 
-/* Wrapper do gauge (Taxa de Poupança) */
+/* Wrapper do gauge (Taxa de Poupança) — título no topo, gauge centralizado no resto */
 .chart-wrapper.gauge-wrapper {
     align-items: center;
-    justify-content: center;
+}
+.chart-wrapper.gauge-wrapper .chart-header.full-width {
+    align-self: stretch;
+}
+.chart-wrapper.gauge-wrapper .chart-body.gauge-body {
+    flex: 1;
+    align-items: center;
 }
 
 /* Wrapper com flex-column explícito (Eficiência de Tarefas) */

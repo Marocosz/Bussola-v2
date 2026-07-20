@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Chart as ChartJS, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { listMovimentacoes, deleteMovimentacao, toggleMovimentacao } from '../../../services/api';
+import { listMovimentacoes, deleteMovimentacao, toggleMovimentacao, updateMovimentacao } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
+import { MovimentacaoEditForm } from './MovimentacaoEditForm';
 
 ChartJS.register(LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip);
 
@@ -33,6 +34,7 @@ function computePontos(efetivadas) {
 
 export function MetaHistorico({ meta, onChange }) {
   const [movs, setMovs] = useState([]);
+  const [editingId, setEditingId] = useState(null);
   const { addToast } = useToast();
 
   const load = async () => {
@@ -75,6 +77,17 @@ export function MetaHistorico({ meta, onChange }) {
     catch { addToast({ type: 'error', title: 'Erro', description: 'Falha ao confirmar aporte.' }); }
   };
 
+  const salvarEdicao = async (id, payload) => {
+    try {
+      await updateMovimentacao(meta.id, id, payload);
+      setEditingId(null);
+      await load();
+      onChange?.();
+    } catch (err) {
+      addToast({ type: 'error', title: 'Erro', description: err.response?.data?.detail || 'Falha ao salvar.' });
+    }
+  };
+
   return (
     <div className="meta-historico">
       {pontos.length > 1 && (
@@ -98,6 +111,18 @@ export function MetaHistorico({ meta, onChange }) {
           <ul className="meta-timeline">
             {movs.map((m) => {
               const isAporte = m.tipo === 'aporte';
+              if (editingId === m.id) {
+                return (
+                  <li key={m.id} className="mov-editing">
+                    <MovimentacaoEditForm
+                      mov={m}
+                      compact
+                      onSubmit={(payload) => salvarEdicao(m.id, payload)}
+                      onCancel={() => setEditingId(null)}
+                    />
+                  </li>
+                );
+              }
               return (
                 <li key={m.id} className={m.status === 'Pendente' ? 'pendente' : ''}>
                   <span className={`mov-icon ${isAporte ? 'is-aporte' : 'is-retirada'}`}>
@@ -120,6 +145,9 @@ export function MetaHistorico({ meta, onChange }) {
                         <i className="fa-solid fa-check"></i>
                       </button>
                     )}
+                    <button className="btn-action-icon btn-edit" onClick={() => setEditingId(m.id)} title="Editar">
+                      <i className="fa-solid fa-pen-to-square"></i>
+                    </button>
                     <button className="btn-action-icon btn-delete" onClick={() => remove(m.id)} title="Excluir">
                       <i className="fa-solid fa-xmark"></i>
                     </button>

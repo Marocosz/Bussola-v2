@@ -26,8 +26,13 @@ export function CofreScene({ meta, onUpdate, onOpenHistorico }) {
 
   const alvo = meta.valor_alvo || 1;
   const saldo = meta.saldo_atual || 0;
-  const amount = Number(valor) || 0;
   const cor = meta.cor || '#4A6DFF';
+
+  // Limite: guardar não pode passar do alvo; retirar não pode passar do saldo.
+  const restante = Math.max(0, Math.round((alvo - saldo) * 100) / 100);
+  const cap = mode === 'guardar' ? restante : saldo;
+  const clampAmt = (v) => Math.min(Math.max(0, Math.round(v * 100) / 100), cap);
+  const amount = clampAmt(Number(valor) || 0);
 
   const currentPct = Math.max(0, Math.min(100, (saldo / alvo) * 100));
   const guardarPct = Math.max(0, Math.min(100, ((saldo + amount) / alvo) * 100));
@@ -63,7 +68,15 @@ export function CofreScene({ meta, onUpdate, onOpenHistorico }) {
   const onPointerMove = (e) => { if (dragging) setAmountFromPointer(e.clientY); };
   const onPointerUp = (e) => { setDragging(false); e.currentTarget.releasePointerCapture?.(e.pointerId); };
 
-  const addChip = (v) => setValor(String(Math.round((amount + v) * 100) / 100));
+  const addChip = (v) => setValor(String(clampAmt(amount + v)));
+
+  // Digitar acima do limite trava no teto (preserva decimais durante a digitação).
+  const onChangeValor = (e) => {
+    const raw = e.target.value;
+    const n = Number(raw);
+    if (raw !== '' && !Number.isNaN(n) && n > cap) setValor(String(cap));
+    else setValor(raw);
+  };
 
   const confirm = async () => {
     if (amount <= 0 || busy) return;
@@ -119,7 +132,7 @@ export function CofreScene({ meta, onUpdate, onOpenHistorico }) {
             className="form-input cofre-amount"
             type="number" step="0.01" min="0" inputMode="decimal"
             value={valor}
-            onChange={(e) => setValor(e.target.value)}
+            onChange={onChangeValor}
             placeholder="R$ 0,00"
           />
 

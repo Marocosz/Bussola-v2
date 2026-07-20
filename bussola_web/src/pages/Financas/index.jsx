@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { getFinancasDashboard, deleteCategoria } from '../../services/api';
+import { getFinancasDashboard, deleteCategoria, updateMovimentacao, toggleMovimentacao, deleteMovimentacao } from '../../services/api';
 import { logger } from '../../utils/logger';
 import { TransactionCard } from './components/TransactionCard';
 import { CategoryCard } from './components/CategoryCard';
 import { FinancasModals } from './components/FinancasModals';
 import { MetasModal } from '../Metas/MetasModal';
+import { MovimentacaoEditForm } from '../Metas/components/MovimentacaoEditForm';
+import { CaixaModal } from './components/CaixaModal';
 import { BaseModal } from '../../components/BaseModal';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmDialogContext';
@@ -22,13 +24,19 @@ export function Financas() {
 
     const [activeModal, setActiveModal] = useState(null);
     const [editingData, setEditingData] = useState(null);
+    const [cofreEditing, setCofreEditing] = useState(null);
     const [showMetas, setShowMetas] = useState(false);
     const [showCategorias, setShowCategorias] = useState(false);
+    const [showCaixa, setShowCaixa] = useState(false);
     const [catView, setCatView] = useState('despesa');
     const [showDropdown, setShowDropdown] = useState(false);
 
-    const [orderTransacoes, setOrderTransacoes] = useState(() => {
-        return localStorage.getItem('bussola_financas_order') || 'desc';
+    const [sortConfig, setSortConfig] = useState(() => {
+        try {
+            const saved = JSON.parse(localStorage.getItem('bussola_financas_sort'));
+            if (saved && saved.column && saved.dir) return saved;
+        } catch { /* ignore */ }
+        return { column: 'data', dir: 'desc' };
     });
 
     const [filterTipo, setFilterTipo] = useState('todos');
@@ -46,8 +54,25 @@ export function Financas() {
     const dropdownRef = useRef(null);
 
     useEffect(() => {
-        localStorage.setItem('bussola_financas_order', orderTransacoes);
-    }, [orderTransacoes]);
+        localStorage.setItem('bussola_financas_sort', JSON.stringify(sortConfig));
+    }, [sortConfig]);
+
+    const handleSort = (column) => {
+        setSortConfig(prev => {
+            if (prev.column === column) {
+                return { column, dir: prev.dir === 'asc' ? 'desc' : 'asc' };
+            }
+            // Data/Valor começam em desc (mais recente / maior primeiro); texto em asc.
+            return { column, dir: (column === 'data' || column === 'valor') ? 'desc' : 'asc' };
+        });
+        setCurrentPage(1);
+    };
+
+    const sortIcon = (column) => {
+        const active = sortConfig.column === column;
+        const cls = active ? (sortConfig.dir === 'asc' ? 'fa-arrow-up-short-wide' : 'fa-arrow-down-wide-short') : 'fa-sort';
+        return <i className={`fa-solid ${cls} th-sort-icon ${active ? 'active' : ''}`}></i>;
+    };
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -113,6 +138,7 @@ export function Financas() {
                 valor: mv.valor,
                 status: mv.status,
                 tipo_mov: mv.tipo,
+                origem: mv.origem,
                 categoria: { nome: g.nome, icone: g.icone, cor: g.cor },
                 meta_id: g.meta_id,
                 _cofreArquivada: !!g.arquivada,
@@ -127,9 +153,22 @@ export function Financas() {
         }
         if (filterStatus !== 'todos') {
             all = all.filter(t => {
-                // Pontual é sempre Efetivada por regra de negócio
-                if ((t.tipo_recorrencia || 'pontual') === 'pontual') return filterStatus === 'Efetivada';
-                return t.status === filterStatus;
+                switch (filterStatus) {
+                    case 'Efetivada':
+                        return (t.tipo_recorrencia || 'pontual') === 'pontual' || t.status === 'Efetivada';
+                    case 'Pendente':
+                        return t.status === 'Pendente';
+                    case 'Encerrada':
+                        return t.recorrencia_encerrada === true;
+                    case 'Arquivado':
+                        return t._cofreArquivada === true;
+                    case 'Automatico':
+                        return t._isCofre && t.tipo_mov && t.origem === 'agendado';
+                    case 'Manual':
+                        return t._isCofre && t.origem === 'manual';
+                    default:
+                        return true;
+                }
             });
         }
         if (filterCategoria) {
@@ -182,10 +221,21 @@ export function Financas() {
             return t;
         });
 
+        const { column, dir } = sortConfig;
+        const mult = dir === 'asc' ? 1 : -1;
         return all.sort((a, b) => {
-            const dateA = new Date(a.data);
-            const dateB = new Date(b.data);
-            return orderTransacoes === 'desc' ? dateB - dateA : dateA - dateB;
+            let cmp = 0;
+            if (column === 'valor') {
+                cmp = Number(a.valor || 0) - Number(b.valor || 0);
+            } else if (column === 'descricao') {
+                cmp = String(a.descricao || '').localeCompare(String(b.descricao || ''), 'pt-BR');
+            } else if (column === 'categoria') {
+                cmp = String(a.categoria?.nome || '').localeCompare(String(b.categoria?.nome || ''), 'pt-BR');
+            } else { // data (default)
+                cmp = new Date(a.data) - new Date(b.data);
+            }
+            if (cmp === 0) cmp = new Date(a.data) - new Date(b.data); // desempate por data
+            return cmp * mult;
         });
     };
 
@@ -223,6 +273,56 @@ export function Financas() {
         setEditingData(null);
     };
 
+    const handleEditCofre = (transacao) => {
+        setCofreEditing({
+            metaId: transacao.meta_id,
+            movId: transacao._movId,
+            tipo: transacao.tipo_mov,
+            valor: transacao.valor,
+            data: transacao.data,
+        });
+    };
+
+    const handleToggleCofre = async (transacao) => {
+        try {
+            await toggleMovimentacao(transacao.meta_id, transacao._movId);
+            fetchData();
+        } catch (error) {
+            const msg = error.response?.data?.detail || 'Não foi possível alterar o status.';
+            addToast({ type: 'error', title: 'Erro', description: msg });
+        }
+    };
+
+    const handleDeleteCofre = async (transacao) => {
+        const isConfirmed = await dialogConfirm({
+            title: 'Excluir movimentação?',
+            description: 'Este aporte/retirada será removido e o saldo do cofrinho recalculado. Esta ação não pode ser desfeita.',
+            confirmLabel: 'Sim, excluir',
+            variant: 'danger',
+        });
+        if (!isConfirmed) return;
+        try {
+            await deleteMovimentacao(transacao.meta_id, transacao._movId);
+            addToast({ type: 'success', title: 'Excluído', description: 'Movimentação removida.' });
+            fetchData();
+        } catch (error) {
+            const msg = error.response?.data?.detail || 'Erro ao excluir movimentação.';
+            addToast({ type: 'error', title: 'Erro', description: msg });
+        }
+    };
+
+    const handleSaveCofre = async (payload) => {
+        try {
+            await updateMovimentacao(cofreEditing.metaId, cofreEditing.movId, payload);
+            setCofreEditing(null);
+            addToast({ type: 'success', title: 'Sucesso', description: 'Movimentação atualizada.' });
+            fetchData();
+        } catch (error) {
+            const msg = error.response?.data?.detail || 'Erro ao salvar movimentação.';
+            addToast({ type: 'error', title: 'Erro', description: msg });
+        }
+    };
+
     const allTransactions = getAllTransactions();
     const totalPages = Math.ceil(allTransactions.length / PAGE_SIZE);
     const pagedTransactions = allTransactions.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -241,6 +341,7 @@ export function Financas() {
     const resumoPat = data?.resumo_patrimonio;
     const disponivel = resumoPat ? resumoPat.disponivel : saldo;
     const guardado = resumoPat ? resumoPat.guardado : 0;
+    const caixa = resumoPat ? resumoPat.total : saldo;
     const qtdMetas = resumoPat ? (resumoPat.qtd_metas || 0) : 0;
     const qtdDespesa = (data?.categorias_despesa || []).length;
     const qtdReceita = (data?.categorias_receita || []).length;
@@ -253,12 +354,15 @@ export function Financas() {
                     <h1><i className="fa-solid fa-wallet"></i> Provisões Financeiras</h1>
                 </div>
                 <div className="page-header-kpis">
-                    <span className="ph-kpi receita"><i className="fa-solid fa-arrow-trend-up"></i> {fmtCurrency(totalReceita)}</span>
-                    <span className="ph-kpi despesa"><i className="fa-solid fa-arrow-trend-down"></i> {fmtCurrency(totalDespesa)}</span>
-                    <span className={`ph-kpi ${disponivel >= 0 ? 'positivo' : 'negativo'}`} title="Disponível: dinheiro livre pra gastar (Total − Guardado). Guardar numa meta reduz isto, mas não é gasto."><i className="fa-solid fa-scale-balanced"></i> {fmtCurrency(disponivel)}</span>
+                    <span className="ph-kpi receita" title="Receitas efetivadas deste mês."><i className="fa-solid fa-arrow-trend-up"></i> {fmtCurrency(totalReceita)}</span>
+                    <span className="ph-kpi despesa" title="Despesas efetivadas deste mês."><i className="fa-solid fa-arrow-trend-down"></i> {fmtCurrency(totalDespesa)}</span>
+                    <span className={`ph-kpi ${disponivel >= 0 ? 'positivo' : 'negativo'}`} title="Disponível: dinheiro livre pra gastar (Caixa − Guardado). Guardar numa meta reduz isto, mas não é gasto."><i className="fa-solid fa-scale-balanced"></i> {fmtCurrency(disponivel)}</span>
                     {guardado > 0 && (
-                        <span className="ph-kpi" title="Guardado nas metas/cofrinhos. Continua sendo seu — só saiu do disponível (não é gasto). O patrimônio total não muda ao guardar." style={{ color: 'var(--cor-azul-primario, #4f46e5)' }}><i className="fa-solid fa-piggy-bank"></i> {fmtCurrency(guardado)}</span>
+                        <span className="ph-kpi" title="Guardado nas metas/cofrinhos. Continua sendo seu — só saiu do disponível (não é gasto). O caixa não muda ao guardar." style={{ color: 'var(--cor-azul-primario, #4f46e5)' }}><i className="fa-solid fa-piggy-bank"></i> {fmtCurrency(guardado)}</span>
                     )}
+                    <button className="ph-kpi ph-kpi-btn" onClick={() => setShowCaixa(true)} title="Caixa (patrimônio acumulado): saldo inicial + todas as receitas − despesas efetivadas. Clique para ajustar (ex.: adicionar dinheiro de antes do Bussola).">
+                        <i className="fa-solid fa-vault"></i> {fmtCurrency(caixa)} <i className="fa-solid fa-sliders ph-kpi-btn-hint"></i>
+                    </button>
                 </div>
             </div>
 
@@ -299,14 +403,14 @@ export function Financas() {
                                     onClick={() => setOpenFilterDropdown(openFilterDropdown === 'status' ? null : 'status')}
                                     disabled={loading}
                                 >
-                                    <span>{filterStatus === 'todos' ? 'Status' : filterStatus}</span>
+                                    <span>{filterStatus === 'todos' ? 'Status' : (filterStatus === 'Automatico' ? 'Automático' : filterStatus)}</span>
                                     <i className="fa-solid fa-chevron-down"></i>
                                 </button>
                                 {openFilterDropdown === 'status' && (
                                     <>
                                         <div className="filter-backdrop" onClick={() => setOpenFilterDropdown(null)}></div>
                                         <div className="filter-dropdown-menu">
-                                            {[['todos','Todos'],['Pendente','Pendente'],['Efetivada','Efetivada']].map(([val, label]) => (
+                                            {[['todos','Todos'],['Efetivada','Efetivada'],['Pendente','Pendente'],['Encerrada','Encerrada'],['Arquivado','Arquivado'],['Automatico','Automático'],['Manual','Manual']].map(([val, label]) => (
                                                 <div key={val} className={`filter-dropdown-item ${filterStatus === val ? 'selected' : ''}`} onClick={() => { setFilterStatus(val); setCurrentPage(1); setOpenFilterDropdown(null); }}>{label}</div>
                                             ))}
                                         </div>
@@ -370,15 +474,6 @@ export function Financas() {
                                 )}
                             </div>
 
-                            <button
-                                className="btn-filter-sort"
-                                onClick={() => { setOrderTransacoes(prev => prev === 'desc' ? 'asc' : 'desc'); setCurrentPage(1); }}
-                                title={orderTransacoes === 'desc' ? 'Mais antigos primeiro' : 'Mais recentes primeiro'}
-                                disabled={loading}
-                            >
-                                <i className={`fa-solid fa-arrow-${orderTransacoes === 'desc' ? 'down-wide-short' : 'up-wide-short'}`}></i>
-                            </button>
-
                             <div className="btn-group" style={{ position: 'relative' }} ref={dropdownRef}>
                                 <button className="btn-primary" onClick={() => setShowDropdown(!showDropdown)}>
                                     <i className="fa-solid fa-plus"></i> Adicionar
@@ -407,11 +502,11 @@ export function Financas() {
                             <div className="transacoes-list">
                                 <div className="table-header">
                                     <span></span>
-                                    <span>Título</span>
-                                    <span>Categoria</span>
-                                    <span>Data</span>
+                                    <span className="th-sortable" onClick={() => handleSort('descricao')}>Título {sortIcon('descricao')}</span>
+                                    <span className="th-sortable" onClick={() => handleSort('categoria')}>Categoria {sortIcon('categoria')}</span>
+                                    <span className="th-sortable" onClick={() => handleSort('data')}>Data {sortIcon('data')}</span>
                                     <span>Tag</span>
-                                    <span>Valor</span>
+                                    <span className="th-sortable" onClick={() => handleSort('valor')}>Valor {sortIcon('valor')}</span>
                                 </div>
                                 {pagedTransactions.map(t => (
                                     <TransactionCard
@@ -419,6 +514,9 @@ export function Financas() {
                                         transacao={t}
                                         onUpdate={fetchData}
                                         onEdit={handleEditTransaction}
+                                        onEditCofre={handleEditCofre}
+                                        onToggleCofre={handleToggleCofre}
+                                        onDeleteCofre={handleDeleteCofre}
                                         isExpanded={expandedGroups.has(t.id)}
                                         onToggleExpand={handleToggleExpand}
                                     />
@@ -508,6 +606,28 @@ export function Financas() {
 
             {showMetas && (
                 <MetasModal onClose={() => setShowMetas(false)} onUpdate={fetchData} />
+            )}
+
+            {showCaixa && (
+                <CaixaModal onClose={() => setShowCaixa(false)} onUpdate={fetchData} />
+            )}
+
+            {cofreEditing && (
+                <BaseModal onClose={() => setCofreEditing(null)} className="modal">
+                    <div className="modal-content financas-scope" onClick={e => e.stopPropagation()} style={{ maxWidth: 460 }}>
+                        <div className="modal-header">
+                            <h3><i className="fa-solid fa-piggy-bank" style={{ marginRight: 8, color: 'var(--cor-azul-primario)' }}></i> Editar movimentação</h3>
+                            <span className="close-btn" onClick={() => setCofreEditing(null)}>&times;</span>
+                        </div>
+                        <div className="modal-body">
+                            <MovimentacaoEditForm
+                                mov={cofreEditing}
+                                onSubmit={handleSaveCofre}
+                                onCancel={() => setCofreEditing(null)}
+                            />
+                        </div>
+                    </div>
+                </BaseModal>
             )}
 
             {showCategorias && (() => {

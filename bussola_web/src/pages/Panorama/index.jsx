@@ -4,8 +4,9 @@ import { logger } from '../../utils/logger';
 import { KpiCard } from './components/KpiCard';
 import { ProvisoesModal, RoteiroModal, RegistrosModal } from './components/PanoramaModals';
 import { useToast } from '../../context/ToastContext';
-import { useConfirm } from '../../context/ConfirmDialogContext'; 
 import { CustomSelect } from '../../components/CustomSelect'; // Reaproveitando componente
+import { DateRangeFilter } from '../../components/DateRangeFilter';
+import { computeRange } from '../../utils/dateRange';
 import './styles.css';
 
 import {
@@ -23,10 +24,8 @@ export function Panorama() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     
-    // Filtros de Período
-    const [periodLength, setPeriodLength] = useState(1); // 1=Mensal, 3=Trimestral, 6=Semestral
-    const [selectedRangeStart, setSelectedRangeStart] = useState(new Date().getMonth() + 1); // Mês 1-12
-    const [viewYear, setViewYear] = useState(new Date().getFullYear());
+    // Filtro de período: intervalo de datas (presets + personalizado), estilo Provisões.
+    const [range, setRange] = useState(() => computeRange('mes'));
     
     // Modo Privacidade
     const [privacyMode, setPrivacyMode] = useState(() => {
@@ -44,7 +43,6 @@ export function Panorama() {
 
     // Hooks de Contexto
     const { addToast } = useToast();
-    const dialogConfirm = useConfirm(); 
 
     // Toggle Privacy
     const togglePrivacy = () => {
@@ -69,8 +67,7 @@ export function Panorama() {
         async function loadData() {
             setLoading(true);
             try {
-                // Passamos os parâmetros numéricos agora
-                const result = await getPanoramaData(selectedRangeStart, viewYear, periodLength); 
+                const result = await getPanoramaData(range?.start, range?.end);
                 setData(result);
                 
                 if (result.categorias_para_filtro.length > 0) {
@@ -92,36 +89,12 @@ export function Panorama() {
         }
         loadData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedRangeStart, viewYear, periodLength]);
+    }, [range?.start, range?.end]);
 
     const handleCategoryChange = (e) => {
         const id = e.target.value;
         setSelectedCategory(Number(id));
         fetchCategoryHistory(id);
-    };
-
-    // --- GERADOR DE OPÇÕES PARA O DROPDOWN DE PERÍODO ---
-    const getPeriodOptions = () => {
-        const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-        const options = [];
-
-        // Loop para gerar opções válidas (que cabem no ano)
-        // Ex: Se trimestral (3), só pode ir até Outubro (10), pois 10+11+12.
-        for (let i = 0; i <= 12 - periodLength; i++) {
-            const startMonthIndex = i; // 0-based
-            let label = "";
-
-            if (periodLength === 1) {
-                label = meses[startMonthIndex];
-            } else if (periodLength === 3) {
-                label = `${meses[startMonthIndex].substring(0,3)} - ${meses[startMonthIndex+2].substring(0,3)}`;
-            } else if (periodLength === 6) {
-                label = `${meses[startMonthIndex].substring(0,3)} - ${meses[startMonthIndex+5].substring(0,3)}`;
-            }
-
-            options.push({ value: startMonthIndex + 1, label: label }); // value 1-based for API
-        }
-        return options;
     };
 
     if (loading && !data) return (
@@ -287,28 +260,7 @@ export function Panorama() {
                         </div>
                         
                         <div className="period-controls-group">
-                            <div className="period-type-selector">
-                                <button className={periodLength === 1 ? 'active' : ''} onClick={() => setPeriodLength(1)}>Mensal</button>
-                                <button className={periodLength === 3 ? 'active' : ''} onClick={() => setPeriodLength(3)}>Trimestral</button>
-                                <button className={periodLength === 6 ? 'active' : ''} onClick={() => setPeriodLength(6)}>Semestral</button>
-                            </div>
-                            
-                            {/* Dropdown Lógico baseado no tipo */}
-                            <div className="period-dropdown-wrapper">
-                                <CustomSelect 
-                                    name="periodRange" 
-                                    value={selectedRangeStart} 
-                                    options={getPeriodOptions()} 
-                                    onChange={(e) => setSelectedRangeStart(parseInt(e.target.value))} 
-                                />
-                            </div>
-
-                            {/* Seletor de Ano Simples */}
-                            <div className="year-selector">
-                                <button onClick={() => setViewYear(prev => prev - 1)}><i className="fa-solid fa-chevron-left"></i></button>
-                                <span>{viewYear}</span>
-                                <button onClick={() => setViewYear(prev => prev + 1)}><i className="fa-solid fa-chevron-right"></i></button>
-                            </div>
+                            <DateRangeFilter initialPreset="mes" onChange={setRange} />
                         </div>
                     </div>
                     
@@ -319,6 +271,7 @@ export function Panorama() {
                                 <KpiCard iconClass="fa-solid fa-arrow-up" value={fmt(kpis.receita_mes)} label="Receita" type="receita" isPrivacy={privacyMode} />
                                 <KpiCard iconClass="fa-solid fa-arrow-down" value={fmt(kpis.despesa_mes)} label="Despesa" type="despesa" isPrivacy={privacyMode} />
                                 <KpiCard iconClass="fa-solid fa-scale-balanced" value={fmt(kpis.balanco_mes)} label="Balanço" type={kpis.balanco_mes >= 0 ? 'receita' : 'despesa'} isPrivacy={privacyMode} />
+                                <KpiCard iconClass="fa-solid fa-vault" value={fmt(kpis.caixa)} label="Caixa" type="azul" isPrivacy={privacyMode} />
                             </div>
                         </div>
                         <div className="divider-vertical"></div>

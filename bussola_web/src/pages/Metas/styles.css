@@ -428,6 +428,16 @@
   color: #fff !important;
 }
 
+/* Edição inline de movimentação (timeline) + form reutilizado em Finanças */
+.meta-timeline li.mov-editing { display: block; padding: 0.7rem; border: 1px solid var(--cor-borda); }
+
+.mov-edit-form { display: flex; flex-direction: column; gap: 0.75rem; }
+.mov-edit-form .form-row { display: flex; gap: 0.75rem; }
+.mov-edit-form .form-group { flex: 1; min-width: 0; }
+.mov-edit-toggle { margin-bottom: 0; }
+.mov-edit-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+.mov-edit-compact .mov-toggle button { padding: 0.4rem 0.6rem; font-size: 0.85rem; }
+
 .meta-timeline-empty {
   text-align: center; padding: 2rem 1rem;
   color: var(--cor-texto-secundario);

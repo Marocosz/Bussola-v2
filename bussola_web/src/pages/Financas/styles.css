@@ -758,7 +758,7 @@
 .financas-scope .table-header,
 .financas-scope .row-cells {
     display: grid;
-    grid-template-columns: 28px 1fr 120px 80px 200px 125px;
+    grid-template-columns: 28px 1fr 120px 80px 300px 125px;
     align-items: center;
     gap: 24px;
     padding: 0 14px;
@@ -801,6 +801,21 @@
 .financas-scope .table-header span:nth-child(6) {
     text-align: right;
 }
+
+/* Cabeçalhos ordenáveis (clique para ordenar por coluna) */
+.financas-scope .table-header .th-sortable {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.15s;
+}
+.financas-scope .table-header .th-sortable:hover { color: var(--cor-texto-principal); }
+.financas-scope .table-header span:nth-child(4).th-sortable { justify-content: center; }
+.financas-scope .table-header span:nth-child(6).th-sortable { justify-content: flex-end; }
+.financas-scope .th-sort-icon { font-size: 0.72rem; opacity: 0.35; }
+.financas-scope .th-sort-icon.active { opacity: 1; color: var(--cor-azul-primario); }
 
 /* Wrapper da linha (agrupa a linha + sub-linhas de parcelas expandidas) */
 .financas-scope .transacao-row-wrapper + .transacao-row-wrapper {
@@ -848,6 +863,79 @@
     color: var(--cor-azul-primario);
 }
 .financas-scope .row-valor-cofre { color: var(--cor-azul-primario) !important; }
+
+/* Tag de origem do aporte (manual x automático) */
+.financas-scope .tag-origem {
+    background: color-mix(in srgb, var(--cor-texto-secundario) 14%, transparent);
+    color: var(--cor-texto-secundario);
+}
+.financas-scope .tag-origem-auto {
+    background: color-mix(in srgb, #8b5cf6 16%, transparent);
+    color: #8b5cf6;
+}
+
+/* ===== Modal de Ajustes de Caixa ===== */
+.financas-scope .caixa-hint {
+    font-size: 0.82rem; color: var(--cor-texto-secundario);
+    margin: 0 0 0.9rem; line-height: 1.45;
+}
+/* Barra superior: saldo + ação na mesma linha */
+.financas-scope .caixa-topbar {
+    display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+    padding: 0.7rem 0.9rem; margin-bottom: 1rem;
+    background: var(--cor-card-secundario); border-radius: 12px;
+}
+.financas-scope .caixa-topbar-saldo { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.financas-scope .caixa-topbar-label {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--cor-texto-secundario);
+}
+.financas-scope .caixa-topbar-saldo strong { font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+.financas-scope .caixa-topbar-saldo .positivo { color: #10b981; }
+.financas-scope .caixa-topbar-saldo .negativo { color: #ef4444; }
+.financas-scope .caixa-topbar .btn-primary { flex-shrink: 0; }
+
+/* Form de ajuste (painel) */
+.financas-scope .caixa-form {
+    margin-bottom: 1rem; padding: 0.9rem; border: 1px solid var(--cor-borda);
+    border-radius: 12px; background: var(--cor-card-principal);
+}
+.financas-scope .caixa-form-head { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.7rem; }
+.financas-scope .caixa-form-toggle { margin-bottom: 0.9rem; }
+.financas-scope .caixa-form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.4rem; }
+
+/* Lista de ajustes */
+.financas-scope .caixa-list { display: flex; flex-direction: column; gap: 0.4rem; }
+.financas-scope .caixa-item {
+    display: flex; align-items: center; gap: 0.7rem;
+    padding: 0.55rem 0.7rem; border-radius: 10px; background: var(--cor-card-secundario);
+}
+.financas-scope .caixa-item-icon {
+    flex-shrink: 0; width: 32px; height: 32px; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem;
+}
+.financas-scope .caixa-item-icon.is-entrada { color: #10b981; background: color-mix(in srgb, #10b981 16%, transparent); }
+.financas-scope .caixa-item-icon.is-saida   { color: #ef4444; background: color-mix(in srgb, #ef4444 16%, transparent); }
+.financas-scope .caixa-item-info { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; flex: 1; }
+.financas-scope .caixa-item-title {
+    font-weight: 600; font-size: 0.9rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.financas-scope .caixa-item-sub { font-size: 0.75rem; }
+.financas-scope .caixa-item-valor { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.financas-scope .caixa-item-valor.positivo { color: #10b981; }
+.financas-scope .caixa-item-valor.negativo { color: #ef4444; }
+.financas-scope .caixa-item-actions { display: flex; gap: 0.25rem; flex-shrink: 0; }
+
+/* Estado vazio */
+.financas-scope .caixa-empty {
+    text-align: center; padding: 2rem 1rem; color: var(--cor-texto-secundario);
+    border: 1px dashed var(--cor-borda); border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; gap: 0.35rem;
+}
+.financas-scope .caixa-empty i { font-size: 1.8rem; opacity: 0.5; }
+.financas-scope .caixa-empty p { margin: 0; color: var(--cor-texto-principal); font-weight: 600; }
+.financas-scope .caixa-empty span { font-size: 0.8rem; }
 
 /* Linha da tabela */
 .financas-scope .transacao-row {

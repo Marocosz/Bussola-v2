@@ -3,25 +3,29 @@ import React, { createContext, useContext, useState, useRef } from 'react';
 const ConfirmDialogContext = createContext();
 
 export function ConfirmDialogProvider({ children }) {
-    const [dialogState, setDialogState] = useState({ 
-        isOpen: false, 
-        title: '', 
-        description: '', 
+    const [dialogState, setDialogState] = useState({
+        isOpen: false,
+        title: '',
+        description: '',
         confirmLabel: 'Confirmar',
         cancelLabel: 'Cancelar',
-        variant: 'danger' // 'danger' | 'info'
+        variant: 'danger', // 'danger' | 'info'
+        options: null      // [{ label, value, variant }] — seletor multi-opção
     });
 
     const awaitingPromiseRef = useRef(null);
 
-    const openDialog = (options) => {
+    const openDialog = (opts) => {
         setDialogState({
             isOpen: true,
-            title: options.title || 'Tem certeza?',
-            description: options.description || '',
-            confirmLabel: options.confirmLabel || 'Confirmar',
-            cancelLabel: options.cancelLabel || 'Cancelar',
-            variant: options.variant || 'danger'
+            title: opts.title || 'Tem certeza?',
+            description: opts.description || '',
+            confirmLabel: opts.confirmLabel || 'Confirmar',
+            cancelLabel: opts.cancelLabel || 'Cancelar',
+            variant: opts.variant || 'danger',
+            // Quando `options` é passado, renderiza N botões que resolvem o
+            // `value` escolhido (cancelar → null). Sem `options` → true/false.
+            options: Array.isArray(opts.options) ? opts.options : null
         });
 
         return new Promise((resolve) => {
@@ -59,20 +63,33 @@ export function ConfirmDialogProvider({ children }) {
                             <p>{dialogState.description}</p>
                         </div>
 
-                        <div className="confirm-footer">
-                            <button 
-                                className="btn-cancel" 
-                                onClick={() => handleClose(false)}
+                        <div className={`confirm-footer ${dialogState.options ? 'confirm-footer-options' : ''}`}>
+                            <button
+                                className="btn-cancel"
+                                onClick={() => handleClose(dialogState.options ? null : false)}
                             >
                                 {dialogState.cancelLabel}
                             </button>
-                            <button 
-                                className={`btn-confirm ${dialogState.variant}`} 
-                                onClick={() => handleClose(true)}
-                                autoFocus
-                            >
-                                {dialogState.confirmLabel}
-                            </button>
+                            {dialogState.options ? (
+                                dialogState.options.map((opt, i) => (
+                                    <button
+                                        key={opt.value}
+                                        className={`btn-confirm ${opt.variant || 'info'}`}
+                                        onClick={() => handleClose(opt.value)}
+                                        autoFocus={i === 0}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                ))
+                            ) : (
+                                <button
+                                    className={`btn-confirm ${dialogState.variant}`}
+                                    onClick={() => handleClose(true)}
+                                    autoFocus
+                                >
+                                    {dialogState.confirmLabel}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

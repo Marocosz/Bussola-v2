@@ -344,14 +344,10 @@ export interface PanoramaData {
     categorias_para_filtro: Categoria[];
 }
 
-export const getPanoramaData = async (month: number, year: number, periodLength: number) => {
-    // Agora enviamos month, year e period_length como números na query string
+export const getPanoramaData = async (start?: string, end?: string) => {
+    // Intervalo livre [start, end) — presets ou personalizado (estilo Provisões).
     const response = await api.get('/panorama/', {
-        params: {
-            month: month,
-            year: year,
-            period_length: periodLength // O Backend espera snake_case
-        }
+        params: { start, end }
     });
     return response.data;
 };
@@ -938,6 +934,11 @@ export const listMovimentacoes = async (metaId: number) => {
     return response.data;
 };
 
+export const updateMovimentacao = async (metaId: number, movId: number, data: any) => {
+    const response = await api.put(`/financas/metas/${metaId}/movimentacoes/${movId}`, data);
+    return response.data;
+};
+
 export const toggleMovimentacao = async (metaId: number, movId: number) => {
     const response = await api.put(`/financas/metas/${metaId}/movimentacoes/${movId}/toggle-status`);
     return response.data;
@@ -945,5 +946,26 @@ export const toggleMovimentacao = async (metaId: number, movId: number) => {
 
 export const deleteMovimentacao = async (metaId: number, movId: number) => {
     const response = await api.delete(`/financas/metas/${metaId}/movimentacoes/${movId}`);
+    return response.data;
+};
+
+// ---- Ajustes de Caixa (saldo inicial / dinheiro histórico) ----
+export const getAjustesCaixa = async () => {
+    const response = await api.get('/financas/caixa/ajustes');
+    return response.data;
+};
+
+export const createAjusteCaixa = async (data: any) => {
+    const response = await api.post('/financas/caixa/ajustes', data);
+    return response.data;
+};
+
+export const updateAjusteCaixa = async (id: number, data: any) => {
+    const response = await api.put(`/financas/caixa/ajustes/${id}`, data);
+    return response.data;
+};
+
+export const deleteAjusteCaixa = async (id: number) => {
+    const response = await api.delete(`/financas/caixa/ajustes/${id}`);
     return response.data;
 };
