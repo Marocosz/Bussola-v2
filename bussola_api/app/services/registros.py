@@ -220,12 +220,23 @@ class RegistrosService:
 
     def create_tarefa(self, db: Session, tarefa_data, user_id: int):
         """Cria a Tarefa Raiz e dispara a criação recursiva das subtarefas."""
+        # Nova tarefa entra no fim da coluna do seu status.
+        status_novo = tarefa_data.status or "Pendente"
+        max_ordem = (
+            db.query(func.max(Tarefa.ordem))
+            .filter(Tarefa.user_id == user_id, Tarefa.status == status_novo)
+            .scalar()
+        )
+        proxima_ordem = (max_ordem + 1) if max_ordem is not None else 0
+
         nova_tarefa = Tarefa(
             titulo=tarefa_data.titulo,
             descricao=tarefa_data.descricao,
             fixado=tarefa_data.fixado,
             prioridade=tarefa_data.prioridade,
             prazo=tarefa_data.prazo,
+            status=status_novo,
+            ordem=proxima_ordem,
             user_id=user_id
         )
         db.add(nova_tarefa)
