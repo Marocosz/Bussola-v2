@@ -28,9 +28,8 @@ function formatarDataJornada() {
 }
 // ────────────────────────────────────────────────────────────────────────────
 import { AnotacaoCard } from './components/AnotacaoCard';
-import { TarefaCard } from './components/TarefaCard';
 import { AnotacaoModal } from './components/AnotacaoModal';
-import { TarefaModal } from './components/TarefaModal';
+import { TarefaBoard } from './components/kanban/TarefaBoard';
 import { GrupoModal } from './components/GrupoModal';
 import { ViewAnotacaoModal } from './components/ViewAnotacaoModal';
 import { HabitoModal } from './components/HabitoModal';
@@ -41,21 +40,6 @@ import { useConfirm } from '../../context/ConfirmDialogContext';
 import { AiAssistant } from '../../components/AiAssistant';
 import './styles.css';
 import { logger } from '../../utils/logger';
-
-const PRIORIDADES = [
-    { label: 'Crítica', color: '#ef4444' },
-    { label: 'Alta', color: '#f59e0b' },
-    { label: 'Média', color: '#3b82f6' },
-    { label: 'Baixa', color: '#10b981' }
-];
-
-const FILTROS_DATA = [
-    { label: 'Hoje', icon: 'fa-calendar-day' },
-    { label: 'Semana', icon: 'fa-calendar-week' },
-    { label: 'Mês', icon: 'fa-calendar' },
-    { label: 'Atrasadas', icon: 'fa-triangle-exclamation' },
-    { label: 'Sem prazo', icon: 'fa-calendar-xmark' },
-];
 
 export function Registros() {
     const [data, setData] = useState(null);
@@ -72,7 +56,6 @@ export function Registros() {
     // UI State - Modais
     const [notaModalOpen, setNotaModalOpen] = useState(false);
     const [viewModalOpen, setViewModalOpen] = useState(false);
-    const [tarefaModalOpen, setTarefaModalOpen] = useState(false);
     const [grupoModalOpen, setGrupoModalOpen] = useState(false);
     const [habitoModalOpen, setHabitoModalOpen] = useState(false);
     const [habitoListaModalOpen, setHabitoListaModalOpen] = useState(false);
@@ -80,7 +63,6 @@ export function Registros() {
     const [editingNota, setEditingNota] = useState(null);
     const [viewingNota, setViewingNota] = useState(null);
     const [editingGrupo, setEditingGrupo] = useState(null);
-    const [editingTarefa, setEditingTarefa] = useState(null);
     const [editingHabito, setEditingHabito] = useState(null);
 
     // UI State - Filtros e Accordions (Caderno)
@@ -95,13 +77,6 @@ export function Registros() {
         }
         return { 'fixados': true };
     });
-
-    // UI State - Filtros (Tarefas)
-    const [prioDropdownOpen, setPrioDropdownOpen] = useState(false);
-    const [filtroPrioridade, setFiltroPrioridade] = useState('Todas');
-    const [dataDropdownOpen, setDataDropdownOpen] = useState(false);
-    const [filtroData, setFiltroData] = useState('Todas');
-    const [showConcluidas, setShowConcluidas] = useState(false);
 
     useEffect(() => {
         localStorage.setItem('@Bussola:registros_accordions', JSON.stringify(openGroups));
@@ -167,42 +142,6 @@ export function Registros() {
 
     const grupos = data?.grupos_disponiveis || [];
 
-    // --- PROCESSAMENTO DE DADOS (TAREFAS) ---
-    const tarefasPendentesRaw = data?.tarefas_pendentes || [];
-    const tarefasConcluidasRaw = data?.tarefas_concluidas || [];
-
-    const { tarefasPendentes, tarefasConcluidas } = useMemo(() => {
-        const filterByPrio = (list) => {
-            if (filtroPrioridade === 'Todas') return list;
-            return list.filter(t => t.prioridade === filtroPrioridade);
-        };
-
-        const filterByData = (list) => {
-            if (filtroData === 'Todas') return list;
-            const hoje = new Date();
-            hoje.setHours(0, 0, 0, 0);
-            const fimSemana = new Date(hoje);
-            fimSemana.setDate(hoje.getDate() + 7);
-            return list.filter(t => {
-                if (filtroData === 'Sem prazo') return !t.prazo;
-                if (!t.prazo) return false;
-                const prazo = new Date(t.prazo);
-                prazo.setHours(0, 0, 0, 0);
-                if (filtroData === 'Hoje') return prazo.getTime() === hoje.getTime();
-                if (filtroData === 'Semana') return prazo >= hoje && prazo <= fimSemana;
-                if (filtroData === 'Mês') return prazo.getMonth() === hoje.getMonth() && prazo.getFullYear() === hoje.getFullYear();
-                if (filtroData === 'Atrasadas') return prazo < hoje;
-                return true;
-            });
-        };
-
-        return {
-            tarefasPendentes: filterByData(filterByPrio(tarefasPendentesRaw)),
-            tarefasConcluidas: filterByData(filterByPrio(tarefasConcluidasRaw)),
-        };
-    }, [tarefasPendentesRaw, tarefasConcluidasRaw, filtroPrioridade, filtroData]);
-
-
     // --- HANDLERS ---
     const handleSilentRefresh = useCallback(() => fetchData(true), []);
 
@@ -216,16 +155,6 @@ export function Registros() {
     const handleViewNota = useCallback((nota) => {
         setViewingNota(nota);
         setViewModalOpen(true);
-    }, []);
-
-    const handleNewTarefa = useCallback(() => {
-        setEditingTarefa(null);
-        setTarefaModalOpen(true);
-    }, []);
-
-    const handleEditTarefa = useCallback((tarefa) => {
-        setEditingTarefa(tarefa);
-        setTarefaModalOpen(true);
     }, []);
 
     const handleNewHabito = useCallback(() => { setEditingHabito(null); setHabitoModalOpen(true); }, []);
@@ -424,84 +353,6 @@ export function Registros() {
                         );
                     })()}
 
-                    {/* Ações das Tarefas */}
-                    {activeTab === 'tarefas' && (
-                        <div className="header-actions-group">
-                            {/* Filtro de Data */}
-                            <div className="custom-dropdown-wrapper">
-                                <button
-                                    className={`dropdown-trigger-btn ${filtroData !== 'Todas' ? 'active' : ''}`}
-                                    onClick={() => { setDataDropdownOpen(!dataDropdownOpen); setPrioDropdownOpen(false); }}
-                                    style={{ minWidth: '130px' }}
-                                    disabled={loading}
-                                >
-                                    <i className="fa-regular fa-calendar" style={{ fontSize: '0.8rem' }}></i>
-                                    <span>{filtroData === 'Todas' ? 'Período' : filtroData}</span>
-                                    <i className="fa-solid fa-chevron-down"></i>
-                                </button>
-
-                                {dataDropdownOpen && (
-                                    <>
-                                        <div className="dropdown-backdrop" onClick={() => setDataDropdownOpen(false)}></div>
-                                        <div className="custom-dropdown-menu" style={{ width: '200px' }}>
-                                            <div className={`dropdown-item ${filtroData === 'Todas' ? 'selected' : ''}`} onClick={() => { setFiltroData('Todas'); setDataDropdownOpen(false); }}>
-                                                <div className="dropdown-item-info">
-                                                    <i className="fa-regular fa-calendar-check" style={{ width: '14px', color: 'var(--cor-texto-secundario)' }}></i>
-                                                    <span className="name">Todas as datas</span>
-                                                </div>
-                                            </div>
-                                            <div className="dropdown-divider"></div>
-                                            {FILTROS_DATA.map(f => (
-                                                <div key={f.label} className={`dropdown-item ${filtroData === f.label ? 'selected' : ''}`} onClick={() => { setFiltroData(f.label); setDataDropdownOpen(false); }}>
-                                                    <div className="dropdown-item-info">
-                                                        <i className={`fa-solid ${f.icon}`} style={{ width: '14px', color: f.label === 'Atrasadas' ? 'var(--cor-vermelho-delete)' : 'var(--cor-texto-secundario)', fontSize: '0.8rem' }}></i>
-                                                        <span className="name">{f.label}</span>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-
-                            {/* Filtro de Prioridade */}
-                            <div className="custom-dropdown-wrapper">
-                                <button
-                                    className={`dropdown-trigger-btn ${filtroPrioridade !== 'Todas' ? 'active' : ''}`}
-                                    onClick={() => { setPrioDropdownOpen(!prioDropdownOpen); setDataDropdownOpen(false); }}
-                                    style={{ minWidth: '130px' }}
-                                    disabled={loading}
-                                >
-                                    <span>{filtroPrioridade === 'Todas' ? 'Prioridade' : filtroPrioridade}</span>
-                                    <i className="fa-solid fa-chevron-down"></i>
-                                </button>
-
-                                {prioDropdownOpen && (
-                                    <>
-                                        <div className="dropdown-backdrop" onClick={() => setPrioDropdownOpen(false)}></div>
-                                        <div className="custom-dropdown-menu" style={{ width: '200px' }}>
-                                            <div className={`dropdown-item ${filtroPrioridade === 'Todas' ? 'selected' : ''}`} onClick={() => { setFiltroPrioridade('Todas'); setPrioDropdownOpen(false); }}>
-                                                <span>Todas as PRIORIDADES</span>
-                                            </div>
-                                            <div className="dropdown-divider"></div>
-                                            {PRIORIDADES.map(p => (
-                                                <div key={p.label} className={`dropdown-item ${filtroPrioridade === p.label ? 'selected' : ''}`} onClick={() => { setFiltroPrioridade(p.label); setPrioDropdownOpen(false); }}>
-                                                    <div className="dropdown-item-info">
-                                                        <span className="dot" style={{ backgroundColor: p.color }}></span>
-                                                        <span className="name">{p.label}</span>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-
-                            <button className="btn-primary small-btn" onClick={handleNewTarefa}>
-                                <i className="fa-solid fa-plus"></i> Tarefa
-                            </button>
-                        </div>
-                    )}
                 </div>
 
                 {/* CONTEÚDO: CADERNO */}
@@ -593,61 +444,10 @@ export function Registros() {
                     </div>
                 )}
 
-                {/* CONTEÚDO: TAREFAS */}
+                {/* CONTEÚDO: TAREFAS (Board Kanban) */}
                 {activeTab === 'tarefas' && (
-                    <div className="column-scroll-content">
-                        {loading ? (
-                            <LoadingState />
-                        ) : (
-                            <>
-                                {tarefasPendentes.length === 0 && tarefasConcluidas.length === 0 ? (
-                                    <div className="empty-state">
-                                        <i className="fa-solid fa-check-double"></i>
-                                        <p>Nenhuma tarefa pendente.</p>
-                                    </div>
-                                ) : (
-                                    <div className="tarefas-grid">
-                                        {tarefasPendentes.map(t => (
-                                            <TarefaCard
-                                                key={t.id}
-                                                tarefa={t}
-                                                onUpdate={handleSilentRefresh}
-                                                onEdit={handleEditTarefa}
-                                            />
-                                        ))}
-                                    </div>
-                                )}
-
-                                {tarefasConcluidasRaw.length > 0 && (
-                                    <div className="concluidas-section">
-                                        <div
-                                            className={`concluidas-header-accordion ${showConcluidas ? 'active' : ''}`}
-                                            onClick={() => setShowConcluidas(!showConcluidas)}
-                                        >
-                                            <span>Concluídas ({tarefasConcluidas.length})</span>
-                                            <i className={`fa-solid fa-chevron-down ${showConcluidas ? 'rotate' : ''}`}></i>
-                                        </div>
-
-                                        <div className={`accordion-wrapper ${showConcluidas ? 'open' : ''}`}>
-                                            <div className="accordion-inner">
-                                                <div className="concluidas-content-wrapper" style={{ paddingTop: '10px' }}>
-                                                    <div className="tarefas-grid completed">
-                                                        {tarefasConcluidas.map(t => (
-                                                            <TarefaCard
-                                                                key={t.id}
-                                                                tarefa={t}
-                                                                onUpdate={handleSilentRefresh}
-                                                                onEdit={handleEditTarefa}
-                                                            />
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </>
-                        )}
+                    <div className="column-scroll-content" style={{ display: 'flex', flexDirection: 'column' }}>
+                        <TarefaBoard />
                     </div>
                 )}
 
@@ -670,7 +470,6 @@ export function Registros() {
 
             {/* MODAIS */}
             <AnotacaoModal active={notaModalOpen} closeModal={() => setNotaModalOpen(false)} onUpdate={handleSilentRefresh} editingData={editingNota} gruposDisponiveis={grupos} />
-            <TarefaModal active={tarefaModalOpen} closeModal={() => setTarefaModalOpen(false)} onUpdate={handleSilentRefresh} editingData={editingTarefa} />
             <GrupoModal
                 active={grupoModalOpen}
                 closeModal={() => setGrupoModalOpen(false)}
