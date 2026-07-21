@@ -22,32 +22,59 @@ export function TransactionCard({ transacao, onUpdate, onEdit, onEditCofre, onTo
     };
 
     const handleDelete = async () => {
-        const isRecorrente = tipo !== 'pontual';
-        const dialogConfig = isRecorrente
-            ? {
-                title: 'Encerrar Recorrência?',
-                description: 'Deseja encerrar esta série? O histórico pago será mantido como "Encerrado" e cobranças futuras serão canceladas.',
-                confirmLabel: 'Sim, encerrar',
-                variant: 'warning'
-              }
-            : {
-                title: 'Excluir Transação?',
+        // Pontual: exclusão direta (lançamento manual avulso).
+        if (tipo === 'pontual') {
+            const ok = await confirm({
+                title: 'Excluir transação?',
                 description: 'Tem certeza que deseja excluir esta transação? Essa ação não pode ser desfeita.',
-                confirmLabel: 'Sim, excluir',
-                variant: 'danger'
-              };
+                confirmLabel: 'Sim, excluir', variant: 'danger',
+            });
+            if (!ok) return;
+            await runDelete(() => deleteTransacao(transacao.id), 'Transação removida.');
+            return;
+        }
 
-        const isConfirmed = await confirm(dialogConfig);
-        if (!isConfirmed) return;
+        // Recorrente/Parcelada: proteger histórico efetivado.
+        const grupoRows = (transacao._allParcelas && transacao._allParcelas.length)
+            ? transacao._allParcelas : [transacao];
+        const hasEfetivada = grupoRows.some(t => t.status === 'Efetivada');
+        const hasPendentes = grupoRows.some(t => t.status === 'Pendente');
 
+        // Já encerrada ou totalmente efetivada (sem pendentes): nada a fazer.
+        if (isEncerrada || (hasEfetivada && !hasPendentes)) {
+            addToast({
+                type: 'info', title: 'Não é possível excluir',
+                description: 'Lançamentos já efetivados são histórico e não podem ser excluídos. Não há cobranças pendentes para cancelar.',
+            });
+            return;
+        }
+
+        // Série nunca efetivada → pode ser removida por completo.
+        if (!hasEfetivada) {
+            const ok = await confirm({
+                title: 'Excluir série?',
+                description: 'Nenhum lançamento desta série foi efetivado ainda — ela será removida por completo.',
+                confirmLabel: 'Sim, excluir', variant: 'danger',
+            });
+            if (!ok) return;
+            await runDelete(() => deleteTransacao(transacao.id), 'Série removida.');
+            return;
+        }
+
+        // Tem efetivadas E pendentes → encerrar (cancela pendentes, mantém histórico).
+        const ok = await confirm({
+            title: 'Encerrar recorrência?',
+            description: 'As próximas cobranças (pendentes) serão canceladas e o histórico já efetivado será mantido como "Encerrado". Os lançamentos efetivados não podem ser excluídos.',
+            confirmLabel: 'Sim, encerrar', variant: 'warning',
+        });
+        if (!ok) return;
+        await runDelete(() => stopRecorrencia(transacao.id), 'Cobranças futuras canceladas. Histórico mantido.', 'Série encerrada');
+    };
+
+    const runDelete = async (fn, successDesc, successTitle = 'Concluído') => {
         try {
-            if (isRecorrente) {
-                await stopRecorrencia(transacao.id);
-                addToast({ type: 'success', title: 'Série Encerrada', description: 'Cobranças futuras removidas. Histórico mantido.' });
-            } else {
-                await deleteTransacao(transacao.id);
-                addToast({ type: 'success', title: 'Excluído', description: 'Transação removida.' });
-            }
+            await fn();
+            addToast({ type: 'success', title: successTitle, description: successDesc });
             setIsDeleting(true);
             setTimeout(() => onUpdate(), 450);
         } catch (error) {
@@ -119,7 +146,9 @@ export function TransactionCard({ transacao, onUpdate, onEdit, onEditCofre, onTo
                                     <i className="fa-solid fa-pen-to-square"></i>
                                 </button>
                             )}
-                            {!isArquivada && (
+                            {/* Aporte automático já efetivado é histórico — sem excluir.
+                                Manual (qualquer) e automático pendente podem ser removidos. */}
+                            {!isArquivada && !(isAgendado && !isPendente) && (
                                 <button
                                     onClick={() => onDeleteCofre && onDeleteCofre(transacao)}
                                     className="btn-action-icon btn-delete-transacao"
@@ -239,9 +268,12 @@ export function TransactionCard({ transacao, onUpdate, onEdit, onEditCofre, onTo
                     <button onClick={() => onEdit && onEdit(transacao)} className="btn-action-icon btn-edit-transacao">
                         <i className="fa-solid fa-pen-to-square"></i>
                     </button>
-                    <button onClick={handleDelete} className="btn-action-icon btn-delete-transacao">
-                        <i className="fa-solid fa-trash-can"></i>
-                    </button>
+                    {/* Encerrada = histórico; não pode ser excluída (botão oculto). */}
+                    {!isEncerrada && (
+                        <button onClick={handleDelete} className="btn-action-icon btn-delete-transacao">
+                            <i className="fa-solid fa-trash-can"></i>
+                        </button>
+                    )}
                     {isExpandableGroup && (
                         <button
                             onClick={() => onToggleExpand && onToggleExpand(transacao.id)}

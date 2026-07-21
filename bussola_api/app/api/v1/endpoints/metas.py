@@ -88,6 +88,10 @@ def toggle_movimentacao(meta_id: int, mov_id: int, db: Session = Depends(deps.ge
 
 @router.delete("/{meta_id}/movimentacoes/{mov_id}")
 def delete_movimentacao(meta_id: int, mov_id: int, db: Session = Depends(deps.get_db), current_user=Depends(deps.get_current_user)):
-    if not metas_service.deletar_movimentacao(db, meta_id, mov_id, current_user.id):
+    try:
+        ok = metas_service.deletar_movimentacao(db, meta_id, mov_id, current_user.id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if not ok:
         raise HTTPException(status_code=404, detail="Movimentação não encontrada")
     return {"ok": True}

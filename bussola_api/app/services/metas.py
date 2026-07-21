@@ -200,6 +200,10 @@ class MetasService:
         )
         if not mov:
             return False
+        # Aporte AUTOMÁTICO já efetivado é histórico — não pode ser excluído.
+        # (Pendente pode ser cancelado; manual pode ser excluído normalmente.)
+        if mov.origem == "agendado" and mov.status == "Efetivada":
+            raise ValueError("Aporte automático já efetivado não pode ser excluído.")
         db.delete(mov)
         db.commit()
         db.refresh(meta)

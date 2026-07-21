@@ -113,27 +113,42 @@ def delete_transacao(
     current_user = Depends(deps.get_current_user)
 ):
     """
-    Exclui uma transação COMPLETAMENTE.
-    
-    Regra de Recorrência:
-        Se a transação faz parte de um grupo (parcelada/recorrente), TODAS as transações
-        desse grupo são excluídas em cascata para manter a integridade contábil.
-        OBS: Para apenas "Encerrar" mantendo histórico, use o endpoint /encerrar-recorrencia.
+    Exclui uma transação, protegendo o histórico já efetivado.
+
+    Regras (integridade contábil):
+    - Pontual: excluída normalmente (lançamento manual avulso).
+    - Recorrente/Parcelada (grupo):
+        * Se QUALQUER ocorrência do grupo já foi 'Efetivada', a exclusão é
+          BLOQUEADA (400). O histórico realizado não pode ser apagado — use
+          "encerrar" (/encerrar-recorrencia) para cancelar apenas os pendentes.
+        * Se NENHUMA foi efetivada (série nunca realizada), o grupo inteiro é
+          removido (limpeza de algo criado por engano).
     """
     transacao = db.query(Transacao).filter(Transacao.id == id, Transacao.user_id == current_user.id).first()
     if not transacao:
         raise HTTPException(status_code=404, detail="Transação não encontrada")
-    
-    # Exclusão em Lote se pertencer a um grupo
-    if transacao.id_grupo_recorrencia and transacao.tipo_recorrencia in ['recorrente', 'parcelada']:
+
+    is_grupo = transacao.id_grupo_recorrencia and transacao.tipo_recorrencia in ['recorrente', 'parcelada']
+
+    if is_grupo:
+        tem_efetivada = db.query(Transacao).filter(
+            Transacao.id_grupo_recorrencia == transacao.id_grupo_recorrencia,
+            Transacao.user_id == current_user.id,
+            Transacao.status == 'Efetivada',
+        ).count() > 0
+        if tem_efetivada:
+            raise HTTPException(
+                status_code=400,
+                detail="Série com lançamentos efetivados não pode ser excluída. Encerre a recorrência para cancelar os pendentes.",
+            )
+        # Nenhuma efetivada → remove o grupo inteiro (nada a preservar).
         db.query(Transacao).filter(
             Transacao.id_grupo_recorrencia == transacao.id_grupo_recorrencia,
-            Transacao.user_id == current_user.id
+            Transacao.user_id == current_user.id,
         ).delete()
     else:
-        # Exclusão unitária
         db.delete(transacao)
-    
+
     db.commit()
     return {"status": "success"}
 

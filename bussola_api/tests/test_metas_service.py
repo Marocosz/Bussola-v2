@@ -143,6 +143,24 @@ def test_atualizar_movimentacao_inexistente_retorna_none(db, user):
     assert metas_service.atualizar_movimentacao(db, m.id, 99999, MovimentacaoUpdate(valor=10.0), user.id) is None
 
 
+def test_deletar_aporte_agendado_efetivado_bloqueia(db, user):
+    m = metas_service.criar_meta(db, MetaCreate(nome="V", valor_alvo=1000.0), user.id)
+    mov = MovimentacaoMeta(meta_id=m.id, user_id=user.id, tipo="aporte", valor=100.0,
+                           status="Efetivada", origem="agendado")
+    db.add(mov); db.commit(); db.refresh(mov)
+    metas_service._recompute_saldo(db, m)
+    with pytest.raises(ValueError, match="autom"):
+        metas_service.deletar_movimentacao(db, m.id, mov.id, user.id)
+
+
+def test_deletar_aporte_agendado_pendente_ok(db, user):
+    m = metas_service.criar_meta(db, MetaCreate(nome="V", valor_alvo=1000.0), user.id)
+    mov = MovimentacaoMeta(meta_id=m.id, user_id=user.id, tipo="aporte", valor=100.0,
+                           status="Pendente", origem="agendado")
+    db.add(mov); db.commit(); db.refresh(mov)
+    assert metas_service.deletar_movimentacao(db, m.id, mov.id, user.id) is True
+
+
 def test_aporte_incrementa_saldo(db, user):
     m = metas_service.criar_meta(db, MetaCreate(nome="V", valor_alvo=1000.0), user.id)
     metas_service.criar_movimentacao(
