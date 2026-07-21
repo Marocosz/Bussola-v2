@@ -294,6 +294,35 @@ class RegistrosService:
         db.refresh(tarefa)
         return tarefa
 
+    def reordenar_tarefas(self, db: Session, user_id: int, status: str, tarefa_ids: list):
+        """
+        Persiste a nova ordem/coluna de um drop do board.
+
+        Para cada id (na ordem recebida) que pertença ao usuário: grava `ordem = índice`,
+        aplica o `status` destino e ajusta `data_conclusao` (seta se virou 'Concluído',
+        limpa caso contrário). Ids alheios são ignorados.
+        """
+        tarefas = (
+            db.query(Tarefa)
+            .filter(Tarefa.id.in_(tarefa_ids), Tarefa.user_id == user_id)
+            .all()
+        )
+        por_id = {t.id: t for t in tarefas}
+
+        for indice, tid in enumerate(tarefa_ids):
+            tarefa = por_id.get(tid)
+            if tarefa is None:
+                continue
+            tarefa.ordem = indice
+            tarefa.status = status
+            if status == "Concluído":
+                if tarefa.data_conclusao is None:
+                    tarefa.data_conclusao = datetime.now()
+            else:
+                tarefa.data_conclusao = None
+
+        db.commit()
+
     def delete_tarefa(self, db: Session, tarefa_id: int, user_id: int):
         # O banco deve ter cascade configurado, senão precisaria deletar subtarefas manualmente
         tarefa = db.query(Tarefa).filter(Tarefa.id == tarefa_id, Tarefa.user_id == user_id).first()
