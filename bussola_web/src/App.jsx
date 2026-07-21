@@ -6,7 +6,8 @@ import './assets/styles/global.css';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { ConfirmDialogProvider } from './context/ConfirmDialogContext';
-import { SystemProvider } from './context/SystemContext'; 
+import { SystemProvider } from './context/SystemContext';
+import { TooltipHost } from './components/Tooltip';
 
 function App() {
     return (
@@ -16,6 +17,7 @@ function App() {
                     <AuthProvider>
                         <ConfirmDialogProvider>
                             <AppRoutes />
+                            <TooltipHost />
                         </ConfirmDialogProvider>
                     </AuthProvider>
                 </SystemProvider>

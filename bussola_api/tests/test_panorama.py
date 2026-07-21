@@ -117,6 +117,22 @@ def test_cofrinhos_no_payload(db, user):
     assert dash["cofrinhos"]["metas"][0]["nome"] == "Viagem"
 
 
+def test_orcamento_limite_escala_por_periodo(db, user):
+    # limite mensal 100; período = ano passado inteiro (12 meses) → limite 1200
+    desp = Categoria(nome="Mercado", tipo="despesa", meta_limite=100.0, user_id=user.id)
+    db.add(desp); db.commit(); db.refresh(desp)
+    ano_passado_ini = datetime.now().replace(month=1, day=1) - relativedelta(years=1)
+    _tx(db, user, desp, 600.0, ano_passado_ini + relativedelta(months=3))
+    dash = panorama_service.get_dashboard_data(
+        db, user.id, start_date=ano_passado_ini, end_date=ano_passado_ini + relativedelta(years=1)
+    )
+    item = next(o for o in dash["orcamento"] if o["nome"] == "Mercado")
+    assert item["meses"] == 12
+    assert item["limite"] == 1200.0
+    assert item["limite_mensal"] == 100.0
+    assert item["pct"] == 50.0  # 600 / 1200
+
+
 def test_orcamento_estourado_gera_insight(db, user):
     desp = Categoria(nome="Delivery", tipo="despesa", meta_limite=100.0, user_id=user.id)
     db.add(desp); db.commit(); db.refresh(desp)

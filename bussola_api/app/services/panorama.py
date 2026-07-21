@@ -342,8 +342,15 @@ class PanoramaService:
             "balanco": round(prev_rec - prev_desp, 2),
         }
 
-        # Orçamento por categoria (gasto do período vs meta_limite). O front só
-        # exibe quando o range é ~1 mês (limite é mensal).
+        # Orçamento por categoria: o meta_limite é MENSAL. Para períodos maiores
+        # (ex.: "Ano passado" = 12 meses) o limite é escalado por nº de meses do
+        # período — contando o mês atual como cheio e sem passar de "hoje".
+        ref_fim = min(today, end_date - relativedelta(days=1))
+        if ref_fim < start_date:
+            meses_periodo = 0
+        else:
+            meses_periodo = (ref_fim.year - start_date.year) * 12 + (ref_fim.month - start_date.month) + 1
+
         gasto_por_cat = dict(db.query(Transacao.categoria_id, func.sum(Transacao.valor)).join(Categoria).filter(
             Categoria.tipo == 'despesa', Transacao.user_id == user_id,
             Transacao.status == 'Efetivada',
@@ -351,13 +358,15 @@ class PanoramaService:
         ).group_by(Transacao.categoria_id).all())
         orcamento = []
         for c in db.query(Categoria).filter(Categoria.tipo == 'despesa', Categoria.user_id == user_id).all():
-            limite = float(c.meta_limite or 0)
+            limite_mensal = float(c.meta_limite or 0)
+            limite = round(limite_mensal * meses_periodo, 2)  # limite proporcional ao período
             gasto = float(gasto_por_cat.get(c.id, 0) or 0)
             if limite <= 0 and gasto <= 0:
                 continue
             pct = round((gasto / limite) * 100, 1) if limite > 0 else None
             orcamento.append({"nome": c.nome, "cor": c.cor, "icone": c.icone,
-                              "gasto": gasto, "limite": limite, "pct": pct})
+                              "gasto": gasto, "limite": limite, "limite_mensal": limite_mensal,
+                              "meses": meses_periodo, "pct": pct})
         orcamento.sort(key=lambda o: (o["pct"] is None, -(o["pct"] or 0)))
 
         # Cofrinhos (Metas ativas) — base para as mini-jarras / Reservatório.
@@ -449,9 +458,51 @@ class PanoramaService:
                     "detalhe": "No ritmo atual, deve concluir ainda este mês.",
                     "acao": "/financas",
                 })
+
+        # [NOVAS REGRAS]
+        # Balanço realizado negativo no período (gastou mais do que ganhou).
+        if (receita > 0 or despesa > 0) and (receita - despesa) < 0:
+            insights.append({
+                "id": "saldo-neg", "tipo": "financas", "severidade": "aviso",
+                "titulo": "Gastou mais do que ganhou",
+                "detalhe": f"Balanço do período: {round(receita - despesa, 2)}.",
+                "acao": "/financas",
+            })
+        # Despesa bem acima do período anterior (> 20%).
+        if comparativo["despesa"] > 0 and despesa > comparativo["despesa"] * 1.2:
+            up = round((despesa / comparativo["despesa"] - 1) * 100)
+            insights.append({
+                "id": "desp-alta", "tipo": "financas", "severidade": "aviso",
+                "titulo": f"Despesas {up}% acima do período anterior",
+                "detalhe": "Seus gastos subiram frente ao período comparável.",
+                "acao": "/financas",
+            })
+        # Nenhuma receita registrada ainda no mês corrente (após o dia 5).
+        if start_date <= today < end_date and meses_periodo <= 1 and receita == 0 and today.day > 5:
+            insights.append({
+                "id": "sem-receita", "tipo": "financas", "severidade": "info",
+                "titulo": "Nenhuma receita registrada ainda",
+                "detalhe": "Não há receitas efetivadas neste período.",
+                "acao": "/financas",
+            })
+        # Cofrinho parado: tem histórico mas sem aporte efetivado há > 45 dias.
+        for m in metas_ativas:
+            efet = [mv for mv in m.movimentacoes if mv.status == "Efetivada"]
+            if not efet:
+                continue
+            ultima = max(mv.data for mv in efet)
+            dias = (today - ultima.replace(tzinfo=None)).days
+            if dias > 45:
+                insights.append({
+                    "id": f"parado-{m.id}", "tipo": "metas", "severidade": "info",
+                    "titulo": f"Cofrinho '{m.nome}' parado",
+                    "detalhe": f"Sem aportes há {dias} dias.",
+                    "acao": "/financas",
+                })
+
         ordem_sev = {"perigo": 0, "aviso": 1, "info": 2}
         insights.sort(key=lambda i: ordem_sev.get(i["severidade"], 3))
-        insights = insights[:4]
+        insights = insights[:12]  # front pagina em carrossel de 4
 
         return {
             "kpis": kpis,

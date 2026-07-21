@@ -79,7 +79,9 @@ class OrcamentoItem(BaseModel):
     cor: Optional[str] = None
     icone: Optional[str] = None
     gasto: float
-    limite: float
+    limite: float               # limite já escalado para o período
+    limite_mensal: float = 0.0  # limite mensal cru (referência)
+    meses: int = 1              # nº de meses do período usado no escalonamento
     pct: Optional[float] = None  # None quando a categoria não tem limite
 
 
