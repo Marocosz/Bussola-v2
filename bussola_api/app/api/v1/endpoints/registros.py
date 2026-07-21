@@ -33,6 +33,7 @@ from app.schemas.registros import (
     RegistrosDashboardResponse,
     AnotacaoCreate, AnotacaoResponse, AnotacaoUpdate,
     TarefaCreate, TarefaResponse, TarefaUpdate,
+    TarefaBoardResponse, ReordenarTarefasRequest,
     GrupoCreate, GrupoResponse,
     HabitoCreate, HabitoUpdate, HabitoResponse, HabitoRegistroResponse,
     ExportPdfRequest,
@@ -177,9 +178,27 @@ async def export_anotacao_pdf(
 # TAREFAS (TO-DO LIST)
 # --------------------------------------------------------------------------------------
 
+@router.get("/tarefas/board", response_model=TarefaBoardResponse)
+def get_tarefas_board(
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_user)
+):
+    """Retorna as tarefas agrupadas nas 4 colunas do board kanban."""
+    return registros_service.get_board_data(db, current_user.id)
+
+@router.patch("/tarefas/reordenar")
+def reordenar_tarefas(
+    dados: ReordenarTarefasRequest,
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_user)
+):
+    """Persiste a reordenação/movimentação de cards do board (drag-and-drop)."""
+    registros_service.reordenar_tarefas(db, current_user.id, dados.status, dados.tarefa_ids)
+    return {"status": "success"}
+
 @router.post("/tarefas", response_model=TarefaResponse)
 def create_tarefa(
-    dados: TarefaCreate, 
+    dados: TarefaCreate,
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):

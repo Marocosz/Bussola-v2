@@ -126,6 +126,7 @@ class TarefaUpdate(BaseModel):
 
 class TarefaResponse(TarefaBase):
     id: int
+    ordem: int = 0
     data_criacao: datetime
     data_conclusao: Optional[datetime] = None
     subtarefas: List[SubtarefaResponse] = []
@@ -142,6 +143,21 @@ class TarefaResponse(TarefaBase):
 
     class Config:
         from_attributes = True
+
+# --------------------------------------------------------------------------------------
+# BOARD KANBAN (Tarefas agrupadas por coluna)
+# --------------------------------------------------------------------------------------
+
+class TarefaBoardResponse(BaseModel):
+    a_fazer: List[TarefaResponse]
+    em_andamento: List[TarefaResponse]
+    concluido: List[TarefaResponse]
+    cancelado: List[TarefaResponse]
+
+
+class ReordenarTarefasRequest(BaseModel):
+    status: str
+    tarefa_ids: List[int]
 
 # --------------------------------------------------------------------------------------
 # HÁBITOS (JORNADA)

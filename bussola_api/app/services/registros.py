@@ -411,6 +411,36 @@ class RegistrosService:
         }
 
     # ==============================================================================
+    # 5b. BOARD KANBAN (Tarefas agrupadas por coluna)
+    # ==============================================================================
+    def get_board_data(self, db: Session, user_id: int):
+        """
+        Monta as 4 colunas do board.
+
+        Colunas abertas (Pendente / Em andamento): ordenadas por `ordem` (reordenação
+        manual). Colunas fechadas (Concluído / Cancelado): mais recentes no topo
+        (data_conclusao desc), limitadas a 200 — reordenar dentro delas não governa a
+        exibição (o `ordem` ainda é gravado no drop, mas ignorado aqui).
+        """
+        base = db.query(Tarefa).filter(Tarefa.user_id == user_id)
+
+        a_fazer = base.filter(Tarefa.status == "Pendente") \
+            .order_by(Tarefa.ordem.asc(), Tarefa.id.desc()).all()
+        em_andamento = base.filter(Tarefa.status == "Em andamento") \
+            .order_by(Tarefa.ordem.asc(), Tarefa.id.desc()).all()
+        concluido = base.filter(Tarefa.status == "Concluído") \
+            .order_by(Tarefa.data_conclusao.desc().nullslast(), Tarefa.id.desc()).limit(200).all()
+        cancelado = base.filter(Tarefa.status == "Cancelado") \
+            .order_by(Tarefa.data_conclusao.desc().nullslast(), Tarefa.id.desc()).limit(200).all()
+
+        return {
+            "a_fazer": a_fazer,
+            "em_andamento": em_andamento,
+            "concluido": concluido,
+            "cancelado": cancelado,
+        }
+
+    # ==============================================================================
     # 6. GESTÃO DE HÁBITOS (JORNADA)
     # ==============================================================================
 
