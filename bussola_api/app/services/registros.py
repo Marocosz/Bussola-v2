@@ -457,6 +457,8 @@ class RegistrosService:
             .order_by(Tarefa.ordem.asc(), Tarefa.id.desc()).all()
         em_andamento = base.filter(Tarefa.status == "Em andamento") \
             .order_by(Tarefa.ordem.asc(), Tarefa.id.desc()).all()
+        bloqueado = base.filter(Tarefa.status == "Bloqueado") \
+            .order_by(Tarefa.ordem.asc(), Tarefa.id.desc()).all()
         concluido = base.filter(Tarefa.status == "Concluído") \
             .order_by(Tarefa.data_conclusao.desc().nullslast(), Tarefa.id.desc()).limit(200).all()
         cancelado = base.filter(Tarefa.status == "Cancelado") \
@@ -465,6 +467,7 @@ class RegistrosService:
         return {
             "a_fazer": a_fazer,
             "em_andamento": em_andamento,
+            "bloqueado": bloqueado,
             "concluido": concluido,
             "cancelado": cancelado,
         }

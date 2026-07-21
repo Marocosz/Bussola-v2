@@ -151,6 +151,7 @@ class TarefaResponse(TarefaBase):
 class TarefaBoardResponse(BaseModel):
     a_fazer: List[TarefaResponse]
     em_andamento: List[TarefaResponse]
+    bloqueado: List[TarefaResponse]
     concluido: List[TarefaResponse]
     cancelado: List[TarefaResponse]
 

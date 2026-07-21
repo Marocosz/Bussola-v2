@@ -510,6 +510,7 @@ export const toggleSubtarefa = async (subId: number) => {
 export interface TarefaBoard {
     a_fazer: Tarefa[];
     em_andamento: Tarefa[];
+    bloqueado: Tarefa[];
     concluido: Tarefa[];
     cancelado: Tarefa[];
 }

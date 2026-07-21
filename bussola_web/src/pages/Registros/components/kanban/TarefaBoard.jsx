@@ -13,7 +13,7 @@ import { BoardCard } from './BoardCard';
 import { TarefaDetailPanel } from './TarefaDetailPanel';
 import '../../styles/kanban.css';
 
-const VAZIO = { a_fazer: [], em_andamento: [], concluido: [], cancelado: [] };
+const VAZIO = { a_fazer: [], em_andamento: [], bloqueado: [], concluido: [], cancelado: [] };
 const PRIOS = ['Todas', 'Crítica', 'Alta', 'Média', 'Baixa'];
 
 export function TarefaBoard() {
@@ -39,7 +39,7 @@ export function TarefaBoard() {
             const data = await getTarefasBoard();
             setColunas({
                 a_fazer: data.a_fazer, em_andamento: data.em_andamento,
-                concluido: data.concluido, cancelado: data.cancelado,
+                bloqueado: data.bloqueado, concluido: data.concluido, cancelado: data.cancelado,
             });
         } catch (e) {
             logger.error('Erro ao carregar board', { error: String(e) });

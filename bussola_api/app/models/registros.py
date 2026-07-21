@@ -30,6 +30,7 @@ import enum
 class StatusTarefa(str, enum.Enum):
     PENDENTE = "Pendente"
     EM_ANDAMENTO = "Em andamento"
+    BLOQUEADO = "Bloqueado"
     CONCLUIDO = "Concluído"
     CANCELADO = "Cancelado"
 

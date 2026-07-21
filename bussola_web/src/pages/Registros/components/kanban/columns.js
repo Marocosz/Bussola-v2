@@ -2,6 +2,7 @@
 export const COLUNAS = [
     { key: 'a_fazer',      status: 'Pendente',     label: 'A Fazer',      accent: 'var(--cor-azul-primario)' },
     { key: 'em_andamento', status: 'Em andamento', label: 'Em Andamento', accent: 'var(--cor-laranja-aviso)' },
+    { key: 'bloqueado',    status: 'Bloqueado',    label: 'Bloqueado',    accent: 'var(--cor-acento)' },
     { key: 'concluido',    status: 'Concluído',    label: 'Concluído',    accent: 'var(--cor-verde-sucesso)' },
     { key: 'cancelado',    status: 'Cancelado',    label: 'Cancelado',    accent: 'var(--cor-vermelho-delete)' },
 ];

@@ -27,12 +27,15 @@ def test_board_agrupa_e_ordena(client):
     client.post("/api/v1/registros/tarefas", json={"titulo": "P2"})
     client.post("/api/v1/registros/tarefas", json={"titulo": "A1", "status": "Em andamento"})
 
+    client.post("/api/v1/registros/tarefas", json={"titulo": "B1", "status": "Bloqueado"})
+
     r = client.get("/api/v1/registros/tarefas/board")
     assert r.status_code == 200, r.text
     body = r.json()
-    assert {"a_fazer", "em_andamento", "concluido", "cancelado"} == set(body.keys())
+    assert {"a_fazer", "em_andamento", "bloqueado", "concluido", "cancelado"} == set(body.keys())
     assert [t["titulo"] for t in body["a_fazer"]] == ["P1", "P2"]   # ordem asc
     assert len(body["em_andamento"]) == 1
+    assert len(body["bloqueado"]) == 1
     assert body["a_fazer"][0]["ordem"] == 0
 
 
