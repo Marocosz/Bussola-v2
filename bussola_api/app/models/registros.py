@@ -31,6 +31,7 @@ class StatusTarefa(str, enum.Enum):
     PENDENTE = "Pendente"
     EM_ANDAMENTO = "Em andamento"
     CONCLUIDO = "Concluído"
+    CANCELADO = "Cancelado"
 
 class GrupoAnotacao(Base):
     """
@@ -100,6 +101,7 @@ class Tarefa(Base):
     
     # Usa os valores do Enum definido no topo
     status = Column(String(50), default=StatusTarefa.PENDENTE.value)
+    ordem = Column(Integer, nullable=False, default=0)  # Posição dentro da coluna do board
     fixado = Column(Boolean, default=False)
     
     data_criacao = Column(DateTime, default=now_utc) # [CORREÇÃO]
