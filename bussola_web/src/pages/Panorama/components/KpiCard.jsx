@@ -1,6 +1,6 @@
 import React from 'react';
 
-export function KpiCard({ iconClass, value, label, type, subtext, isPrivacy = false }) {
+export function KpiCard({ iconClass, value, label, type, subtext, isPrivacy = false, delta = null, deltaGood = 'up' }) {
     const getColorStyle = () => {
         switch(type) {
             case 'receita': return { bg: 'rgba(39, 174, 96, 0.15)', color: '#27ae60' }; 
@@ -24,6 +24,18 @@ export function KpiCard({ iconClass, value, label, type, subtext, isPrivacy = fa
                 <span className={`kpi-value-text ${isPrivacy ? 'privacy-blur' : ''}`}>{value}</span>
                 <span className="kpi-label-text">{label}</span>
                 {subtext && <span className="kpi-subtext">{subtext}</span>}
+                {delta != null && Number.isFinite(delta) && (
+                    (() => {
+                        const up = delta >= 0;
+                        const positivo = (deltaGood === 'up') ? up : !up;
+                        return (
+                            <span className={`kpi-delta ${positivo ? 'good' : 'bad'}`}>
+                                <i className={`fa-solid fa-arrow-${up ? 'up' : 'down'}`}></i>
+                                {Math.abs(delta).toFixed(0)}%
+                            </span>
+                        );
+                    })()
+                )}
             </div>
         </div>
     );
