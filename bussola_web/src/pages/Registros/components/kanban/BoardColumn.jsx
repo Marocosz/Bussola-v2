@@ -3,7 +3,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { BoardCard } from './BoardCard';
 
-export function BoardColumn({ coluna, tarefas, cardVisivel, onCardClick, onQuickAdd }) {
+function BoardColumnBase({ coluna, tarefas, cardVisivel, onCardClick, onQuickAdd }) {
     const { setNodeRef, isOver } = useDroppable({ id: coluna.key });
     const [adding, setAdding] = useState(false);
     const [titulo, setTitulo] = useState('');
@@ -63,3 +63,7 @@ export function BoardColumn({ coluna, tarefas, cardVisivel, onCardClick, onQuick
         </div>
     );
 }
+
+// Colunas cujo array `tarefas` não mudou de referência não re-renderizam
+// (num drag cross-coluna, só 2 das 4 mudam).
+export const BoardColumn = React.memo(BoardColumnBase);

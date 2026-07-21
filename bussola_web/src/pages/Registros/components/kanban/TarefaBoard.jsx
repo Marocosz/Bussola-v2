@@ -111,7 +111,7 @@ export function TarefaBoard() {
         }
     };
 
-    const quickAdd = async (statusDestino, titulo) => {
+    const quickAdd = useCallback(async (statusDestino, titulo) => {
         try {
             await createTarefa({ titulo, status: statusDestino });
             carregar();
@@ -119,12 +119,14 @@ export function TarefaBoard() {
             logger.error('Erro no quick-add', { error: String(e) });
             addToast({ type: 'error', title: 'Erro', description: 'Falha ao criar tarefa.' });
         }
-    };
+    }, [carregar, addToast]);
 
-    const abrirNova = () => { setPanelTarefa(null); setPanelAberto(true); };
-    const abrirCard = (t) => { setPanelTarefa(t); setPanelAberto(true); };
+    const abrirNova = useCallback(() => { setPanelTarefa(null); setPanelAberto(true); }, []);
+    const abrirCard = useCallback((t) => { setPanelTarefa(t); setPanelAberto(true); }, []);
 
-    const cardVisivel = (t) => {
+    // Estável durante o arraste (só muda quando busca/filtro mudam), pra não
+    // invalidar o memo dos cards a cada frame.
+    const cardVisivel = useCallback((t) => {
         if (filtroPrio !== 'Todas' && t.prioridade !== filtroPrio) return false;
         if (busca) {
             const term = busca.toLowerCase();
@@ -133,7 +135,7 @@ export function TarefaBoard() {
             if (!emTitulo && !emDesc) return false;
         }
         return true;
-    };
+    }, [busca, filtroPrio]);
 
     return (
         <div className="kb-board-scope">

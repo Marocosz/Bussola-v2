@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { PRIO_COLORS } from './columns';
@@ -23,20 +23,25 @@ function formatarPrazo(prazo) {
 }
 
 // `overlay` = render sem sortable (usado no DragOverlay).
-export function BoardCard({ tarefa, onClick, hidden = false, overlay = false }) {
+function BoardCardBase({ tarefa, onClick, hidden = false, overlay = false }) {
     const sortable = useSortable({ id: tarefa.id, disabled: overlay });
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = sortable;
+
+    // Cálculos pesados memoizados: durante o arraste o dnd-kit re-renderiza cada
+    // item por frame; sem isso, a árvore de subtarefas seria percorrida 86x/frame.
+    const prog = useMemo(() => contarSubtarefas(tarefa.subtarefas), [tarefa.subtarefas]);
+    const prazo = useMemo(() => formatarPrazo(tarefa.prazo), [tarefa.prazo]);
+    const atrasado = useMemo(
+        () => tarefa.prazo && new Date(tarefa.prazo) < new Date() && tarefa.status !== 'Concluído',
+        [tarefa.prazo, tarefa.status],
+    );
+    const prioColor = PRIO_COLORS[tarefa.prioridade] || PRIO_COLORS['Média'];
 
     const style = overlay ? undefined : {
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.4 : 1,
     };
-
-    const prog = contarSubtarefas(tarefa.subtarefas);
-    const prazo = formatarPrazo(tarefa.prazo);
-    const atrasado = tarefa.prazo && new Date(tarefa.prazo) < new Date() && tarefa.status !== 'Concluído';
-    const prioColor = PRIO_COLORS[tarefa.prioridade] || PRIO_COLORS['Média'];
 
     return (
         <div
@@ -74,3 +79,7 @@ export function BoardCard({ tarefa, onClick, hidden = false, overlay = false }) 
         </div>
     );
 }
+
+// React.memo evita re-render vindo do pai (setState de onDragOver / filtros)
+// para os cards cujas props não mudaram.
+export const BoardCard = React.memo(BoardCardBase);
