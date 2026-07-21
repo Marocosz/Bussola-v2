@@ -2,8 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { getPanoramaData, getCategoryHistory } from '../../services/api';
 import { logger } from '../../utils/logger';
 import { KpiCard } from './components/KpiCard';
-import { AttentionStrip } from './components/AttentionStrip';
-import { Reservoir } from './components/Reservoir';
 import { ProvisoesModal, RoteiroModal, RegistrosModal } from './components/PanoramaModals';
 import { useToast } from '../../context/ToastContext';
 import { CustomSelect } from '../../components/CustomSelect'; // Reaproveitando componente
@@ -16,7 +14,7 @@ import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, 
   ArcElement, PointElement, LineElement, RadialLinearScale, Filler
 } from 'chart.js';
-import { Bar, Doughnut, Line } from 'react-chartjs-2';
+import { Bar, Doughnut, Line, Radar } from 'react-chartjs-2';
 
 ChartJS.register(
     CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, 
@@ -149,26 +147,6 @@ export function Panorama() {
     const statusProjecao = fc?.status || 'safe';
     const weeklySpendData = data.gasto_semanal.data; // média por dia da semana (backend)
 
-    // [P1] Deltas vs período anterior (comparativo do backend).
-    const comp = data.comparativo;
-    const pctDelta = (atual, ant) => (ant && ant !== 0 ? ((atual - ant) / Math.abs(ant)) * 100 : null);
-    const dReceita = comp ? pctDelta(receitaTotal, comp.receita) : null;
-    const dDespesa = comp ? pctDelta(despesaTotal, comp.despesa) : null;
-    const dBalanco = comp ? pctDelta(kpis.balanco_mes, comp.balanco) : null;
-
-    // [P1] Cofrinhos + Ritmo + orçamento (só faz sentido exibir orçamento em ~1 mês).
-    const cofrinhos = data.cofrinhos || { total_guardado: 0, qtd: 0, metas: [] };
-    const ritmo = data.ritmo;
-    const resumo = data.kpis;
-    const isMesUnico = (() => {
-        const s = range?.start ? new Date(range.start) : null;
-        const e = range?.end ? new Date(range.end) : null;
-        if (!s || !e) return true;
-        const meses = (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth());
-        return meses <= 1;
-    })();
-    const orcamento = isMesUnico ? (data.orcamento || []) : [];
-
     // ==========================================
     // CONFIGURAÇÃO DOS GRÁFICOS
     // ==========================================
@@ -199,6 +177,20 @@ export function Panorama() {
             { type: 'bar', label: 'Receitas', data: data.evolucao_mensal_receita, backgroundColor: C.verde, borderRadius: 4, order: 1 },
             { type: 'bar', label: 'Despesas', data: data.evolucao_mensal_despesa, backgroundColor: C.vermelho, borderRadius: 4, order: 1 },
         ],
+    };
+
+    const radarTarefasData = {
+        labels: ['Crítica', 'Alta', 'Média', 'Baixa'],
+        datasets: [{
+            label: 'Risco (Pendências)',
+            data: [kpis.tarefas_pendentes.critica, kpis.tarefas_pendentes.alta, kpis.tarefas_pendentes.media, kpis.tarefas_pendentes.baixa],
+            backgroundColor: 'rgba(239, 68, 68, 0.2)', borderColor: C.vermelho, pointBackgroundColor: C.vermelho, pointBorderColor: C.texto,
+        }]
+    };
+
+    const radarOptions = {
+        scales: { r: { angleLines: { color: C.grid }, grid: { color: C.grid }, pointLabels: { color: C.textoSec, font: { size: 10 } }, ticks: { display: false, backdropColor: 'transparent' } } },
+        plugins: { legend: { display: false } }, maintainAspectRatio: false
     };
 
     const roscaGastosData = {
@@ -247,39 +239,19 @@ export function Panorama() {
             </div>
 
             <div className="panorama-content-wrapper">
-
-                {/* 0. ATENÇÃO AGORA (insights) */}
-                <AttentionStrip insights={data.insights || []} />
-
-                {/* 0.1 HERÓI: RESERVATÓRIO */}
-                <div className="panel-section reservoir-panel">
-                    <div className="panel-header">
-                        <div className="panel-header-left">
-                            <h2>Seu dinheiro</h2>
-                            <button className={`btn-privacy-toggle ${privacyMode ? 'active' : ''}`} onClick={togglePrivacy} title={privacyMode ? 'Mostrar valores' : 'Ocultar valores'}>
-                                <i className={`fa-solid ${privacyMode ? 'fa-eye-slash' : 'fa-eye'}`}></i>
-                            </button>
-                        </div>
-                        <div className="period-controls-group">
-                            <DateRangeFilter initialPreset="mes" onChange={setRange} />
-                        </div>
-                    </div>
-                    <Reservoir
-                        caixa={resumo.caixa || 0}
-                        guardado={cofrinhos.total_guardado || 0}
-                        disponivel={(resumo.caixa || 0) - (cofrinhos.total_guardado || 0)}
-                        receitaPeriodo={receitaTotal}
-                        despesaPeriodo={despesaTotal}
-                        cofrinhos={cofrinhos.metas || []}
-                        privacy={privacyMode}
-                    />
-                </div>
-
+                
                 {/* 1. KPIS GERAIS */}
                 <div className="panel-section">
                     <div className="panel-header">
                         <div className="panel-header-left">
                             <h2>Indicadores Chave</h2>
+                            <button className={`btn-privacy-toggle ${privacyMode ? 'active' : ''}`} onClick={togglePrivacy} title={privacyMode ? "Mostrar valores" : "Ocultar valores"}>
+                                <i className={`fa-solid ${privacyMode ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                            </button>
+                        </div>
+                        
+                        <div className="period-controls-group">
+                            <DateRangeFilter initialPreset="mes" onChange={setRange} />
                         </div>
                     </div>
                     
@@ -287,9 +259,9 @@ export function Panorama() {
                         <div className="kpi-group">
                             <span className="group-label">Finanças</span>
                             <div className="kpi-row finance-row">
-                                <KpiCard iconClass="fa-solid fa-arrow-up" value={fmt(kpis.receita_mes)} label="Receita" type="receita" isPrivacy={privacyMode} delta={dReceita} deltaGood="up" />
-                                <KpiCard iconClass="fa-solid fa-arrow-down" value={fmt(kpis.despesa_mes)} label="Despesa" type="despesa" isPrivacy={privacyMode} delta={dDespesa} deltaGood="down" />
-                                <KpiCard iconClass="fa-solid fa-scale-balanced" value={fmt(kpis.balanco_mes)} label="Balanço" type={kpis.balanco_mes >= 0 ? 'receita' : 'despesa'} isPrivacy={privacyMode} delta={dBalanco} deltaGood="up" />
+                                <KpiCard iconClass="fa-solid fa-arrow-up" value={fmt(kpis.receita_mes)} label="Receita" type="receita" isPrivacy={privacyMode} />
+                                <KpiCard iconClass="fa-solid fa-arrow-down" value={fmt(kpis.despesa_mes)} label="Despesa" type="despesa" isPrivacy={privacyMode} />
+                                <KpiCard iconClass="fa-solid fa-scale-balanced" value={fmt(kpis.balanco_mes)} label="Balanço" type={kpis.balanco_mes >= 0 ? 'receita' : 'despesa'} isPrivacy={privacyMode} />
                                 <KpiCard iconClass="fa-solid fa-vault" value={fmt(kpis.caixa)} label="Caixa" type="azul" isPrivacy={privacyMode} />
                             </div>
                         </div>
@@ -431,39 +403,11 @@ export function Panorama() {
                         </div>
                     </div>
 
-                    {/* F. ORÇAMENTO POR CATEGORIA */}
+                    {/* F. RADAR DE RISCO */}
                     <div className="chart-wrapper span-4">
-                        <div className="chart-header"><h3>Orçamento {isMesUnico ? '' : <span className="chart-subtitle">· mensal</span>}</h3></div>
-                        <div className={`chart-body budget-body ${privacyMode ? 'privacy-blur' : ''}`}>
-                            {!isMesUnico ? (
-                                <div className="panorama-empty-note">
-                                    <i className="fa-solid fa-calendar-day"></i>
-                                    <p>Orçamento é mensal</p>
-                                    <span>Selecione "Este mês" para ver o burndown.</span>
-                                </div>
-                            ) : orcamento.length ? (
-                                <div className="budget-list">
-                                    {orcamento.map((o) => {
-                                        const pct = o.pct;
-                                        const over = pct != null && pct > 100;
-                                        return (
-                                            <div className="budget-item" key={o.nome}>
-                                                <div className="budget-item-head">
-                                                    <span className="budget-name"><i className={o.icone || 'fa-solid fa-tag'} style={{ color: o.cor }}></i> {o.nome}</span>
-                                                    <span className={over ? 'over' : ''}>{fmt(o.gasto)}{o.limite > 0 ? ` / ${fmt(o.limite)}` : ''}</span>
-                                                </div>
-                                                {o.limite > 0 && (
-                                                    <div className="budget-bar">
-                                                        <div className="budget-bar-fill" style={{ width: `${Math.min(100, pct)}%`, background: over ? 'var(--cor-vermelho-delete)' : (o.cor || 'var(--cor-azul-primario)') }}></div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            ) : (
-                                <p className="empty-list-msg">Nenhuma categoria com gasto ou limite.</p>
-                            )}
+                        <div className="chart-header"><h3>Perfil de Risco (Pendências)</h3></div>
+                        <div className="chart-body">
+                            <Radar data={radarTarefasData} options={radarOptions} />
                         </div>
                     </div>
 
@@ -488,36 +432,6 @@ export function Panorama() {
                                 <strong>{tarefasPendentesTotal}</strong>
                                 <span>Pendentes</span>
                             </div>
-                        </div>
-                    </div>
-
-                    {/* G2. RITMO (SAÚDE) */}
-                    <div className="chart-wrapper span-4 col-flex">
-                        <div className="chart-header"><h3>Ritmo (saúde)</h3></div>
-                        <div className="chart-body ritmo-body">
-                            {ritmo ? (
-                                <>
-                                    <div className="ritmo-peso">
-                                        <strong className={privacyMode ? 'privacy-blur' : ''}>{ritmo.peso_atual ? `${ritmo.peso_atual} kg` : '—'}</strong>
-                                        {ritmo.peso_delta != null && (
-                                            <span className={`ritmo-delta ${ritmo.peso_delta <= 0 ? 'good' : 'bad'}`}>
-                                                {ritmo.peso_delta > 0 ? '+' : ''}{ritmo.peso_delta} kg
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="ritmo-tags">
-                                        {ritmo.objetivo && <span className="ritmo-tag">{ritmo.objetivo}</span>}
-                                        {ritmo.plano_ativo && <span className="ritmo-tag"><i className="fa-solid fa-dumbbell"></i> {ritmo.plano_ativo}</span>}
-                                        {ritmo.dieta_calorias ? <span className="ritmo-tag"><i className="fa-solid fa-fire"></i> {Math.round(ritmo.dieta_calorias)} kcal</span> : null}
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="panorama-empty-note">
-                                    <i className="fa-solid fa-heart-pulse"></i>
-                                    <p>Sem dados de saúde</p>
-                                    <span>Registre no módulo Ritmo.</span>
-                                </div>
-                            )}
                         </div>
                     </div>
 
