@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { getRegistrosDashboard, deleteGrupo } from '../../services/api';
 
 // ── Helpers de Jornada ──────────────────────────────────────────────────────
@@ -49,6 +49,9 @@ export function Registros() {
     // Hooks de Contexto
     const { addToast } = useToast();
     const dialogConfirm = useConfirm();
+
+    // Permite que o botão "Tarefa" do cabeçalho abra o modal de nova tarefa do board.
+    const novaTarefaRef = useRef(null);
 
     // UI State - Aba ativa
     const [activeTab, setActiveTab] = useState('caderno');
@@ -353,6 +356,15 @@ export function Registros() {
                         );
                     })()}
 
+                    {/* Ações das Tarefas */}
+                    {activeTab === 'tarefas' && (
+                        <div className="header-actions-group">
+                            <button className="btn-primary small-btn" onClick={() => novaTarefaRef.current?.()}>
+                                <i className="fa-solid fa-plus"></i> Tarefa
+                            </button>
+                        </div>
+                    )}
+
                 </div>
 
                 {/* CONTEÚDO: CADERNO */}
@@ -447,7 +459,7 @@ export function Registros() {
                 {/* CONTEÚDO: TAREFAS (Board Kanban) */}
                 {activeTab === 'tarefas' && (
                     <div className="column-scroll-content" style={{ display: 'flex', flexDirection: 'column' }}>
-                        <TarefaBoard />
+                        <TarefaBoard novaRef={novaTarefaRef} />
                     </div>
                 )}
 

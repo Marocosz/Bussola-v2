@@ -1,7 +1,9 @@
 /* ===== Board Kanban de Tarefas ===== */
-.kb-board-scope { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+/* O scope inteiro (toolbar + board) é centralizado com uma largura máxima, então
+   a toolbar e as colunas compartilham as mesmas margens esquerda/direita. */
+.kb-board-scope { display: flex; flex-direction: column; height: 100%; min-height: 0; width: 100%; max-width: 1600px; margin: 0 auto; }
 
-.kb-toolbar { display: flex; gap: 10px; align-items: center; padding: 4px 2px 14px; flex-wrap: wrap; }
+.kb-toolbar { display: flex; gap: 10px; align-items: center; padding: 4px 0 14px; flex-wrap: wrap; }
 .kb-toolbar-search { position: relative; display: flex; align-items: center; }
 .kb-toolbar-search i { position: absolute; left: 12px; color: var(--cor-texto-secundario); font-size: 0.85rem; }
 .kb-toolbar-search input {
@@ -14,10 +16,10 @@
 }
 .kb-toolbar .btn-primary { margin-left: auto; }
 
-/* Colunas — centralizadas horizontalmente (não esticam pra preencher) */
-.kb-board { display: flex; gap: 14px; flex: 1; min-height: 0; overflow-x: auto; padding-bottom: 6px; justify-content: safe center; }
+/* Colunas preenchem o bloco (que já é centralizado via .kb-board-scope) */
+.kb-board { display: flex; gap: 14px; flex: 1; min-height: 0; overflow-x: auto; padding-bottom: 6px; }
 .kb-column {
-    display: flex; flex-direction: column; flex: 0 1 300px; min-width: 260px; max-width: 340px;
+    display: flex; flex-direction: column; flex: 1 1 0; min-width: 260px; max-width: 360px;
     background: var(--cor-fundo-hover); border: 1px solid var(--cor-borda); border-radius: 14px; min-height: 0;
 }
 .kb-column-head { display: flex; align-items: center; gap: 8px; padding: 12px 14px; }

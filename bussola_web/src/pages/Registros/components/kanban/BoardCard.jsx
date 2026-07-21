@@ -23,8 +23,12 @@ function formatarPrazo(prazo) {
 }
 
 // `overlay` = render sem sortable (usado no DragOverlay).
+// Desliga a animação de layout: em coluna grande (~86 cards) animar o transform
+// de todos os itens por frame é o que trava o arraste.
+const semAnimacao = () => false;
+
 function BoardCardBase({ tarefa, onClick, hidden = false, overlay = false }) {
-    const sortable = useSortable({ id: tarefa.id, disabled: overlay });
+    const sortable = useSortable({ id: tarefa.id, disabled: overlay, animateLayoutChanges: semAnimacao });
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = sortable;
 
     // Cálculos pesados memoizados: durante o arraste o dnd-kit re-renderiza cada

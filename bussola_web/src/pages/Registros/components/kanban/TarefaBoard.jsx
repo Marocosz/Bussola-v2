@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     DndContext, DragOverlay, PointerSensor, TouchSensor, KeyboardSensor,
-    useSensor, useSensors, closestCorners,
+    useSensor, useSensors, pointerWithin, rectIntersection,
 } from '@dnd-kit/core';
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { getTarefasBoard, reordenarTarefas, createTarefa } from '../../../../services/api';
@@ -16,7 +16,14 @@ import '../../styles/kanban.css';
 const VAZIO = { a_fazer: [], em_andamento: [], bloqueado: [], concluido: [], cancelado: [] };
 const PRIOS = ['Todas', 'Crítica', 'Alta', 'Média', 'Baixa'];
 
-export function TarefaBoard() {
+// Detecção por ponteiro primeiro (enxerga colunas VAZIAS, que o closestCorners
+// ignora) com fallback por interseção de retângulos.
+const detectarColisao = (args) => {
+    const porPonteiro = pointerWithin(args);
+    return porPonteiro.length > 0 ? porPonteiro : rectIntersection(args);
+};
+
+export function TarefaBoard({ novaRef }) {
     const { addToast } = useToast();
     const [colunas, setColunas] = useState(VAZIO);
     const [loading, setLoading] = useState(true);
@@ -124,6 +131,12 @@ export function TarefaBoard() {
     const abrirNova = useCallback(() => { setPanelTarefa(null); setPanelAberto(true); }, []);
     const abrirCard = useCallback((t) => { setPanelTarefa(t); setPanelAberto(true); }, []);
 
+    // Expõe "abrir nova tarefa" pro botão que vive no cabeçalho da página.
+    useEffect(() => {
+        if (novaRef) novaRef.current = abrirNova;
+        return () => { if (novaRef) novaRef.current = null; };
+    }, [novaRef, abrirNova]);
+
     // Estável durante o arraste (só muda quando busca/filtro mudam), pra não
     // invalidar o memo dos cards a cada frame.
     const cardVisivel = useCallback((t) => {
@@ -147,16 +160,13 @@ export function TarefaBoard() {
                 <select className="kb-toolbar-select" value={filtroPrio} onChange={e => setFiltroPrio(e.target.value)}>
                     {PRIOS.map(p => <option key={p} value={p}>{p === 'Todas' ? 'Prioridade' : p}</option>)}
                 </select>
-                <button className="btn-primary small-btn" onClick={abrirNova}>
-                    <i className="fa-solid fa-plus"></i> Nova Tarefa
-                </button>
             </div>
 
             {loading ? (
                 <div className="kb-loading"><i className="fa-solid fa-circle-notch fa-spin"></i> Carregando board...</div>
             ) : (
                 <DndContext
-                    sensors={sensors} collisionDetection={closestCorners}
+                    sensors={sensors} collisionDetection={detectarColisao}
                     onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd}
                 >
                     <div className="kb-board">
