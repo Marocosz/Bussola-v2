@@ -40,6 +40,13 @@ class Frequencia(str, Enum):
     MENSAL = 'mensal'
     ANUAL = 'anual'
 
+class TipoPagamento(str, Enum):
+    """Forma de pagamento da transação (valores sem acento, como as demais tags)."""
+    PIX = 'pix'
+    CREDITO = 'credito'
+    DEBITO = 'debito'
+    TRANSFERENCIA = 'transferencia'
+
 # --------------------------------------------------------------------------------------
 # CATEGORIAS
 # --------------------------------------------------------------------------------------
@@ -91,7 +98,11 @@ class TransacaoBase(BaseModel):
     total_parcelas: Optional[int] = None
     valor_total_parcelamento: Optional[float] = None # Campo para exibir o valor cheio no front
     frequencia: Optional[Frequencia] = None
-    
+
+    # Forma de pagamento (Pix/Crédito/Débito/Transferência). Opcional no backend —
+    # a obrigatoriedade é regra de UI; legado fica NULL ("não informado").
+    tipo_pagamento: Optional[TipoPagamento] = None
+
     # Flag para indicar se a série foi encerrada manualmente pelo usuário
     recorrencia_encerrada: Optional[bool] = False
 
@@ -104,18 +115,29 @@ class EscopoValor(str, Enum):
     FUTURAS = 'futuras'    # esta e as posteriores (data > data original)
 
 
+class EscopoTipoPagamento(str, Enum):
+    """Alcance da mudança de FORMA DE PAGAMENTO em uma transação agrupada."""
+    APENAS = 'apenas'      # só esta ocorrência
+    FUTURAS = 'futuras'    # esta e as posteriores (data > data original)
+    TODAS = 'todas'        # toda a série, inclusive ocorrências anteriores
+
+
 class TransacaoUpdate(BaseModel):
     descricao: Optional[str] = None
     valor: Optional[float] = None
     data: Optional[datetime] = None
     categoria_id: Optional[int] = None
     status: Optional[StatusTransacao] = None
+    tipo_pagamento: Optional[TipoPagamento] = None
     recorrencia_encerrada: Optional[bool] = None
 
     # Controla APENAS a propagação de `valor` em grupos (parcelada/recorrente).
     # Categoria/descrição sempre propagam ao grupo inteiro; demais campos ficam
     # só na ocorrência alvo. Não é coluna — só request.
     escopo_valor: EscopoValor = EscopoValor.APENAS
+
+    # Controla a propagação de `tipo_pagamento` em grupos. Não é coluna — só request.
+    escopo_tipo_pagamento: EscopoTipoPagamento = EscopoTipoPagamento.APENAS
 
 class TransacaoResponse(TransacaoBase):
     id: int

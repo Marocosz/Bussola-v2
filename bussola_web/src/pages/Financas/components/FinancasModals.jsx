@@ -85,13 +85,21 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                     await createCategoria(payload);
                 }
             } else {
+                // Forma de pagamento é obrigatória (regra de UI; coluna é nullable no banco).
+                if (!formData.tipo_pagamento) {
+                    addToast({ type: 'error', title: 'Campo obrigatório', description: 'Selecione a forma de pagamento.' });
+                    return;
+                }
+
                 let payload = { ...formData, tipo_recorrencia: activeModal };
                 if (editingData) {
-                    // Grupo (parcelada/recorrente): mudança de VALOR pergunta o alcance.
-                    // Categoria/descrição já propagam ao grupo inteiro no backend.
+                    // Grupo (parcelada/recorrente): mudança de VALOR ou de FORMA DE
+                    // PAGAMENTO pergunta o alcance. Categoria/descrição já propagam
+                    // ao grupo inteiro no backend.
                     const isGrupo = !!editingData.id_grupo_recorrencia
                         && (activeModal === 'parcelada' || activeModal === 'recorrente');
                     const valorMudou = Number(formData.valor) !== Number(editingData.valor);
+                    const tipoPagMudou = formData.tipo_pagamento !== editingData.tipo_pagamento;
 
                     if (isGrupo && valorMudou) {
                         const escopo = await confirm({
@@ -106,6 +114,22 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                         });
                         if (!escopo) return; // cancelou
                         payload.escopo_valor = escopo;
+                    }
+
+                    if (isGrupo && tipoPagMudou) {
+                        const escopoTp = await confirm({
+                            title: 'Aplicar a forma de pagamento a quais lançamentos?',
+                            description: 'Você pode mudar só este lançamento, este e os próximos, ou toda a série (inclusive os anteriores).',
+                            variant: 'info',
+                            cancelLabel: 'Cancelar',
+                            options: [
+                                { label: 'Somente esta', value: 'apenas', variant: 'info' },
+                                { label: 'Esta e as futuras', value: 'futuras', variant: 'info' },
+                                { label: 'Todas', value: 'todas', variant: 'info' },
+                            ],
+                        });
+                        if (!escopoTp) return; // cancelou
+                        payload.escopo_tipo_pagamento = escopoTp;
                     }
 
                     await updateTransacao(editingData.id, payload);
@@ -150,6 +174,13 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
         { value: 'mensal', label: 'Mensal' },
         { value: 'semanal', label: 'Semanal' },
         { value: 'anual', label: 'Anual' }
+    ];
+
+    const paymentMethodOptions = [
+        { value: 'pix', label: 'Pix' },
+        { value: 'credito', label: 'Crédito' },
+        { value: 'debito', label: 'Débito' },
+        { value: 'transferencia', label: 'Transferência' },
     ];
 
     const titles = {
@@ -248,11 +279,23 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                         />
                                     </div>
                                     <div className="form-group">
-                                        <CustomSelect 
+                                        <CustomSelect
                                             label="Categoria"
                                             name="categoria_id"
                                             value={formData.categoria_id}
                                             options={categoryOptions}
+                                            onChange={handleChange}
+                                            placeholder="Selecione..."
+                                        />
+                                    </div>
+                                </div>
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <CustomSelect
+                                            label="Forma de Pagamento"
+                                            name="tipo_pagamento"
+                                            value={formData.tipo_pagamento}
+                                            options={paymentMethodOptions}
                                             onChange={handleChange}
                                             placeholder="Selecione..."
                                         />
@@ -273,7 +316,7 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                         <input type="number" step="0.01" name="valor" value={formData.valor || ''} className="form-input" required onChange={handleChange} placeholder="Ex: 1000.00" />
                                     </div>
                                 </div>
-                                <div className="form-row grid-33">
+                                <div className="form-row grid-50-50">
                                     <div className="form-group">
                                         <DatePicker
                                             label={editingData ? 'Data' : 'Data 1ª parcela'}
@@ -285,23 +328,35 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                     </div>
                                     <div className="form-group">
                                         <label>Nº Parcelas</label>
-                                        <input 
-                                            type="number" 
-                                            name="total_parcelas" 
-                                            value={formData.total_parcelas || ''} 
-                                            className="form-input" 
-                                            min="2" 
-                                            required 
+                                        <input
+                                            type="number"
+                                            name="total_parcelas"
+                                            value={formData.total_parcelas || ''}
+                                            className="form-input"
+                                            min="2"
+                                            required
                                             onChange={handleChange}
-                                            disabled={!!editingData} 
+                                            disabled={!!editingData}
                                         />
                                     </div>
+                                </div>
+                                <div className="form-row grid-50-50">
                                     <div className="form-group">
-                                        <CustomSelect 
+                                        <CustomSelect
                                             label="Categoria"
                                             name="categoria_id"
                                             value={formData.categoria_id}
                                             options={categoryOptions}
+                                            onChange={handleChange}
+                                            placeholder="Selecione..."
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <CustomSelect
+                                            label="Forma de Pagamento"
+                                            name="tipo_pagamento"
+                                            value={formData.tipo_pagamento}
+                                            options={paymentMethodOptions}
                                             onChange={handleChange}
                                             placeholder="Selecione..."
                                         />
@@ -322,7 +377,7 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                         <input type="number" step="0.01" name="valor" value={formData.valor || ''} className="form-input" required onChange={handleChange} placeholder="Ex: 39.90" />
                                     </div>
                                 </div>
-                                <div className="form-row grid-33">
+                                <div className="form-row grid-50-50">
                                     <div className="form-group">
                                         <DatePicker
                                             label={editingData ? 'Data' : 'Data Início'}
@@ -333,7 +388,7 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                         />
                                     </div>
                                     <div className="form-group">
-                                        <CustomSelect 
+                                        <CustomSelect
                                             label="Frequência"
                                             name="frequencia"
                                             value={formData.frequencia}
@@ -342,12 +397,24 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                             placeholder="Selecione..."
                                         />
                                     </div>
+                                </div>
+                                <div className="form-row grid-50-50">
                                     <div className="form-group">
-                                        <CustomSelect 
+                                        <CustomSelect
                                             label="Categoria"
                                             name="categoria_id"
                                             value={formData.categoria_id}
                                             options={categoryOptions}
+                                            onChange={handleChange}
+                                            placeholder="Selecione..."
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <CustomSelect
+                                            label="Forma de Pagamento"
+                                            name="tipo_pagamento"
+                                            value={formData.tipo_pagamento}
+                                            options={paymentMethodOptions}
                                             onChange={handleChange}
                                             placeholder="Selecione..."
                                         />

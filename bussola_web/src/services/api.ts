@@ -260,6 +260,7 @@ export interface Transacao {
     parcela_atual?: number;
     total_parcelas?: number;
     frequencia?: string;
+    tipo_pagamento?: 'pix' | 'credito' | 'debito' | 'transferencia';
 }
 
 export interface FinancasDashboard {

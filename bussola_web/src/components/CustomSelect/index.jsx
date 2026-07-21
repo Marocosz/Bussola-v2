@@ -43,7 +43,7 @@ export const CustomSelect = React.memo(function CustomSelect({ label, options, v
                         </span>
                     )}
                     <span className="cs-opt-label">{selectedLabel}</span>
-                    {selectedOpt?.type && <span className="cs-opt-type">{selectedOpt.type}</span>}
+                    {selectedOpt?.type && <span className={`cs-opt-type cs-opt-type-${String(selectedOpt.type).toLowerCase()}`}>{selectedOpt.type}</span>}
                 </span>
                 <i className="fa-solid fa-chevron-down arrow-icon"></i>
             </div>
@@ -62,7 +62,7 @@ export const CustomSelect = React.memo(function CustomSelect({ label, options, v
                                 </span>
                             )}
                             <span className="cs-opt-label">{opt.label}</span>
-                            {opt.type && <span className="cs-opt-type">{opt.type}</span>}
+                            {opt.type && <span className={`cs-opt-type cs-opt-type-${String(opt.type).toLowerCase()}`}>{opt.type}</span>}
                         </div>
                     ))}
                 </div>

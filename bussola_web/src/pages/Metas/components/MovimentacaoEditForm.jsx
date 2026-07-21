@@ -6,7 +6,7 @@ import { DatePicker } from '../../../components/Pickers';
  * Reutilizado inline na timeline da meta e dentro de um BaseModal na lista de
  * Finanças. O pai fornece `onSubmit(payload)` (async: chama a API + recarrega).
  */
-export function MovimentacaoEditForm({ mov, onSubmit, onCancel, compact = false }) {
+export function MovimentacaoEditForm({ mov, onSubmit, onCancel, compact = false, variant = 'inline' }) {
   const toDateInput = (d) => {
     const s = String(d || '');
     return s.includes('T') ? s.split('T')[0] : s;
@@ -33,8 +33,10 @@ export function MovimentacaoEditForm({ mov, onSubmit, onCancel, compact = false 
     }
   };
 
-  return (
-    <form className={`mov-edit-form ${compact ? 'mov-edit-compact' : ''}`} onSubmit={handleSubmit}>
+  const isModal = variant === 'modal';
+
+  const fields = (
+    <>
       <div className="mov-toggle mov-edit-toggle">
         <button type="button" className={tipo === 'aporte' ? 'active' : ''} onClick={() => setTipo('aporte')}>
           <i className="fa-solid fa-plus"></i> Aporte
@@ -60,11 +62,32 @@ export function MovimentacaoEditForm({ mov, onSubmit, onCancel, compact = false 
           <DatePicker label="Data" name="data" value={data} onChange={(e) => setData(e.target.value)} />
         </div>
       </div>
+    </>
+  );
 
-      <div className="mov-edit-actions">
-        <button type="button" className="btn-secondary" onClick={onCancel}>Cancelar</button>
-        <button type="submit" className="btn-primary" disabled={!(Number(valor) > 0) || busy}>Salvar</button>
-      </div>
+  const actions = (
+    <>
+      <button type="button" className="btn-secondary" onClick={onCancel}>Cancelar</button>
+      <button type="submit" className="btn-primary" disabled={!(Number(valor) > 0) || busy}>Salvar</button>
+    </>
+  );
+
+  // Dentro de um BaseModal (lista de Finanças): segue o padrão dos modais —
+  // corpo em .modal-body e botões no .modal-footer.
+  if (isModal) {
+    return (
+      <form className="mov-edit-form" onSubmit={handleSubmit}>
+        <div className="modal-body">{fields}</div>
+        <div className="modal-footer">{actions}</div>
+      </form>
+    );
+  }
+
+  // Inline (timeline da meta): mantém o layout compacto original.
+  return (
+    <form className={`mov-edit-form ${compact ? 'mov-edit-compact' : ''}`} onSubmit={handleSubmit}>
+      {fields}
+      <div className="mov-edit-actions">{actions}</div>
     </form>
   );
 }

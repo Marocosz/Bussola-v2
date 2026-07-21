@@ -389,6 +389,7 @@ class FinancasService:
                     id_grupo_recorrencia=grupo_id,
                     status=dados.status or 'Pendente',
                     valor_total_parcelamento=valor_total_compra, # Salva o total original
+                    tipo_pagamento=dados.tipo_pagamento,
                     user_id=user_id
                 )
                 
@@ -421,6 +422,8 @@ class FinancasService:
         - valor: aplica na alvo; se `escopo_valor == 'futuras'`, também nas
           ocorrências posteriores (data > data original). Em parceladas, o
           `valor_total_parcelamento` é recalculado como a soma real das parcelas.
+        - tipo_pagamento: aplica na alvo; propaga conforme `escopo_tipo_pagamento`
+          ('apenas' | 'futuras' | 'todas' — esta última inclui as anteriores).
         - data / status / recorrencia_encerrada: só na ocorrência alvo.
 
         Transações 'pontual' (ou sem grupo) só alteram a própria linha.
@@ -436,9 +439,10 @@ class FinancasService:
         tipo = transacao.tipo_recorrencia
         is_grupo = bool(grupo_id) and tipo in ('recorrente', 'parcelada')
 
-        # `escopo_valor` é só de controle — não vira atributo da transação.
+        # `escopo_valor`/`escopo_tipo_pagamento` são só de controle — não viram atributo.
         update_data = dados.model_dump(exclude_unset=True)
         escopo_valor = update_data.pop('escopo_valor', 'apenas')
+        escopo_tipo_pagamento = update_data.pop('escopo_tipo_pagamento', 'apenas')
 
         # 2. Atualiza a transação alvo (todos os campos enviados)
         for key, value in update_data.items():
@@ -464,6 +468,21 @@ class FinancasService:
                     Transacao.user_id == user_id,
                     Transacao.data > data_original,
                 ).update({'valor': update_data['valor']}, synchronize_session=False)
+
+            # 3b'. Forma de pagamento → alvo (já aplicada) + escopo escolhido.
+            if 'tipo_pagamento' in update_data and escopo_tipo_pagamento != 'apenas':
+                q_tp = db.query(Transacao).filter(
+                    Transacao.id_grupo_recorrencia == grupo_id,
+                    Transacao.user_id == user_id,
+                    Transacao.id != transacao.id,
+                )
+                if escopo_tipo_pagamento == 'futuras':
+                    q_tp = q_tp.filter(Transacao.data > data_original)
+                # 'todas' → sem filtro de data (inclui anteriores).
+                q_tp.update(
+                    {'tipo_pagamento': update_data['tipo_pagamento']},
+                    synchronize_session=False,
+                )
 
             # 3c. Parcelada: total exibido = soma real das parcelas do grupo.
             if tipo == 'parcelada' and 'valor' in update_data:

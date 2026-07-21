@@ -42,6 +42,7 @@ export function Financas() {
     const [filterTipo, setFilterTipo] = useState('todos');
     const [filterStatus, setFilterStatus] = useState('todos');
     const [filterCategoria, setFilterCategoria] = useState(null);
+    const [filterPagamento, setFilterPagamento] = useState('todos');
     const [filterDatePreset, setFilterDatePreset] = useState('todos');
     const [filterDateStart, setFilterDateStart] = useState('');
     const [filterDateEnd, setFilterDateEnd] = useState('');
@@ -173,6 +174,9 @@ export function Financas() {
         }
         if (filterCategoria) {
             all = all.filter(t => t.categoria?.id === filterCategoria);
+        }
+        if (filterPagamento !== 'todos') {
+            all = all.filter(t => t.tipo_pagamento === filterPagamento);
         }
 
         // Filtro de data
@@ -390,6 +394,28 @@ export function Financas() {
                                         <div className="filter-dropdown-menu">
                                             {[['todos','Todos'],['pontual','Pontual'],['parcelada','Parcelada'],['recorrente','Recorrente'],['cofre','Cofre']].map(([val, label]) => (
                                                 <div key={val} className={`filter-dropdown-item ${filterTipo === val ? 'selected' : ''}`} onClick={() => { setFilterTipo(val); setCurrentPage(1); setOpenFilterDropdown(null); }}>{label}</div>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
+                            {/* Filtro: Forma de Pagamento */}
+                            <div className="filter-dropdown-wrapper">
+                                <button
+                                    className={`filter-trigger-btn ${filterPagamento !== 'todos' ? 'active' : ''}`}
+                                    onClick={() => setOpenFilterDropdown(openFilterDropdown === 'pagamento' ? null : 'pagamento')}
+                                    disabled={loading}
+                                >
+                                    <span>{filterPagamento === 'todos' ? 'Pagamento' : ({ pix: 'Pix', credito: 'Crédito', debito: 'Débito', transferencia: 'Transferência' }[filterPagamento] || 'Pagamento')}</span>
+                                    <i className="fa-solid fa-chevron-down"></i>
+                                </button>
+                                {openFilterDropdown === 'pagamento' && (
+                                    <>
+                                        <div className="filter-backdrop" onClick={() => setOpenFilterDropdown(null)}></div>
+                                        <div className="filter-dropdown-menu">
+                                            {[['todos','Todos'],['pix','Pix'],['credito','Crédito'],['debito','Débito'],['transferencia','Transferência']].map(([val, label]) => (
+                                                <div key={val} className={`filter-dropdown-item ${filterPagamento === val ? 'selected' : ''}`} onClick={() => { setFilterPagamento(val); setCurrentPage(1); setOpenFilterDropdown(null); }}>{label}</div>
                                             ))}
                                         </div>
                                     </>
@@ -619,13 +645,12 @@ export function Financas() {
                             <h3><i className="fa-solid fa-piggy-bank" style={{ marginRight: 8, color: 'var(--cor-azul-primario)' }}></i> Editar movimentação</h3>
                             <span className="close-btn" onClick={() => setCofreEditing(null)}>&times;</span>
                         </div>
-                        <div className="modal-body">
-                            <MovimentacaoEditForm
-                                mov={cofreEditing}
-                                onSubmit={handleSaveCofre}
-                                onCancel={() => setCofreEditing(null)}
-                            />
-                        </div>
+                        <MovimentacaoEditForm
+                            mov={cofreEditing}
+                            onSubmit={handleSaveCofre}
+                            onCancel={() => setCofreEditing(null)}
+                            variant="modal"
+                        />
                     </div>
                 </BaseModal>
             )}

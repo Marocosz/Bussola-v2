@@ -21,6 +21,7 @@ docker compose down -v --rmi all  # Full reset (destroys volumes)
 ### Backend (bussola_api/)
 ```bash
 # Setup — the venv dir is `venvbussola` (NOT venvbussola2)
+(Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned) ; (& c:\Users\marco\OneDrive\Documentos\Pessoal\Projetos\Bussola-v2\bussola_api\venvbussola\Scripts\Activate.ps1)
 cd bussola_api
 python -m venv venvbussola
 source venvbussola/bin/activate   # Windows: venvbussola\Scripts\activate

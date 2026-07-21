@@ -84,7 +84,12 @@ class Transacao(Base):
     valor_total_parcelamento = Column(MoneyCents, nullable=True)
     
     frequencia = Column(String(50), nullable=True)
-    
+
+    # Forma de pagamento: 'pix', 'credito', 'debito', 'transferencia'. Nullable
+    # (legado = NULL) — mantém o self-heal de boot (sync_missing_columns)
+    # cobrindo a coluna em prod, que só adiciona colunas nullable/com default.
+    tipo_pagamento = Column(String(30), nullable=True)
+
     # Agrupador: Permite editar todas as ocorrências de uma transação recorrente de uma vez.
     id_grupo_recorrencia = Column(String(100), nullable=True, index=True)
 

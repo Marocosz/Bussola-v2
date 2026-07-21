@@ -3,6 +3,15 @@ import { toggleStatusTransacao, deleteTransacao, stopRecorrencia } from '../../.
 import { useToast } from '../../../context/ToastContext';
 import { useConfirm } from '../../../context/ConfirmDialogContext';
 
+// Forma de pagamento → rótulo e ícone para o badge no card.
+const PAG_LABEL = { pix: 'Pix', credito: 'Crédito', debito: 'Débito', transferencia: 'Transferência' };
+const PAG_ICONE = {
+    pix: 'fa-solid fa-bolt',
+    credito: 'fa-solid fa-credit-card',
+    debito: 'fa-solid fa-money-check-dollar',
+    transferencia: 'fa-solid fa-right-left',
+};
+
 export function TransactionCard({ transacao, onUpdate, onEdit, onEditCofre, onToggleCofre, onDeleteCofre, isExpanded, onToggleExpand }) {
     const { addToast } = useToast();
     const confirm = useConfirm();
@@ -239,6 +248,12 @@ export function TransactionCard({ transacao, onUpdate, onEdit, onEditCofre, onTo
                                 {transacao.status}
                             </span>
                         ) : null}
+                        {/* Forma de pagamento (quando informada) */}
+                        {transacao.tipo_pagamento && (
+                            <span className={`tag tag-pagamento tag-pag-${transacao.tipo_pagamento}`}>
+                                <i className={PAG_ICONE[transacao.tipo_pagamento]}></i> {PAG_LABEL[transacao.tipo_pagamento]}
+                            </span>
+                        )}
                     </div>
 
                     {/* Col 6: Valor */}

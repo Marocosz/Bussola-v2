@@ -119,16 +119,27 @@
     white-space: nowrap;
 }
 
-/* Badge de tipo (Despesa / Receita) */
+/* Badge de tipo (Despesa / Receita) — só cor de fonte e borda, sem fundo */
 .cs-opt-type {
     font-size: 0.65rem;
     font-weight: 600;
     padding: 2px 6px;
     border-radius: 20px;
-    background: rgba(255,255,255,0.08);
+    background: transparent;
+    border: 1px solid var(--cor-borda);
     color: var(--cor-texto-secundario);
     flex-shrink: 0;
     white-space: nowrap;
+}
+
+.cs-opt-type-despesa {
+    color: var(--cor-vermelho-delete);
+    border-color: color-mix(in srgb, var(--cor-vermelho-delete) 55%, transparent);
+}
+
+.cs-opt-type-receita {
+    color: var(--cor-verde-sucesso);
+    border-color: color-mix(in srgb, var(--cor-verde-sucesso) 55%, transparent);
 }
 
 /* Item individual */
@@ -153,9 +164,12 @@
     color: white;
 }
 
-.custom-option.selected .cs-opt-type {
-    background: rgba(255,255,255,0.2);
-    color: rgba(255,255,255,0.85);
+.custom-option.selected .cs-opt-type,
+.custom-option.selected .cs-opt-type-despesa,
+.custom-option.selected .cs-opt-type-receita {
+    background: transparent;
+    color: rgba(255,255,255,0.9);
+    border-color: rgba(255,255,255,0.55);
 }
 
 /* ========================================================= */
