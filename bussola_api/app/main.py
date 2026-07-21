@@ -75,6 +75,12 @@ from app.api.middleware.logging_middleware import RequestLoggingMiddleware
 # schema em SQLite in-memory, e ao rodar `alembic revision --autogenerate`).
 if os.getenv("SKIP_DB_CREATE_ALL", "").lower() not in ("1", "true", "yes"):
     base.Base.metadata.create_all(bind=engine)
+    # Rede de segurança para a limitação do create_all: ele cria tabelas novas mas
+    # NÃO faz ALTER em tabelas existentes. sync_missing_columns adiciona (idempotente,
+    # só ADD COLUMN) colunas novas de modelos em tabelas já criadas — evita o 500
+    # "no such column" em prod quando uma migração de coluna não roda no deploy.
+    from app.db.schema_sync import sync_missing_columns
+    sync_missing_columns(engine)
 
 # --------------------------------------------------------------------------------------
 # DEFINIÇÃO DA APLICAÇÃO
