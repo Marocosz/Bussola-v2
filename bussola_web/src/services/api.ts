@@ -401,10 +401,11 @@ export interface Tarefa {
     id: number;
     titulo: string;
     descricao: string;
-    status: 'Pendente' | 'Em andamento' | 'Concluído';
+    status: 'Pendente' | 'Em andamento' | 'Concluído' | 'Cancelado';
     fixado: boolean;
     prioridade?: 'Baixa' | 'Média' | 'Alta' | 'Crítica';
     prazo?: string;
+    ordem: number;
     data_criacao: string;
     data_conclusao?: string;
     subtarefas: Subtarefa[];
@@ -503,6 +504,26 @@ export const addSubtarefa = async (tarefaId: number, titulo: string, parentId?: 
 
 export const toggleSubtarefa = async (subId: number) => {
     const response = await api.patch(`/registros/subtarefas/${subId}/toggle`);
+    return response.data;
+};
+
+export interface TarefaBoard {
+    a_fazer: Tarefa[];
+    em_andamento: Tarefa[];
+    concluido: Tarefa[];
+    cancelado: Tarefa[];
+}
+
+export const getTarefasBoard = async (): Promise<TarefaBoard> => {
+    const response = await api.get('/registros/tarefas/board');
+    return response.data;
+};
+
+export const reordenarTarefas = async (status: string, tarefaIds: number[]) => {
+    const response = await api.patch('/registros/tarefas/reordenar', {
+        status,
+        tarefa_ids: tarefaIds,
+    });
     return response.data;
 };
 
