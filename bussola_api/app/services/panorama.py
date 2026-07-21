@@ -259,6 +259,24 @@ class PanoramaService:
         gastos_por_categoria = _por_categoria('despesa')
         receitas_por_categoria = _por_categoria('receita')
 
+        # --- Gastos (despesa efetivada) por FORMA DE PAGAMENTO no período ---
+        # Só formas preenchidas: linhas legadas (tipo_pagamento NULL) são ignoradas.
+        # Cores espelham as badges de forma de pagamento do módulo Finanças.
+        def _por_tipo_pagamento():
+            LABELS = {'pix': 'Pix', 'credito': 'Crédito', 'debito': 'Débito', 'transferencia': 'Transferência'}
+            CORES = {'pix': '#22d3ee', 'credito': '#818cf8', 'debito': '#fb923c', 'transferencia': '#94a3b8'}
+            rows = db.query(Transacao.tipo_pagamento, func.sum(Transacao.valor)).join(Categoria).filter(
+                Categoria.tipo == 'despesa', Transacao.user_id == user_id,
+                Transacao.status == 'Efetivada',
+                Transacao.tipo_pagamento.isnot(None),
+                Transacao.data >= start_date, Transacao.data < end_date,
+            ).group_by(Transacao.tipo_pagamento).all()
+            items = [(LABELS.get(tp, tp), CORES.get(tp, '#94a3b8'), float(v or 0.0)) for (tp, v) in rows if (v or 0) > 0]
+            items.sort(key=lambda r: r[2], reverse=True)
+            return {"labels": [i[0] for i in items], "colors": [i[1] for i in items], "data": [i[2] for i in items]}
+
+        gastos_por_tipo_pagamento = _por_tipo_pagamento()
+
         # --- Tendência: 12 meses terminando no mês do fim da janela (ou hoje) ---
         # caixa_real[i] = patrimônio REAL no fim de cada mês (baseline + acumulado),
         # não uma soma-corrente que começa do zero.
@@ -514,6 +532,7 @@ class PanoramaService:
             "ritmo": ritmo,
             "gastos_por_categoria": gastos_por_categoria,
             "receitas_por_categoria": receitas_por_categoria,
+            "gastos_por_tipo_pagamento": gastos_por_tipo_pagamento,
             "evolucao_mensal_receita": evol_rec,
             "evolucao_mensal_despesa": evol_desp,
             "evolucao_caixa_real": evol_caixa,

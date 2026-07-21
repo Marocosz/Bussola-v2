@@ -166,6 +166,7 @@ class PanoramaResponse(BaseModel):
     # Gráficos
     gastos_por_categoria: ChartData
     receitas_por_categoria: ChartData = ChartData(labels=[], data=[], colors=[])
+    gastos_por_tipo_pagamento: ChartData = ChartData(labels=[], data=[], colors=[])
     evolucao_mensal_receita: List[float]
     evolucao_mensal_despesa: List[float]
     evolucao_caixa_real: List[float] = []

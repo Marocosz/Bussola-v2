@@ -551,20 +551,8 @@ a {
     font-weight: 500;
     text-align: left;
     white-space: normal;
-    animation: app-tooltip-in 0.13s ease;
+    /* Segue o cursor (posicionado via JS); sem "biquinho" ancorado à borda. */
 }
-.app-tooltip::after {
-    content: '';
-    position: absolute;
-    left: 50%;
-    width: 9px;
-    height: 9px;
-    background: var(--cor-card-principal);
-    border: 1px solid var(--cor-borda);
-    transform: translateX(-50%) rotate(45deg);
-}
-.app-tooltip.tt-above::after { bottom: -5px; border-top: none; border-left: none; }
-.app-tooltip.tt-below::after { top: -5px; border-bottom: none; border-right: none; }
 @keyframes app-tooltip-in { from { opacity: 0; } to { opacity: 1; } }
 
 /* --- DROPDOWN GLOBAL --- */

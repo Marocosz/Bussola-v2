@@ -202,10 +202,31 @@ function Weekday({ days }) {
           <g key={i}>
             <rect x={x} y={base - bh} width={bw} height={bh} rx="5" style={{ fill: wk ? 'var(--orange)' : 'var(--blue)', fillOpacity: wk ? 0.9 : 0.75 }} />
             <text x={x + bw / 2} y="112" textAnchor="middle" style={{ fill: 'var(--muted2)', fontSize: 10.5 }}>{d.d}</text>
+            {/* alvo de hover da coluna inteira → média do dia */}
+            <rect x={x} y="0" width={bw} height={base} data-tooltip={`${d.d}: ${fmt(d.v)}`} style={{ fill: 'transparent', pointerEvents: 'all', cursor: 'help' }} />
           </g>
         );
       })}
     </svg>
+  );
+}
+
+// Barras horizontais — Gastos por forma de pagamento (só formas preenchidas).
+function PayBars({ items }) {
+  if (!items.length) return <div className="pv2-empty-note"><i className="fa-solid fa-credit-card"></i><span>Sem gastos por forma de pagamento no período.</span></div>;
+  const max = Math.max(...items.map(i => i.v), 1);
+  return (
+    <div className="pv2-paybars">
+      {items.map((it, i) => (
+        <div key={i} className="pv2-paybar" data-tooltip={`${it.n}: ${fmt(it.v)}`}>
+          <span className="pv2-paybar-label">{it.n}</span>
+          <div className="pv2-paybar-track">
+            <div className="pv2-paybar-fill" style={{ width: `${Math.max(2, it.v / max * 100)}%`, background: it.color }} />
+          </div>
+          <span className="pv2-paybar-val" data-money="">{fmt(it.v)}</span>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -249,7 +270,7 @@ function MiniJar({ meta }) {
   const pct = empty ? 0 : Math.max(0, Math.min(100, Math.round(meta.progresso_pct || 0)));
   const cor = empty ? 'var(--muted2)' : (meta.cor || 'var(--cor-azul-primario)');
   return (
-    <div className="pv2-goal">
+    <div className="pv2-goal" data-tooltip={empty ? undefined : `${meta.nome}: guardado ${fmt(meta.saldo_atual)} de ${fmt(meta.valor_alvo)} (${pct}%)${meta.data_projetada ? ` · conclui ${fmtMonth(meta.data_projetada)}` : ''}`}>
       <div className={`pan-cofre-scaled ${empty ? 'is-empty' : ''}`}>
         <div className="jar-holder">
           <div className="jar" style={{ '--cofre-cor': cor }}>
@@ -375,6 +396,10 @@ export function Panorama() {
     n, v: data.gastos_por_categoria.data[i] || 0, color: data.gastos_por_categoria.colors?.[i] || 'var(--muted2)',
   }));
 
+  const payItems = (data.gastos_por_tipo_pagamento?.labels || []).map((n, i) => ({
+    n, v: data.gastos_por_tipo_pagamento.data[i] || 0, color: data.gastos_por_tipo_pagamento.colors?.[i] || 'var(--muted2)',
+  }));
+
   const ev = (data.evolucao_labels || []).map((m, i) => ({
     m, rec: data.evolucao_mensal_receita?.[i] || 0, desp: data.evolucao_mensal_despesa?.[i] || 0, caixa: data.evolucao_caixa_real?.[i] || 0,
   }));
@@ -400,9 +425,9 @@ export function Panorama() {
   const prox = kpis.proximo_compromisso;
 
   const kpiList = [
-    { label: 'Receita', value: fmt(receita), arrow: dRec >= 0 ? '▲' : '▼', delta: fmtPct(dRec), dc: dRec >= 0 ? 'var(--green)' : 'var(--red)', vc: 'var(--text)' },
-    { label: 'Despesa', value: fmt(despesa), arrow: dDesp >= 0 ? '▲' : '▼', delta: fmtPct(dDesp), dc: dDesp <= 0 ? 'var(--green)' : 'var(--red)', vc: 'var(--text)' },
-    { label: 'Balanço', value: fmt(bal), arrow: bal >= 0 ? '▲' : '▼', delta: fmtPct(dBal), dc: bal >= 0 ? 'var(--green)' : 'var(--red)', vc: bal >= 0 ? 'var(--text)' : 'var(--red)' },
+    { label: 'Receita', value: fmt(receita), arrow: dRec >= 0 ? '▲' : '▼', delta: fmtPct(dRec), dc: dRec >= 0 ? 'var(--green)' : 'var(--red)', vc: 'var(--text)', tip: 'Receitas efetivadas no período. A variação compara com o período anterior de mesma duração.' },
+    { label: 'Despesa', value: fmt(despesa), arrow: dDesp >= 0 ? '▲' : '▼', delta: fmtPct(dDesp), dc: dDesp <= 0 ? 'var(--green)' : 'var(--red)', vc: 'var(--text)', tip: 'Despesas efetivadas no período. A variação compara com o período anterior de mesma duração.' },
+    { label: 'Balanço', value: fmt(bal), arrow: bal >= 0 ? '▲' : '▼', delta: fmtPct(dBal), dc: bal >= 0 ? 'var(--green)' : 'var(--red)', vc: bal >= 0 ? 'var(--text)' : 'var(--red)', tip: 'Receitas menos despesas efetivadas no período. Positivo = sobrou; negativo = gastou mais do que entrou.' },
   ];
 
   return (
@@ -415,7 +440,8 @@ export function Panorama() {
       <div className="pv2-root" data-privacy={privacy ? 'on' : 'off'}>
         <div className="pv2-inner">
 
-          {/* ATENÇÃO AGORA */}
+          {/* ATENÇÃO AGORA — some por completo (título + cards) quando não há alertas */}
+          {insights.length > 0 && (
           <div className="pv2-section-top">
             <div className="pv2-attn-head">
               <span className="pv2-attn-dot" />
@@ -465,6 +491,7 @@ export function Panorama() {
               })}
             </div>
           </div>
+          )}
 
           {/* HERO: CAIXA */}
           <div className="pv2-hero">
@@ -506,14 +533,14 @@ export function Panorama() {
           {/* KPI BAND */}
           <div className="pv2-kpiband">
             {kpiList.map((k, i) => (
-              <div key={i} className="pv2-kpi">
+              <div key={i} className="pv2-kpi" data-tooltip={k.tip}>
                 <div className="pv2-kpi-label">{k.label}</div>
                 <div className="pv2-kpi-value" style={{ color: k.vc }}><span data-money="">{k.value}</span></div>
                 <div className="pv2-kpi-delta" style={{ color: k.dc }}>{k.arrow} {k.delta} <span className="muted">vs anterior</span></div>
               </div>
             ))}
             {fc && (
-              <div className="pv2-kpi-extra">
+              <div className="pv2-kpi-extra" data-tooltip="Projeção de fechamento do período: o realizado até agora mais as pendências conhecidas. 'Seguro' quando deve fechar positivo.">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <span className="pv2-kpi-label">Projeção</span>
                   <span style={{ fontSize: 10.5, fontWeight: 700, padding: '2px 8px', borderRadius: 20, color: seguro ? 'var(--green)' : 'var(--red)', background: seguro ? 'rgba(39,174,96,.15)' : 'rgba(231,76,60,.15)' }}>{seguro ? 'seguro' : 'alerta'}</span>
@@ -522,7 +549,7 @@ export function Panorama() {
                 <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>Fecha em <b style={{ color: seguro ? 'var(--green)' : 'var(--red)' }}><span data-money="">{fmt(fcClose)}</span></b> · projetado <span data-money="">{fmt(fc.projetado)}</span></div>
               </div>
             )}
-            <div className="pv2-kpi-extra">
+            <div className="pv2-kpi-extra" data-tooltip="Taxa de poupança: percentual da receita do período que não foi gasto (quanto maior, mais você guardou).">
               <div className="pv2-kpi-label">Poupança</div>
               <div style={{ fontSize: 'clamp(28px,3.4vw,38px)', fontWeight: 800, color: 'var(--green)', lineHeight: 1, margin: '8px 0' }}>{savingsPct}<span style={{ fontSize: '.55em' }}>%</span></div>
               <div className="pv2-track"><div style={{ width: `${Math.min(100, savingsPct)}%`, height: '100%', background: 'var(--green)', borderRadius: 4 }} /></div>
@@ -559,8 +586,9 @@ export function Panorama() {
                   {budget.map((b) => {
                     const over = b.pct != null && b.pct > 100;
                     const near = b.pct != null && b.pct >= 90;
+                    const budgetTip = `${b.nome}: gasto ${fmt(b.gasto)}${b.limite > 0 ? ` de ${fmt(b.limite)}${b.pct != null ? ` (${Math.round(b.pct)}%)` : ''}` : ' · sem limite definido'}`;
                     return (
-                      <div key={b.nome}>
+                      <div key={b.nome} data-tooltip={budgetTip}>
                         <div className="pv2-budget-head">
                           <span className="n">{b.nome} {over && <span className="pv2-badge-over">{Math.round(b.pct)}%</span>}</span>
                           <span className="amt"><span data-money="">{fmt(b.gasto)}</span>{b.limite > 0 ? <> / <span data-money="">{fmt(b.limite)}</span></> : ''}</span>
@@ -582,6 +610,11 @@ export function Panorama() {
               <div className="pv2-goals">
                 {goalSlots.map((m, i) => <MiniJar key={m ? m.id : `empty-${i}`} meta={m} />)}
               </div>
+            </div>
+
+            <div className="pcard" style={{ gridColumn: 'span 12' }}>
+              <div className="pv2-card-title" style={{ marginBottom: 16 }}>Gastos por forma de pagamento</div>
+              <PayBars items={payItems} />
             </div>
 
             <div className="pcard" style={{ gridColumn: 'span 4' }}>
