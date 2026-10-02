@@ -1,15 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp } from './helpers.mjs';
 
-// O robo flutuante antigo (AiAssistant) ainda existe ate a Task 8 e pode cobrir a barra inferior.
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    const s = document.createElement('style');
-    s.textContent = '.ai-floating-container{display:none !important}';
-    document.addEventListener('DOMContentLoaded', () => document.head.appendChild(s));
-  });
-});
-
 test('barra inferior com 5 itens, rótulos e item ativo da rota', async ({ page }) => {
   await gotoApp(page, '/financas');
   const nav = page.getByRole('navigation', { name: 'Navegação principal' });

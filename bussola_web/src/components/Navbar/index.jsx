@@ -11,6 +11,8 @@ import { NAV_ITEMS, findNavItem } from './navItems';
 import { MobileTopbar } from './MobileTopbar';
 import { BottomNav } from './BottomNav';
 import { MoreSheet } from './MoreSheet';
+import { Sheet } from '../mobile/Sheet';
+import { AiMobilePanel } from '../AiAssistant/AiInsightPanel';
 
 import bussolaLogo from '../../assets/images/bussola.svg';
 import '../../assets/styles/layout.css';
@@ -42,7 +44,13 @@ export function Navbar() {
     const navigate = useNavigate();
     const { setSlotEl } = useMobileChrome();
     const [moreOpen, setMoreOpen] = useState(false);
-    const [, setAiOpen] = useState(false);
+    const [aiOpen, setAiOpen] = useState(false);
+    const [prevPath, setPrevPath] = useState(pathname);
+    if (prevPath !== pathname) {
+        setPrevPath(pathname);
+        setAiOpen(false);
+        setMoreOpen(false);
+    }
     const current = findNavItem(pathname);
     const sairMobile = () => { logout(); navigate('/login'); };
 
@@ -102,6 +110,11 @@ export function Navbar() {
                         onOpenAdmin={() => setShowAdminModal(true)}
                         onLogout={sairMobile}
                     />
+                    {current?.aiContext && (
+                        <Sheet open={aiOpen} onClose={() => setAiOpen(false)} full title="Assistente" className="ai-sheet">
+                            <AiMobilePanel key={current.aiContext} context={current.aiContext} />
+                        </Sheet>
+                    )}
                 </>
             ) : (
                 <aside className={`sidebar ${colapsada ? 'collapsed' : ''}`}>

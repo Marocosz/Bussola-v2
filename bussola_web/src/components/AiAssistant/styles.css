@@ -632,3 +632,12 @@
     top: auto !important;
   }
 }
+/* ===== Painel dentro do sheet mobile ===== */
+.ai-sheet .ai-glass-card {
+    width: auto;
+    max-width: none;
+    max-height: none;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+}
