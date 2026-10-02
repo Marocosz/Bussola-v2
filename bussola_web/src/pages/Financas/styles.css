@@ -1118,44 +1118,50 @@
     opacity: 0.7;
 }
 
-/* Ações da linha — sobrepostas à ponta direita da própria linha, no hover.
-   Nada se desloca (sem reflow) e não há elemento flutuante fora da linha. */
+/* Ações da linha. Com mouse: sobrepostas à ponta direita da própria linha, no hover
+   (nada se desloca, sem elemento flutuante fora da linha). Com toque (tablet): sempre
+   visíveis, numa linha própria abaixo das células. O celular (≤768) usa outra lista. */
 .financas-scope .transacao-row {
     position: relative;
 }
 
 .financas-scope .row-actions {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
     display: flex;
     align-items: center;
-    padding-left: 56px; /* área do degradê, antes dos botões */
-    /* Mesmas camadas do fundo da linha em hover (tinta de hover sobre o fundo da página),
-       esmaecendo para a esquerda para não cortar o texto de forma seca. */
-    background:
-        linear-gradient(to right, transparent, var(--cor-fundo-hover) 56px),
-        linear-gradient(to right, transparent, var(--cor-fundo) 56px);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.15s ease;
 }
 
-/* Grupo expandido tem uma camada de tinta a mais no fundo */
-.financas-scope .row-wrapper-expanded .row-actions {
-    background:
-        linear-gradient(to right, transparent, var(--cor-fundo-hover) 56px),
-        linear-gradient(to right, transparent, var(--cor-fundo-hover) 56px),
-        linear-gradient(to right, transparent, var(--cor-fundo) 56px);
-}
+@media (hover: hover) and (pointer: fine) {
+    .financas-scope .row-actions {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        padding-left: 56px; /* área do degradê, antes dos botões */
+        /* Mesmas camadas do fundo da linha em hover (tinta de hover sobre o fundo da página),
+           esmaecendo para a esquerda para não cortar o texto de forma seca. */
+        background:
+            linear-gradient(to right, transparent, var(--cor-fundo-hover) 56px),
+            linear-gradient(to right, transparent, var(--cor-fundo) 56px);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.15s ease;
+    }
 
-.financas-scope .transacao-row:hover .row-actions,
-/* Só foco de teclado: depois de um clique de mouse o botão fica focado,
-   e :focus-within deixava as ações presas na tela. */
-.financas-scope .transacao-row:has(:focus-visible) .row-actions {
-    opacity: 1;
-    pointer-events: auto;
+    /* Grupo expandido tem uma camada de tinta a mais no fundo */
+    .financas-scope .row-wrapper-expanded .row-actions {
+        background:
+            linear-gradient(to right, transparent, var(--cor-fundo-hover) 56px),
+            linear-gradient(to right, transparent, var(--cor-fundo-hover) 56px),
+            linear-gradient(to right, transparent, var(--cor-fundo) 56px);
+    }
+
+    .financas-scope .transacao-row:hover .row-actions,
+    /* Só foco de teclado: depois de um clique de mouse o botão fica focado,
+       e :focus-within deixava as ações presas na tela. */
+    .financas-scope .transacao-row:has(:focus-visible) .row-actions {
+        opacity: 1;
+        pointer-events: auto;
+    }
 }
 
 .financas-scope .row-actions-inner {
@@ -1166,19 +1172,20 @@
     white-space: nowrap;
 }
 
-/* Celular: sem hover — ações inline e sempre visíveis */
-@media (max-width: 768px) {
+/* Toque sem mouse (tablet): ações sempre visíveis, numa linha própria. */
+@media (hover: none), (pointer: coarse) {
+    .financas-scope .transacao-row {
+        flex-wrap: wrap;
+    }
+
     .financas-scope .row-actions {
-        position: static;
-        padding-left: 0;
-        background: none;
-        opacity: 1;
-        pointer-events: auto;
-        flex-shrink: 0;
+        width: 100%;
+        justify-content: flex-end;
+        padding-bottom: var(--sp-2);
     }
 
     .financas-scope .row-actions-inner {
-        padding: 0 10px 0 4px;
+        gap: var(--sp-2);
     }
 }
 
@@ -1775,60 +1782,9 @@ input[type=number]::-webkit-inner-spin-button {
 /* 8. RESPONSIVIDADE (SCOPED)                    */
 /* ============================================= */
 
+/* Celular (≤768): a página usa o layout de abas (mobile/). Aqui ficam só os
+   formulários dos modais, que viram sheet. */
 @media (max-width: 768px) {
-    .financas-scope .table-header,
-    .financas-scope .row-cells {
-        grid-template-columns: 28px 1fr 75px 110px;
-        gap: 10px;
-    }
-
-    /* Oculta colunas Categoria e Tag no mobile */
-    .financas-scope .table-header span:nth-child(3),
-    .financas-scope .table-header span:nth-child(5),
-    .financas-scope .row-cells .row-categoria-nome,
-    .financas-scope .row-cells .row-tags {
-        display: none;
-    }
-
-    .financas-scope .parcela-sub-row {
-        grid-template-columns: 50px 1fr 110px;
-        padding-left: 42px;
-    }
-
-    .financas-scope .parcela-sub-data {
-        display: none;
-    }
-}
-
-@media (max-width: 768px) {
-    .financas-scope .layout-grid-custom {
-        grid-template-columns: 1fr;
-        gap: 2rem;
-    }
-
-    .financas-scope .agenda-column {
-        padding: 0;
-    }
-
-    .financas-scope .agenda-column:not(:last-child) {
-        border-right: none;
-        border-bottom: 1px dashed var(--cor-borda);
-        padding-bottom: 2rem;
-        padding-right: 0;
-    }
-
-    .financas-scope .column-header-flex {
-        margin: 0 0 1.5rem 0;
-        border-right: none;
-        border-radius: 12px;
-        z-index: auto;
-    }
-
-    .financas-scope .agenda-column:last-child .column-header-flex,
-    .financas-scope .agenda-column:first-child .column-header-flex {
-        border-radius: 12px;
-    }
-
     .financas-scope .form-row,
     .financas-scope .grid-65-35,
     .financas-scope .grid-50-50,
@@ -1839,5 +1795,64 @@ input[type=number]::-webkit-inner-spin-button {
 
     .financas-scope .grid-meta-icon-color {
         grid-template-columns: 1fr auto auto;
+    }
+}
+
+/* Tablet (769–1024): mantém 2 colunas, coluna direita de 320px, tabela compacta
+   (sem Categoria e Tag) e cabeçalho que quebra linha. */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .financas-scope .page-header {
+        max-width: 100%;
+    }
+
+    .financas-scope .layout-grid-custom {
+        grid-template-columns: minmax(0, 1fr) 320px;
+        max-width: 100%;
+    }
+
+    .financas-scope .header-actions-group {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .financas-scope .table-header,
+    .financas-scope .row-cells {
+        grid-template-columns: 28px minmax(0, 1fr) 80px auto;
+        gap: var(--sp-3);
+    }
+
+    .financas-scope .table-header span:nth-child(3),
+    .financas-scope .table-header span:nth-child(5),
+    .financas-scope .row-cells .row-categoria-nome,
+    .financas-scope .row-cells .row-tags {
+        display: none;
+    }
+
+    .financas-scope .metas-cat-row {
+        width: auto;
+        align-self: stretch;
+        margin: 0.25rem 0 1.25rem var(--sp-4);
+    }
+}
+
+/* Toque (tablet): alvos de 44px nos controles da página. */
+@media (pointer: coarse) {
+    .financas-scope .filter-trigger-btn,
+    .financas-scope .filter-categoria-cs .custom-select-trigger,
+    .financas-scope .column-header-flex .btn-primary,
+    .financas-scope .page-header .ph-kpi-btn { /* só o do desktop/tablet: o chip Caixa do celular tem 52px */
+        min-height: var(--tap-min);
+        height: var(--tap-min);
+    }
+
+    .financas-scope .btn-page {
+        width: var(--tap-min);
+        height: var(--tap-min);
+    }
+
+    .financas-scope .row-actions .btn-sm-pagar,
+    .financas-scope .row-actions .btn-sm-desmarcar {
+        min-height: var(--tap-min);
+        padding: 0 var(--sp-3);
     }
 }

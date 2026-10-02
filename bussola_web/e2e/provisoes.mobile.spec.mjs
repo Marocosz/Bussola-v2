@@ -619,6 +619,17 @@ test.describe('categorias e caixa', () => {
     for (const s of tamanhos) expect(s).toBeGreaterThanOrEqual(12);
   });
 
+  test('cards de categoria: 11px só em rótulos em caixa alta (chip e stat-label)', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    await abrirAba(page, 'Categorias');
+    const info = await page.locator('.catcard-chip, .catcard-stat-label').evaluateAll(
+      (els) => els.map((e) => { const cs = getComputedStyle(e); return { t: cs.textTransform, s: parseFloat(cs.fontSize) }; }));
+    expect(info.length).toBeGreaterThan(0);
+    for (const i of info) {
+      if (i.s < 12) expect(i.t).toBe('uppercase');
+    }
+  });
+
   test('Caixa: ajuste em sheet, linha sem sobreposição em 360px, e exclusão', async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 780 });
     await gotoApp(page, '/financas');
