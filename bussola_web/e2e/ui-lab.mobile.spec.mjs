@@ -83,3 +83,26 @@ test('fab tem 56px e fica acima da área da barra inferior', async ({ page }) =>
   expect(Math.round(box.width)).toBe(56);
   expect(box.y + box.height).toBeLessThanOrEqual(844 - 64);
 });
+
+test('teclado virtual (--vvh): rodapé fica na área visível com layout de 844', async ({ page }) => {
+  // simula teclado de 424px: a área visível tem 420px e o layout segue com 844
+  await page.evaluate(() => {
+    document.documentElement.style.setProperty('--vvh', '420px');
+    document.documentElement.style.setProperty('--kb-inset', '424px');
+  });
+  await page.getByRole('button', { name: 'Abrir modal longo' }).click();
+  const salvar = page.getByRole('button', { name: 'Salvar' });
+  await expect(salvar).toBeVisible();
+  await expect.poll(async () => { const b = await salvar.boundingBox(); return b.y + b.height; }).toBeLessThanOrEqual(420);
+  const content = page.locator('.modal-overlay.is-sheet > .modal-content');
+  expect((await content.boundingBox()).height).toBeLessThanOrEqual(413);
+});
+
+test('action sheet: nome acessível e linha Cancelar que só fecha', async ({ page }) => {
+  await page.getByRole('button', { name: 'Abrir ações' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toHaveAttribute('aria-label', /.+/);
+  await dialog.getByRole('button', { name: 'Cancelar' }).click();
+  await expect(page.locator('.action-sheet')).toHaveCount(0);
+  await expect(page.getByTestId('ultima-acao')).not.toHaveText('editar');
+});

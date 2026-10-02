@@ -203,9 +203,11 @@ a {
     padding: 0;
 }
 
-.btn-action-icon:hover {
-    background-color: var(--cor-azul-hover);
-    color: white;
+@media (hover: hover) and (pointer: fine) {
+    .btn-action-icon:hover {
+        background-color: var(--cor-azul-hover);
+        color: white;
+    }
 }
 
 /* --- Inputs e Formulários --- */

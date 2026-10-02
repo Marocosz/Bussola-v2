@@ -5,7 +5,7 @@ const mobile = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, is
 export default defineConfig({
   testDir: './e2e',
   timeout: 45_000,
-  expect: { toHaveScreenshot: { maxDiffPixelRatio: 0.01, animations: 'disabled' } },
+  expect: { toHaveScreenshot: { maxDiffPixelRatio: 0.002, animations: 'disabled' } },
   fullyParallel: false,
   workers: 1,
   reporter: [['list']],

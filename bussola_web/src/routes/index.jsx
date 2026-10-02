@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -43,9 +43,17 @@ function RequireAuth({ children }) {
     return children;
 }
 
+// Cada navegação começa no topo (a rolagem é da janela no mobile).
+function ScrollToTop() {
+    const { pathname } = useLocation();
+    useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+    return null;
+}
+
 function PrivateRoute({ children }) {
     return (
         <RequireAuth>
+            <ScrollToTop />
             <MobileChromeProvider>
                 <div className="app-layout">
                     <Navbar />

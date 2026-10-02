@@ -33,6 +33,8 @@
 }
 
 .app-sheet > .app-sheet-header {
+    border-radius: 0;
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -77,6 +79,7 @@
 
 @media (max-width: 768px) {
     .sheet-grab { display: block; }
+    .is-sheet-full .sheet-grab { display: none; }
 }
 
 /* ===== ActionSheet ===== */
@@ -139,6 +142,11 @@
 .action-sheet-item i {
     width: 24px;
     text-align: center;
+    color: var(--cor-texto-secundario);
+}
+
+.action-sheet-item.action-sheet-cancel {
+    justify-content: center;
     color: var(--cor-texto-secundario);
 }
 

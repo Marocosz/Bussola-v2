@@ -37,7 +37,7 @@
 
 /* --- Mobile: inputs de 16px (o iOS não dá zoom) --- */
 @media (max-width: 768px) {
-    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="file"]):not([type="color"]):not([type="reset"]):not([type="image"]),
     select,
     textarea {
         font-size: 16px !important;

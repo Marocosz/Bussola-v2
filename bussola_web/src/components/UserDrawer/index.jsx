@@ -6,6 +6,8 @@ import { getNewsTopics } from '../../services/api';
 import zxcvbn from 'zxcvbn'; // Importando lib de força de senha
 import { COLOR_PRESETS, applyColorTheme, getActivePresetId } from '../../utils/colorTheme';
 import { ConexoesMcp } from './ConexoesMcp';
+import { useIsMobile } from '../../hooks/useIsMobile';
+import { lockScroll, unlockScroll } from '../../utils/scrollLock';
 import './styles.css';
 
 export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
@@ -46,6 +48,14 @@ export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
         }
         loadTopics();
     }, []);
+
+    // No mobile o drawer cobre a tela: trava a rolagem do fundo enquanto aberto.
+    const isMobile = useIsMobile();
+    useEffect(() => {
+        if (!isOpen || !isMobile) return undefined;
+        lockScroll();
+        return unlockScroll;
+    }, [isOpen, isMobile]);
 
     useEffect(() => {
         if (user && isOpen) {

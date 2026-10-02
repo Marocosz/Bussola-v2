@@ -26,6 +26,15 @@ test('navegar pela barra inferior', async ({ page }) => {
   await expect(page.locator('.m-topbar-title')).toHaveText('Registros');
 });
 
+test('trocar de rota pela barra inferior volta ao topo', async ({ page }) => {
+  await gotoApp(page, '/financas');
+  await page.evaluate(() => window.scrollTo(0, 1500));
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(500);
+  await page.getByRole('navigation', { name: 'Navegação principal' }).getByText('Registros', { exact: true }).click();
+  await expect(page).toHaveURL(/\/registros$/);
+  await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBe(0);
+});
+
 test('"Mais" abre o sheet com módulos e conta; Ritmo ativa o "Mais"', async ({ page }) => {
   await gotoApp(page, '/panorama');
   await page.getByRole('button', { name: 'Mais' }).click();
