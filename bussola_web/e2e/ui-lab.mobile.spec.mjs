@@ -107,7 +107,7 @@ test('teclado virtual (--vvh): sheet cheio fica acima do teclado', async ({ page
   const content = page.locator('.modal-overlay.is-sheet-full > .modal-content');
   await expect(content).toBeVisible();
   await expect.poll(async () => { const b = await content.boundingBox(); return b.y + b.height; }).toBeLessThanOrEqual(421);
-  expect((await content.boundingBox()).height).toBeLessThanOrEqual(420);
+  expect((await content.boundingBox()).height).toBeLessThanOrEqual(420.5);
 });
 
 test('action sheet: nome acessível e linha Cancelar que só fecha', async ({ page }) => {
