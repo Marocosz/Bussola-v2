@@ -39,6 +39,7 @@ from app.api.v1.endpoints import (
     ai,
     bot_auth,
     discord_link,
+    oauth,
 )
 
 # Instância principal que acumulará todas as rotas
@@ -77,3 +78,6 @@ api_router.include_router(bot_auth.router, prefix="/bot", tags=["bot"])
 
 # Discord Link (confirmação de vínculo via JWT do usuário)
 api_router.include_router(discord_link.router, prefix="/discord/link", tags=["discord"])
+
+# OAuth do MCP (consent/clientes chamados pelo SPA com JWT; o restante fica na raiz via main.py)
+api_router.include_router(oauth.router, prefix="/oauth", tags=["OAuth MCP"])

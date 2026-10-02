@@ -199,6 +199,8 @@ async def scalar_html():
 # Inclui o roteador principal que agrupa todos os endpoints (Auth, Users, Finanças, etc).
 # Adiciona o prefixo global (ex: /api/v1) a todas as rotas.
 app.include_router(api_router, prefix=settings.API_V1_STR)
+from app.api.v1.endpoints import oauth  # noqa: E402 — descoberta OAuth precisa ficar na raiz
+app.include_router(oauth.public_router)
 
 # --------------------------------------------------------------------------------------
 # ROTA DE HEALTH CHECK
