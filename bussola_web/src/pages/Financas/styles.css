@@ -1141,8 +1141,9 @@
     opacity: 0.7;
 }
 
-/* Ações da linha — sobrepostas à ponta direita da própria linha, no hover.
-   Nada se desloca (sem reflow) e não há elemento flutuante fora da linha. */
+/* Ações da linha — sobrepostas à coluna de tags, encostadas no valor, no hover.
+   O valor continua visível; nada se desloca e não há elemento flutuante fora da linha.
+   Posição: padding da linha (14px) + coluna de valor (125px, ver grid de .row-cells) + folga. */
 .financas-scope .transacao-row {
     position: relative;
 }
@@ -1150,7 +1151,7 @@
 .financas-scope .row-actions {
     position: absolute;
     top: 0;
-    right: 0;
+    right: calc(14px + 125px + 10px);
     bottom: 0;
     display: flex;
     align-items: center;
@@ -1174,7 +1175,9 @@
 }
 
 .financas-scope .transacao-row:hover .row-actions,
-.financas-scope .transacao-row:focus-within .row-actions {
+/* Só foco de teclado: depois de um clique de mouse o botão fica focado,
+   e :focus-within deixava as ações presas na tela. */
+.financas-scope .transacao-row:has(:focus-visible) .row-actions {
     opacity: 1;
     pointer-events: auto;
 }
@@ -1183,7 +1186,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    padding-right: 14px;
+    padding-right: 6px;
     white-space: nowrap;
 }
 
