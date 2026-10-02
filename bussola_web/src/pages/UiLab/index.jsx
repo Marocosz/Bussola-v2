@@ -8,6 +8,8 @@ import { useConfirm } from '../../context/ConfirmDialogContext';
 /** Bancada DEV-only (/__ui) para testar os primitivos mobile isoladamente. */
 export function UiLab() {
     const [modal, setModal] = useState(false);
+    const [formModal, setFormModal] = useState(false);
+    const [aninhado, setAninhado] = useState(false);
     const [full, setFull] = useState(false);
     const [actions, setActions] = useState(false);
     const [ultima, setUltima] = useState('');
@@ -18,6 +20,7 @@ export function UiLab() {
             <h2>UI Lab</h2>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 <button className="btn-primary" onClick={() => setModal(true)}>Abrir modal longo</button>
+                <button className="btn-primary" onClick={() => setFormModal(true)}>Abrir modal com form</button>
                 <button className="btn-primary" onClick={() => setFull(true)}>Abrir sheet cheio</button>
                 <button className="btn-primary" onClick={() => setActions(true)}>Abrir ações</button>
             </div>
@@ -45,11 +48,43 @@ export function UiLab() {
                             <button className="btn-secondary" onClick={() => confirm({ title: 'Confirmar?', description: 'Teste aninhado' })}>
                                 Abrir confirmação
                             </button>
+                            <button className="btn-secondary" onClick={() => setAninhado(true)}>Abrir sheet aninhado</button>
                             <button className="btn-primary">Salvar</button>
                         </div>
                     </div>
                 </BaseModal>
             )}
+
+            {formModal && (
+                <BaseModal onClose={() => setFormModal(false)} className="modal">
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>Modal com form</h3>
+                            <button type="button" className="app-sheet-close" aria-label="Fechar" onClick={() => setFormModal(false)}>
+                                <i className="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        <form onSubmit={(e) => e.preventDefault()}>
+                            <div className="modal-body">
+                                {Array.from({ length: 14 }, (_, i) => (
+                                    <div className="form-group" key={i}>
+                                        <label>Campo form {i + 1}</label>
+                                        <input className="form-input" />
+                                    </div>
+                                ))}
+                                <p>Fim do form</p>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="submit" className="btn-primary">Salvar form</button>
+                            </div>
+                        </form>
+                    </div>
+                </BaseModal>
+            )}
+
+            <Sheet open={aninhado} onClose={() => setAninhado(false)} title="Aninhado">
+                <p>Sheet por cima do modal.</p>
+            </Sheet>
 
             <Sheet open={full} onClose={() => setFull(false)} full title="Sheet cheio">
                 <p>Conteúdo em tela cheia.</p>

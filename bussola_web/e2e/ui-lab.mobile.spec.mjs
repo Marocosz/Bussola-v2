@@ -26,12 +26,34 @@ test('scroll lock aninhado: fechar o de cima mantém a trava', async ({ page }) 
   await page.evaluate(() => window.scrollTo(0, 300));
   // dispatchEvent: um click() normal rolaria o botão (fora da tela) de volta ao topo antes de abrir o modal
   await page.getByRole('button', { name: 'Abrir modal longo' }).dispatchEvent('click');
-  await page.getByRole('button', { name: 'Abrir confirmação' }).click();
-  await page.getByRole('button', { name: 'Cancelar' }).click();
+  await page.getByRole('button', { name: 'Abrir sheet aninhado' }).click();
+  const aninhado = page.locator('.app-sheet-overlay');
+  await expect(aninhado).toBeVisible();
+  await aninhado.getByRole('button', { name: 'Fechar' }).click();
+  await expect(aninhado).toHaveCount(0);
   expect(await page.evaluate(() => document.body.style.position)).toBe('fixed');
   await page.getByRole('button', { name: 'Fechar' }).first().click();
   expect(await page.evaluate(() => document.body.style.position)).toBe('');
   expect(await page.evaluate(() => Math.round(window.scrollY))).toBe(300);
+});
+
+test('modal com <form> (body+footer dentro do form): rodapé fixo e corpo rola', async ({ page }) => {
+  await page.getByRole('button', { name: 'Abrir modal com form' }).click();
+  await expect(page.getByRole('button', { name: 'Salvar form' })).toBeInViewport();
+  await page.setViewportSize({ width: 390, height: 420 });
+  await expect(page.getByRole('button', { name: 'Salvar form' })).toBeInViewport();
+  await page.locator('.modal-overlay.is-sheet .modal-body').evaluate((b) => b.scrollTo(0, 99999));
+  await expect(page.getByText('Fim do form')).toBeInViewport();
+  await expect(page.getByRole('button', { name: 'Salvar form' })).toBeInViewport();
+});
+
+test('modal real (Cofre, Guardar Segredo) com viewport baixa: rodapé visível', async ({ page }) => {
+  await gotoApp(page, '/cofre');
+  await page.setViewportSize({ width: 390, height: 420 });
+  await page.getByRole('button', { name: 'Guardar Segredo' }).click();
+  const overlay = page.locator('.modal-overlay.is-sheet');
+  await expect(overlay).toBeVisible();
+  await expect(overlay.getByRole('button', { name: 'Salvar' })).toBeInViewport();
 });
 
 test('resize com modal aberto troca sheet ↔ modal sem fechar', async ({ page }) => {

@@ -10,7 +10,7 @@
     z-index: var(--z-sheet);
 }
 
-.app-sheet {
+.modal-content.app-sheet {
     background: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
     border-radius: 16px;
@@ -32,7 +32,7 @@
     flex-shrink: 0;
 }
 
-.app-sheet-header {
+.app-sheet > .app-sheet-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -40,7 +40,7 @@
     padding: var(--sp-3) var(--sp-4);
 }
 
-.app-sheet-header h3 {
+.app-sheet > .app-sheet-header h3 {
     margin: 0;
     font-size: 1.05rem;
     font-weight: 600;
@@ -58,19 +58,19 @@
     cursor: pointer;
 }
 
-.app-sheet-body {
+.app-sheet > .app-sheet-body {
     padding: 0 var(--sp-4) var(--sp-4);
     overflow-y: auto;
 }
 
-.app-sheet-footer {
+.app-sheet > .app-sheet-footer {
     display: flex;
     gap: var(--sp-2);
     padding: var(--sp-3) var(--sp-4);
     border-top: 1px solid var(--cor-borda);
 }
 
-.app-sheet-footer > * {
+.app-sheet > .app-sheet-footer > * {
     flex: 1;
     min-height: 48px;
 }

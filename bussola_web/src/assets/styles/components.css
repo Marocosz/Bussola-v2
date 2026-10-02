@@ -186,11 +186,20 @@ textarea.form-input {
     }
 
     /* Com .modal-body: o corpo rola e cabeçalho/rodapé ficam fixos */
-    .modal-overlay.is-sheet > .modal-content:has(> .modal-body) {
+    .modal-overlay.is-sheet > .modal-content:has(> .modal-body),
+    .modal-overlay.is-sheet > .modal-content:has(> form > .modal-body) {
         overflow: hidden !important;
     }
 
-    .modal-overlay.is-sheet > .modal-content > .modal-body {
+    .modal-overlay.is-sheet > .modal-content > form {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+
+    .modal-overlay.is-sheet > .modal-content > .modal-body,
+    .modal-overlay.is-sheet > .modal-content > form > .modal-body {
         flex: 1 1 auto;
         min-height: 0;
         overflow-y: auto !important;
@@ -198,11 +207,14 @@ textarea.form-input {
     }
 
     .modal-overlay.is-sheet > .modal-content > .modal-header,
-    .modal-overlay.is-sheet > .modal-content > .modal-footer {
+    .modal-overlay.is-sheet > .modal-content > .modal-footer,
+    .modal-overlay.is-sheet > .modal-content > form > .modal-header,
+    .modal-overlay.is-sheet > .modal-content > form > .modal-footer {
         flex-shrink: 0;
     }
 
-    .modal-overlay.is-sheet > .modal-content > .modal-footer {
+    .modal-overlay.is-sheet > .modal-content > .modal-footer,
+    .modal-overlay.is-sheet > .modal-content > form > .modal-footer {
         padding-bottom: calc(var(--sp-3) + var(--safe-bottom)) !important;
     }
 
