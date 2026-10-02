@@ -323,3 +323,73 @@
     .estudo-destino { margin-left: 0; }
     .estudo-cabecalho h1 { font-size: 1.5rem; }
 }
+
+/* =========================================================
+   ESTUDOS — kit do Claude
+   ========================================================= */
+.kit-intro,
+.kit-rodape { max-width: 760px; color: var(--cor-texto-secundario); line-height: 1.6; }
+.kit-rodape { margin-top: 1.5rem; font-size: 0.9rem; }
+
+.kit-grade {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.2rem;
+    margin-top: 1.2rem;
+}
+
+.kit-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.3rem 1.4rem;
+    background: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    border-radius: 16px;
+}
+.kit-card header { display: flex; gap: 0.9rem; align-items: flex-start; }
+.kit-card header > i {
+    font-size: 1.3rem;
+    color: var(--cor-azul-primario);
+    background: rgba(var(--cor-tema-rgb), 0.12);
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 2.6rem;
+}
+.kit-card h2 { margin: 0 0 0.2rem; font-size: 1.1rem; }
+.kit-card header p { margin: 0; color: var(--cor-texto-secundario); font-size: 0.88rem; }
+
+.kit-passos { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.9rem; line-height: 1.55; }
+.kit-passos code {
+    background: var(--cor-card-secundario);
+    padding: 0.05rem 0.35rem;
+    border-radius: 5px;
+    font-size: 0.85em;
+    word-break: break-all;
+}
+.kit-comando {
+    display: flex;
+    gap: 0.4rem;
+    align-items: flex-start;
+    margin-top: 0.4rem;
+    padding: 0.5rem 0.6rem;
+    background: var(--cor-fundo);
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+}
+.kit-comando code { background: none; padding: 0; flex: 1; }
+.kit-comando button {
+    border: none;
+    background: transparent;
+    color: var(--cor-texto-secundario);
+    cursor: pointer;
+    padding: 0.1rem 0.3rem;
+}
+.kit-comando button:hover { color: var(--cor-azul-primario); }
+
+.kit-botoes { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: auto; }
+.kit-baixar { display: inline-flex; gap: 0.4rem; align-items: center; justify-content: center; }
+.kit-card > .kit-baixar { margin-top: auto; align-self: flex-start; }
