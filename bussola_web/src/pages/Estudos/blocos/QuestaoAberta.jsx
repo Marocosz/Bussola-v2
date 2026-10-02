@@ -7,10 +7,20 @@ export function QuestaoAberta({ bloco, onResponder }) {
     const [tentativa, setTentativa] = useState('');
     const [acertou, setAcertou] = useState(null);
 
-    const avaliar = (valor) => {
+    const [pendente, setPendente] = useState(false);
+
+    // Mostra a avaliação na hora (pendente) e volta à etapa anterior se o registro falhar.
+    const avaliar = async (valor) => {
+        if (pendente) return;
         setAcertou(valor);
         setEtapa('avaliada');
-        onResponder?.(bloco.id, { resposta: tentativa, acertou: valor });
+        setPendente(true);
+        const ok = onResponder ? await onResponder(bloco.id, { resposta: tentativa, acertou: valor }) : true;
+        setPendente(false);
+        if (ok === false) {
+            setAcertou(null);
+            setEtapa('revelada');
+        }
     };
 
     const refazer = () => {
@@ -58,7 +68,7 @@ export function QuestaoAberta({ bloco, onResponder }) {
                             <span className={`bloco-questao-marcado ${acertou ? 'acerto' : 'erro'}`}>
                                 {acertou ? 'Você marcou: acertei' : 'Você marcou: errei'}
                             </span>
-                            <button type="button" className="btn-secondary btn-pequeno" onClick={refazer}>
+                            <button type="button" className="btn-secondary btn-pequeno" onClick={refazer} disabled={pendente}>
                                 <i className="fa-solid fa-rotate-left"></i> Refazer
                             </button>
                         </div>

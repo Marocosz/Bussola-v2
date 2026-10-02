@@ -53,8 +53,10 @@ export function LeituraEstudo() {
     const responder = useCallback(async (blocoId, dados) => {
         try {
             await responderEstudo(id, { bloco_id: blocoId, ...dados });
+            return true;
         } catch (err) {
             addToast({ type: 'warning', title: 'Resposta não registrada', description: mensagemDeErro(err, 'Tente de novo em instantes.') });
+            return false;
         }
     }, [id, addToast]);
 
@@ -70,7 +72,7 @@ export function LeituraEstudo() {
             // preserva a referência de blocos/fontes (BlocoRenderer é memoizado)
             setEstado((atual) => ({
                 ...atual,
-                material: { ...atualizado, blocos: atual.material.blocos, fontes: atual.material.fontes },
+                material: { ...atual.material, estudado: atualizado.estudado, estudado_em: atualizado.estudado_em },
             }));
         } catch (err) {
             addToast({ type: 'error', title: 'Erro', description: mensagemDeErro(err, 'Não foi possível atualizar o material.') });

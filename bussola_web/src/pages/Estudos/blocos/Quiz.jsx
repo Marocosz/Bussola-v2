@@ -5,13 +5,18 @@ import { TextoInline } from './TextoInline';
 // "Refazer" só limpa localmente; a próxima escolha é registrada de novo.
 export function Quiz({ bloco, onResponder }) {
     const [escolha, setEscolha] = useState(null);
+    const [pendente, setPendente] = useState(false);
     const respondido = escolha !== null;
     const acertou = escolha === bloco.correta;
 
-    const escolher = (indice) => {
+    // Mostra a escolha na hora (pendente) e desfaz se o registro falhar.
+    const escolher = async (indice) => {
         if (respondido) return;
         setEscolha(indice);
-        onResponder?.(bloco.id, { resposta: indice });
+        setPendente(true);
+        const ok = onResponder ? await onResponder(bloco.id, { resposta: indice }) : true;
+        setPendente(false);
+        if (ok === false) setEscolha(null);
     };
 
     return (
@@ -38,10 +43,10 @@ export function Quiz({ bloco, onResponder }) {
                 })}
             </div>
             {respondido && (
-                <div className={`bloco-quiz-feedback ${acertou ? 'acerto' : 'erro'}`}>
+                <div className={`bloco-quiz-feedback ${acertou ? 'acerto' : 'erro'}`} aria-busy={pendente}>
                     <strong>{acertou ? 'Correto!' : 'Não foi dessa vez.'}</strong>
                     <p><TextoInline texto={bloco.explicacao} /></p>
-                    <button type="button" className="btn-secondary btn-pequeno" onClick={() => setEscolha(null)}>
+                    <button type="button" className="btn-secondary btn-pequeno" onClick={() => setEscolha(null)} disabled={pendente}>
                         <i className="fa-solid fa-rotate-left"></i> Refazer
                     </button>
                 </div>
