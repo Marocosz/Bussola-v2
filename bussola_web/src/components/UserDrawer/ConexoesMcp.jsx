@@ -118,7 +118,7 @@ export function ConexoesMcp() {
             </button>
 
             {modalAberto && createPortal(
-                <BaseModal onClose={fecharModal} className="modal">
+                <BaseModal onClose={fecharModal} className="modal mcp-modal">
                     <div className="modal-content">
                         <div className="modal-header">
                             <h3>Novo token MCP</h3>

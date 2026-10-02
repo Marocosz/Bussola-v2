@@ -1,3 +1,8 @@
+/* Acima do drawer de configurações (overlay 9999, conteúdo 10000); o .modal global é 2000. */
+.modal.mcp-modal {
+    z-index: 10001;
+}
+
 .mcp-dica {
     font-size: 0.85rem;
     opacity: 0.75;
