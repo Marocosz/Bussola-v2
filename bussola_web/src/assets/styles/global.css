@@ -123,7 +123,7 @@ a {
     font-weight: 500;
     cursor: pointer;
     font-size: 0.9rem;
-    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -168,6 +168,17 @@ a {
 .btn-delete:hover {
     background-color: var(--cor-vermelho-delete-hover);
     transform: translateY(-2px);
+}
+
+/* Desabilitado: sem efeito de hover */
+.btn-primary:disabled,
+.btn-secondary:disabled,
+.btn-delete:disabled,
+.submit-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 /* --- Botões de Ação Redondos (Ícones) --- */
@@ -703,9 +714,28 @@ textarea:focus:invalid {
     max-width: 90%;
     margin: 0 auto 2rem auto;
     padding: 1.4rem 1.25rem 1.1rem 1.25rem;
-    border-radius: 10px 10px 0 0;
+    position: relative;
+    isolation: isolate;
+}
+
+/* Linha + gradiente do header vão de borda a borda da tela; o conteúdo segue em 90%. */
+.page-header::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 100vw;
+    transform: translateX(-50%);
     border-bottom: 1px solid rgba(var(--cor-tema-rgb), 0.25);
     background: linear-gradient(to right, transparent 0%, rgba(var(--cor-tema-rgb), 0.11) 20%, transparent 65%);
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* Evita rolagem horizontal pela faixa de 100vw (clip não cria scroll container). */
+.app-content {
+    overflow-x: clip;
 }
 
 .page-header-main h1 {

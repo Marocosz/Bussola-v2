@@ -87,8 +87,8 @@ export function ConexoesMcp() {
     const comando = `claude mcp add --transport http bussola ${MCP_URL} --header "Authorization: Bearer ${tokenGerado}"`;
 
     return (
-        <>
-            <div className="form-section-title">Conexões MCP (Claude)</div>
+        <section className="drawer-section">
+            <div className="form-section-title"><i className="fa-solid fa-plug" /> Conexões MCP (Claude)</div>
             <p className="mcp-dica">
                 No claude.ai, adicione um conector personalizado com a URL <code>{MCP_URL}</code>.
                 Para o Claude Code, gere um token.
@@ -113,7 +113,7 @@ export function ConexoesMcp() {
                 ))}
                 {!erroCarga && conexoes.length === 0 && <li className="mcp-meta">Nenhuma conexão ativa.</li>}
             </ul>
-            <button type="button" className="mcp-btn" onClick={() => setModalAberto(true)}>
+            <button type="button" className="btn-secondary" onClick={() => setModalAberto(true)}>
                 Novo token
             </button>
 
@@ -150,14 +150,14 @@ export function ConexoesMcp() {
                         <div className="modal-footer">
                             {tokenGerado ? (
                                 <>
-                                    <button type="button" className="mcp-btn" onClick={() => copiar(comando)}>Copiar comando</button>
-                                    <button type="button" className="mcp-btn" onClick={() => copiar(tokenGerado)}>Copiar token</button>
-                                    <button type="button" className="mcp-btn primario" onClick={fecharModal}>Concluir</button>
+                                    <button type="button" className="btn-secondary" onClick={() => copiar(comando)}>Copiar comando</button>
+                                    <button type="button" className="btn-secondary" onClick={() => copiar(tokenGerado)}>Copiar token</button>
+                                    <button type="button" className="btn-primary" onClick={fecharModal}>Concluir</button>
                                 </>
                             ) : (
                                 <>
-                                    <button type="button" className="mcp-btn" disabled={gerando} onClick={fecharModal}>Cancelar</button>
-                                    <button type="button" className="mcp-btn primario" disabled={!nome.trim() || gerando} onClick={gerar}>Gerar</button>
+                                    <button type="button" className="btn-secondary" disabled={gerando} onClick={fecharModal}>Cancelar</button>
+                                    <button type="button" className="btn-primary" disabled={!nome.trim() || gerando} onClick={gerar}>Gerar</button>
                                 </>
                             )}
                         </div>
@@ -165,6 +165,6 @@ export function ConexoesMcp() {
                 </BaseModal>,
                 document.body
             )}
-        </>
+        </section>
     );
 }

@@ -182,128 +182,136 @@ export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
                     </div>
 
                     <div className="drawer-form">
-                        <div className="form-section-title">Aparência</div>
-                        <div className="form-group">
-                            <label>Cor do Tema</label>
-                            <div className="color-theme-grid">
-                                {COLOR_PRESETS.map(preset => (
-                                    <button
-                                        key={preset.id}
-                                        type="button"
-                                        className={`color-preset-btn ${activePreset === preset.id ? 'active' : ''}`}
-                                        onClick={() => handlePresetSelect(preset.id)}
-                                        title={preset.name}
-                                    >
-                                        <div
-                                            className="color-preset-swatch"
-                                            style={{ background: `linear-gradient(135deg, ${preset.from}, ${preset.to})` }}
+                        <section className="drawer-section">
+                            <div className="form-section-title"><i className="fa-solid fa-palette" /> Aparência</div>
+                            <div className="form-group">
+                                <label>Cor do Tema</label>
+                                <div className="color-theme-grid">
+                                    {COLOR_PRESETS.map(preset => (
+                                        <button
+                                            key={preset.id}
+                                            type="button"
+                                            className={`color-preset-btn ${activePreset === preset.id ? 'active' : ''}`}
+                                            onClick={() => handlePresetSelect(preset.id)}
+                                            title={preset.name}
                                         >
-                                            <div className="color-preset-check">
-                                                <i className="fa-solid fa-check"></i>
+                                            <div
+                                                className="color-preset-swatch"
+                                                style={{ background: `linear-gradient(135deg, ${preset.from}, ${preset.to})` }}
+                                            >
+                                                <div className="color-preset-check">
+                                                    <i className="fa-solid fa-check"></i>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <span className="color-preset-name">{preset.name}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="form-section-title">Informações Pessoais</div>
-                        
-                        <div className="form-row">
-                            <div className="form-group" style={{flex: 1}}>
-                                <label>Nome de Exibição</label>
-                                <input className="form-input" value={editName} onChange={e => setEditName(e.target.value)} />
-                            </div>
-                        </div>
-
-                        <div className="form-group">
-                            <label>Cidade (Para Clima e Notícias Locais)</label>
-                            <CitySelector 
-                                value={editCity} 
-                                onChange={(val) => setEditCity(val)} 
-                            />
-                        </div>
-
-                        <div className="form-group">
-                            <label>Interesses de Notícias</label>
-                            <div className="tags-container">
-                                {availableTopics.map(topic => (
-                                    <span 
-                                        key={topic.id}
-                                        className={`tag-option ${newsPrefs.includes(topic.id) ? 'selected' : ''}`}
-                                        onClick={() => handleTopicToggle(topic.id)}
-                                    >
-                                        {topic.label}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="form-section-title">Segurança e Acesso</div>
-                        
-                        <div className="form-group">
-                            <label>E-mail Principal</label>
-                            <input 
-                                className="form-input" 
-                                type="email" 
-                                value={editEmail} 
-                                onChange={e => setEditEmail(e.target.value)}
-                                disabled={isGoogleOnly}
-                                title={isGoogleOnly ? "E-mail gerenciado pelo Google" : ""}
-                            />
-                            {isGoogleOnly && <small className="input-hint">Gerenciado pelo Google.</small>}
-                        </div>
-
-                        <div className="security-box">
-                            {!hasPasswordSet ? (
-                                <div className="no-password-alert">
-                                    <i className="fa-solid fa-shield-halved"></i>
-                                    <p>Você acessa via Google. Defina uma senha abaixo se quiser habilitar login por e-mail também.</p>
+                                            <span className="color-preset-name">{preset.name}</span>
+                                        </button>
+                                    ))}
                                 </div>
-                            ) : (
-                                (editEmail !== user?.email || editPassword) && (
-                                    <div className="form-group confirm-password-group">
-                                        <label>Senha Atual (Para confirmar alterações)</label>
-                                        <input 
-                                            className="form-input" 
-                                            type="password" 
-                                            value={currentPassword} 
-                                            onChange={e => setCurrentPassword(e.target.value)} 
-                                        />
-                                    </div>
-                                )
-                            )}
+                            </div>
+
+                        </section>
+
+                        <section className="drawer-section">
+                            <div className="form-section-title"><i className="fa-solid fa-user" /> Informações Pessoais</div>
+                        
+                            <div className="form-row">
+                                <div className="form-group" style={{flex: 1}}>
+                                    <label>Nome de Exibição</label>
+                                    <input className="form-input" value={editName} onChange={e => setEditName(e.target.value)} />
+                                </div>
+                            </div>
 
                             <div className="form-group">
-                                <label>{hasPasswordSet ? "Nova Senha" : "Criar Senha Local"}</label>
+                                <label>Cidade (Para Clima e Notícias Locais)</label>
+                                <CitySelector 
+                                    value={editCity} 
+                                    onChange={(val) => setEditCity(val)} 
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label>Interesses de Notícias</label>
+                                <div className="tags-container">
+                                    {availableTopics.map(topic => (
+                                        <span 
+                                            key={topic.id}
+                                            className={`tag-option ${newsPrefs.includes(topic.id) ? 'selected' : ''}`}
+                                            onClick={() => handleTopicToggle(topic.id)}
+                                        >
+                                            {topic.label}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+
+                        </section>
+
+                        <section className="drawer-section">
+                            <div className="form-section-title"><i className="fa-solid fa-lock" /> Segurança e Acesso</div>
+                        
+                            <div className="form-group">
+                                <label>E-mail Principal</label>
                                 <input 
                                     className="form-input" 
-                                    type="password" 
-                                    placeholder={hasPasswordSet ? "Deixe vazio para manter a atual" : "Crie uma senha segura"} 
-                                    value={editPassword} 
-                                    onChange={handlePasswordChange} 
+                                    type="email" 
+                                    value={editEmail} 
+                                    onChange={e => setEditEmail(e.target.value)}
+                                    disabled={isGoogleOnly}
+                                    title={isGoogleOnly ? "E-mail gerenciado pelo Google" : ""}
                                 />
-                                
-                                {/* BARRA DE FORÇA DA SENHA */}
-                                {editPassword && (
-                                    <div className="drawer-password-strength">
-                                        <div className="strength-bar-bg">
-                                            <div 
-                                                className="strength-bar-fill" 
-                                                style={{ 
-                                                    width: `${(passwordScore + 1) * 20}%`,
-                                                    backgroundColor: getStrengthColor() 
-                                                }}
-                                            ></div>
-                                        </div>
-                                        <span className="strength-text" style={{ color: getStrengthColor() }}>
-                                            {passwordFeedback}
-                                        </span>
-                                    </div>
-                                )}
+                                {isGoogleOnly && <small className="input-hint">Gerenciado pelo Google.</small>}
                             </div>
-                        </div>
+
+                            <div className="security-box">
+                                {!hasPasswordSet ? (
+                                    <div className="no-password-alert">
+                                        <i className="fa-solid fa-shield-halved"></i>
+                                        <p>Você acessa via Google. Defina uma senha abaixo se quiser habilitar login por e-mail também.</p>
+                                    </div>
+                                ) : (
+                                    (editEmail !== user?.email || editPassword) && (
+                                        <div className="form-group confirm-password-group">
+                                            <label>Senha Atual (Para confirmar alterações)</label>
+                                            <input 
+                                                className="form-input" 
+                                                type="password" 
+                                                value={currentPassword} 
+                                                onChange={e => setCurrentPassword(e.target.value)} 
+                                            />
+                                        </div>
+                                    )
+                                )}
+
+                                <div className="form-group">
+                                    <label>{hasPasswordSet ? "Nova Senha" : "Criar Senha Local"}</label>
+                                    <input 
+                                        className="form-input" 
+                                        type="password" 
+                                        placeholder={hasPasswordSet ? "Deixe vazio para manter a atual" : "Crie uma senha segura"} 
+                                        value={editPassword} 
+                                        onChange={handlePasswordChange} 
+                                    />
+                                
+                                    {/* BARRA DE FORÇA DA SENHA */}
+                                    {editPassword && (
+                                        <div className="drawer-password-strength">
+                                            <div className="strength-bar-bg">
+                                                <div 
+                                                    className="strength-bar-fill" 
+                                                    style={{ 
+                                                        width: `${(passwordScore + 1) * 20}%`,
+                                                        backgroundColor: getStrengthColor() 
+                                                    }}
+                                                ></div>
+                                            </div>
+                                            <span className="strength-text" style={{ color: getStrengthColor() }}>
+                                                {passwordFeedback}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </section>
                         {isOpen && <ConexoesMcp />}
                     </div>
                 </div>
