@@ -268,3 +268,27 @@ def test_isolamento_entre_usuarios(db, user, outro_user):
     assert estudos_service.excluir_tema(db, tema.id, outro_user.id) is False
     with pytest.raises(ValueError, match="Tema"):
         _material(db, outro_user, tema_id=tema.id)
+
+
+def test_normalizacao_preserva_escritas_nao_latinas(db, user):
+    a = _material(db, user, titulo="Programação básica", tags=["日本語", "한국어"])
+    b = _material(db, user, titulo="Aula de 日本語 N5")
+    c = _material(db, user, titulo="Outro")
+    assert a.tags == ["日本語", "한국어"]
+
+    def ids(**f):
+        return {m.id for m in estudos_service.listar_materiais(db, user.id, **f)}
+
+    assert ids(busca="日本語") == {a.id, b.id}  # título de b, tag de a; c fora
+    assert c.id not in ids(busca="日本語") and c.id not in ids(tag="日本語")
+    assert ids(tag="한국어") == {a.id}
+    assert ids(busca="programacao") == {a.id}  # sem acento ainda funciona
+    assert ids(busca="   ") == {a.id, b.id, c.id}  # busca vazia = sem filtro
+
+
+def test_temas_em_outras_escritas_coexistem(db, user):
+    ru = estudos_service.salvar_tema(db, user.id, nome="Русский")
+    jp = estudos_service.salvar_tema(db, user.id, nome="日本語")
+    assert ru.id != jp.id
+    assert estudos_service.obter_ou_criar_tema(db, user.id, "日本語").id == jp.id
+    assert estudos_service.obter_ou_criar_tema(db, user.id, "русский").id == ru.id

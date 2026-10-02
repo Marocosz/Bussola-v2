@@ -38,7 +38,8 @@ _ICONE = re.compile(r"^fa-[a-z0-9-]{1,40}$")
 
 
 def _normalizar(texto: Optional[str]) -> str:
-    sem_acento = unicodedata.normalize("NFKD", texto or "").encode("ascii", "ignore").decode()
+    decomposto = unicodedata.normalize("NFKD", texto or "")
+    sem_acento = "".join(c for c in decomposto if not unicodedata.combining(c))
     return sem_acento.casefold().strip()
 
 
@@ -210,11 +211,11 @@ class EstudosService:
         elif estudado is False:
             query = query.filter(EstudoMaterial.estudado_em.is_(None))
         materiais = query.order_by(EstudoMaterial.atualizado_em.desc(), EstudoMaterial.id.desc()).all()
-        if tag:
-            alvo = _normalizar(tag)
-            materiais = [m for m in materiais if any(_normalizar(t) == alvo for t in (m.tags or []))]
-        if busca:
-            alvo = _normalizar(busca)
+        alvo_tag = _normalizar(tag) if tag else ""
+        if alvo_tag:  # tag vazia após normalizar = sem filtro (intencional)
+            materiais = [m for m in materiais if any(_normalizar(t) == alvo_tag for t in (m.tags or []))]
+        alvo = _normalizar(busca) if busca else ""
+        if alvo:  # busca vazia após normalizar = sem filtro (intencional)
             materiais = [
                 m for m in materiais
                 if alvo in _normalizar(m.titulo) or any(alvo in _normalizar(t) for t in (m.tags or []))
