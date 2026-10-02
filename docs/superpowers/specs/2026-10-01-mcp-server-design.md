@@ -56,8 +56,7 @@ bussola_api/app/mcp/
 
 ### 3.2 Montagem
 
-- `main.py`: `app.mount("/mcp", mcp_app)` com `mcp_app = mcp.streamable_http_app()` e o
-  `session_manager.run()` do MCP encadeado no lifespan do FastAPI.
+- `main.py`: registra duas rotas explícitas apontando para o app Starlette do SDK: `app.router.add_route("/mcp", mcp_asgi)` e `app.router.add_route("/.well-known/oauth-protected-resource/mcp", mcp_asgi)`, onde `mcp_asgi = mcp.streamable_http_app()`. O `session_manager.run()` do MCP é encadeado no lifespan do FastAPI. Não usa `app.mount` porque a raiz já redireciona a barra final da API, e montar em `/mcp` criaria `/mcp/mcp`.
 - `server.py` configura `AuthSettings(issuer_url="https://bussola.marocos.dev",
   resource_server_url="https://bussola.marocos.dev/mcp", required_scopes=["bussola:read"])`; o SDK
   responde 401 com `WWW-Authenticate: Bearer resource_metadata=...`. A URL pública vem de
@@ -107,7 +106,7 @@ Migration Alembic escrita à mão (ver gotcha do `create_all()` no CLAUDE.md). S
 | `GET /.well-known/oauth-protected-resource` (e `/.well-known/oauth-protected-resource/mcp`) | Servido pelo SDK: `resource` = `/mcp`, `authorization_servers` = base pública |
 | `GET /.well-known/oauth-authorization-server` | Metadata RFC 8414: `authorization_endpoint=/oauth/authorize`, `token_endpoint=/oauth/token`, `registration_endpoint=/oauth/register`, `code_challenge_methods_supported=["S256"]`, `grant_types_supported=["authorization_code","refresh_token"]`, `token_endpoint_auth_methods_supported=["none"]`, `scopes_supported=["bussola:read","bussola:write"]` |
 | `POST /oauth/register` | RFC 7591, só clientes públicos. Valida `redirect_uris` (https ou `http://localhost`/`127.0.0.1`). Rate limit slowapi 10/hora/IP |
-| `GET /oauth/authorize` | Valida `client_id`, `redirect_uri` (match exato), `response_type=code`, `code_challenge` + `S256`, `scope`, `state`. Inválido antes de confiar no redirect → 400 em JSON; válido → 302 para `/oauth/consent?<params>` do SPA |
+| `GET /oauth/authorize` | Valida `client_id`, `redirect_uri` (match exato), `response_type=code`, `code_challenge` + `S256`, `scope`, `state`. Inválido antes de confiar no redirect → 400 em JSON; válido → 302 para `/conexoes/autorizar?<params>` do SPA |
 | `POST /api/v1/oauth/consent` | JWT normal (`get_current_user`). Body: params do authorize + `aprovado` + `scopes` escolhidos. Aprovado → cria `McpAuthCode` e devolve `{redirect_url: "<redirect_uri>?code=...&state=..."}`; negado → `...?error=access_denied&state=...` |
 | `POST /oauth/token` | `authorization_code`: valida código (hash, não usado, não expirado, mesmo client e redirect_uri) e PKCE `S256`; marca usado; emite access (1h) + refresh (30 dias). `refresh_token`: valida, revoga o antigo, emite par novo (rotação). Erros no formato OAuth (`invalid_grant`, ...) |
 | `GET /api/v1/mcp-tokens` | Lista conexões do usuário (OAuth agrupado por client + PATs): nome, escopos, `last_used_at`, expiração |
@@ -124,7 +123,7 @@ são registrados num router próprio em `main.py`.
 
 ### 4.4 Frontend
 
-- **`/oauth/consent`** (página nova): se deslogado, redireciona ao login existente (inclusive Google)
+- **`/conexoes/autorizar`** (página nova): se deslogado, redireciona ao login existente (inclusive Google)
   e volta com os params preservados. Mostra "**{client_name}** quer acessar seu Bussola", escopos
   (ler / ler e escrever, escrita pré-marcada) e Autorizar / Negar. Ao responder, chama
   `POST /api/v1/oauth/consent` e faz `window.location = redirect_url`.
@@ -152,11 +151,11 @@ são registrados num router próprio em `main.py`.
 | Módulo | Leitura | Escrita |
 |---|---|---|
 | Perfil | `meu_perfil` | — |
-| Panorama | `panorama_geral(periodo)`, `historico_categoria(categoria)` | — |
+| Panorama | `panorama_geral(de, ate)`, `historico_categoria(categoria)` | — |
 | Finanças | `resumo_financeiro(mes)`, `listar_transacoes(mes, categoria, tipo, status, busca, limite)`, `listar_categorias` | `salvar_transacao`, `marcar_pagamento`, `encerrar_recorrencia`, `excluir_transacao`, `salvar_categoria`, `excluir_categoria`, `salvar_ajuste_caixa`, `excluir_ajuste_caixa` |
-| Metas | `listar_metas`, `detalhar_meta` | `salvar_meta`, `excluir_meta`, `movimentar_meta`, `excluir_movimentacao` |
+| Metas | `listar_metas`, `detalhar_meta` | `salvar_meta`, `arquivar_meta`, `movimentar_meta`, `excluir_movimentacao` |
 | Agenda | `listar_compromissos(de, ate)` | `salvar_compromisso`, `excluir_compromisso` |
-| Registros | `listar_grupos`, `listar_anotacoes(grupo, busca)`, `ler_anotacao`, `listar_tarefas(status, grupo)` | `salvar_grupo`, `excluir_grupo`, `salvar_anotacao`, `excluir_anotacao`, `salvar_tarefa`, `marcar_subtarefa`, `excluir_tarefa` |
+| Registros | `listar_grupos`, `listar_anotacoes(grupo, busca)`, `ler_anotacao`, `listar_tarefas(status)` | `salvar_grupo`, `excluir_grupo`, `salvar_anotacao`, `excluir_anotacao`, `salvar_tarefa`, `marcar_subtarefa`, `excluir_tarefa` |
 | Hábitos | `listar_habitos`, `historico_habito` | `salvar_habito`, `checkin_habito(habito, data)`, `excluir_habito` |
 | Ritmo | `ultimo_bio`, `listar_treinos`, `listar_dietas`, `buscar_alimento(q)` | `registrar_bio`, `salvar_treino`, `excluir_treino`, `salvar_dieta`, `excluir_dieta` |
 | Cofre | `listar_segredos` (nome, categoria, notas — nunca o valor) | — |
@@ -206,3 +205,12 @@ Padrão de `tests/conftest.py` (SQLite em memória, `user`, `client`):
    `curl -i https://bussola.marocos.dev/mcp` (espera 401 com `WWW-Authenticate`).
 4. claude.ai → Configurações → Conectores → Adicionar conector personalizado → URL `/mcp` → fluxo OAuth.
 5. Claude Code → gerar PAT na tela → `claude mcp add ...`.
+
+## 9. Ajustes do planejamento
+
+A spec é atualizada na Task 0 com estes pontos (todos decorrem do código/SDK real):
+- O app Starlette do SDK serve `/mcp` e `/.well-known/oauth-protected-resource/mcp` a partir da própria raiz, então ele **não** é montado em `/mcp` (viraria `/mcp/mcp`) nem na raiz (um mount em `/` desliga o redirect de barra final da API). O FastAPI registra duas rotas explícitas que apontam para ele.
+- A tela de consentimento do SPA fica em **`/conexoes/autorizar`** (não `/oauth/consent`), porque `nginx` encaminha o prefixo `/oauth/` ao backend.
+- `excluir_meta` vira **`arquivar_meta`** (o service faz soft delete). `movimentar_meta.tipo` = `aporte`/`retirada` (enum real).
+- `panorama_geral(de, ate)` em vez de `periodo` (o service recebe intervalo). `listar_tarefas(status)` sem `grupo` (tarefa não tem grupo).
+- SDK 2.2: proteção de DNS rebinding precisa ser desligada explicitamente (senão rejeita `Host: bussola.marocos.dev`), e o session manager só roda uma vez por instância (o app MCP é recriado a cada lifespan).
