@@ -15,40 +15,63 @@ main.container {
 }
 
 /* ============================================= */
-/* 2. Barra de Navegação (Cabeçalho)             */
+/* 2. Navegação lateral (Sidebar)                */
 /* ============================================= */
-.main-header {
-    width: 100%;
-    z-index: 10;
-    border-bottom: 1px solid var(--cor-borda);
-    /* Garante que o fundo seja opaco para não misturar com o scroll */
-    background-color: var(--cor-fundo);
+:root {
+    --sidebar-largura: 240px;
+    --sidebar-largura-recolhida: 72px;
 }
 
-.navbar {
-    margin: auto;
-    width: 90%;
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: var(--sidebar-largura);
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    max-width: 1920px;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.25rem 0.85rem;
+    background-color: var(--cor-fundo);
+    border-right: 1px solid var(--cor-borda);
+    z-index: 100;
+    overflow-x: hidden;
+    overflow-y: auto;
+    transition: width 0.25s ease;
 }
 
-/* --- Logo e Marca --- */
+.sidebar.collapsed {
+    width: var(--sidebar-largura-recolhida);
+}
 
-.nav-brand {
-    display: flex;        /* Torna o container do logo flexível */
-    align-items: center;  /* Centraliza verticalmente a imagem dentro do link */
-    height: 100%;         /* Garante consistência de altura */
+/* O conteúdo acompanha a largura da sidebar */
+.app-content {
+    margin-left: var(--sidebar-largura);
+    transition: margin-left 0.25s ease;
+}
+
+.app-layout:has(.sidebar.collapsed) .app-content {
+    margin-left: var(--sidebar-largura-recolhida);
+}
+
+/* --- Marca --- */
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0 0.35rem;
     text-decoration: none;
+    color: var(--cor-texto-principal);
 }
 
 .nav-logo {
-    height: 50px;
+    height: 40px;
     width: auto;
+    flex-shrink: 0;
     transition: transform 0.3s ease;
 }
 
+.sidebar-brand:hover .nav-logo,
 .nav-brand:hover .nav-logo {
     transform: rotate(15deg);
 }
@@ -57,54 +80,108 @@ main.container {
     filter: invert(1);
 }
 
-/* --- Links de Navegação --- */
-.nav-links {
-    list-style: none;
+.sidebar-brand-name {
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+/* --- Rótulos somem quando recolhida --- */
+.sidebar-label {
+    white-space: nowrap;
+    overflow: hidden;
+    transition: opacity 0.2s ease;
+}
+
+.sidebar.collapsed .sidebar-label {
+    opacity: 0;
+    width: 0;
+}
+
+/* --- Links --- */
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+}
+
+.sidebar-link {
     display: flex;
     align-items: center;
-    gap: 1rem;
-}
-
-.nav-links li {
-    transition: background-color 0.4s cubic-bezier(0.25, 1, 0.5, 1), color 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-.nav-links a {
-    display: block;
-    padding: 24px 20px;
-    font-size: 1rem;
-    font-weight: 500;
+    gap: 0.85rem;
+    padding: 0.7rem 0.85rem;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
     color: var(--cor-texto-secundario);
-    transition: color 0.4s ease;
+    font-size: 0.95rem;
+    font-weight: 500;
+    font-family: inherit;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Efeito de foco: esmaece os outros */
-.nav-links:hover li {
-    opacity: 0.4;
+.sidebar-link i {
+    width: 20px;
+    text-align: center;
+    font-size: 1rem;
+    flex-shrink: 0;
 }
 
-/* Zoom no focado */
-.nav-links:hover li:hover {
-    opacity: 1;
-    transform: scale(1.1);
-}
-
-.nav-links:hover li:hover a {
+.sidebar-link:hover {
+    background: var(--cor-fundo-hover);
     color: var(--cor-texto-principal);
 }
 
-/* --- [NOVO] Botão Específico da Navbar (Criar Usuário) --- */
-/* Ele está no layout.css pois é um ajuste de posicionamento na nav */
-.btn-nav-create {
-    margin-left: 10px;
-    margin-right: 15px;
-    white-space: nowrap;
-    /* Não quebra linha */
-    height: 38px;
-    /* Altura fixa para alinhar com os outros itens */
+.sidebar-link.active {
+    background: rgba(var(--cor-tema-rgb), 0.14);
+    color: var(--cor-azul-primario);
+    font-weight: 600;
 }
 
-/* --- Hamburger button (hidden on desktop) --- */
+/* --- Rodapé (conta, tema, sair) --- */
+.sidebar-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--cor-borda);
+}
+
+.sidebar-footer .btn-nav-account {
+    width: 100%;
+    padding: 0.55rem 0.7rem;
+    border-radius: 10px;
+}
+
+.sidebar.collapsed .btn-nav-account {
+    justify-content: center;
+    padding: 0.55rem 0;
+}
+
+.sidebar-tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0.25rem;
+}
+
+.sidebar.collapsed .sidebar-tools {
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.sidebar-logout:hover {
+    color: var(--cor-vermelho-delete, #ef4444);
+}
+
+/* --- Barra do topo e hamburger: só no celular --- */
+.mobile-topbar {
+    display: none;
+}
+
 .btn-hamburger {
     display: none;
     flex-direction: column;
@@ -148,7 +225,6 @@ main.container {
     transform: translateY(-7px) rotate(-45deg);
 }
 
-/* --- Mobile menu overlay --- */
 .mobile-menu-overlay {
     display: none;
 }
@@ -157,6 +233,15 @@ main.container {
 /* RESPONSIVIDADE MOBILE                         */
 /* ============================================= */
 @media (max-width: 768px) {
+    .mobile-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.5rem 1rem;
+        border-bottom: 1px solid var(--cor-borda);
+        background-color: var(--cor-fundo);
+    }
+
     .btn-hamburger {
         display: flex;
     }
@@ -169,64 +254,31 @@ main.container {
         z-index: 998;
     }
 
-    .nav-links {
-        position: fixed;
-        top: 0;
-        right: 0;
-        width: 75%;
-        max-width: 300px;
-        height: 100vh;
-        background: var(--cor-card-principal);
-        border-left: 1px solid var(--cor-borda);
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0;
-        padding: 5rem 0 2rem 0;
+    /* No celular a sidebar vira gaveta e sempre mostra os rótulos */
+    .sidebar,
+    .sidebar.collapsed {
+        width: min(280px, 80vw);
         z-index: 999;
-        transform: translateX(100%);
+        transform: translateX(-100%);
         transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-        overflow-y: auto;
     }
 
-    .nav-links.mobile-open {
+    .sidebar.mobile-open {
         transform: translateX(0);
     }
 
-    .nav-links li {
-        width: 100%;
-    }
-
-    .nav-links a {
-        padding: 1rem 1.5rem;
-        font-size: 1.1rem;
-        width: 100%;
-        color: var(--cor-texto-principal);
-        border-bottom: 1px solid var(--cor-borda);
-    }
-
-    .nav-links:hover li {
+    .sidebar.collapsed .sidebar-label {
         opacity: 1;
+        width: auto;
     }
 
-    .nav-links:hover li:hover {
-        transform: none;
+    .sidebar-collapse {
+        display: none;
     }
 
-    .btn-nav-account {
-        width: 100%;
-        padding: 1rem 1.5rem;
-        justify-content: flex-start;
-        border-bottom: 1px solid var(--cor-borda);
-        border-radius: 0;
-    }
-
-    .btn-nav-create {
-        margin: 0.5rem 1rem;
-        width: calc(100% - 2rem);
-    }
-
-    #theme-toggle-li {
-        padding: 0.5rem 1rem;
+    .app-content,
+    .app-layout:has(.sidebar.collapsed) .app-content {
+        margin-left: 0;
     }
 }
 

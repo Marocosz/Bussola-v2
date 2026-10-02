@@ -1,14 +1,34 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { loadSavedColorTheme } from '../../utils/colorTheme';
-import { Link } from 'react-router-dom';
-import { AuthContext } from '../../context/AuthContext'; 
+import { Link, NavLink } from 'react-router-dom';
+import { AuthContext } from '../../context/AuthContext';
 import { useSystem } from '../../context/SystemContext';
-// O useToast não é mais necessário aqui, pois o UserDrawer gerencia seus próprios avisos
-import { AdminUserModal } from '../AdminUserModal'; 
-import { UserDrawer } from '../UserDrawer'; // [NOVO] Import do componente modular
+import { AdminUserModal } from '../AdminUserModal';
+import { UserDrawer } from '../UserDrawer';
 
 import bussolaLogo from '../../assets/images/bussola.svg';
-import '../../assets/styles/layout.css'; 
+import '../../assets/styles/layout.css';
+
+// Navegação principal (sidebar à esquerda). O estado "recolhida" fica salvo no navegador.
+const LINKS = [
+    { to: '/home', icone: 'fa-house', rotulo: 'Início' },
+    { to: '/panorama', icone: 'fa-chart-pie', rotulo: 'Panorama' },
+    { to: '/financas', icone: 'fa-wallet', rotulo: 'Provisões' },
+    { to: '/agenda', icone: 'fa-calendar-days', rotulo: 'Roteiro' },
+    { to: '/registros', icone: 'fa-book', rotulo: 'Registros' },
+    { to: '/ritmo', icone: 'fa-dumbbell', rotulo: 'Ritmo' },
+    { to: '/cofre', icone: 'fa-vault', rotulo: 'Cofre' },
+];
+
+const CHAVE_RECOLHIDA = 'sidebar-recolhida';
+
+function lerRecolhida() {
+    try {
+        return localStorage.getItem(CHAVE_RECOLHIDA) === '1';
+    } catch {
+        return false;
+    }
+}
 
 export function Navbar() {
     const { authenticated, logout, user, updateUserData } = useContext(AuthContext);
@@ -18,6 +38,7 @@ export function Navbar() {
     const [showAdminModal, setShowAdminModal] = useState(false);
     const [isAccountOpen, setIsAccountOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [recolhida, setRecolhida] = useState(lerRecolhida);
 
     const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
@@ -42,84 +63,121 @@ export function Navbar() {
         setTheme(newTheme);
     };
 
+    const alternarRecolhida = () => {
+        const nova = !recolhida;
+        setRecolhida(nova);
+        try {
+            localStorage.setItem(CHAVE_RECOLHIDA, nova ? '1' : '0');
+        } catch {
+            // sem storage: a preferência só não persiste
+        }
+    };
+
     return (
         <>
-            <header className="main-header">
-                <nav className="navbar">
-                    <Link to="/" className="nav-brand" onClick={closeMobileMenu}>
-                        <img src={bussolaLogo} alt="Logo Bússola" className="nav-logo" />
-                    </Link>
-
-                    {isMobileMenuOpen && <div className="mobile-menu-overlay" onClick={closeMobileMenu} />}
-
-                    <ul className={`nav-links ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
-                        {authenticated ? (
-                            <>
-                                <li><Link to="/home" onClick={closeMobileMenu}>Início</Link></li>
-                                <li><Link to="/panorama" onClick={closeMobileMenu}>Panorama</Link></li>
-                                <li><Link to="/financas" onClick={closeMobileMenu}>Provisões</Link></li>
-                                <li><Link to="/agenda" onClick={closeMobileMenu}>Roteiro</Link></li>
-                                <li><Link to="/registros" onClick={closeMobileMenu}>Registros</Link></li>
-                                <li><Link to="/ritmo" onClick={closeMobileMenu}>Ritmo</Link></li>
-                                <li><Link to="/cofre" onClick={closeMobileMenu}>Cofre</Link></li>
-
-                                <li>
-                                    <button className="btn-nav-account" onClick={() => { setIsAccountOpen(true); closeMobileMenu(); }}>
-                                        <div className="nav-user-avatar">
-                                            {user?.avatar_url ? <img src={user.avatar_url} alt="Avatar" /> : <i className="fa-solid fa-user"></i>}
-                                        </div>
-                                        <span>Minha Conta</span>
-                                    </button>
-                                </li>
-
-                                <li><Link to="/login" onClick={() => { logout(); closeMobileMenu(); }}>Sair</Link></li>
-
-                                {isSelfHosted && user?.is_superuser && (
-                                    <li>
-                                        <button
-                                            className="btn-secondary btn-nav-create"
-                                            onClick={() => { setShowAdminModal(true); closeMobileMenu(); }}
-                                            title="Criar Novo Usuário"
-                                        >
-                                            <i className="fa-solid fa-user-plus"></i>
-                                            <span>Novo Usuário</span>
-                                        </button>
-                                    </li>
-                                )}
-
-                                <li id="theme-toggle-li">
-                                    <button id="theme-toggle" className="btn-action-icon" onClick={toggleTheme}>
-                                        <i className={`fa-solid ${theme === 'light' ? 'fa-moon' : 'fa-sun'}`}></i>
-                                    </button>
-                                </li>
-                            </>
-                        ) : (
-                            <>
-                                <li><Link to="/login" onClick={closeMobileMenu}>Entrar</Link></li>
-                                <li id="theme-toggle-li">
-                                    <button id="theme-toggle" className="btn-action-icon" onClick={toggleTheme}>
-                                        <i className={`fa-solid ${theme === 'light' ? 'fa-moon' : 'fa-sun'}`}></i>
-                                    </button>
-                                </li>
-                            </>
-                        )}
-                    </ul>
-
-                    <button
-                        className={`btn-hamburger ${isMobileMenuOpen ? 'open' : ''}`}
-                        onClick={() => setIsMobileMenuOpen(prev => !prev)}
-                        aria-label="Menu"
-                    >
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </button>
-                </nav>
+            {/* Barra fina no topo — só aparece no celular */}
+            <header className="mobile-topbar">
+                <Link to="/" className="nav-brand" onClick={closeMobileMenu}>
+                    <img src={bussolaLogo} alt="Logo Bússola" className="nav-logo" />
+                </Link>
+                <button
+                    className={`btn-hamburger ${isMobileMenuOpen ? 'open' : ''}`}
+                    onClick={() => setIsMobileMenuOpen(prev => !prev)}
+                    aria-label="Menu"
+                >
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
             </header>
 
-            {/* [NOVO] Chamada Modular do Drawer */}
-            <UserDrawer 
-                isOpen={isAccountOpen} 
+            {isMobileMenuOpen && <div className="mobile-menu-overlay" onClick={closeMobileMenu} />}
+
+            <aside className={`sidebar ${recolhida ? 'collapsed' : ''} ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+                <Link to="/" className="sidebar-brand" onClick={closeMobileMenu}>
+                    <img src={bussolaLogo} alt="Logo Bússola" className="nav-logo" />
+                    <span className="sidebar-label sidebar-brand-name">Bússola</span>
+                </Link>
+
+                <nav className="sidebar-nav">
+                    {authenticated ? LINKS.map(link => (
+                        <NavLink
+                            key={link.to}
+                            to={link.to}
+                            className="sidebar-link"
+                            onClick={closeMobileMenu}
+                            title={recolhida ? link.rotulo : undefined}
+                        >
+                            <i className={`fa-solid ${link.icone}`}></i>
+                            <span className="sidebar-label">{link.rotulo}</span>
+                        </NavLink>
+                    )) : (
+                        <Link to="/login" className="sidebar-link" onClick={closeMobileMenu}>
+                            <i className="fa-solid fa-right-to-bracket"></i>
+                            <span className="sidebar-label">Entrar</span>
+                        </Link>
+                    )}
+                </nav>
+
+                <div className="sidebar-footer">
+                    {authenticated && (
+                        <button
+                            className="btn-nav-account"
+                            onClick={() => { setIsAccountOpen(true); closeMobileMenu(); }}
+                            title={recolhida ? 'Minha Conta' : undefined}
+                        >
+                            <div className="nav-user-avatar">
+                                {user?.avatar_url ? <img src={user.avatar_url} alt="Avatar" /> : <i className="fa-solid fa-user"></i>}
+                            </div>
+                            <span className="sidebar-label">Minha Conta</span>
+                        </button>
+                    )}
+
+                    {authenticated && isSelfHosted && user?.is_superuser && (
+                        <button
+                            className="sidebar-link sidebar-action"
+                            onClick={() => { setShowAdminModal(true); closeMobileMenu(); }}
+                            title="Criar Novo Usuário"
+                        >
+                            <i className="fa-solid fa-user-plus"></i>
+                            <span className="sidebar-label">Novo Usuário</span>
+                        </button>
+                    )}
+
+                    <div className="sidebar-tools">
+                        <button
+                            id="theme-toggle"
+                            className="btn-action-icon"
+                            onClick={toggleTheme}
+                            title={theme === 'light' ? 'Tema escuro' : 'Tema claro'}
+                        >
+                            <i className={`fa-solid ${theme === 'light' ? 'fa-moon' : 'fa-sun'}`}></i>
+                        </button>
+                        <button
+                            className="btn-action-icon sidebar-collapse"
+                            onClick={alternarRecolhida}
+                            title={recolhida ? 'Expandir menu' : 'Recolher menu'}
+                        >
+                            <i className={`fa-solid ${recolhida ? 'fa-angles-right' : 'fa-angles-left'}`}></i>
+                        </button>
+                    </div>
+
+                    {authenticated && (
+                        <Link
+                            to="/login"
+                            className="sidebar-link sidebar-logout"
+                            onClick={() => { logout(); closeMobileMenu(); }}
+                            title={recolhida ? 'Sair' : undefined}
+                        >
+                            <i className="fa-solid fa-arrow-right-from-bracket"></i>
+                            <span className="sidebar-label">Sair</span>
+                        </Link>
+                    )}
+                </div>
+            </aside>
+
+            <UserDrawer
+                isOpen={isAccountOpen}
                 onClose={() => setIsAccountOpen(false)}
                 user={user}
                 updateUserData={updateUserData}
