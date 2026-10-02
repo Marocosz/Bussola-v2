@@ -189,15 +189,18 @@
     text-overflow: ellipsis;
 }
 
+/* A largura da trilha vem do JSX (proporcional ao maior grupo); os blocos (1 por série) dividem essa largura */
 .ritmo-scope .vol-blocks-track {
     display: flex;
-    flex-wrap: wrap;
     gap: 3px;
     align-items: center;
+    min-width: 0;
+    transition: width 0.3s ease;
 }
 
 .ritmo-scope .vol-block {
-    width: 8px;
+    flex: 1;
+    min-width: 3px;
     height: 13px;
     border-radius: 2px;
     background: var(--cor-azul-primario);

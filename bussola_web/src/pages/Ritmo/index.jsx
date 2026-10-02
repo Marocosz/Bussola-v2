@@ -69,6 +69,9 @@ export function Ritmo() {
         }, { p: 0, c: 0, g: 0 });
     }, [dietaAtiva]);
 
+    // Maior volume da semana: referência de 100% para as barras proporcionais
+    const maxSetsSemana = Math.max(1, ...Object.values(volumeSemanal));
+
     useEffect(() => {
         loadData(true);
     }, []);
@@ -319,7 +322,8 @@ export function Ritmo() {
                                     {Object.entries(volumeSemanal).map(([grupo, sets]) => (
                                         <div key={grupo} className="vol-bar-row">
                                             <span className="vol-bar-label">{grupo}</span>
-                                            <div className="vol-blocks-track">
+                                            {/* Largura proporcional ao maior grupo: o maior ocupa a linha inteira */}
+                                            <div className="vol-blocks-track" style={{ width: `${(sets / maxSetsSemana) * 100}%` }}>
                                                 {Array.from({ length: sets }).map((_, i) => (
                                                     <div key={i} className="vol-block"></div>
                                                 ))}
