@@ -131,3 +131,25 @@ def test_normalizar_escopos():
     assert normalizar_escopos(["bussola:read"]) == ["bussola:read"]
     with pytest.raises(OAuthErro):
         normalizar_escopos(["admin"])
+
+
+def test_pkce_errado_queima_o_codigo(db, user):
+    cliente = mcp_auth_service.registrar_cliente(db, "Claude", [REDIRECT])
+    verifier, challenge = _pkce()
+    codigo = mcp_auth_service.criar_codigo(db, cliente.client_id, user.id, REDIRECT, challenge, ["bussola:read"])
+    with pytest.raises(OAuthErro):
+        mcp_auth_service.trocar_codigo(db, cliente.client_id, codigo, REDIRECT, "errado-" + "y" * 40)
+    with pytest.raises(OAuthErro) as erro:
+        mcp_auth_service.trocar_codigo(db, cliente.client_id, codigo, REDIRECT, verifier)
+    assert erro.value.codigo == "invalid_grant"
+
+
+def test_replay_de_refresh_revoga_a_sessao(db, user):
+    cliente, par1 = _par(db, user)
+    par2 = mcp_auth_service.renovar(db, cliente.client_id, par1["refresh_token"])
+    with pytest.raises(OAuthErro) as erro:
+        mcp_auth_service.renovar(db, cliente.client_id, par1["refresh_token"])
+    assert erro.value.codigo == "invalid_grant"
+    assert mcp_auth_service.verificar(db, par2["access_token"]) is None
+    with pytest.raises(OAuthErro):
+        mcp_auth_service.renovar(db, cliente.client_id, par2["refresh_token"])

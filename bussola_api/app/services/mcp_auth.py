@@ -116,16 +116,31 @@ class McpAuthService:
         if (not reg or reg.used or reg.expires_at < agora()
                 or reg.client_id != client_id or reg.redirect_uri != redirect_uri):
             raise OAuthErro("invalid_grant", "Código de autorização inválido ou expirado.")
+        # Consumo atômico ANTES do PKCE: garante uso único mesmo com requisições
+        # concorrentes, e um code_verifier errado também queima o código.
+        consumido = db.query(McpAuthCode).filter(
+            McpAuthCode.id == reg.id, McpAuthCode.used.is_(False)
+        ).update({"used": True}, synchronize_session=False)
+        db.commit()
+        if consumido == 0:
+            raise OAuthErro("invalid_grant", "Código de autorização inválido ou expirado.")
         if not _pkce_confere(code_verifier, reg.code_challenge):
             raise OAuthErro("invalid_grant", "code_verifier não confere (PKCE).")
-        reg.used = True
         return self._emitir_par(db, reg.user_id, client_id, reg.scopes.split())
 
     def renovar(self, db: Session, client_id: str, refresh_token: str) -> dict:
         reg = db.query(McpToken).filter(
             McpToken.token_hash == hash_token(refresh_token), McpToken.kind == "refresh"
         ).first()
-        if not reg or reg.revoked or reg.client_id != client_id or reg.expires_at < agora():
+        if reg and reg.revoked and reg.client_id == client_id:
+            # Reuso de refresh já rotacionado: possível vazamento. Derruba a sessão toda.
+            db.query(McpToken).filter(
+                McpToken.user_id == reg.user_id, McpToken.client_id == client_id,
+                McpToken.revoked.is_(False),
+            ).update({"revoked": True}, synchronize_session=False)
+            db.commit()
+            raise OAuthErro("invalid_grant", "Refresh token já utilizado; sessão revogada.")
+        if not reg or reg.client_id != client_id or reg.expires_at < agora():
             raise OAuthErro("invalid_grant", "Refresh token inválido ou expirado.")
         reg.revoked = True  # rotação: o refresh usado morre
         return self._emitir_par(db, reg.user_id, client_id, reg.scopes.split())
