@@ -48,7 +48,13 @@ export function Financas() {
     const [filterStatus, setFilterStatus] = useState('todos');
     const [filterCategoria, setFilterCategoria] = useState(null);
     const [filterPagamento, setFilterPagamento] = useState('todos');
-    const [filterDatePreset, setFilterDatePreset] = useState('todos');
+    // Celular começa no mês corrente (evita abrir em parcelas do futuro distante); desktop segue em "todos".
+    const [filterDatePreset, setFilterDatePreset] = useState(() => (isMobile ? 'mes' : 'todos'));
+    const [prevIsMobile, setPrevIsMobile] = useState(isMobile);
+    if (prevIsMobile !== isMobile) {
+        setPrevIsMobile(isMobile);
+        if (isMobile && filterDatePreset === 'todos') setFilterDatePreset('mes');
+    }
     const [filterDateStart, setFilterDateStart] = useState('');
     const [filterDateEnd, setFilterDateEnd] = useState('');
     const [filterSearch, setFilterSearch] = useState('');

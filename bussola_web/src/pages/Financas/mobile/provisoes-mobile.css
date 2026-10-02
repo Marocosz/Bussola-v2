@@ -372,3 +372,125 @@
     min-width: 56px;
     font-size: 0.8125rem;
 }
+
+/* --- Botão de filtros + contador --- */
+.financas-scope .m-filter-btn {
+    position: relative;
+    flex-shrink: 0;
+    width: var(--tap-min);
+    height: var(--tap-min);
+    display: grid;
+    place-items: center;
+    border: none;
+    border-radius: 12px;
+    background: var(--cor-card-secundario);
+    box-shadow: inset 0 0 0 1px var(--cor-borda);
+    color: var(--cor-texto-principal);
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.financas-scope .m-filter-btn.active {
+    color: var(--cor-azul-primario);
+    box-shadow: inset 0 0 0 1px var(--cor-azul-primario);
+}
+
+.financas-scope .m-filter-badge {
+    position: absolute;
+    top: calc(-1 * var(--sp-1));
+    right: calc(-1 * var(--sp-1));
+    min-width: 18px;
+    height: 18px;
+    padding: 0 var(--sp-1);
+    display: grid;
+    place-items: center;
+    border-radius: 9px;
+    background: var(--cor-azul-primario);
+    color: #fff;
+    font-size: 0.6875rem;
+    font-weight: 700;
+}
+
+/* --- Chips dos filtros ativos --- */
+.financas-scope .m-active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2);
+}
+
+.financas-scope .m-active-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    min-height: var(--tap-min);
+    padding: 0 var(--sp-3);
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--cor-azul-primario) 40%, var(--cor-borda));
+    background: color-mix(in srgb, var(--cor-azul-primario) 12%, transparent);
+    color: var(--cor-azul-primario);
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* --- Sheet de filtros (corpo em portal; o wrapper .m-filters-scope devolve o escopo da página) --- */
+.financas-scope.m-filters-scope {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-5);
+    padding-top: var(--sp-2);
+}
+
+.financas-scope .m-filter-group {
+    min-width: 0; /* fieldset tem min-width: min-content por padrão (causaria overflow) */
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.financas-scope .m-filter-label {
+    margin-bottom: var(--sp-2);
+    padding: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--cor-texto-secundario);
+}
+
+.financas-scope .m-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2);
+}
+
+.financas-scope .m-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    min-height: var(--tap-min);
+    max-width: 100%;
+    padding: 0 var(--sp-3);
+    border-radius: 999px;
+    border: 1px solid var(--cor-borda);
+    background: var(--cor-card-secundario);
+    color: var(--cor-texto-principal);
+    font: inherit;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.financas-scope .m-chip.active {
+    border-color: var(--cor-azul-primario);
+    background: color-mix(in srgb, var(--cor-azul-primario) 16%, transparent);
+    color: var(--cor-azul-primario);
+    font-weight: 600;
+}
+
+.financas-scope .m-filter-range {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--sp-3);
+    margin-top: var(--sp-3);
+}

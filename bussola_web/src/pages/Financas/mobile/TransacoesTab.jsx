@@ -1,20 +1,24 @@
 import { useState } from 'react';
-import { groupByDay } from '../transactionsQuery';
+import { activeFilterChips, groupByDay } from '../transactionsQuery';
 import { TransactionRowMobile } from './TransactionRowMobile';
+import { FiltersSheet } from './FiltersSheet';
 
 const PAGINA = 30;
 
-/** Aba Transações: busca, grupos por dia e "Carregar mais". */
-export function TransacoesTab({ loading, transactions, filters, sortConfig, onSearch, rowProps }) {
+/** Aba Transações: busca, filtros (sheet + chips), grupos por dia e "Carregar mais". */
+export function TransacoesTab({ data, loading, transactions, filters, sortConfig, onSearch, onApplyFilters, onClearFilter, rowProps }) {
     // "Carregar mais" volta ao início quando filtros/ordem mudam (ajuste no render, sem efeito).
     const chave = JSON.stringify([filters, sortConfig]);
     const [visiveis, setVisiveis] = useState(PAGINA);
     const [chaveAnterior, setChaveAnterior] = useState(chave);
+    const [filtrosAbertos, setFiltrosAbertos] = useState(false);
     if (chaveAnterior !== chave) {
         setChaveAnterior(chave);
         setVisiveis(PAGINA);
     }
 
+    const chips = activeFilterChips(filters, data);
+    const n = chips.length;
     const mostradas = transactions.slice(0, visiveis);
     const restantes = transactions.length - mostradas.length;
     // Cabeçalho por dia só faz sentido ordenando por data; em outra ordem, lista corrida.
@@ -36,7 +40,33 @@ export function TransacoesTab({ loading, transactions, filters, sortConfig, onSe
                             onChange={(e) => onSearch(e.target.value)}
                         />
                     </label>
+                    <button
+                        type="button"
+                        className={`m-filter-btn ${n ? 'active' : ''}`}
+                        aria-label={n === 0 ? 'Filtros' : n === 1 ? 'Filtros (1 ativo)' : `Filtros (${n} ativos)`}
+                        onClick={() => setFiltrosAbertos(true)}
+                    >
+                        <i className="fa-solid fa-sliders" aria-hidden="true"></i>
+                        {n > 0 && <span className="m-filter-badge">{n}</span>}
+                    </button>
                 </div>
+
+                {n > 0 && (
+                    <div className="m-active-filters">
+                        {chips.map((c) => (
+                            <button
+                                key={c.key}
+                                type="button"
+                                className="m-active-chip"
+                                aria-label={`Remover filtro ${c.label}`}
+                                onClick={() => onClearFilter(c.key)}
+                            >
+                                <span>{c.label}</span>
+                                <i className="fa-solid fa-xmark" aria-hidden="true"></i>
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {loading ? (
@@ -59,6 +89,16 @@ export function TransacoesTab({ loading, transactions, filters, sortConfig, onSe
                         </button>
                     )}
                 </>
+            )}
+
+            {filtrosAbertos && (
+                <FiltersSheet
+                    data={data}
+                    filters={filters}
+                    sortConfig={sortConfig}
+                    onApply={onApplyFilters}
+                    onClose={() => setFiltrosAbertos(false)}
+                />
             )}
         </div>
     );

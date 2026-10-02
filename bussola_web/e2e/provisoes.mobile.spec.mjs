@@ -190,6 +190,8 @@ test.describe('layout mobile', () => {
 
   test('lista agrupada por dia (cabeçalhos sem repetir) e "Carregar mais"', async ({ page }) => {
     await gotoApp(page, '/financas');
+    // O mês corrente tem menos de 30 linhas no banco demo: mostra todas as datas para exercitar a paginação.
+    await page.getByRole('button', { name: 'Remover filtro Este mês' }).click();
     const heads = await page.locator('.m-tx-day-head').allTextContents();
     expect(heads.length).toBeGreaterThan(1);
     for (const h of heads) expect(h).toMatch(/^(Hoje|Ontem|Amanhã|[A-Z][a-zá]{2}) · \d{2}\/\d{2}(\/\d{2})?$/);
@@ -338,5 +340,103 @@ test.describe('ações da linha', () => {
     await page.getByRole('button', { name: 'Sim, excluir' }).click();
     await expect(page.getByText('Transação removida.')).toBeVisible();
     await expect(page.locator('.m-tx-row')).toHaveCount(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Task 4 — filtros
+// ---------------------------------------------------------------------------
+test.describe('filtros', () => {
+  const FILTROS = /^Filtros/;
+  const abrirFiltros = (page) => page.getByRole('button', { name: FILTROS }).click();
+  const carregarTudo = async (page) => {
+    const mais = page.getByRole('button', { name: /^Carregar mais/ });
+    while (await mais.count()) await mais.click();
+  };
+
+  test('padrão no celular: chip "Este mês" removível e primeiro dia dentro do mês corrente', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    await expect(page.locator('.m-active-chip')).toHaveText(['Este mês']);
+    await expect(page.getByRole('button', { name: 'Filtros (1 ativo)' })).toBeVisible();
+    const heads = page.locator('.m-tx-day-head');
+    await expect(heads.first()).toBeVisible();
+    for (const h of await heads.allTextContents()) expect(h).toMatch(/ · \d{2}\/10$/); // sem sufixo de ano: 2026
+    await page.getByRole('button', { name: 'Remover filtro Este mês' }).click();
+    await expect(page.locator('.m-active-chip')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Filtros', exact: true })).toBeVisible();
+    await expect(page.locator('.m-tx-day-head').first()).not.toHaveText(/ · \d{2}\/10$/); // todas as datas: parcelas futuras
+  });
+
+  test('Tipo=Parcelada: "Ver N" bate com a lista e o chip remove', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    await abrirFiltros(page);
+    const sheet = page.locator('.m-filters');
+    await sheet.getByRole('group', { name: 'Tipo' }).getByRole('button', { name: 'Parcelada' }).click();
+    await expect(sheet.getByRole('group', { name: 'Tipo' }).getByRole('button', { name: 'Parcelada' })).toHaveAttribute('aria-pressed', 'true');
+    const ver = sheet.getByRole('button', { name: /^Ver \d+ transaç/ });
+    const n = Number((await ver.textContent()).match(/\d+/)[0]);
+    expect(n).toBeGreaterThan(0);
+    await ver.click();
+    await expect(sheet).toHaveCount(0);
+
+    await expect(page.getByRole('button', { name: 'Filtros (2 ativos)' })).toBeVisible();
+    await expect(page.locator('.m-filter-badge')).toHaveText('2');
+    await carregarTudo(page);
+    const rows = page.locator('.m-tx-row');
+    await expect(rows).toHaveCount(n);
+    expect([...new Set(await rows.evaluateAll((els) => els.map((e) => e.dataset.tipo)))]).toEqual(['parcelada']);
+
+    await page.getByRole('button', { name: 'Remover filtro Parcelada' }).click();
+    await expect(page.getByRole('button', { name: 'Filtros (1 ativo)' })).toBeVisible();
+    await expect(page.locator('.m-filter-badge')).toHaveText('1');
+    expect(await rows.count()).toBeGreaterThan(0);
+  });
+
+  test('o contador do sheet acompanha o rascunho e só aplica no "Ver"', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    await abrirFiltros(page);
+    const sheet = page.locator('.m-filters');
+    const ver = sheet.getByRole('button', { name: /^Ver \d+ transaç/ });
+    const total = Number((await ver.textContent()).match(/\d+/)[0]);
+    await sheet.getByRole('group', { name: 'Status' }).getByRole('button', { name: 'Pendente' }).click();
+    const pendentes = Number((await ver.textContent()).match(/\d+/)[0]);
+    expect(pendentes).toBeLessThan(total);
+    await page.keyboard.press('Escape'); // descarta o rascunho
+    await expect(sheet).toHaveCount(0);
+    await expect(page.locator('.m-filter-badge')).toHaveText('1'); // só o "Este mês" padrão
+  });
+
+  test('Ordenar por maior valor desliga os cabeçalhos de dia e ordena', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    await abrirFiltros(page);
+    const sheet = page.locator('.m-filters');
+    await sheet.getByRole('group', { name: 'Ordenar' }).getByRole('button', { name: 'Maior valor' }).click();
+    await sheet.getByRole('button', { name: /^Ver \d+ transaç/ }).click();
+    await expect(page.locator('.m-tx-day-head')).toHaveCount(0);
+    const valores = (await page.locator('.m-tx-valor').allTextContents())
+      .slice(0, 6)
+      .map((s) => Number(s.replace(/[^\d,]/g, '').replace(',', '.')));
+    for (let i = 1; i < valores.length; i += 1) expect(valores[i]).toBeLessThanOrEqual(valores[i - 1]);
+  });
+
+  test('Período personalizado usa DatePicker em sheet e vira chip', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    await abrirFiltros(page);
+    const sheet = page.locator('.m-filters');
+    await sheet.getByRole('group', { name: 'Período' }).getByRole('button', { name: 'Personalizado' }).click();
+    await expect(sheet.locator('.m-filter-range .pk-trigger')).toHaveCount(2);
+    await sheet.locator('.m-filter-range .pk-trigger').first().click();
+    await page.locator('.pk-date-panel').getByRole('button', { name: 'Hoje' }).click();
+    await sheet.getByRole('button', { name: /^Ver \d+ transaç/ }).click();
+    await expect(page.locator('.m-active-chip')).toHaveText(['02/10–…']);
+  });
+
+  test('sheet de filtros sem overflow em 360px e com alvos de 44px', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 780 });
+    await gotoApp(page, '/financas');
+    await abrirFiltros(page);
+    await expect(page.locator('.m-filters')).toBeVisible();
+    expect(await overflowOffenders(page)).toEqual([]);
+    expect(await smallTargets(page, '.m-filters')).toEqual([]);
   });
 });
