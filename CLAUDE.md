@@ -91,6 +91,7 @@ All routes are prefixed `/api/v1` and registered centrally in `app/api/v1/router
 | Panorama | `/panorama` | Dashboard aggregating all modules |
 | Auth | `/auth` | JWT + Google OAuth2 |
 | AI | `/ai` | AI orchestration endpoint |
+| MCP | `/mcp`, `/oauth`, `/api/v1/mcp-tokens` | Servidor MCP para o Claude (OAuth 2.1 + PAT); tools em `app/mcp/tools/`. Ver `docs/MCP.md` |
 | System | `/system` | Health checks |
 
 ### AI Brain Layer (`app/services/ai/`)
@@ -160,4 +161,5 @@ Detailed module documentation lives in `docs/`:
 - `docs/AI.md` — agent design and orchestration patterns
 - `docs/SECURITY.md` — auth architecture, JWT flow, RBAC
 - `docs/FINANCE.md`, `docs/RITMO.md`, `docs/REGISTROS.md`, `docs/AGENDA.md`, `docs/COFRE.md`, `docs/PANORAMA.md` — module-specific logic
+- `docs/MCP.md` — servidor MCP, conexão no claude.ai/Claude Code, como adicionar módulos
 - Metas has no `docs/METAS.md` yet; its design spec and implementation plan live in `docs/superpowers/specs/2026-07-19-metas-cofrinhos-design.md` and `docs/superpowers/plans/2026-07-19-metas-cofrinhos.md`
