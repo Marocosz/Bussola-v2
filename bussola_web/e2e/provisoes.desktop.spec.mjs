@@ -41,6 +41,13 @@ test('desktop provisões: ações da linha só aparecem no hover', async ({ page
   await expect.poll(opacity).toBe('1');
 });
 
+test('desktop provisões: modal de transação mantém overflow visível (popovers não cortam)', async ({ page }) => {
+  await gotoApp(page, '/financas');
+  await page.getByRole('button', { name: 'Adicionar' }).first().click();
+  await page.locator('.dropdown-menu a', { hasText: 'Pontual' }).click();
+  expect(await page.locator('.modal-content').evaluate((e) => getComputedStyle(e).overflow)).toBe('visible');
+});
+
 test('desktop provisões: nada do layout mobile aparece', async ({ page }) => {
   await gotoApp(page, '/financas');
   await expect(page.locator('.page-header')).toBeVisible();

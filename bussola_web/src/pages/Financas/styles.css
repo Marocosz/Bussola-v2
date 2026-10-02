@@ -1413,7 +1413,6 @@
     flex-direction: column;
     max-height: 90vh;
     animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    overflow: visible !important;
 }
 
 .financas-scope .modal-header {
@@ -1434,10 +1433,21 @@
 
 .financas-scope .modal-body {
     padding: 1.5rem;
-    overflow: visible;
     display: flex;
     flex-direction: column;
     gap: 1.2rem;
+}
+
+/* Desktop/tablet: o modal não corta os popovers de DatePicker/CustomSelect/ícone.
+   No celular eles abrem em sheet próprio, então o sheet volta a rolar normalmente. */
+@media (min-width: 769px) {
+    .financas-scope .modal-content {
+        overflow: visible !important;
+    }
+
+    .financas-scope .modal-body {
+        overflow: visible;
+    }
 }
 
 .financas-scope .modal-footer {

@@ -548,3 +548,117 @@ test.describe('metas', () => {
     expect(r[3]).toMatch(/^R\$\s500$/);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 6 — Categorias, Caixa e modais
+// ---------------------------------------------------------------------------
+test.describe('categorias e caixa', () => {
+  test('alternância Despesas/Receitas troca a lista', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    await abrirAba(page, 'Categorias');
+    await expect(page.getByRole('tab', { name: 'Despesas' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('.catcard', { hasText: 'Alimentação' })).toBeVisible();
+    await page.getByRole('tab', { name: 'Receitas' }).click();
+    await expect(page.locator('.catcard', { hasText: 'Salário' }).first()).toBeVisible();
+    await expect(page.locator('.catcard', { hasText: 'Alimentação' })).toHaveCount(0);
+  });
+
+  test('categoria: Fab → form com ícone em sheet de 6 colunas; cria e exclui', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    await abrirAba(page, 'Categorias');
+    await page.getByRole('button', { name: 'Nova categoria' }).click();
+    const form = page.locator('.modal-overlay.is-sheet').first();
+    await expect(form.locator('h3')).toHaveText('Nova Categoria');
+    await expect(form.locator('input[name="meta_limite"]')).toHaveAttribute('inputmode', 'decimal');
+    await form.locator('input[name="nome"]').fill('E2E Categoria');
+
+    await form.locator('.picker-preview').first().click();
+    const grid = page.locator('.picker-sheet .picker-sheet-grid');
+    await expect(grid).toBeVisible();
+    expect(await grid.evaluate((g) => getComputedStyle(g).gridTemplateColumns.split(' ').length)).toBe(6);
+    expect(await overflowOffenders(page)).toEqual([]);
+    const opcao = grid.locator('.icon-option').nth(4);
+    const icone = await opcao.getAttribute('aria-label');
+    await opcao.click();
+    await expect(page.locator('.picker-sheet')).toHaveCount(0);
+    await expect(form.locator('.picker-preview i').first()).toHaveAttribute('class', icone);
+
+    await form.locator('.picker-preview').nth(1).click();
+    await page.locator('.picker-sheet .color-swatch').nth(2).click();
+    await expect(page.locator('.picker-sheet')).toHaveCount(0);
+
+    await form.getByRole('button', { name: 'Salvar' }).click();
+    await expect(page.getByText('Salvo com sucesso.')).toBeVisible();
+    const card = page.locator('.catcard', { hasText: 'E2E Categoria' });
+    await expect(card).toBeVisible();
+    await card.locator('.btn-delete-transacao').click();
+    await page.getByRole('button', { name: 'Sim, excluir' }).click();
+    await expect(card).toHaveCount(0);
+  });
+
+  test('form de categoria: Salvar visível com teclado e fechar com 44px', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 480 });
+    await gotoApp(page, '/financas');
+    await abrirAba(page, 'Categorias');
+    await page.getByRole('button', { name: 'Nova categoria' }).click();
+    const form = page.locator('.modal-overlay.is-sheet').first();
+    await expect(form.getByRole('button', { name: 'Salvar' })).toBeInViewport();
+    const fechar = await form.locator('.close-btn').boundingBox();
+    expect(fechar.width).toBeGreaterThanOrEqual(44);
+    expect(fechar.height).toBeGreaterThanOrEqual(44);
+    expect(await form.locator('.modal-content').evaluate((e) => getComputedStyle(e).overflow)).toBe('hidden');
+    expect(await form.locator('.modal-body').evaluate((e) => getComputedStyle(e).overflowY)).toBe('auto');
+  });
+
+  test('cards de categoria: textos secundários ≥ 12px', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    await abrirAba(page, 'Categorias');
+    const tamanhos = await page.locator('.catcard-progress-label, .catcard-nometa, .catcard-progress-pct').evaluateAll(
+      (els) => els.map((e) => parseFloat(getComputedStyle(e).fontSize)));
+    expect(tamanhos.length).toBeGreaterThan(0);
+    for (const s of tamanhos) expect(s).toBeGreaterThanOrEqual(12);
+  });
+
+  test('Caixa: ajuste em sheet, linha sem sobreposição em 360px, e exclusão', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 780 });
+    await gotoApp(page, '/financas');
+    await page.locator('.m-kpi', { hasText: 'Caixa' }).click();
+    const sheet = page.locator('.modal-overlay.is-sheet').first();
+    await sheet.getByRole('button', { name: 'Novo ajuste' }).click();
+    await sheet.locator('.caixa-form input[type="number"]').fill('10');
+    await sheet.locator('.caixa-form input:not([type="number"])').last().fill('E2E ajuste');
+    await sheet.locator('.caixa-form').getByRole('button', { name: 'Salvar' }).click();
+    const item = sheet.locator('.caixa-item', { hasText: 'E2E ajuste' });
+    await expect(item).toBeVisible();
+    expect(await overflowOffenders(page)).toEqual([]);
+    expect(await smallTargets(page, '.modal-overlay.is-sheet .caixa-item')).toEqual([]);
+    const valor = await item.locator('.caixa-item-valor').boundingBox();
+    const acoes = await item.locator('.caixa-item-actions').boundingBox();
+    expect(acoes.y).toBeGreaterThanOrEqual(valor.y + valor.height - 1); // ações numa linha própria
+    await item.locator('.btn-delete').click();
+    await page.getByRole('button', { name: 'Sim, excluir' }).click();
+    await expect(item).toHaveCount(0);
+  });
+});
+
+test.describe('metas com teclado simulado', () => {
+  test('cena do cofre: confirmar fica dentro da área visível (--vvh 420)', async ({ page, playwright }) => {
+    const r = await playwright.request.newContext();
+    await apiJson(r, 'POST', '/financas/metas', { nome: 'E2E Teclado', valor_alvo: 500, icone: 'fa-solid fa-piggy-bank', cor: '#4A6DFF' });
+    await r.dispose();
+    await gotoApp(page, '/financas');
+    await abrirAba(page, 'Metas');
+    await page.locator('.m-metas .meta-card').filter({ hasText: 'E2E Teclado' }).getByRole('button', { name: 'Guardar' }).click();
+    const sheet = page.locator('.modal-overlay.is-sheet-full');
+    await expect(sheet.locator('.cofre-body')).toBeVisible();
+    await sheet.getByRole('button', { name: '+50', exact: true }).click();
+    await page.evaluate(() => {
+      document.documentElement.style.setProperty('--vvh', '420px');
+      document.documentElement.style.setProperty('--kb-inset', '424px');
+    });
+    await page.waitForTimeout(400);
+    const box = await sheet.getByRole('button', { name: /^Guardar R\$/ }).boundingBox();
+    expect(box.y + box.height).toBeLessThanOrEqual(420.5);
+    expect(box.y).toBeGreaterThanOrEqual(0);
+  });
+});

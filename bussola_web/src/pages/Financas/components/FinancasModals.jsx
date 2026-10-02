@@ -6,6 +6,8 @@ import { useConfirm } from '../../../context/ConfirmDialogContext';
 import { CustomSelect } from '../../../components/CustomSelect';
 import { BaseModal } from '../../../components/BaseModal';
 import { DatePicker } from '../../../components/Pickers';
+import { useIsMobile } from '../../../hooks/useIsMobile';
+import { Sheet } from '../../../components/mobile/Sheet';
 
 export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardData, editingData }) {
     const { addToast } = useToast();
@@ -13,6 +15,7 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
     const [formData, setFormData] = useState({});
     const [showIconPicker, setShowIconPicker] = useState(false);
     const [showColorPicker, setShowColorPicker] = useState(false);
+    const isMobile = useIsMobile();
 
     const iconWrapperRef = useRef(null);
     const colorWrapperRef = useRef(null);
@@ -43,6 +46,8 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
 
     useEffect(() => {
         function handleClickOutside(event) {
+            // No celular o picker é um sheet: o "clique fora" fecharia antes do toque selecionar.
+            if (isMobile) return;
             if (showIconPicker && iconWrapperRef.current && !iconWrapperRef.current.contains(event.target)) {
                 setShowIconPicker(false);
             }
@@ -54,7 +59,7 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
-    }, [showIconPicker, showColorPicker]);
+    }, [showIconPicker, showColorPicker, isMobile]);
 
     if (!activeModal) return null;
 
@@ -227,12 +232,29 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                             <div className="picker-preview" onClick={() => setShowIconPicker(!showIconPicker)}>
                                                 <i className={formData.icone || 'fa-solid fa-question'} style={{color: formData.cor}}></i>
                                             </div>
-                                            {showIconPicker && (
+                                            {showIconPicker && !isMobile && (
                                                 <div className="picker-popover icon-grid visible">
                                                     {safeIcones.map(icon => (
                                                         <div key={icon} className="icon-option" onClick={() => { setFormData(prev => ({...prev, icone: icon})); setShowIconPicker(false); }}><i className={icon}></i></div>
                                                     ))}
                                                 </div>
+                                            )}
+                                            {isMobile && (
+                                                <Sheet open={showIconPicker} onClose={() => setShowIconPicker(false)} title="Ícone" className="picker-sheet">
+                                                    <div className="picker-sheet-grid">
+                                                        {safeIcones.map(icon => (
+                                                            <button
+                                                                key={icon}
+                                                                type="button"
+                                                                aria-label={icon}
+                                                                className={`icon-option ${formData.icone === icon ? 'selected' : ''}`}
+                                                                onClick={() => { setFormData(prev => ({ ...prev, icone: icon })); setShowIconPicker(false); }}
+                                                            >
+                                                                <i className={icon} style={{ color: formData.cor }}></i>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </Sheet>
                                             )}
                                         </div>
                                     </div>
@@ -243,12 +265,28 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                             <div className="picker-preview" onClick={() => setShowColorPicker(!showColorPicker)}>
                                                 <div style={{ width: 20, height: 20, borderRadius: '50%', backgroundColor: formData.cor || '#fff' }}></div>
                                             </div>
-                                            {showColorPicker && (
+                                            {showColorPicker && !isMobile && (
                                                 <div className="picker-popover color-grid visible">
                                                     {safeCores.map(cor => (
                                                         <div key={cor} className="color-swatch" style={{backgroundColor: cor}} onClick={() => { setFormData(prev => ({...prev, cor: cor})); setShowColorPicker(false); }}></div>
                                                     ))}
                                                 </div>
+                                            )}
+                                            {isMobile && (
+                                                <Sheet open={showColorPicker} onClose={() => setShowColorPicker(false)} title="Cor" className="picker-sheet">
+                                                    <div className="picker-sheet-grid">
+                                                        {safeCores.map(cor => (
+                                                            <button
+                                                                key={cor}
+                                                                type="button"
+                                                                aria-label={cor}
+                                                                className={`color-swatch ${formData.cor === cor ? 'selected' : ''}`}
+                                                                style={{ backgroundColor: cor }}
+                                                                onClick={() => { setFormData(prev => ({ ...prev, cor })); setShowColorPicker(false); }}
+                                                            ></button>
+                                                        ))}
+                                                    </div>
+                                                </Sheet>
                                             )}
                                         </div>
                                     </div>

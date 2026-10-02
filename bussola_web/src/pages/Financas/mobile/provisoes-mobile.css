@@ -516,6 +516,19 @@
     cursor: pointer;
 }
 
+/* No portal o `.financas-scope .color-swatch` não vale: espelha o visual do desktop */
+.picker-sheet .picker-sheet-grid > .icon-option,
+.picker-sheet .picker-sheet-grid > .color-swatch {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.picker-sheet .picker-sheet-grid > .color-swatch {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
 .picker-sheet .picker-sheet-grid > .icon-option {
     border: 1px solid var(--cor-borda);
     background: var(--cor-card-secundario);
@@ -681,5 +694,83 @@
     .financas-scope .metas-scope .meta-proj,
     .financas-scope .metas-scope .meta-mensal {
         font-size: 0.8125rem;
+    }
+}
+
+/* ===== Modais da página em sheet (≤768) ===== */
+@media (max-width: 768px) {
+    .financas-scope .modal-overlay.is-sheet .modal-header {
+        padding: var(--sp-3) var(--sp-4);
+    }
+
+    .financas-scope .modal-overlay.is-sheet .close-btn {
+        width: var(--tap-min);
+        height: var(--tap-min);
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin: calc(-1 * var(--sp-2)) calc(-1 * var(--sp-2)) calc(-1 * var(--sp-2)) 0;
+    }
+
+    /* Caixa: valor à direita do título; editar/excluir numa linha própria */
+    .financas-scope .caixa-hint {
+        font-size: 0.875rem;
+        margin-bottom: var(--sp-3);
+    }
+
+    .financas-scope .caixa-topbar {
+        gap: var(--sp-3);
+        padding: var(--sp-3);
+        margin-bottom: var(--sp-4);
+    }
+
+    .financas-scope .caixa-topbar .btn-primary,
+    .financas-scope .caixa-form-actions > button {
+        min-height: var(--tap-min);
+    }
+
+    .financas-scope .caixa-form-actions > button {
+        flex: 1;
+    }
+
+    .financas-scope .caixa-list {
+        gap: var(--sp-2);
+    }
+
+    .financas-scope .caixa-item {
+        flex-wrap: wrap;
+        gap: var(--sp-2) var(--sp-3);
+        padding: var(--sp-3);
+    }
+
+    .financas-scope .caixa-item-info {
+        flex: 1 1 0;
+    }
+
+    .financas-scope .caixa-item-title {
+        font-size: 0.9375rem;
+    }
+
+    .financas-scope .caixa-item-sub {
+        font-size: 0.8125rem;
+    }
+
+    .financas-scope .caixa-item-actions {
+        flex-basis: 100%;
+        justify-content: flex-end;
+        gap: var(--sp-2);
+    }
+
+    /* CategoryCard: só tamanho de texto (o card não muda) */
+    .financas-scope .catcard-progress-label,
+    .financas-scope .catcard-progress-pct,
+    .financas-scope .catcard-nometa {
+        font-size: 0.75rem;
+    }
+
+    .financas-scope .catcard-chip,
+    .financas-scope .catcard-stat-label {
+        font-size: 0.6875rem;
     }
 }
