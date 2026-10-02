@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 import { Navbar } from '../components/Navbar';
+import { MobileChromeProvider } from '../components/mobile/MobileChrome';
 import { Login } from '../pages/Login';
 import { Home } from '../pages/Home';
 import { Financas } from '../pages/Financas';
@@ -45,12 +46,14 @@ function RequireAuth({ children }) {
 function PrivateRoute({ children }) {
     return (
         <RequireAuth>
-            <div className="app-layout">
-                <Navbar />
-                <div className="app-content">
-                    {children}
+            <MobileChromeProvider>
+                <div className="app-layout">
+                    <Navbar />
+                    <div className="app-content">
+                        {children}
+                    </div>
                 </div>
-            </div>
+            </MobileChromeProvider>
         </RequireAuth>
     );
 }

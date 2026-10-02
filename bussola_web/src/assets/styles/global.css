@@ -517,10 +517,11 @@ a {
 @media (max-width: 768px) {
     .toast-container {
         top: auto;
-        bottom: 1rem;
-        right: 1rem;
-        left: 1rem;
+        bottom: calc(var(--bottom-nav-h) + var(--safe-bottom) + var(--sp-2));
+        right: var(--sp-3);
+        left: var(--sp-3);
         align-items: stretch;
+        z-index: var(--z-toast);
     }
 
     .toast-notification {
@@ -532,8 +533,8 @@ a {
     main.container {
         padding-top: 1rem;
         padding-bottom: 1rem;
-        padding-left: 12px;
-        padding-right: 12px;
+        padding-left: var(--sp-4);
+        padding-right: var(--sp-4);
     }
 }
 
@@ -758,6 +759,27 @@ textarea:focus:invalid {
 .page-header-main h1 i {
     color: var(--cor-azul-primario);
     font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+    /* O título vai para a topbar mobile; o header fica só com os KPIs. */
+    .page-header-main h1 { display: none; }
+    .page-header {
+        max-width: 100%;
+        margin-bottom: var(--sp-4);
+        padding: 0 0 var(--sp-3);
+    }
+    .page-header:not(:has(.page-header-kpis)) { display: none; }
+
+    /* Confirmação ancorada no rodapé, alcançável com o polegar */
+    .confirm-overlay { align-items: flex-end; z-index: var(--z-toast); }
+    .confirm-modal {
+        width: 100%;
+        max-width: none;
+        border-radius: 20px 20px 0 0;
+        padding-bottom: calc(1.5rem + var(--safe-bottom));
+    }
+    .confirm-footer button { min-height: 48px; flex: 1; }
 }
 
 .page-header-kpis {

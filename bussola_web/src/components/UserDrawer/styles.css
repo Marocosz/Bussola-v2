@@ -380,11 +380,21 @@
 }
 
 /* Responsividade Mobile */
-@media (max-width: 480px) {
+@media (max-width: 768px) {
+    .drawer-overlay {
+        z-index: var(--z-drawer);
+    }
+
     .drawer-content {
         width: 100%;
         min-width: unset;
         max-width: unset;
+        height: 100dvh;
+        z-index: var(--z-drawer);
+    }
+
+    .color-theme-grid {
+        grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
     }
 
     .drawer-header {
@@ -397,6 +407,7 @@
 
     .drawer-footer {
         padding: 1.25rem 1rem;
+        padding-bottom: calc(1.25rem + var(--safe-bottom));
     }
 
     .tags-container {
