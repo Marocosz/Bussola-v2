@@ -168,9 +168,8 @@ Detalhes por tool:
   o estado atual difere.
 - `movimentar_meta(meta, tipo, valor, data, id=None)`: `tipo` = `deposito`/`retirada`; respeita a
   regra de meta travada do service.
-- `salvar_anotacao`: aceita conteúdo em **Markdown** e converte para o HTML do editor de notas
-  (lib `markdown`, dependência nova); `ler_anotacao` devolve o HTML como está salvo (o Claude lê HTML
-  sem problema — sem conversão de volta).
+- `salvar_anotacao` / `ler_anotacao`: o conteúdo é guardado como **Markdown** (formato nativo do SPA),
+  com as aberturas de tag HTML escapadas (`<` -> `&lt;`); sem conversão para HTML nem de volta.
 - `checkin_habito(habito, data=hoje, feito=True)`: idempotente, como `marcar_pagamento`.
 - `marcar_subtarefa(id, feita)`: idempotente.
 - `listar_segredos`: serializa só campos de metadado; teste garante que o campo de valor nunca sai.

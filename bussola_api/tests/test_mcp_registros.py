@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from mcp.server.mcpserver.exceptions import ToolError
 
@@ -11,12 +13,12 @@ def test_grupos(mcp_call):
     assert mcp_call("excluir_grupo", grupo="estudos") == {"ok": True}
 
 
-def test_anotacao_markdown_vira_html_e_edicao_preserva(mcp_call):
+def test_anotacao_salva_markdown_e_edicao_preserva(mcp_call):
     mcp_call("salvar_grupo", nome="Ideias")
     nota = mcp_call("salvar_anotacao", titulo="Plano", conteudo_markdown="# Meta\n\nTexto **forte**",
                     grupo="ideias", links=["https://exemplo.dev"])
     lida = mcp_call("ler_anotacao", id=nota["id"])
-    assert "<strong>forte</strong>" in lida["conteudo"]
+    assert lida["conteudo"] == "# Meta\n\nTexto **forte**"
 
     mcp_call("salvar_anotacao", id=nota["id"], titulo="Plano v2")
     depois = mcp_call("ler_anotacao", id=nota["id"])
@@ -54,3 +56,11 @@ def test_editar_status_adicionar_subtarefa_e_excluir(mcp_call, outro_user):
     with pytest.raises(ToolError, match="não encontrada"):
         mcp_call("excluir_tarefa", usuario=outro_user, id=t["id"])
     assert mcp_call("excluir_tarefa", id=t["id"]) == {"ok": True}
+
+
+def test_anotacao_escapa_html_cru(mcp_call):
+    nota = mcp_call("salvar_anotacao", titulo="x",
+                    conteudo_markdown="oi <img src=x onerror=alert(1)> e <script>x</script>")
+    conteudo = mcp_call("ler_anotacao", id=nota["id"])["conteudo"]
+    assert not re.search(r"<[a-z][\s\S]*>", conteudo, re.I)
+    assert "&lt;img" in conteudo

@@ -4,7 +4,7 @@ ARQUIVO: tools/registros.py (MCP - Registros: grupos, anotações e tarefas)
 =======================================================================================
 
 OBJETIVO:
-    Notas (conteúdo recebido em Markdown e salvo no HTML do editor), grupos de
+    Notas (conteúdo em Markdown, formato nativo do SPA, com tags HTML escapadas), grupos de
     notas e tarefas com subtarefas.
 =======================================================================================
 """
@@ -13,7 +13,6 @@ import re
 from datetime import datetime
 from typing import Any, Literal, Optional
 
-import markdown
 from mcp.server.mcpserver.exceptions import ToolError
 
 from app.mcp.context import ESCOPO_ESCRITA, apenas_informados, exigir, usuario_e_db
@@ -29,8 +28,9 @@ StatusTarefa = Literal["Pendente", "Em andamento", "Bloqueado", "Concluído", "C
 Prioridade = Literal["Crítica", "Alta", "Média", "Baixa"]
 
 
-def _html(texto_markdown: str) -> str:
-    return markdown.markdown(texto_markdown, extensions=["extra", "sane_lists"])
+def _markdown_seguro(texto: str) -> str:
+    """Neutraliza aberturas de tag HTML (o SPA renderiza HTML cru sem sanitizar)."""
+    return re.sub(r"<(?=[A-Za-z/!?])", "&lt;", texto)
 
 
 def _trecho(html: Optional[str], tamanho: int = 200) -> str:
@@ -87,7 +87,7 @@ def listar_anotacoes(grupo: Optional[str] = None, busca: Optional[str] = None, l
 
 
 def ler_anotacao(id: int) -> dict[str, Any]:
-    """Anotação completa: título, conteúdo (HTML do editor), grupo, links."""
+    """Anotação completa: título, conteúdo (Markdown), grupo, links."""
     with usuario_e_db() as (db, user):
         nota = exigir(registros_service.get_anotacao(db, id, user.id), f"Anotação {id} não encontrada.")
         return AnotacaoResponse.model_validate(nota).model_dump(mode="json")
@@ -102,10 +102,10 @@ def salvar_anotacao(
     links: Optional[list[str]] = None,
 ) -> dict[str, Any]:
     """Cria (sem id) ou edita (com id; o que não for enviado é mantido) uma anotação.
-    conteudo_markdown é escrito em Markdown e convertido para o editor. grupo: nome ou id."""
+    conteudo_markdown é Markdown, salvo como está (HTML cru é escapado). grupo: nome ou id."""
     with usuario_e_db(ESCOPO_ESCRITA) as (db, user):
         grupo_id = resolver_grupo(db, user.id, grupo).id if grupo else None
-        conteudo = _html(conteudo_markdown) if conteudo_markdown is not None else None
+        conteudo = _markdown_seguro(conteudo_markdown) if conteudo_markdown is not None else None
         if id is None:
             nota = registros_service.create_anotacao(db, AnotacaoCreate(**apenas_informados(
                 titulo=titulo, conteudo=conteudo, grupo_id=grupo_id, fixado=fixado, links=links,
