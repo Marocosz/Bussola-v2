@@ -3,9 +3,9 @@ import { gotoApp } from './helpers.mjs';
 
 test('Financas: CustomSelect e DatePicker dentro do modal nao fecham o modal pai', async ({ page }) => {
   await gotoApp(page, '/financas');
-  // na barra do mobile o botão pode ficar cortado: dispatchEvent dispara o clique sem depender de scroll
-  await page.getByRole('button', { name: 'Adicionar' }).first().dispatchEvent('click');
-  await page.locator('.dropdown-menu a', { hasText: 'Pontual' }).dispatchEvent('click');
+  // No celular a criação vem do Fab → ActionSheet (Pontual / Parcelada / Recorrente).
+  await page.getByRole('button', { name: 'Nova transação' }).click();
+  await page.locator('.action-sheet').getByRole('button', { name: 'Pontual' }).click();
   const modal = page.locator('.modal-overlay.is-sheet').first();
   await expect(modal).toBeVisible();
 

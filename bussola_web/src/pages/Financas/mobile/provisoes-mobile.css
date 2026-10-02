@@ -1,0 +1,331 @@
+/* ========================================================= */
+/* PROVISÕES NO CELULAR (≤768) E TOQUE                        */
+/* Os componentes de mobile/ só renderizam no celular; regras */
+/* que tocam classes existentes ficam dentro de @media.       */
+/* Escala: 8 dentro do card/linha, 12 entre cards, 16 entre   */
+/* blocos e gutter, 24 entre seções (grupos de dia).          */
+/* Ordem de carga: depois de Financas/styles.css e            */
+/* Metas/styles.css (mesma especificidade vence), antes de    */
+/* mobile.css/components.css/global.css (para vencer          */
+/* `.app-sheet > …` use 3 classes).                           */
+/* ========================================================= */
+
+/* --- Estrutura --- */
+.financas-scope .m-prov {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
+    /* Sem o .page-header no celular, nada separava a faixa de KPIs da topbar. */
+    padding-top: var(--sp-4);
+}
+
+/* --- KPIs (faixa rolável de borda a borda, respeitando o gutter) --- */
+.financas-scope .m-kpi-strip {
+    display: flex;
+    gap: var(--sp-2);
+    overflow-x: auto;
+    margin: 0 calc(-1 * var(--sp-4));
+    padding: 0 var(--sp-4);
+    scroll-snap-type: x proximity;
+    scroll-padding: 0 var(--sp-4);
+    scrollbar-width: none;
+}
+
+.financas-scope .m-kpi-strip::-webkit-scrollbar {
+    display: none;
+}
+
+.financas-scope .m-kpi {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    min-height: 52px;
+    padding: var(--sp-2) var(--sp-3);
+    gap: var(--sp-2);
+    border-radius: 14px;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.financas-scope .m-kpi i {
+    font-size: 0.875rem;
+}
+
+.financas-scope .m-kpi-text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-1);
+    line-height: 1.15;
+}
+
+.financas-scope .m-kpi-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--cor-texto-secundario);
+}
+
+.financas-scope .m-kpi strong {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.financas-scope .m-kpi.is-open {
+    border-color: currentColor;
+}
+
+.financas-scope .m-kpi-guardado {
+    color: var(--cor-azul-primario);
+}
+
+.financas-scope .m-kpi-explain {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-2);
+    margin: var(--sp-2) 0 0;
+    padding: var(--sp-3);
+    border-radius: 12px;
+    background: var(--cor-card-secundario);
+    border: 1px solid var(--cor-borda);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--cor-texto-secundario);
+}
+
+.financas-scope .m-kpi-explain i {
+    color: var(--cor-azul-primario);
+    margin-top: var(--sp-1);
+}
+
+/* --- Aba Transações --- */
+.financas-scope .m-tx-head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+    margin-bottom: var(--sp-4);
+}
+
+.financas-scope .m-tx-toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+}
+
+.financas-scope .m-search {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    height: var(--tap-min);
+    padding: 0 var(--sp-3);
+    border-radius: 12px;
+    background: var(--cor-card-secundario);
+    box-shadow: inset 0 0 0 1px var(--cor-borda);
+    color: var(--cor-texto-secundario);
+}
+
+.financas-scope .m-search:focus-within {
+    box-shadow: inset 0 0 0 1px var(--cor-azul-primario);
+}
+
+.financas-scope .m-search input {
+    flex: 1;
+    min-width: 0;
+    height: var(--tap-min);
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--cor-texto-principal);
+    font: inherit;
+}
+
+.financas-scope .m-tx-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-2);
+    padding: var(--sp-6) 0;
+    color: var(--cor-texto-secundario);
+}
+
+.financas-scope .m-tx-day + .m-tx-day {
+    margin-top: var(--sp-5);
+}
+
+.financas-scope .m-tx-day-head {
+    margin: 0;
+    padding-bottom: var(--sp-2);
+    border-bottom: 1px solid var(--cor-borda);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--cor-texto-secundario);
+}
+
+.financas-scope .m-tx-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.financas-scope .m-tx-row {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    column-gap: var(--sp-3);
+    row-gap: var(--sp-1);
+    align-items: center;
+    min-height: 64px;
+    padding: var(--sp-3) 0;
+    border-bottom: 1px solid var(--cor-borda);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.financas-scope .m-tx-row:last-child {
+    border-bottom: none;
+}
+
+.financas-scope .m-tx-row:active {
+    background: var(--cor-fundo-hover);
+}
+
+.financas-scope .m-tx-row.is-muted {
+    opacity: 0.8;
+}
+
+.financas-scope .m-tx-row.is-deleting {
+    animation: rowFadeOut 0.4s ease forwards;
+    pointer-events: none;
+}
+
+.financas-scope .m-tx-icon {
+    grid-row: 1 / span 2;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+}
+
+.financas-scope .m-tx-title {
+    grid-column: 2;
+    min-width: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--cor-texto-principal);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.financas-scope .m-tx-valor {
+    grid-column: 3;
+    justify-self: end;
+    font-size: 0.9375rem;
+}
+
+.financas-scope .m-tx-meta {
+    grid-column: 2;
+    min-width: 0;
+    font-size: 0.8125rem;
+    color: var(--cor-texto-secundario);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.financas-scope .m-tx-side {
+    grid-column: 3;
+    justify-self: end;
+    display: flex;
+    align-items: center;
+}
+
+.financas-scope .m-load-more {
+    width: 100%;
+    min-height: 48px;
+    justify-content: center;
+    margin-top: var(--sp-4);
+}
+
+/* --- Aba Metas --- */
+.financas-scope .m-metas {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
+}
+
+.financas-scope .m-metas-resumo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+}
+
+.financas-scope .m-metas .metas-kpis {
+    margin-bottom: 0;
+}
+
+.financas-scope .metas-scope .metas-explain {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-2);
+    margin: 0;
+    padding: var(--sp-3);
+    border-radius: 12px;
+    background: var(--cor-card-secundario);
+    border: 1px solid var(--cor-borda);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--cor-texto-secundario);
+}
+
+.financas-scope .metas-scope .metas-explain i {
+    color: var(--cor-azul-primario);
+    margin-top: var(--sp-1);
+}
+
+/* Vazio: `.metas-empty i` (Metas/styles.css) também pega o ícone do botão e não
+   centraliza o porquinho; corrigido só aqui para o desktop ficar idêntico. */
+.financas-scope .m-metas .metas-empty > i {
+    width: fit-content;
+    margin: 0 auto var(--sp-3);
+}
+
+.financas-scope .m-metas .metas-empty .btn-primary i {
+    display: inline;
+    margin: 0;
+    font-size: inherit;
+    opacity: 1;
+}
+
+.financas-scope .m-metas .metas-grid {
+    grid-template-columns: 1fr;
+    gap: var(--sp-3);
+}
+
+/* --- Aba Categorias --- */
+.financas-scope .m-cats {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+}
+
+.financas-scope .m-cats .categoria-list {
+    gap: var(--sp-3);
+}
+
+/* --- Toque: alvos de 44px nos cards reaproveitados (celular e tablet) --- */
+@media (pointer: coarse) {
+    .financas-scope .catcard-expand {
+        min-width: var(--tap-min);
+        min-height: var(--tap-min);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .financas-scope .metas-scope .meta-card-actions .btn-primary,
+    .financas-scope .metas-scope .metas-empty .btn-primary {
+        min-height: var(--tap-min);
+    }
+}

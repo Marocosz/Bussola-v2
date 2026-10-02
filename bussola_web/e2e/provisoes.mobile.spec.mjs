@@ -121,3 +121,119 @@ test.describe('lógica pura', () => {
     ]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 2 — layout mobile
+// ---------------------------------------------------------------------------
+test.describe('layout mobile', () => {
+  test('topbar "Provisões", sem page-header, KPIs na ordem e aba Transações ativa', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    await expect(page.locator('.m-topbar-title')).toHaveText('Provisões');
+    await expect(page.locator('.page-header')).toHaveCount(0);
+    const kpis = page.locator('.m-kpi .m-kpi-label');
+    await expect(kpis.first()).toHaveText('Disponível');
+    await expect(kpis.nth(1)).toHaveText('Receitas');
+    await expect(kpis.nth(2)).toHaveText('Despesas');
+    await expect(kpis.last()).toHaveText('Caixa');
+    await expect(page.getByRole('tab', { name: 'Transações', exact: true })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  for (const w of [360, 390, 430, 768]) {
+    test(`sem overflow horizontal em ${w}px nas 3 abas`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: 844 });
+      await gotoApp(page, '/financas');
+      for (const aba of ['Transações', 'Metas', 'Categorias']) {
+        await abrirAba(page, aba);
+        await page.waitForLoadState('networkidle');
+        expect(await overflowOffenders(page), `${aba} @ ${w}px`).toEqual([]);
+      }
+    });
+  }
+
+  test('alvos de toque ≥ 44px nas 3 abas', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    for (const aba of ['Transações', 'Metas', 'Categorias']) {
+      await abrirAba(page, aba);
+      await page.waitForLoadState('networkidle');
+      expect(await smallTargets(page, '.financas-scope'), aba).toEqual([]);
+    }
+  });
+
+  test('trocar de aba troca o conteúdo e o Fab (um por vez)', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    await expect(page.getByRole('button', { name: 'Nova transação' })).toBeVisible();
+    await abrirAba(page, 'Metas');
+    await expect(page.locator('.m-metas')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Nova meta' })).toBeVisible();
+    await abrirAba(page, 'Categorias');
+    await expect(page.locator('.m-cats .categoria-list')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Nova categoria' })).toBeVisible();
+    await expect(page.locator('.app-fab')).toHaveCount(1);
+    await abrirAba(page, 'Transações');
+    await expect(page.locator('.m-tx')).toBeVisible();
+    await expect(page.locator('.app-fab')).toHaveCount(1);
+  });
+
+  test('tocar no KPI mostra a explicação; Caixa abre os ajustes em sheet', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    const disponivel = page.locator('.m-kpi', { hasText: 'Disponível' });
+    await disponivel.click();
+    await expect(page.locator('.m-kpi-explain')).toContainText('Caixa − Guardado');
+    await expect(disponivel).toHaveAttribute('aria-expanded', 'true');
+    await disponivel.click();
+    await expect(page.locator('.m-kpi-explain')).toHaveCount(0);
+    await page.locator('.m-kpi', { hasText: 'Caixa' }).click();
+    const sheet = page.locator('.modal-overlay.is-sheet');
+    await expect(sheet).toBeVisible();
+    await expect(sheet.locator('h3')).toContainText('Ajustes de Caixa');
+  });
+
+  test('lista agrupada por dia (cabeçalhos sem repetir) e "Carregar mais"', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    const heads = await page.locator('.m-tx-day-head').allTextContents();
+    expect(heads.length).toBeGreaterThan(1);
+    for (const h of heads) expect(h).toMatch(/^(Hoje|Ontem|Amanhã|[A-Z][a-zá]{2}) · \d{2}\/\d{2}(\/\d{2})?$/);
+    for (let i = 1; i < heads.length; i += 1) expect(heads[i]).not.toBe(heads[i - 1]);
+    const rows = page.locator('.m-tx-row');
+    await expect(rows).toHaveCount(30);
+    await page.getByRole('button', { name: /^Carregar mais/ }).click();
+    expect(await rows.count()).toBeGreaterThan(30);
+  });
+
+  test('linha em 2 níveis: título com reticências, valor à direita, textos ≥ 14px', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await gotoApp(page, '/financas');
+    const row = page.locator('.m-tx-row').first();
+    const title = await row.locator('.m-tx-title').boundingBox();
+    const valor = await row.locator('.m-tx-valor').boundingBox();
+    const meta = await row.locator('.m-tx-meta').boundingBox();
+    expect(title.width).toBeGreaterThan(80);
+    expect(title.x + title.width).toBeLessThanOrEqual(valor.x + 1);
+    expect(meta.y).toBeGreaterThanOrEqual(title.y + title.height - 1);
+    expect((await row.boundingBox()).height).toBeGreaterThanOrEqual(56);
+    for (const sel of ['.m-tx-title', '.m-tx-valor']) {
+      const fs = await row.locator(sel).evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
+      expect(fs).toBeGreaterThanOrEqual(14);
+    }
+  });
+
+  test('busca filtra a lista sem acento', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    await buscar(page, 'netflix');
+    const titles = await page.locator('.m-tx-row .m-tx-title').allTextContents();
+    expect(titles.length).toBeGreaterThan(0);
+    for (const t of titles) expect(t).toMatch(/Netflix/);
+  });
+
+  test('Fab abre Pontual / Parcelada / Recorrente e leva ao form em sheet', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    await page.getByRole('button', { name: 'Nova transação' }).click();
+    // A linha "Cancelar" (sempre acrescentada pelo ActionSheet) não é uma opção.
+    await expect(page.locator('.action-sheet .action-sheet-item:not(.action-sheet-cancel)')).toHaveText(['Pontual', 'Parcelada', 'Recorrente']);
+    await page.locator('.action-sheet').getByRole('button', { name: 'Parcelada' }).click();
+    const form = page.locator('.modal-overlay.is-sheet').first();
+    await expect(form.locator('h3')).toHaveText('Nova Transação Parcelada');
+    await form.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(page.locator('.modal-overlay')).toHaveCount(0);
+  });
+});

@@ -13,8 +13,11 @@ import { useConfirm } from '../../context/ConfirmDialogContext';
 import { AiAssistant } from '../../components/AiAssistant';
 import { DatePicker } from '../../components/Pickers';
 import { CustomSelect } from '../../components/CustomSelect';
-import { filterAndSortTransactions } from './transactionsQuery';
+import { FILTER_DEFAULTS, filterAndSortTransactions } from './transactionsQuery';
+import { useIsMobile } from '../../hooks/useIsMobile';
+import { ProvisoesMobile } from './mobile/ProvisoesMobile';
 import './styles.css';
+import './mobile/provisoes-mobile.css';
 
 export function Financas() {
     const [data, setData] = useState(null);
@@ -22,6 +25,7 @@ export function Financas() {
 
     const { addToast } = useToast();
     const dialogConfirm = useConfirm();
+    const isMobile = useIsMobile();
 
     const [activeModal, setActiveModal] = useState(null);
     const [editingData, setEditingData] = useState(null);
@@ -47,6 +51,7 @@ export function Financas() {
     const [filterDatePreset, setFilterDatePreset] = useState('todos');
     const [filterDateStart, setFilterDateStart] = useState('');
     const [filterDateEnd, setFilterDateEnd] = useState('');
+    const [filterSearch, setFilterSearch] = useState('');
     const [expandedGroups, setExpandedGroups] = useState(new Set());
     const [openFilterDropdown, setOpenFilterDropdown] = useState(null);
 
@@ -129,7 +134,7 @@ export function Financas() {
         datePreset: filterDatePreset,
         dateStart: filterDateStart,
         dateEnd: filterDateEnd,
-        search: '',
+        search: filterSearch,
     };
 
     const handleEditTransaction = (transacao) => {
@@ -216,6 +221,42 @@ export function Financas() {
         }
     };
 
+    // --- Celular: filtros aplicados pelo sheet, busca e atalhos de criação ---
+    const handleApplyFilters = (next, nextSort) => {
+        setFilterTipo(next.tipo);
+        setFilterStatus(next.status);
+        setFilterCategoria(next.categoria);
+        setFilterPagamento(next.pagamento);
+        setFilterDatePreset(next.datePreset);
+        setFilterDateStart(next.dateStart);
+        setFilterDateEnd(next.dateEnd);
+        if (nextSort) setSortConfig(nextSort);
+        setCurrentPage(1);
+    };
+
+    const handleClearFilter = (key) => {
+        handleApplyFilters({
+            ...filters,
+            [key]: FILTER_DEFAULTS[key],
+            ...(key === 'datePreset' ? { dateStart: '', dateEnd: '' } : {}),
+        });
+    };
+
+    const handleSearch = (q) => {
+        setFilterSearch(q);
+        setCurrentPage(1);
+    };
+
+    const handleNewTransaction = (tipo) => {
+        setEditingData(null);
+        setActiveModal(tipo);
+    };
+
+    const handleNewCategory = () => {
+        setEditingData(null);
+        setActiveModal('category');
+    };
+
     const allTransactions = filterAndSortTransactions(data, filters, sortConfig);
     const totalPages = Math.ceil(allTransactions.length / PAGE_SIZE);
     const pagedTransactions = allTransactions.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -242,6 +283,7 @@ export function Financas() {
 
     return (
         <div className="container main-container financas-scope">
+            {!isMobile && (
             <div className="page-header">
                 <div className="page-header-main">
                     <h1><i className="fa-solid fa-wallet"></i> Provisões Financeiras</h1>
@@ -258,7 +300,33 @@ export function Financas() {
                     </button>
                 </div>
             </div>
+            )}
 
+            {isMobile ? (
+                <ProvisoesMobile
+                    data={data}
+                    loading={loading}
+                    transactions={allTransactions}
+                    filters={filters}
+                    sortConfig={sortConfig}
+                    onSearch={handleSearch}
+                    onApplyFilters={handleApplyFilters}
+                    onClearFilter={handleClearFilter}
+                    kpis={{ totalReceita, totalDespesa, disponivel, guardado, caixa }}
+                    onOpenCaixa={() => setShowCaixa(true)}
+                    onNewTransaction={handleNewTransaction}
+                    onUpdate={fetchData}
+                    onEdit={handleEditTransaction}
+                    onEditCofre={handleEditCofre}
+                    onToggleCofre={handleToggleCofre}
+                    onDeleteCofre={handleDeleteCofre}
+                    catView={catView}
+                    onCatView={setCatView}
+                    onNewCategory={handleNewCategory}
+                    onEditCategory={handleEditCategory}
+                    onDeleteCategory={handleDeleteCategory}
+                />
+            ) : (
             <div className="layout-grid-custom">
 
                 {/* --- COLUNA 1: TODAS AS TRANSAÇÕES --- */}
@@ -518,6 +586,7 @@ export function Financas() {
                     </div>
                 </div>
             </div>
+            )}
 
             {showMetas && (
                 <MetasModal onClose={() => setShowMetas(false)} onUpdate={fetchData} />

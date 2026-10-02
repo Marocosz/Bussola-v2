@@ -390,3 +390,41 @@
 .more-row.is-danger > i:first-child {
     color: var(--cor-vermelho-delete);
 }
+
+/* ===== Controle segmentado (abas de página / alternâncias) ===== */
+.m-segmented {
+    display: flex;
+    gap: var(--sp-1);
+    padding: var(--sp-1);
+    border-radius: 14px;
+    background: var(--cor-card-secundario);
+    border: 1px solid var(--cor-borda);
+}
+
+.m-segmented-item {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: var(--tap-min);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-2);
+    padding: 0 var(--sp-2);
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--cor-texto-secundario);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.m-segmented-item.active {
+    background: var(--cor-azul-primario);
+    color: #fff;
+}

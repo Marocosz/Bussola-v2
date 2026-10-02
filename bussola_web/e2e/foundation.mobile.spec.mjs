@@ -22,6 +22,9 @@ test('inputs têm 16px no mobile (sem zoom do iOS)', async ({ page }) => {
 
 test('tooltip global não aparece em dispositivo de toque', async ({ page }) => {
   await gotoApp(page, '/financas');
+  // No celular os KPIs de Provisões não têm `title`; o resumo da aba Metas ainda tem.
+  await page.getByRole('tab', { name: 'Metas', exact: true }).click();
+  await page.waitForLoadState('networkidle');
   // Dispara o mouseover (o que o tap sintético gera no toque) num elemento com title na viewport.
   const ok = await page.evaluate(() => {
     for (const e of document.querySelectorAll('[title]')) {
