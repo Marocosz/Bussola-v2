@@ -1158,7 +1158,6 @@
 .row-actions-popover {
     position: fixed;
     z-index: 1500; /* acima da página, abaixo de modais (2000) e drawer (9999) */
-    margin-top: 6px;
     padding: 6px;
     background: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
@@ -1168,7 +1167,6 @@
 }
 
 .row-actions-popover.acima {
-    margin-top: -6px;
     transform: translateY(-100%);
 }
 

@@ -2,8 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 const MEDIA_MOBILE = '(max-width: 768px)';
-const ATRASO_FECHAR_MS = 150;   // tempo para o mouse atravessar o vão entre linha e balão
-const ESPACO_MINIMO_ABAIXO = 70;
+const ATRASO_FECHAR_MS = 200;   // folga para o mouse ir da linha ao balão
+const ESPACO_MINIMO_ACIMA = 70;
+const SOBREPOSICAO = 6;         // o balão invade a linha: o mouse passa direto, sem vão
 
 function useEhMobile() {
     const [mobile, setMobile] = useState(() => window.matchMedia(MEDIA_MOBILE).matches);
@@ -40,8 +41,13 @@ export function useAcoesDaLinha() {
         if (mobile || !linhaRef.current) return;
         clearTimeout(timerRef.current);
         const r = linhaRef.current.getBoundingClientRect();
-        const abaixo = window.innerHeight - r.bottom > ESPACO_MINIMO_ABAIXO;
-        setPosicao({ top: abaixo ? r.bottom : r.top, right: window.innerWidth - r.right + 12, abaixo });
+        // Padrão: acima da linha; abaixo só quando falta espaço no topo da tela.
+        const acima = r.top > ESPACO_MINIMO_ACIMA;
+        setPosicao({
+            top: acima ? r.top + SOBREPOSICAO : r.bottom - SOBREPOSICAO,
+            right: window.innerWidth - r.right + 12,
+            acima,
+        });
     };
 
     const fechar = () => {
@@ -76,11 +82,13 @@ export function useAcoesDaLinha() {
         // financas-scope: o balão vive no body, fora da página, e precisa dos estilos escopados dos botões.
         return createPortal(
             <div
-                className={`financas-scope row-actions-popover ${posicao.abaixo ? 'abaixo' : 'acima'}`}
+                className={`financas-scope row-actions-popover ${posicao.acima ? 'acima' : 'abaixo'}`}
                 style={{ top: posicao.top, right: posicao.right }}
                 onMouseEnter={abrir}
                 onMouseLeave={fechar}
-                onClickCapture={fecharJa}
+                /* Fecha na fase de BOLHA, depois do onClick do botão. Fechar na captura
+                   desmontava o balão antes do clique chegar ao botão. */
+                onClick={fecharJa}
             >
                 <div className="row-actions-inner">{conteudo}</div>
             </div>,
