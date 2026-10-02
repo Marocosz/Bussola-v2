@@ -5,6 +5,7 @@ import { CitySelector } from '../CitySelector';
 import { getNewsTopics } from '../../services/api';
 import zxcvbn from 'zxcvbn'; // Importando lib de força de senha
 import { COLOR_PRESETS, applyColorTheme, getActivePresetId } from '../../utils/colorTheme';
+import { ConexoesMcp } from './ConexoesMcp';
 import './styles.css';
 
 export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
@@ -303,6 +304,7 @@ export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
                                 )}
                             </div>
                         </div>
+                        {isOpen && <ConexoesMcp />}
                     </div>
                 </div>
 

@@ -1,0 +1,71 @@
+.mcp-dica {
+    font-size: 0.85rem;
+    opacity: 0.75;
+    margin: 4px 0 8px;
+}
+
+.mcp-lista {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.mcp-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: var(--cor-fundo-card);
+}
+
+.mcp-item-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.mcp-meta {
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+.mcp-opcao {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mcp-token {
+    display: block;
+    padding: 8px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.25);
+    word-break: break-all;
+    font-size: 0.8rem;
+    margin-bottom: 8px;
+}
+
+.mcp-btn {
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid currentColor;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.mcp-btn.primario {
+    background: var(--cor-azul-primario);
+    border-color: var(--cor-azul-primario);
+    color: #fff;
+}
+
+.mcp-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
