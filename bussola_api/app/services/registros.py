@@ -645,6 +645,19 @@ class RegistrosService:
         db.refresh(registro)
         return registro
 
+    def definir_checkin(self, db: Session, habito_id: int, user_id: int, data_checkin: date, concluido: bool):
+        """Define (não alterna) o check-in do dia; reaproveita toggle_checkin."""
+        registro = (
+            db.query(HabitoRegistro)
+            .join(Habito, HabitoRegistro.habito_id == Habito.id)
+            .filter(HabitoRegistro.habito_id == habito_id, Habito.user_id == user_id,
+                    HabitoRegistro.data == data_checkin)
+            .first()
+        )
+        if (registro.concluido if registro else False) == concluido:
+            return registro
+        return self.toggle_checkin(db, habito_id, user_id, data_checkin)
+
     def get_historico_habito(self, db: Session, habito_id: int, user_id: int, dias: int = 90):
         """
         Retorna os registros de check-in dos últimos N dias.
