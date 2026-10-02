@@ -231,3 +231,18 @@ servidor rejeita material inválido de qualquer forma).
 ## 11. Fases futuras
 - **Fase 2:** busca de texto completo, índice lateral pelas seções, tempo de leitura; grifos e
   anotações; histórico de versões; exportar PDF.
+
+## 12. Ajustes do planejamento (2026-10-02)
+
+Decorrem do código real; o plano `docs/superpowers/plans/2026-10-02-estudos.md` segue estes pontos.
+- Kit em `bussola_api/kit/` (não `kit/` na raiz): o contexto de build do backend é `./bussola_api`; assim não há mudança no compose.
+- `EstudoMaterial.seq_bloco` (int): maior `b<n>` já emitido; ids de blocos removidos nunca são reaproveitados.
+- `GET /kit/versao` → `{"versao": "..."}`; `GET /kit/instrucoes-projeto` → `{"texto": "..."}`.
+- Zip `claude-ai` traz também `estudos.zip` (pasta da skill pronta para upload).
+- `editar_blocos/inserir` aceita `depois_de` ou `antes_de` (nenhum = fim).
+- `salvar_material(tema=...)`: nome novo cria o tema; `""` deixa sem tema.
+- Toda ação aceita `bloco:` opcional; `comparativo material:ID` = comparativo relacionado.
+- Bloco `codigo` realçado com react-markdown + rehype-highlight (sem innerHTML).
+- Gramática inline formal (parágrafos, escapes, código, `[n]`, ênfase com regra de flanco) — idêntica no backend (`citacoes`) e no site (`parseInline`).
+- URLs de fonte só `http(s)://`.
+- `GET /materiais` aceita também `tag` e `busca`.
