@@ -741,7 +741,7 @@ textarea:focus:invalid {
 .page-header-main h1 {
     font-size: 1.35rem;
     font-weight: 600;
-    color: var(--cor-texto-primario);
+    color: var(--cor-texto-principal);
     display: flex;
     align-items: center;
     gap: 0.55rem;
