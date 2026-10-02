@@ -4,6 +4,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google'; // [NOVO] Apenas este
 import App from './App.jsx'
 import { ErrorBoundary } from './components/ErrorBoundary.tsx'
 
+import './assets/styles/components.css'
 import './assets/styles/global.css' 
 import 'weather-icons/css/weather-icons.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';

@@ -148,7 +148,7 @@
     font-weight: 700;
 }
 
-.form-group label {
+.drawer-content .form-group label {
     display: block;
     margin-bottom: 0.6rem;
     font-weight: 500;
@@ -156,14 +156,14 @@
     color: var(--cor-texto-secundario);
 }
 
-.form-input {
+.drawer-content .form-input {
     padding: 1rem; /* Inputs mais altos/confortáveis */
     font-size: 1rem;
     background: var(--cor-fundo);
     border-color: var(--cor-borda);
 }
 
-.form-input:disabled {
+.drawer-content .form-input:disabled {
     opacity: 0.7;
     cursor: not-allowed;
     background: rgba(255,255,255,0.02);

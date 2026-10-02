@@ -52,8 +52,8 @@ export function ForgotPassword() {
     };
 
     return (
-        <div className="auth-container">
-            <div className="auth-card">
+        <div className="auth-simple-container">
+            <div className="auth-simple-card">
                 <div className="auth-header">
                     <h2>Recuperar Senha</h2>
                     <p>Digite seu e-mail para receber as instruções.</p>

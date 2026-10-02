@@ -94,8 +94,8 @@ export function ResetPassword() {
     if (!token) return null;
 
     return (
-        <div className="auth-container">
-            <div className="auth-card">
+        <div className="auth-simple-container">
+            <div className="auth-simple-card">
                 <div className="auth-header">
                     <h2>Nova Senha</h2>
                     <p>Crie uma nova senha segura para sua conta.</p>

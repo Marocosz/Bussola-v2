@@ -3,7 +3,7 @@
    ========================================================== */
 
 /* CONTAINER GERAL (Centraliza tudo na tela) */
-.auth-container {
+.auth-simple-container {
     min-height: 100vh;
     width: 100%;
     display: flex;
@@ -15,7 +15,7 @@
 }
 
 /* CARTÃO DE AUTH */
-.auth-card {
+.auth-simple-card {
     background-color: var(--cor-card-principal); /* Ajustado para variável padrão */
     width: 100%;
     max-width: 440px; /* Largura ideal para leitura */
@@ -254,7 +254,7 @@
 
 /* RESPONSIVIDADE MOBILE */
 @media (max-width: 600px) {
-    .auth-card {
+    .auth-simple-card {
         padding: 1.5rem;
         gap: 1.5rem;
         border: none;
@@ -262,7 +262,7 @@
         background: transparent;
     }
     
-    .auth-container {
+    .auth-simple-container {
         background-color: var(--cor-fundo);
         align-items: flex-start;
         padding-top: 3rem;
@@ -270,5 +270,65 @@
 
     .form-input {
         background-color: var(--cor-card-principal);
+    }
+}
+
+/* ==========================================================
+   FORMULÁRIO DO CARD (antes herdado por vazamento de
+   Login/styles.css via .auth-card; agora explícito e escopado)
+   ========================================================== */
+.auth-simple-container {
+    justify-items: center;
+    max-width: 1100px;
+    gap: 4rem;
+    margin: 0 auto;
+}
+
+.auth-simple-card .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.auth-simple-card .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--cor-texto-secundario);
+}
+
+.auth-simple-card .form-input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    background-color: var(--cor-fundo);
+    color: var(--cor-texto-principal);
+    font-size: 1rem;
+    font-family: 'Poppins', sans-serif;
+}
+
+.auth-simple-card .form-input:focus {
+    outline: none;
+    border-color: var(--cor-azul-primario);
+    box-shadow: 0 0 0 3px rgba(74, 109, 255, 0.3);
+}
+
+.auth-simple-card .btn-primary {
+    width: 100%;
+    padding: 0.8rem;
+    font-size: 1rem;
+    margin-top: 1rem;
+    background: linear-gradient(90deg, var(--cor-azul-primario), #a855f7);
+    border: none;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.auth-simple-card .btn-primary:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 900px) {
+    .auth-simple-container {
+        text-align: center;
+        gap: 3rem;
     }
 }
