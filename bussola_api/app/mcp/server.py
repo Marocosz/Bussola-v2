@@ -20,9 +20,9 @@ from mcp.server.transport_security import TransportSecuritySettings
 from app.core.config import settings
 from app.mcp.auth import BussolaTokenVerifier
 from app.mcp.context import ESCOPO_LEITURA
-from app.mcp.tools import agenda, cofre, financas, habitos, metas, panorama, perfil, registros, ritmo
+from app.mcp.tools import agenda, cofre, estudos, financas, habitos, metas, panorama, perfil, registros, ritmo
 
-MODULOS = (perfil, panorama, financas, metas, agenda, registros, habitos, ritmo, cofre)
+MODULOS = (perfil, panorama, financas, metas, agenda, registros, habitos, ritmo, cofre, estudos)
 
 _base = settings.PUBLIC_BASE_URL.rstrip("/")
 if "localhost" in _base or "127.0.0.1" in _base:
@@ -35,9 +35,10 @@ mcp = MCPServer(
     title="Bússola",
     instructions=(
         "Sistema operacional pessoal do usuário: finanças, metas (cofrinhos), agenda, "
-        "anotações, tarefas, hábitos, saúde (Ritmo) e cofre de senhas (só metadados). "
+        "anotações, tarefas, hábitos, saúde (Ritmo), cofre de senhas (só metadados) e estudos "
+        "(materiais em blocos tipados — chame catalogo_de_blocos antes de escrever um). "
         "Chame meu_perfil para saber a data de hoje. Valores em reais; datas ISO (AAAA-MM-DD). "
-        "Categorias, metas, grupos e hábitos aceitam nome ou id."
+        "Categorias, metas, grupos, hábitos, temas e materiais de estudo aceitam nome ou id."
     ),
     token_verifier=BussolaTokenVerifier(),
     auth=AuthSettings(
