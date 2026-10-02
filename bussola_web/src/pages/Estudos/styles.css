@@ -190,3 +190,136 @@
     .estudos-temas h2 { width: 100%; }
     .estudos-tema { width: auto; }
 }
+
+/* =========================================================
+   ESTUDOS — leitura
+   ========================================================= */
+.estudo-leitura { max-width: 90%; margin: 0 auto 4rem auto; }
+
+.estudo-breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    align-items: center;
+    font-size: 0.85rem;
+    color: var(--cor-texto-secundario);
+    margin-bottom: 1.2rem;
+}
+.estudo-breadcrumb a { color: var(--cor-texto-secundario); text-decoration: none; }
+.estudo-breadcrumb a:hover { color: var(--cor-azul-primario); }
+.estudo-breadcrumb > i { font-size: 0.6rem; opacity: 0.6; }
+
+.estudo-cabecalho { max-width: 760px; margin: 0 auto 2rem auto; }
+.estudo-etiquetas { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin-bottom: 0.7rem; }
+.estudo-chip-info {
+    font-size: 0.74rem;
+    padding: 0.18rem 0.6rem;
+    border-radius: 999px;
+    background: var(--cor-card-secundario);
+    color: var(--cor-texto-secundario);
+}
+.estudo-chip-info.estudado { color: var(--cor-verde-sucesso); background: color-mix(in srgb, var(--cor-verde-sucesso) 12%, transparent); }
+.estudo-cabecalho h1 { font-size: 1.9rem; line-height: 1.25; margin: 0 0 0.4rem; }
+.estudo-subtitulo { color: var(--cor-texto-secundario); font-size: 1.05rem; margin: 0 0 1.1rem; }
+
+.estudo-acoes { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.estudo-acoes .btn-secondary,
+.estudo-acoes .btn-primary { display: inline-flex; gap: 0.45rem; align-items: center; }
+.estudo-btn-estudado.ativo { background: var(--cor-verde-sucesso); }
+.estudo-btn-excluir {
+    background: transparent;
+    border: 1px solid var(--cor-borda);
+    color: var(--cor-texto-secundario);
+    border-radius: 8px;
+    padding: 0.5rem 0.7rem;
+    cursor: pointer;
+}
+.estudo-btn-excluir:hover { color: var(--cor-vermelho-delete); border-color: var(--cor-vermelho-delete); }
+.estudo-destino { display: inline-flex; border: 1px solid var(--cor-borda); border-radius: 8px; overflow: hidden; margin-left: auto; }
+.estudo-destino button {
+    border: none;
+    background: transparent;
+    color: var(--cor-texto-secundario);
+    padding: 0.45rem 0.75rem;
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+.estudo-destino button.ativo { background: rgba(var(--cor-tema-rgb), 0.16); color: var(--cor-azul-primario); font-weight: 600; }
+
+.estudo-bloco { position: relative; scroll-margin-top: 80px; }
+.estudo-bloco-acoes { position: absolute; top: 0.2rem; right: -2.7rem; opacity: 0; transition: opacity 0.15s; z-index: 2; }
+.estudo-bloco:hover .estudo-bloco-acoes,
+.estudo-bloco:focus-within .estudo-bloco-acoes { opacity: 1; }
+
+.estudo-fontes { max-width: 760px; margin: 3rem auto 0 auto; padding-top: 1.2rem; border-top: 1px solid var(--cor-borda); }
+.estudo-fontes h2 { font-size: 1rem; margin: 0 0 0.7rem; }
+.estudo-fontes ol { margin: 0; padding-left: 1.4rem; display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.9rem; }
+.estudo-fontes li { scroll-margin-top: 120px; border-radius: 6px; padding: 0.1rem 0.3rem; transition: background 0.3s; }
+.estudo-fontes a { color: var(--cor-azul-primario); }
+.estudo-fonte-dominio { margin-left: 0.5rem; font-size: 0.78rem; color: var(--cor-texto-secundario); }
+.estudo-fonte-destaque { background: rgba(var(--cor-tema-rgb), 0.18); }
+
+/* ---- Pedir ao Claude ---- */
+.pedir-claude { position: relative; display: inline-block; }
+.pedir-claude-gatilho-bloco {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 8px;
+    border: 1px solid var(--cor-borda);
+    background: var(--cor-card-principal);
+    color: var(--cor-acento);
+    cursor: pointer;
+}
+.pedir-claude-gatilho-bloco:hover { background: var(--cor-fundo-hover); }
+.pedir-claude-fundo { position: fixed; inset: 0; z-index: 98; }
+.pedir-claude-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 99;
+    min-width: 260px;
+    padding: 0.4rem;
+    display: flex;
+    flex-direction: column;
+    background: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+.pedir-claude:not(.compacto) .pedir-claude-menu { left: 0; right: auto; }
+.pedir-claude-menu > button {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    padding: 0.5rem 0.65rem;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--cor-texto-principal);
+    font: inherit;
+    font-size: 0.88rem;
+    text-align: left;
+    cursor: pointer;
+}
+.pedir-claude-menu > button:hover { background: var(--cor-fundo-hover); }
+.pedir-claude-menu > button i { width: 1rem; color: var(--cor-acento); }
+.pedir-claude-alvo {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--cor-texto-secundario);
+    padding: 0.3rem 0.65rem;
+}
+.pedir-claude-pergunta { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.3rem; }
+.pedir-claude-pergunta textarea { resize: vertical; width: 100%; box-sizing: border-box; }
+.pedir-claude-pergunta div { display: flex; gap: 0.4rem; justify-content: flex-end; }
+
+@media (hover: none), (max-width: 1000px) {
+    .estudo-bloco-acoes { position: static; opacity: 1; display: flex; justify-content: flex-end; margin-bottom: 0.2rem; }
+}
+@media (max-width: 860px) {
+    .estudo-leitura { max-width: 100%; padding: 0 1rem; }
+    .estudo-destino { margin-left: 0; }
+    .estudo-cabecalho h1 { font-size: 1.5rem; }
+}

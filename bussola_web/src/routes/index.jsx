@@ -10,6 +10,7 @@ import { Financas } from '../pages/Financas';
 import { Agenda } from '../pages/Agenda';
 import { Registros } from '../pages/Registros';
 import { Estudos } from '../pages/Estudos';
+import { LeituraEstudo } from '../pages/Estudos/Leitura';
 import { Panorama } from '../pages/Panorama';
 import { Cofre } from '../pages/Cofre';
 import { Ritmo } from '../pages/Ritmo';
@@ -71,6 +72,7 @@ export function AppRoutes() {
             <Route path="/agenda" element={<PrivateRoute><Agenda /></PrivateRoute>} />
             <Route path="/registros" element={<PrivateRoute><Registros /></PrivateRoute>} />
             <Route path="/estudos" element={<PrivateRoute><Estudos /></PrivateRoute>} />
+            <Route path="/estudos/:id" element={<PrivateRoute><LeituraEstudo /></PrivateRoute>} />
             <Route path="/ritmo" element={<PrivateRoute><Ritmo /></PrivateRoute>} />
             <Route path="/cofre" element={<PrivateRoute><Cofre /></PrivateRoute>} />
         </Routes>
