@@ -223,7 +223,6 @@ def root():
     return {"message": "Bússola API está online! 🧭"}
 
 
-# MCP: só os dois caminhos que o app do SDK serve. NÃO usar app.mount("/") — um mount
+# MCP: só o caminho /mcp vai para o app do SDK (a metadata do recurso é do nosso router). NÃO usar app.mount("/") — um mount
 # na raiz casa qualquer caminho e desliga o redirect de barra final da API inteira.
 app.router.add_route("/mcp", mcp_asgi, include_in_schema=False)
-app.router.add_route("/.well-known/oauth-protected-resource/mcp", mcp_asgi, include_in_schema=False)

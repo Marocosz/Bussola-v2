@@ -48,7 +48,7 @@ venvbussola/Scripts/python.exe -m pytest -q                 # whole suite
 venvbussola/Scripts/python.exe -m pytest tests/test_metas_service.py -q   # one file
 venvbussola/Scripts/python.exe -m pytest tests/test_metas_api.py::test_criar_e_listar_via_api -v  # one test
 ```
-`tests/conftest.py` provides an in-memory SQLite `db` fixture, a persisted `user`, and a `client` (FastAPI `TestClient`) that overrides `deps.get_db` + `deps.get_current_user`. Only the `metas`/`financas` layers currently have tests; other modules have none.
+`tests/conftest.py` provides an in-memory SQLite `db` fixture, a persisted `user`, and a `client` (FastAPI `TestClient`) that overrides `deps.get_db` + `deps.get_current_user`. Tests cover `metas`/`financas` and the MCP layer (`tests/test_mcp_*.py`, which exercise every module through its tools); fixtures `mcp_call`, `mcp_db`, `outro_user` live in conftest.
 
 ### Frontend (bussola_web/)
 ```bash

@@ -33,6 +33,11 @@
     color: #ef4444;
 }
 
+.autorizar-alerta {
+    color: #f59e0b;
+    font-weight: 600;
+}
+
 .autorizar-acoes {
     display: flex;
     justify-content: flex-end;

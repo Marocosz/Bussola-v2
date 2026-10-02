@@ -26,7 +26,7 @@ leitura e escrita em todos os módulos do catálogo (§5), com isolamento por us
 
 | Decisão | Escolha | Por quê |
 |---|---|---|
-| Onde roda | Embutido no `bussola_backend`, montado em `/mcp` | Sem container novo; compose, service names, domínio e healthchecks intactos (nenhuma armadilha do checklist Coolify se aplica) |
+| Onde roda | Embutido no `bussola_backend`, ligado ao FastAPI por duas rotas explícitas | Sem container novo; compose, service names, domínio e healthchecks intactos (nenhuma armadilha do checklist Coolify se aplica) |
 | SDK | `mcp` oficial (FastMCP), transporte Streamable HTTP, `stateless_http=True`, `json_response=True` | O uvicorn roda com 2 workers — não pode haver estado de sessão em memória |
 | Desenho das tools | Curadas, orientadas a tarefa (~48), chamando os **services** existentes | Auto-gerar dos ~85 endpoints dá tools cruas e caras em contexto |
 | Auth | Bussola é o próprio Authorization Server OAuth 2.1 (router escrito à mão sob `/oauth/`) + PAT | claude.ai exige OAuth; o provider de AS do SDK monta `/register` e `/token` na raiz e colide com o SPA |
@@ -56,7 +56,7 @@ bussola_api/app/mcp/
 
 ### 3.2 Montagem
 
-- `main.py`: registra duas rotas explícitas apontando para o app Starlette do SDK: `app.router.add_route("/mcp", mcp_asgi)` e `app.router.add_route("/.well-known/oauth-protected-resource/mcp", mcp_asgi)`, onde `mcp_asgi = mcp.streamable_http_app()`. O `session_manager.run()` do MCP é encadeado no lifespan do FastAPI. Não usa `app.mount` porque a raiz já redireciona a barra final da API, e montar em `/mcp` criaria `/mcp/mcp`.
+- `main.py`: registra só `/mcp` no app Starlette do SDK: `app.router.add_route("/mcp", mcp_asgi)`, onde `mcp_asgi = mcp.streamable_http_app()`. O `session_manager.run()` do MCP é encadeado no lifespan do FastAPI. Não usa `app.mount` porque a raiz já redireciona a barra final da API, e montar em `/mcp` criaria `/mcp/mcp`. A metadata do recurso (`/.well-known/oauth-protected-resource` e `/.well-known/oauth-protected-resource/mcp`) é servida pelo nosso router OAuth, que anuncia os dois escopos (o SDK anunciaria só `bussola:read`).
 - `server.py` configura `AuthSettings(issuer_url="https://bussola.marocos.dev",
   resource_server_url="https://bussola.marocos.dev/mcp", required_scopes=["bussola:read"])`; o SDK
   responde 401 com `WWW-Authenticate: Bearer resource_metadata=...`. A URL pública vem de
@@ -66,16 +66,17 @@ bussola_api/app/mcp/
 
 `claude.ai / Claude Code → Traefik → nginx (frontend) → bussola_backend:8000`
 
-`bussola_web/nginx.conf` ganha três `location` com `proxy_buffering off` e `proxy_read_timeout 300s`:
-`/mcp`, `/.well-known/oauth-` (prefixo) e `/oauth/`. Nenhuma outra mudança de infraestrutura.
+`bussola_web/nginx.conf` ganha três `location`: `/mcp`, `/.well-known/oauth-` (prefixo) e `/oauth/`.
+Só `/mcp` usa `proxy_buffering off` e `proxy_read_timeout 300s`; as outras duas usam os padrões.
+Nenhuma outra mudança de infraestrutura.
 
 ### 3.4 Fluxo de uma chamada
 
 1. SDK extrai o Bearer → `BussolaTokenVerifier.verify_token()` → `sha256(token)` buscado em
    `McpToken`; rejeita se revogado, expirado, ou usuário inexistente/`is_active=False`; atualiza
    `last_used_at`.
-2. A tool verifica o escopo exigido (`exigir_escopo("bussola:write")`).
-3. `with usuario_e_db() as (db, user):` → chama o service com `user.id`.
+2. A checagem de escopo é feita por `usuario_e_db(escopo)` (não há `exigir_escopo`).
+3. `with usuario_e_db(escopo) as (db, user):` → chama o service com `user.id`.
 4. Retorna dict/list enxuto (JSON estruturado).
 
 ### 3.5 Erros
@@ -103,15 +104,17 @@ Migration Alembic escrita à mão (ver gotcha do `create_all()` no CLAUDE.md). S
 
 | Rota | Comportamento |
 |---|---|
-| `GET /.well-known/oauth-protected-resource` (e `/.well-known/oauth-protected-resource/mcp`) | Servido pelo SDK: `resource` = `/mcp`, `authorization_servers` = base pública |
+| `GET /.well-known/oauth-protected-resource` (e `/.well-known/oauth-protected-resource/mcp`) | Servido pelo nosso router OAuth: `resource` = `/mcp`, `authorization_servers` = base pública, `scopes_supported` = os dois escopos |
 | `GET /.well-known/oauth-authorization-server` | Metadata RFC 8414: `authorization_endpoint=/oauth/authorize`, `token_endpoint=/oauth/token`, `registration_endpoint=/oauth/register`, `code_challenge_methods_supported=["S256"]`, `grant_types_supported=["authorization_code","refresh_token"]`, `token_endpoint_auth_methods_supported=["none"]`, `scopes_supported=["bussola:read","bussola:write"]` |
-| `POST /oauth/register` | RFC 7591, só clientes públicos. Valida `redirect_uris` (https ou `http://localhost`/`127.0.0.1`). Rate limit slowapi 10/hora/IP |
+| `POST /oauth/register` | RFC 7591, só clientes públicos. Valida `redirect_uris` (https ou `http://localhost`/`127.0.0.1`). Rate limit slowapi 20/hora/IP (IP via `X-Real-IP` do nginx) |
 | `GET /oauth/authorize` | Valida `client_id`, `redirect_uri` (match exato), `response_type=code`, `code_challenge` + `S256`, `scope`, `state`. Inválido antes de confiar no redirect → 400 em JSON; válido → 302 para `/conexoes/autorizar?<params>` do SPA |
-| `POST /api/v1/oauth/consent` | JWT normal (`get_current_user`). Body: params do authorize + `aprovado` + `scopes` escolhidos. Aprovado → cria `McpAuthCode` e devolve `{redirect_url: "<redirect_uri>?code=...&state=..."}`; negado → `...?error=access_denied&state=...` |
+| `POST /api/v1/oauth/consent` | JWT normal (`get_current_user`). Body: params do authorize + `aprovado` + `escopos` escolhidos. Aprovado → cria `McpAuthCode` e devolve `{redirect_url: "<redirect_uri>?code=...&state=..."}`; negado → `...?error=access_denied&state=...` |
 | `POST /oauth/token` | `authorization_code`: valida código (hash, não usado, não expirado, mesmo client e redirect_uri) e PKCE `S256`; marca usado; emite access (1h) + refresh (30 dias). `refresh_token`: valida, revoga o antigo, emite par novo (rotação). Erros no formato OAuth (`invalid_grant`, ...) |
 | `GET /api/v1/mcp-tokens` | Lista conexões do usuário (OAuth agrupado por client + PATs): nome, escopos, `last_used_at`, expiração |
 | `POST /api/v1/mcp-tokens` | Cria PAT (`name`, `scopes`, `validade_dias`, padrão 90). Retorna o token **uma única vez** |
-| `DELETE /api/v1/mcp-tokens/{id}` | Revoga PAT, ou todos os tokens de um client OAuth |
+| `DELETE /api/v1/mcp-tokens/pat/{id}` | Revoga um PAT |
+| `DELETE /api/v1/mcp-tokens/cliente/{client_id}` | Revoga todos os tokens de um client OAuth |
+| `GET /api/v1/oauth/clientes/{client_id}` | JWT normal. Devolve `client_name` e `redirect_hosts` (hosts dos redirect_uris registrados), usados pela tela de consentimento para mostrar o destino |
 
 `/oauth/*` e `/.well-known/*` ficam fora do prefixo `/api/v1` (exigência de descoberta OAuth);
 são registrados num router próprio em `main.py`.
@@ -187,10 +190,10 @@ Detalhes por tool:
 ## 7. Testes
 
 Padrão de `tests/conftest.py` (SQLite em memória, `user`, `client`):
-- `test_mcp_auth.py`: registro de cliente; authorize inválido (redirect diferente, sem PKCE);
+- `tests/test_mcp_*.py` (`test_mcp_auth_service.py`, `test_mcp_oauth_api.py`, `test_mcp_tokens_api.py`, `test_mcp_server.py` e um arquivo por módulo de tools) e `test_financas_service_mcp.py`: registro de cliente; authorize inválido (redirect diferente, sem PKCE);
   consent → token; PKCE errado; código reutilizado; refresh com rotação; token revogado/expirado;
   usuário inativo; metadata endpoints.
-- `test_mcp_tools.py`: chamada das tools via cliente MCP em processo (`mcp` `ClientSession` sobre o
+- Tools: chamada das tools via cliente MCP em processo (`mcp` `ClientSession` sobre o
   ASGI app) com token de teste: escopo `read` bloqueia escrita; isolamento entre dois usuários;
   caminho feliz por módulo; resolução por nome (ok/ambíguo/inexistente); `listar_segredos` sem valor.
 - Frontend: `npm run build` passa, sem erros novos de lint nos arquivos tocados.

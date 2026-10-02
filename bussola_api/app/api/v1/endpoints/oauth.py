@@ -13,7 +13,7 @@ OBJETIVO:
 
 import time
 from typing import List, Optional
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -26,7 +26,12 @@ from app.api import deps
 from app.core.config import settings
 from app.services.mcp_auth import ESCOPOS_VALIDOS, OAuthErro, mcp_auth_service, normalizar_escopos
 
-limiter = Limiter(key_func=get_remote_address)
+def _ip_cliente(request: Request) -> str:
+    # O nginx define X-Real-IP a partir de $remote_addr (cliente não consegue forjar por ele).
+    return request.headers.get("x-real-ip") or get_remote_address(request)
+
+
+limiter = Limiter(key_func=_ip_cliente)
 public_router = APIRouter(include_in_schema=False)
 router = APIRouter()
 
@@ -82,8 +87,9 @@ def metadata_authorization_server():
 
 
 @public_router.get("/.well-known/oauth-protected-resource")
+@public_router.get("/.well-known/oauth-protected-resource/mcp")
 def metadata_protected_resource():
-    """Variante na raiz; a variante /mcp é servida pelo próprio SDK."""
+    """Metadados do recurso (raiz e variante /mcp) com os dois escopos anunciados."""
     base = _base()
     return {
         "resource": f"{base}/mcp",
@@ -150,7 +156,8 @@ def ler_cliente(client_id: str, db: Session = Depends(deps.get_db), current_user
     cliente = mcp_auth_service.get_cliente(db, client_id)
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente não encontrado.")
-    return {"client_id": cliente.client_id, "client_name": cliente.client_name}
+    hosts = sorted({urlparse(uri).hostname for uri in cliente.redirect_uris if urlparse(uri).hostname})
+    return {"client_id": cliente.client_id, "client_name": cliente.client_name, "redirect_hosts": hosts}
 
 
 class ConsentimentoIn(BaseModel):

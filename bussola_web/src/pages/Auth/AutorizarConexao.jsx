@@ -4,6 +4,22 @@ import { useAuth } from '../../context/AuthContext';
 import { enviarConsentimentoOAuth, getOAuthCliente } from '../../services/api';
 import './AutorizarConexao.css';
 
+const HOSTS_EXATOS = ['localhost', '127.0.0.1'];
+const DOMINIOS_CONFIAVEIS = ['claude.ai', 'anthropic.com'];
+
+function lerHost(uri) {
+    try {
+        return new URL(uri).hostname;
+    } catch {
+        return null;
+    }
+}
+
+function hostConfiavel(host) {
+    return HOSTS_EXATOS.includes(host)
+        || DOMINIOS_CONFIAVEIS.some((d) => host === d || host.endsWith(`.${d}`));
+}
+
 export function AutorizarConexao() {
     const [searchParams] = useSearchParams();
     const { user } = useAuth();
@@ -11,7 +27,12 @@ export function AutorizarConexao() {
 
     const [cliente, setCliente] = useState(null);
     const [erro, setErro] = useState('');
-    const [podeEscrever, setPodeEscrever] = useState(true);
+    const redirectUri = searchParams.get('redirect_uri') || '';
+    const destinoHost = lerHost(redirectUri);
+    const destinoSuspeito = !!destinoHost && !hostConfiavel(destinoHost);
+    // null = ainda não escolhido: o padrão é marcado, exceto para destino não confiável
+    const [escritaEscolhida, setEscritaEscolhida] = useState(null);
+    const podeEscrever = escritaEscolhida ?? !destinoSuspeito;
     const [enviando, setEnviando] = useState(false);
 
     useEffect(() => {
@@ -27,13 +48,17 @@ export function AutorizarConexao() {
         try {
             const { redirect_url } = await enviarConsentimentoOAuth({
                 client_id: clientId,
-                redirect_uri: searchParams.get('redirect_uri'),
+                redirect_uri: redirectUri,
                 code_challenge: searchParams.get('code_challenge'),
                 code_challenge_method: searchParams.get('code_challenge_method'),
                 state: searchParams.get('state'),
                 escopos: podeEscrever ? ['bussola:read', 'bussola:write'] : ['bussola:read'],
                 aprovado,
             });
+            const protocolo = new URL(redirect_url).protocol;
+            if (protocolo !== 'https:' && protocolo !== 'http:') {
+                throw new Error('redirect inválido');
+            }
             window.location.href = redirect_url;
         } catch (e) {
             setErro(e.response?.data?.detail || 'Não foi possível concluir a autorização.');
@@ -46,13 +71,20 @@ export function AutorizarConexao() {
             <div className="autorizar-card">
                 <h2>Autorizar acesso</h2>
                 {erro && <p className="autorizar-erro">{erro}</p>}
+                {!erro && !destinoHost && <p className="autorizar-erro">Pedido de autorização inválido. Recomece a conexão pelo Claude.</p>}
                 {!erro && !cliente && <p>Carregando...</p>}
-                {!erro && cliente && (
+                {!erro && destinoHost && cliente && (
                     <>
                         <p>
                             <strong>{cliente.client_name}</strong> quer acessar o seu Bússola
                             {user?.email ? ` (${user.email})` : ''}.
                         </p>
+                        <p>Você será redirecionado para <strong>{destinoHost}</strong>.</p>
+                        {destinoSuspeito && (
+                            <p className="autorizar-alerta">
+                                Atenção: este endereço não é do Claude. Só autorize se você mesmo iniciou esta conexão.
+                            </p>
+                        )}
                         <label className="autorizar-opcao">
                             <input type="checkbox" checked readOnly disabled /> Ler seus dados
                         </label>
@@ -60,7 +92,7 @@ export function AutorizarConexao() {
                             <input
                                 type="checkbox"
                                 checked={podeEscrever}
-                                onChange={(e) => setPodeEscrever(e.target.checked)}
+                                onChange={(e) => setEscritaEscolhida(e.target.checked)}
                             />{' '}
                             Criar, editar e excluir registros
                         </label>

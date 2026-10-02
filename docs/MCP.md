@@ -16,7 +16,7 @@ Revogue qualquer conexão na mesma tela.
 
 ## Arquitetura
 
-- `server.py` — `MCPServer` (SDK `mcp` 2.x) ligado ao FastAPI por duas rotas explícitas; serve `/mcp` e `/.well-known/oauth-protected-resource/mcp`.
+- `server.py` — `MCPServer` (SDK `mcp` 2.x) ligado ao FastAPI por duas rotas explícitas; serve `/mcp`; a metadata do recurso (`/.well-known/oauth-protected-resource[/mcp]`) é do router OAuth.
 - `auth.py` — verifica o Bearer contra `mcp_token` (só hash SHA-256 no banco).
 - `context.py` — `usuario_e_db(escopo)`: usuário do token, checagem de escopo, tradução de
   erros de service em `ToolError`.
@@ -34,6 +34,9 @@ acrescente o módulo a `MODULOS` em `server.py`. Teste com a fixture `mcp_call`.
 ## Produção
 
 - Env do backend: `PUBLIC_BASE_URL=https://bussola.marocos.dev`.
+- `FRONTEND_URL` deve ser a URL de produção (o authorize redireciona para `/conexoes/autorizar` nela).
+- No primeiro deploy sobre um banco já populado, rode `alembic stamp head` (as tabelas são criadas por `create_all` no boot).
+- A tela de consentimento mostra o host de destino do redirect e avisa quando ele não é do Claude.
 - Smoke test: `curl https://bussola.marocos.dev/.well-known/oauth-authorization-server` e
   `curl -i -X POST https://bussola.marocos.dev/mcp` (espera 401 com `WWW-Authenticate`).
 - O Cofre nunca expõe valores via MCP, por design.

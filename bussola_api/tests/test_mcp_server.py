@@ -20,10 +20,11 @@ def test_mcp_sem_token_responde_401_com_descoberta(client):
     assert "/.well-known/oauth-protected-resource/mcp" in r.headers["www-authenticate"]
 
 
-def test_metadata_do_recurso_servida_pelo_sdk(client):
+def test_metadata_do_recurso_mcp(client):
     r = client.get("/.well-known/oauth-protected-resource/mcp")
     assert r.status_code == 200
     assert r.json()["resource"].endswith("/mcp")
+    assert r.json()["scopes_supported"] == ["bussola:read", "bussola:write"]
 
 
 def test_pat_valido_lista_tools_e_revogado_volta_401(client, mcp_db, user):

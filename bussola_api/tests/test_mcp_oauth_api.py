@@ -122,5 +122,7 @@ def test_consentimento_negado_volta_access_denied(client):
 
 def test_ler_cliente_para_a_tela(client):
     cid = _registrar(client)
-    assert client.get(f"/api/v1/oauth/clientes/{cid}").json()["client_name"] == "Claude"
+    dados = client.get(f"/api/v1/oauth/clientes/{cid}").json()
+    assert dados["client_name"] == "Claude"
+    assert dados["redirect_hosts"] == ["claude.ai"]
     assert client.get("/api/v1/oauth/clientes/inexistente").status_code == 404

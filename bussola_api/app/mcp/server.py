@@ -6,10 +6,11 @@ ARQUIVO: server.py (MCP - servidor do Bussola)
 OBJETIVO:
     Instância MCPServer com auth (o Bussola é o resource server e o authorization
     server), registro das tools de cada módulo e o app ASGI ligado ao
-    FastAPI — o app do SDK serve /mcp e /.well-known/oauth-protected-resource/mcp.
+    FastAPI — o app do SDK serve /mcp (a metadata do recurso é do router OAuth).
 =======================================================================================
 """
 
+import logging
 from contextlib import asynccontextmanager
 
 from mcp.server.auth.settings import AuthSettings
@@ -24,6 +25,10 @@ from app.mcp.tools import agenda, cofre, financas, habitos, metas, panorama, per
 MODULOS = (perfil, panorama, financas, metas, agenda, registros, habitos, ritmo, cofre)
 
 _base = settings.PUBLIC_BASE_URL.rstrip("/")
+if "localhost" in _base or "127.0.0.1" in _base:
+    logging.getLogger("app.mcp").warning(
+        "PUBLIC_BASE_URL=%s — em produção defina https://bussola.marocos.dev, senão o OAuth do MCP anuncia localhost.", _base
+    )
 
 mcp = MCPServer(
     name="bussola",
