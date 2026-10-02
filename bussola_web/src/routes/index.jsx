@@ -18,8 +18,9 @@ import { ResetPassword } from '../pages/Auth/ResetPassword';
 import { VerifyEmail } from '../pages/Auth/VerifyEmail';
 import { RegisterSuccess } from '../pages/Auth/RegisterSuccess';
 import { DiscordLink } from '../pages/Auth/DiscordLink';
+import { AutorizarConexao } from '../pages/Auth/AutorizarConexao';
 
-function PrivateRoute({ children }) {
+function RequireAuth({ children }) {
     const { authenticated, loading } = useAuth();
     const location = useLocation();
 
@@ -32,13 +33,19 @@ function PrivateRoute({ children }) {
         return <Navigate to={`/login?next=${next}`} />;
     }
 
+    return children;
+}
+
+function PrivateRoute({ children }) {
     return (
-        <div className="app-layout">
-            <Navbar />
-            <div className="app-content">
-                {children}
+        <RequireAuth>
+            <div className="app-layout">
+                <Navbar />
+                <div className="app-content">
+                    {children}
+                </div>
             </div>
-        </div>
+        </RequireAuth>
     );
 }
 
@@ -53,6 +60,7 @@ export function AppRoutes() {
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/register-success" element={<RegisterSuccess />} />
             <Route path="/discord/link" element={<PrivateRoute><DiscordLink /></PrivateRoute>} />
+            <Route path="/conexoes/autorizar" element={<RequireAuth><AutorizarConexao /></RequireAuth>} />
             
             {/* --- ROTAS PRIVADAS --- */}
             <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />

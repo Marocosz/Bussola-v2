@@ -1,0 +1,60 @@
+.autorizar-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.autorizar-card {
+    width: 100%;
+    max-width: 420px;
+    padding: 28px;
+    border-radius: 16px;
+    background: var(--cor-fundo-card);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.autorizar-opcao {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.autorizar-dica {
+    font-size: 0.85rem;
+    opacity: 0.7;
+}
+
+.autorizar-erro {
+    color: #ef4444;
+}
+
+.autorizar-acoes {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.autorizar-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid currentColor;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.autorizar-btn.primario {
+    background: var(--cor-azul-primario);
+    border-color: var(--cor-azul-primario);
+    color: #fff;
+}
+
+.autorizar-btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}

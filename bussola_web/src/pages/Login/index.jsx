@@ -26,7 +26,9 @@ export function Login() {
 
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const nextUrl = searchParams.get('next') ? decodeURIComponent(searchParams.get('next')) : '/home';
+    // searchParams.get já decodifica; decodificar de novo corromperia a query do
+    // fluxo OAuth (redirect_uri, state) que volta por aqui.
+    const nextUrl = searchParams.get('next') || '/home';
 
     // --- LÓGICA DO LOGIN GOOGLE ---
     const handleGoogleClick = useGoogleLogin({

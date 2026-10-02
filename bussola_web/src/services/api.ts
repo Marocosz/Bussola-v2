@@ -924,6 +924,40 @@ export const aiService = {
   },
 };
 
+// ==========================================================
+// MÓDULO MCP (CONEXÕES COM O CLAUDE)
+// ==========================================================
+
+export const getOAuthCliente = async (clientId: string) => {
+    const response = await api.get(`/oauth/clientes/${encodeURIComponent(clientId)}`);
+    return response.data;
+};
+
+export const enviarConsentimentoOAuth = async (dados: any) => {
+    const response = await api.post('/oauth/consent', dados);
+    return response.data;
+};
+
+export const listarConexoesMcp = async () => {
+    const response = await api.get('/mcp-tokens');
+    return response.data;
+};
+
+export const criarTokenMcp = async (dados: any) => {
+    const response = await api.post('/mcp-tokens', dados);
+    return response.data;
+};
+
+export const revogarTokenMcp = async (id: number) => {
+    const response = await api.delete(`/mcp-tokens/pat/${id}`);
+    return response.data;
+};
+
+export const revogarClienteMcp = async (clientId: string) => {
+    const response = await api.delete(`/mcp-tokens/cliente/${encodeURIComponent(clientId)}`);
+    return response.data;
+};
+
 export default api;
 
 // --- METAS & COFRINHOS ---
