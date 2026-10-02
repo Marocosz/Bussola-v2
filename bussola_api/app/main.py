@@ -39,6 +39,7 @@ from app.core.logging_config import setup_logging
 setup_logging(_settings_for_logging.LOG_LEVEL)
 # -------------------------------------
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse # Necessário para servir o HTML do Scalar
 from fastapi.middleware.cors import CORSMiddleware
@@ -48,6 +49,7 @@ from slowapi.errors import RateLimitExceeded
 
 from app.core.config import settings
 from app.api.v1.router import api_router
+from app.mcp.server import mcp_asgi, mcp_lifespan
 from app.db.session import engine
 # Importamos 'base' para garantir que todos os Models sejam lidos pelo SQLAlchemy
 from app.db import base
@@ -85,7 +87,14 @@ if os.getenv("SKIP_DB_CREATE_ALL", "").lower() not in ("1", "true", "yes"):
 # --------------------------------------------------------------------------------------
 # DEFINIÇÃO DA APLICAÇÃO
 # --------------------------------------------------------------------------------------
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    async with mcp_lifespan():
+        yield
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title=settings.PROJECT_NAME,
     # Define a URL onde o JSON do OpenAPI (Swagger) será servido
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
@@ -212,3 +221,9 @@ def root():
     Útil para Load Balancers ou para checar se o deploy foi bem sucedido.
     """
     return {"message": "Bússola API está online! 🧭"}
+
+
+# MCP: só os dois caminhos que o app do SDK serve. NÃO usar app.mount("/") — um mount
+# na raiz casa qualquer caminho e desliga o redirect de barra final da API inteira.
+app.router.add_route("/mcp", mcp_asgi, include_in_schema=False)
+app.router.add_route("/.well-known/oauth-protected-resource/mcp", mcp_asgi, include_in_schema=False)

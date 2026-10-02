@@ -49,3 +49,43 @@ def client(db, user):
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def outro_user(db):
+    u = User(email="outro@bussola.dev", hashed_password="x", is_active=True)
+    db.add(u)
+    db.commit()
+    db.refresh(u)
+    return u
+
+
+@pytest.fixture
+def mcp_db(db, monkeypatch):
+    """Faz o MCP (app.mcp.context.sessao) usar a sessão de teste sem fechá-la."""
+    from app.mcp import context as mcp_context
+    monkeypatch.setattr(mcp_context, "SessionLocal", lambda: db)
+    monkeypatch.setattr(db, "close", lambda: None)
+    return db
+
+
+@pytest.fixture
+def mcp_call(mcp_db, user):
+    """Chama uma tool do MCP em processo, autenticado como `user` (ou `usuario=`)."""
+    import anyio
+    from mcp.server.auth.middleware.auth_context import auth_context_var
+    from mcp.server.auth.middleware.bearer_auth import AuthenticatedUser
+    from mcp.server.auth.provider import AccessToken
+    from app.mcp.server import mcp
+
+    def _call(nome, escopos=("bussola:read", "bussola:write"), usuario=None, **args):
+        alvo = usuario or user
+        token = AccessToken(token="teste", client_id="teste", scopes=list(escopos), subject=str(alvo.id))
+        marca = auth_context_var.set(AuthenticatedUser(token))
+        try:
+            resultado = anyio.run(mcp.call_tool, nome, args)
+        finally:
+            auth_context_var.reset(marca)
+        return resultado.structured_content
+
+    return _call
