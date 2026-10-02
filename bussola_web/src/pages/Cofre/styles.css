@@ -143,17 +143,15 @@
     display: inline-block;
 }
 
+/* Sem display:flex no <td>: isso o tira do layout de tabela e o colSpan é ignorado. */
 .cofre-scope .data-table td.empty-state-cell {
     text-align: center;
     padding: 5rem 2rem;
     color: var(--cor-texto-secundario);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
 }
 
 .cofre-scope .empty-state-cell i {
+    display: block;
     font-size: 2.5rem;
     margin-bottom: 1rem;
     opacity: 0.3;
