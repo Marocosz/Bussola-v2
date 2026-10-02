@@ -4,6 +4,8 @@ import { Line } from 'react-chartjs-2';
 import { listMovimentacoes, deleteMovimentacao, toggleMovimentacao, updateMovimentacao } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 import { MovimentacaoEditForm } from './MovimentacaoEditForm';
+import { useIsMobile } from '../../../hooks/useIsMobile';
+import { tickDiaMes, tickBRLCompacto } from '../chartFormat';
 
 ChartJS.register(LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip);
 
@@ -36,6 +38,7 @@ export function MetaHistorico({ meta, onChange }) {
   const [movs, setMovs] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const { addToast } = useToast();
+  const isMobile = useIsMobile();
 
   const load = async () => {
     try { setMovs(await listMovimentacoes(meta.id)); } catch { /* ignore */ }
@@ -98,8 +101,16 @@ export function MetaHistorico({ meta, onChange }) {
               plugins: { legend: { display: false } },
               maintainAspectRatio: false,
               scales: {
-                x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 6 } },
-                y: { grid: { color: 'rgba(128,128,128,.12)' }, ticks: { maxTicksLimit: 4 } },
+                x: {
+                  grid: { display: false },
+                  ticks: isMobile
+                    ? { maxRotation: 0, autoSkip: true, maxTicksLimit: 4, callback(value) { return tickDiaMes(this.getLabelForValue(value)); } }
+                    : { maxRotation: 0, autoSkip: true, maxTicksLimit: 6 },
+                },
+                y: {
+                  grid: { color: 'rgba(128,128,128,.12)' },
+                  ticks: isMobile ? { maxTicksLimit: 4, callback: (v) => tickBRLCompacto(v) } : { maxTicksLimit: 4 },
+                },
               },
             }}
           />

@@ -367,6 +367,16 @@ test.describe('filtros', () => {
     await expect(page.locator('.m-tx-day-head').first()).not.toHaveText(/ · \d{2}\/10$/); // todas as datas: parcelas futuras
   });
 
+  test('período removido pelo usuário não volta ao redimensionar (390 → 1280 → 390)', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    await page.getByRole('button', { name: 'Remover filtro Este mês' }).click();
+    await expect(page.locator('.m-active-chip')).toHaveCount(0);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.locator('.m-tx-day-head').first()).toBeVisible();
+    await expect(page.locator('.m-active-chip')).toHaveCount(0);
+  });
+
   test('Tipo=Parcelada: "Ver N" bate com a lista e o chip remove', async ({ page }) => {
     await gotoApp(page, '/financas');
     await abrirFiltros(page);
@@ -438,5 +448,103 @@ test.describe('filtros', () => {
     await expect(page.locator('.m-filters')).toBeVisible();
     expect(await overflowOffenders(page)).toEqual([]);
     expect(await smallTargets(page, '.m-filters')).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Task 5 — Metas
+// ---------------------------------------------------------------------------
+test.describe('metas', () => {
+  test.describe.configure({ mode: 'serial' });
+  const META = 'E2E Viagem';
+
+  test.beforeAll(async ({ playwright }) => {
+    const r = await playwright.request.newContext();
+    await apiJson(r, 'POST', '/financas/metas', { nome: META, valor_alvo: 1000, icone: 'fa-solid fa-piggy-bank', cor: '#4A6DFF' });
+    await r.dispose();
+  });
+
+  test('aba Metas: cards em 1 coluna e explicação visível', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    await abrirAba(page, 'Metas');
+    await expect(page.locator('.metas-explain')).toContainText('transferência');
+    await expect(page.locator('.m-metas .metas-kpis-info')).toHaveCount(0);
+    const card = page.locator('.m-metas .meta-card').filter({ hasText: META });
+    await expect(card).toBeVisible();
+    const painel = await page.locator('.m-metas').boundingBox();
+    expect(Math.round((await card.boundingBox()).width)).toBe(Math.round(painel.width));
+    expect(await smallTargets(page, '.m-metas')).toEqual([]);
+  });
+
+  test('Guardar → cena em tela cheia, pote ao lado do saldo, confirmar alcançável, histórico em scroll único', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 480 });
+    await gotoApp(page, '/financas');
+    await abrirAba(page, 'Metas');
+    await page.locator('.m-metas .meta-card').filter({ hasText: META }).getByRole('button', { name: 'Guardar' }).click();
+
+    const sheet = page.locator('.modal-overlay.is-sheet-full');
+    await expect(sheet.locator('.cofre-body')).toBeVisible();
+    const jar = await sheet.locator('.jar').boundingBox();
+    const saldo = await sheet.locator('.cofre-progress-num').boundingBox();
+    expect(jar.width).toBeLessThanOrEqual(100);
+    expect(jar.x).toBeGreaterThanOrEqual(saldo.x + saldo.width - 1);           // ao lado
+    expect(Math.abs((jar.y + jar.height / 2) - (saldo.y + saldo.height / 2))).toBeLessThan(60); // mesma linha
+    for (const b of await sheet.locator('.cofre-chips button').all()) expect((await b.boundingBox()).height).toBeGreaterThanOrEqual(44);
+    expect(await overflowOffenders(page)).toEqual([]);
+
+    await sheet.getByRole('button', { name: '+50', exact: true }).click();
+    const confirmar = sheet.getByRole('button', { name: /^Guardar R\$/ });
+    await expect(confirmar).toBeInViewport();
+    await confirmar.click();
+    await expect(page.getByText('Guardado!')).toBeVisible();
+    await expect(sheet.locator('.cofre-progress-num strong')).toContainText('50,00');
+
+    await sheet.getByRole('button', { name: /Ver movimentações/ }).click();
+    await expect(sheet.locator('h3')).toContainText('Movimentações');
+    await expect(sheet.locator('.meta-timeline li')).toHaveCount(1);
+    expect(await sheet.locator('.meta-timeline-scroll').evaluate((e) => getComputedStyle(e).maxHeight)).toBe('none');
+    for (const b of await sheet.locator('.meta-timeline .btn-action-icon').all()) expect((await b.boundingBox()).height).toBeGreaterThanOrEqual(44);
+    expect(await smallTargets(page, '.modal-overlay.is-sheet-full .modal-header')).toEqual([]);
+
+    await sheet.getByRole('button', { name: 'Voltar' }).click();
+    await expect(sheet.locator('.cofre-body')).toBeVisible();
+    await sheet.getByRole('button', { name: 'Fechar' }).click();
+    await expect(page.locator('.modal-overlay.is-sheet-full')).toHaveCount(0);
+  });
+
+  test('Nova meta pelo Fab: form em tela cheia, valor decimal, ícone em sheet de 6 colunas', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 480 });
+    await gotoApp(page, '/financas');
+    await abrirAba(page, 'Metas');
+    await page.getByRole('button', { name: 'Nova meta' }).click();
+    const sheet = page.locator('.modal-overlay.is-sheet-full').first();
+    await expect(sheet.locator('h3')).toHaveText('Nova meta');
+    await expect(sheet.locator('input[type="number"]').first()).toHaveAttribute('inputmode', 'decimal');
+    await expect(sheet.getByRole('button', { name: 'Salvar meta' })).toBeInViewport();
+
+    await sheet.locator('.picker-preview').first().click();
+    const grid = page.locator('.picker-sheet .picker-sheet-grid');
+    await expect(grid).toBeVisible();
+    expect(await grid.evaluate((g) => getComputedStyle(g).gridTemplateColumns.split(' ').length)).toBe(6);
+    const opcao = grid.locator('.icon-option').nth(3);
+    const icone = await opcao.getAttribute('aria-label');
+    await opcao.click();
+    await expect(page.locator('.picker-sheet')).toHaveCount(0);
+    await expect(sheet.locator('.picker-preview i').first()).toHaveAttribute('class', icone);
+
+    await sheet.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(page.locator('.modal-overlay.is-sheet-full')).toHaveCount(0);
+  });
+
+  test('eixos do gráfico do histórico: dd/mm e BRL compacto', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    const r = await page.evaluate(async () => {
+      const m = await import('/src/pages/Metas/chartFormat.js');
+      return [m.tickDiaMes('05/09/2026'), m.tickBRLCompacto(1234), m.tickBRLCompacto(15000), m.tickBRLCompacto('500')];
+    });
+    expect(r[0]).toBe('05/09');
+    expect(r[1]).toMatch(/^R\$\s1,2\smil$/);
+    expect(r[2]).toMatch(/^R\$\s15\smil$/);
+    expect(r[3]).toMatch(/^R\$\s500$/);
   });
 });

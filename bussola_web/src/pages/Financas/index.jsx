@@ -51,9 +51,11 @@ export function Financas() {
     // Celular começa no mês corrente (evita abrir em parcelas do futuro distante); desktop segue em "todos".
     const [filterDatePreset, setFilterDatePreset] = useState(() => (isMobile ? 'mes' : 'todos'));
     const [prevIsMobile, setPrevIsMobile] = useState(isMobile);
+    // Depois que o usuário mexe no período (aplica filtros / remove o chip), o padrão 'mes' não volta sozinho.
+    const [presetTouched, setPresetTouched] = useState(false);
     if (prevIsMobile !== isMobile) {
         setPrevIsMobile(isMobile);
-        if (isMobile && filterDatePreset === 'todos') setFilterDatePreset('mes');
+        if (isMobile && !presetTouched && filterDatePreset === 'todos') setFilterDatePreset('mes');
     }
     const [filterDateStart, setFilterDateStart] = useState('');
     const [filterDateEnd, setFilterDateEnd] = useState('');
@@ -229,6 +231,7 @@ export function Financas() {
 
     // --- Celular: filtros aplicados pelo sheet, busca e atalhos de criação ---
     const handleApplyFilters = (next, nextSort) => {
+        setPresetTouched(true);
         setFilterTipo(next.tipo);
         setFilterStatus(next.status);
         setFilterCategoria(next.categoria);

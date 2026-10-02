@@ -18,7 +18,7 @@ export function MetasHeader({ ctl, onClose }) {
         {ctl.view === 'grid' && <i className="fa-solid fa-piggy-bank" style={{ marginRight: 8, color: 'var(--cor-azul-primario)' }}></i>}
         {ctl.title}
       </h3>
-      <span className="close-btn" role="button" aria-label="Fechar" onClick={onClose}>&times;</span>
+      <span className="close-btn" role="button" tabIndex={0} aria-label="Fechar" onClick={onClose} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClose(); } }}>&times;</span>
     </div>
   );
 }

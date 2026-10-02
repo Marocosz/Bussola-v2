@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createMeta, updateMeta } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 import { DatePicker } from '../../../components/Pickers';
+import { useIsMobile } from '../../../hooks/useIsMobile';
+import { Sheet } from '../../../components/mobile/Sheet';
 
 const buildForm = (m) => ({
   nome: m?.nome || '',
@@ -27,15 +29,18 @@ export function MetaForm({ editingData, iconesDisponiveis = [], coresDisponiveis
   const iconRef = useRef(null);
   const colorRef = useRef(null);
   const { addToast } = useToast();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const handler = (e) => {
+      // No celular o picker é um sheet: o "clique fora" fecharia antes do toque selecionar.
+      if (isMobile) return;
       if (iconRef.current && !iconRef.current.contains(e.target)) setShowIconPicker(false);
       if (colorRef.current && !colorRef.current.contains(e.target)) setShowColorPicker(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, []);
+  }, [isMobile]);
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
 
@@ -75,7 +80,7 @@ export function MetaForm({ editingData, iconesDisponiveis = [], coresDisponiveis
           </div>
           <div className="form-group">
             <label>Valor-alvo (R$)</label>
-            <input className="form-input" type="number" step="0.01" min="0.01" value={form.valor_alvo} onChange={(e) => set({ valor_alvo: e.target.value })} placeholder="50000" required />
+            <input className="form-input" type="number" step="0.01" min="0.01" inputMode="decimal" value={form.valor_alvo} onChange={(e) => set({ valor_alvo: e.target.value })} placeholder="50000" required />
           </div>
         </div>
 
@@ -96,7 +101,7 @@ export function MetaForm({ editingData, iconesDisponiveis = [], coresDisponiveis
               <div className="picker-preview" onClick={() => { setShowIconPicker((v) => !v); setShowColorPicker(false); }}>
                 <i className={form.icone || 'fa-solid fa-piggy-bank'} style={{ color: form.cor }}></i>
               </div>
-              {showIconPicker && (
+              {showIconPicker && !isMobile && (
                 <div className="picker-popover icon-grid visible">
                   {iconesDisponiveis.map((icon) => (
                     <div key={icon} className="icon-option" onClick={() => { set({ icone: icon }); setShowIconPicker(false); }}>
@@ -104,6 +109,23 @@ export function MetaForm({ editingData, iconesDisponiveis = [], coresDisponiveis
                     </div>
                   ))}
                 </div>
+              )}
+              {isMobile && (
+                <Sheet open={showIconPicker} onClose={() => setShowIconPicker(false)} title="Ícone" className="picker-sheet">
+                    <div className="picker-sheet-grid">
+                      {iconesDisponiveis.map((icon) => (
+                        <button
+                          key={icon}
+                          type="button"
+                          aria-label={icon}
+                          className={`icon-option ${form.icone === icon ? 'selected' : ''}`}
+                          onClick={() => { set({ icone: icon }); setShowIconPicker(false); }}
+                        >
+                          <i className={icon} style={{ color: form.cor }}></i>
+                        </button>
+                      ))}
+                    </div>
+                </Sheet>
               )}
             </div>
           </div>
@@ -114,12 +136,28 @@ export function MetaForm({ editingData, iconesDisponiveis = [], coresDisponiveis
               <div className="picker-preview" onClick={() => { setShowColorPicker((v) => !v); setShowIconPicker(false); }}>
                 <div style={{ width: 20, height: 20, borderRadius: '50%', backgroundColor: form.cor }}></div>
               </div>
-              {showColorPicker && (
+              {showColorPicker && !isMobile && (
                 <div className="picker-popover color-grid visible">
                   {coresDisponiveis.map((cor) => (
                     <div key={cor} className="color-swatch" style={{ backgroundColor: cor }} onClick={() => { set({ cor }); setShowColorPicker(false); }}></div>
                   ))}
                 </div>
+              )}
+              {isMobile && (
+                <Sheet open={showColorPicker} onClose={() => setShowColorPicker(false)} title="Cor" className="picker-sheet">
+                    <div className="picker-sheet-grid">
+                      {coresDisponiveis.map((cor) => (
+                        <button
+                          key={cor}
+                          type="button"
+                          aria-label={cor}
+                          className={`color-swatch ${form.cor === cor ? 'selected' : ''}`}
+                          style={{ backgroundColor: cor }}
+                          onClick={() => { set({ cor }); setShowColorPicker(false); }}
+                        ></button>
+                      ))}
+                    </div>
+                </Sheet>
               )}
             </div>
           </div>
@@ -128,11 +166,11 @@ export function MetaForm({ editingData, iconesDisponiveis = [], coresDisponiveis
         <div className="form-row grid-50-50">
           <div className="form-group">
             <label>Aporte mensal (R$)</label>
-            <input className="form-input" type="number" step="0.01" min="0" value={form.aporte_mensal_valor} onChange={(e) => set({ aporte_mensal_valor: e.target.value })} placeholder="Opcional — ex: 500" />
+            <input className="form-input" type="number" step="0.01" min="0" inputMode="decimal" value={form.aporte_mensal_valor} onChange={(e) => set({ aporte_mensal_valor: e.target.value })} placeholder="Opcional — ex: 500" />
           </div>
           <div className="form-group">
             <label>Dia do mês</label>
-            <input className="form-input" type="number" min="1" max="28" value={form.aporte_mensal_dia} onChange={(e) => set({ aporte_mensal_dia: e.target.value })} placeholder="1–28" />
+            <input className="form-input" type="number" min="1" max="28" inputMode="numeric" value={form.aporte_mensal_dia} onChange={(e) => set({ aporte_mensal_dia: e.target.value })} placeholder="1–28" />
           </div>
         </div>
 
