@@ -274,7 +274,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
+    gap: var(--sp-1);
     border: none;
     background: transparent;
     color: var(--cor-texto-secundario);
@@ -317,7 +317,12 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr); /* Início, Estudos, Ritmo, Cofre */
     gap: var(--sp-3);
-    margin-bottom: var(--sp-4);
+}
+
+/* Espaçamento do sheet Mais: respiro sob o cabeçalho e 24px entre a grade e a lista */
+.modal-content.app-sheet.more-sheet > .app-sheet-body {
+    gap: var(--sp-5);
+    padding-top: var(--sp-4);
 }
 
 .more-tile {
@@ -350,6 +355,7 @@
     align-items: center;
     gap: var(--sp-3);
     min-height: 52px;
+    padding: 0 var(--sp-1);
     border: none;
     border-top: 1px solid var(--cor-borda);
     background: transparent;

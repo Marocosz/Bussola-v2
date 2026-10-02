@@ -8,7 +8,7 @@ export function MoreSheet({ open, onClose, theme, onToggleTheme, onOpenAccount, 
     const go = (to) => { onClose(); navigate(to); };
 
     return (
-        <Sheet open={open} onClose={onClose} title="Mais">
+        <Sheet open={open} onClose={onClose} title="Mais" className="more-sheet">
             <div className="more-grid">
                 {NAV_ITEMS.filter((i) => !i.bottom).map((i) => (
                     <button key={i.to} type="button" className="more-tile" onClick={() => go(i.to)}>
