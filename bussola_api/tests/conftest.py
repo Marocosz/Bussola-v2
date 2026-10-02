@@ -78,7 +78,7 @@ def mcp_call(mcp_db, user):
     from mcp.server.auth.provider import AccessToken
     from app.mcp.server import mcp
 
-    def _call(nome, escopos=("bussola:read", "bussola:write"), usuario=None, **args):
+    def _call(nome, /, escopos=("bussola:read", "bussola:write"), usuario=None, **args):
         alvo = usuario or user
         token = AccessToken(token="teste", client_id="teste", scopes=list(escopos), subject=str(alvo.id))
         marca = auth_context_var.set(AuthenticatedUser(token))
