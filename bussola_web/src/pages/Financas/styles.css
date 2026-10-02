@@ -1141,65 +1141,66 @@
     opacity: 0.7;
 }
 
-/* Ações da linha — celular: inline e sempre visíveis (não há hover) */
+/* Ações da linha — sobrepostas à ponta direita da própria linha, no hover.
+   Nada se desloca (sem reflow) e não há elemento flutuante fora da linha. */
+.financas-scope .transacao-row {
+    position: relative;
+}
+
 .financas-scope .row-actions {
-    flex-shrink: 0;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    padding-left: 56px; /* área do degradê, antes dos botões */
+    /* Mesmas camadas do fundo da linha em hover (tinta de hover sobre o fundo da página),
+       esmaecendo para a esquerda para não cortar o texto de forma seca. */
+    background:
+        linear-gradient(to right, transparent, var(--cor-fundo-hover) 56px),
+        linear-gradient(to right, transparent, var(--cor-fundo) 56px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+/* Grupo expandido tem uma camada de tinta a mais no fundo */
+.financas-scope .row-wrapper-expanded .row-actions {
+    background:
+        linear-gradient(to right, transparent, var(--cor-fundo-hover) 56px),
+        linear-gradient(to right, transparent, var(--cor-fundo-hover) 56px),
+        linear-gradient(to right, transparent, var(--cor-fundo) 56px);
+}
+
+.financas-scope .transacao-row:hover .row-actions,
+.financas-scope .transacao-row:focus-within .row-actions {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .financas-scope .row-actions-inner {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 0 10px 0 4px;
+    padding-right: 14px;
     white-space: nowrap;
 }
 
-/* Ações da linha — desktop: balão flutuante (portal no body) aberto no hover */
-.row-actions-popover {
-    position: fixed;
-    z-index: 1500; /* acima da página, abaixo de modais (2000) e drawer (9999) */
-    padding: 6px;
-    background: var(--cor-card-principal);
-    border: 1px solid var(--cor-borda);
-    border-radius: 12px;
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.38);
-    animation: rowPopoverIn 0.14s ease-out;
-}
+/* Celular: sem hover — ações inline e sempre visíveis */
+@media (max-width: 768px) {
+    .financas-scope .row-actions {
+        position: static;
+        padding-left: 0;
+        background: none;
+        opacity: 1;
+        pointer-events: auto;
+        flex-shrink: 0;
+    }
 
-.row-actions-popover.acima {
-    transform: translateY(-100%);
-}
-
-.row-actions-popover .row-actions-inner {
-    padding: 0;
-}
-
-/* Setinha apontando para a linha */
-.row-actions-popover::before {
-    content: "";
-    position: absolute;
-    right: 18px;
-    width: 10px;
-    height: 10px;
-    background: var(--cor-card-principal);
-    transform: rotate(45deg);
-}
-
-.row-actions-popover.abaixo::before {
-    top: -6px;
-    border-left: 1px solid var(--cor-borda);
-    border-top: 1px solid var(--cor-borda);
-}
-
-.row-actions-popover.acima::before {
-    bottom: -6px;
-    border-right: 1px solid var(--cor-borda);
-    border-bottom: 1px solid var(--cor-borda);
-}
-
-@keyframes rowPopoverIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    .financas-scope .row-actions-inner {
+        padding: 0 10px 0 4px;
+    }
 }
 
 /* Botão de expansão de parcelas (dentro do row-actions-inner) */
