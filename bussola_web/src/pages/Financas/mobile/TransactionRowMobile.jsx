@@ -5,7 +5,8 @@ import { useTransactionActions } from '../components/useTransactionActions';
 import { ParcelaSubList } from '../components/ParcelaSubList';
 import { PAG_LABEL } from '../components/pagamento';
 
-const fmtBRL = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
+const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const fmtBRL = (v) => BRL.format(v || 0);
 
 /**
  * Ações do ActionSheet, na ordem: status (Efetivar primária / Desmarcar), Editar,
@@ -25,8 +26,8 @@ function acoesDaLinha(t, h) {
         }]
         : [];
     const status = (onClick) => (isPendente
-        ? { key: 'efetivar', icon: 'fa-solid fa-check', label: 'Efetivar', variant: 'primary', onClick }
-        : { key: 'desmarcar', icon: 'fa-solid fa-rotate-left', label: 'Desmarcar', onClick });
+        ? { key: 'efetivar', icon: 'fa-solid fa-check', label: 'Efetivar', variant: 'primary', onClick, disabled: h.busy }
+        : { key: 'desmarcar', icon: 'fa-solid fa-rotate-left', label: 'Desmarcar', onClick, disabled: h.busy });
 
     if (t._isCofre) {
         if (t._cofreArquivada) return verHistorico;
@@ -58,7 +59,14 @@ function acoesDaLinha(t, h) {
 /** Linha de 2 níveis. Tocar abre o ActionSheet; o chip "Efetivar" efetiva direto. */
 export function TransactionRowMobile({ transacao: t, onUpdate, onEdit, onEditCofre, onToggleCofre, onDeleteCofre }) {
     const [sheet, setSheet] = useState(null); // null | 'acoes' | 'historico'
-    const { isDeleting, deleteMode, handleToggleStatus, handleDelete } = useTransactionActions(t, onUpdate);
+    const { isDeleting, deleteMode, toggling, handleToggleStatus, handleDelete } = useTransactionActions(t, onUpdate);
+    const [cofreToggling, setCofreToggling] = useState(false);
+    const busy = toggling || cofreToggling;
+    const toggleCofre = async () => {
+        if (cofreToggling) return;
+        setCofreToggling(true);
+        try { await onToggleCofre(t); } finally { setCofreToggling(false); }
+    };
 
     const isCofre = !!t._isCofre;
     const tipo = t.tipo_recorrencia || 'pontual';
@@ -73,7 +81,8 @@ export function TransactionRowMobile({ transacao: t, onUpdate, onEdit, onEditCof
         toggle: handleToggleStatus,
         excluir: handleDelete,
         editar: () => onEdit(t),
-        toggleCofre: () => onToggleCofre(t),
+        busy,
+        toggleCofre,
         editCofre: () => onEditCofre(t),
         deleteCofre: () => onDeleteCofre(t),
         verHistorico: () => setSheet('historico'),
@@ -97,8 +106,8 @@ export function TransactionRowMobile({ transacao: t, onUpdate, onEdit, onEditCof
         <>
             <div
                 className={`m-tx-row ${apagada ? 'is-muted' : ''} ${isDeleting ? 'is-deleting' : ''}`}
-                role="button"
-                tabIndex={0}
+                role={actions.length ? 'button' : undefined}
+                tabIndex={actions.length ? 0 : undefined}
                 data-tipo={isCofre ? 'cofre' : tipo}
                 onClick={abrir}
                 onKeyDown={(e) => {
@@ -115,7 +124,8 @@ export function TransactionRowMobile({ transacao: t, onUpdate, onEdit, onEditCof
                         <button
                             type="button"
                             className="m-tx-efetivar"
-                            onClick={(e) => { e.stopPropagation(); if (isCofre) onToggleCofre(t); else handleToggleStatus(); }}
+                            disabled={busy}
+                            onClick={(e) => { e.stopPropagation(); if (isCofre) toggleCofre(); else handleToggleStatus(); }}
                         >
                             <span className="btn-sm-pagar">Efetivar</span>
                         </button>

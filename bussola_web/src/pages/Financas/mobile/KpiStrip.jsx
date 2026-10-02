@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
-const fmtBRL = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
+const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const fmtBRL = (v) => BRL.format(v || 0);
 
 /**
  * KPIs do mês numa faixa rolável. A explicação (antes só no `title`) aparece ao tocar

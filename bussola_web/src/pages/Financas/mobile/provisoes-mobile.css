@@ -149,6 +149,11 @@
     color: var(--cor-texto-secundario);
 }
 
+.financas-scope .m-tx-day {
+    /* "Hoje" rolado para o topo não fica sob a topbar */
+    scroll-margin-top: calc(var(--topbar-h) + var(--safe-top, 0px) + var(--sp-3));
+}
+
 .financas-scope .m-tx-day + .m-tx-day {
     margin-top: var(--sp-5);
 }
@@ -344,6 +349,11 @@
     cursor: pointer;
 }
 
+.financas-scope .m-tx-efetivar:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
 .financas-scope .m-tx-efetivar .btn-sm-pagar {
     display: inline-block;
     padding: var(--sp-1) var(--sp-3);
@@ -525,7 +535,7 @@
 }
 
 .picker-sheet .picker-sheet-grid > .color-swatch {
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--cor-borda);
     border-radius: 50%;
 }
 
@@ -760,6 +770,16 @@
         flex-basis: 100%;
         justify-content: flex-end;
         gap: var(--sp-2);
+    }
+
+    /* CategoryCard: o título quebra em até 2 linhas em vez de truncar (mesma fonte/cor) */
+    .financas-scope .catcard-name {
+        white-space: normal;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        overflow-wrap: anywhere;
     }
 
     /* CategoryCard: só tamanho de texto (o card não muda) */

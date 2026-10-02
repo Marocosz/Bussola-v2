@@ -14,8 +14,13 @@ async function limparE2E(request) {
     ...Object.values(dash.transacoes_pontuais || {}).flat(),
     ...Object.values(dash.transacoes_recorrentes || {}).flat(),
   ];
-  for (const t of transacoes.filter((x) => String(x.descricao).startsWith('E2E '))) {
-    await apiJson(request, 'DELETE', `/financas/transacoes/${t.id}`);
+  const e2e = transacoes.filter((x) => String(x.descricao).startsWith('E2E '));
+  // Série com parcela efetivada não pode ser excluída: devolve tudo a Pendente antes.
+  for (const t of e2e.filter((x) => x.tipo_recorrencia !== 'pontual' && x.status === 'Efetivada')) {
+    await apiJson(request, 'PUT', `/financas/transacoes/${t.id}/toggle-status`);
+  }
+  for (const t of e2e) {
+    await apiJson(request, 'DELETE', `/financas/transacoes/${t.id}`).catch(() => {}); // série já removida por um irmão
   }
   for (const g of (dash.transacoes_cofre || []).filter((x) => String(x.nome).startsWith('E2E '))) {
     for (const mv of g.movimentacoes || []) await apiJson(request, 'DELETE', `/financas/metas/${g.meta_id}/movimentacoes/${mv.id}`);
@@ -673,3 +678,77 @@ test.describe('metas com teclado simulado', () => {
     expect(box.y).toBeGreaterThanOrEqual(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Correções da revisão final
+// ---------------------------------------------------------------------------
+test.describe('revisão final', () => {
+  test('Efetivar com duplo toque rápido chama a API uma vez e a transação termina Efetivada', async ({ page, playwright }) => {
+    const r = await playwright.request.newContext();
+    const hoje = new Date('2026-10-02T12:00:00-03:00').toISOString();
+    const cats = await apiJson(r, 'GET', '/financas/');
+    const cat = cats.categorias_despesa[0];
+    await apiJson(r, 'POST', '/financas/transacoes', {
+      descricao: 'E2E Duplo toque', valor: 10, data: hoje, categoria_id: cat.id,
+      tipo_recorrencia: 'recorrente', frequencia: 'mensal', status: 'Pendente', tipo_pagamento: 'pix',
+    });
+    const toggles = [];
+    page.on('request', (req) => { if (/toggle-status/.test(req.url())) toggles.push(req.url()); });
+    await gotoApp(page, '/financas');
+    await buscar(page, 'E2E Duplo toque');
+    const linha = page.locator('.m-tx-row').filter({ has: page.locator('.m-tx-efetivar') }).first();
+    const antes = await page.locator('.m-tx-efetivar').count();
+    await linha.locator('.m-tx-efetivar').dblclick();
+    await expect(page.locator('.m-tx-efetivar')).toHaveCount(antes - 1);
+    await page.waitForTimeout(600);
+    expect(toggles).toHaveLength(1);
+    const id = toggles[0].match(/transacoes\/(\d+)\/toggle-status/)[1];
+    const dash = await apiJson(r, 'GET', '/financas/');
+    const todas = [...Object.values(dash.transacoes_pontuais).flat(), ...Object.values(dash.transacoes_recorrentes).flat()];
+    expect(todas.find((t) => String(t.id) === id).status).toBe('Efetivada');
+    await r.dispose();
+  });
+
+  test('busca digitada no celular não fica aplicada ao ir para o desktop', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    await buscar(page, 'netflix');
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await expect(page.locator('.layout-grid-custom')).toBeVisible();
+    await page.locator('.filter-trigger-btn', { hasText: 'Este mês' }).click(); // preset do celular continua ativo
+    await page.locator('.filter-dropdown-item', { hasText: 'Tudo' }).click();
+    const titulos = await page.locator('.transacao-row').allTextContents();
+    expect(titulos.length).toBeGreaterThan(0);
+    expect(titulos.some((t) => !/netflix/i.test(t))).toBe(true);
+  });
+
+  test('desktop: escolher o período no dropdown conta como "tocado" (não volta a "Este mês" no celular)', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await gotoApp(page, '/financas');
+    await page.getByRole('button', { name: 'Data' }).click();
+    await page.locator('.filter-dropdown-item', { hasText: 'Tudo' }).click();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.locator('.m-tx')).toBeVisible();
+    await expect(page.locator('.m-active-chip')).toHaveCount(0);
+  });
+
+  test('título da categoria não é cortado com reticências em 390', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    await abrirAba(page, 'Categorias');
+    const nome = page.locator('.catcard-name', { hasText: 'Alimentação' }).first();
+    await expect(nome).toBeVisible();
+    const { sw, cw } = await nome.evaluate((e) => ({ sw: e.scrollWidth, cw: e.clientWidth }));
+    expect(sw).toBeLessThanOrEqual(cw);
+  });
+
+  test('a lista "Este mês" abre em hoje (ou no dia mais próximo anterior)', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    await expect(page.locator('.m-tx-day-head').first()).toBeVisible();
+    const heads = await page.locator('.m-tx-day-head').allTextContents();
+    const idx = heads.findIndex((h) => Number(h.match(/(\d{2})\/10/)[1]) <= 2);
+    test.skip(idx < 1, 'sem dias futuros acima de hoje nos dados demo');
+    await page.waitForTimeout(300);
+    await expect(page.locator('.m-tx-day-head').nth(idx)).toBeInViewport();
+    await expect(page.locator('.m-tx-day-head').first()).not.toBeInViewport();
+  });
+});
+

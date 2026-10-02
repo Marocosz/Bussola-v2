@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { getFinancasDashboard, deleteCategoria, updateMovimentacao, toggleMovimentacao, deleteMovimentacao } from '../../services/api';
 import { logger } from '../../utils/logger';
 import { TransactionCard } from './components/TransactionCard';
@@ -53,13 +53,15 @@ export function Financas() {
     const [prevIsMobile, setPrevIsMobile] = useState(isMobile);
     // Depois que o usuário mexe no período (aplica filtros / remove o chip), o padrão 'mes' não volta sozinho.
     const [presetTouched, setPresetTouched] = useState(false);
-    if (prevIsMobile !== isMobile) {
-        setPrevIsMobile(isMobile);
-        if (isMobile && !presetTouched && filterDatePreset === 'todos') setFilterDatePreset('mes');
-    }
     const [filterDateStart, setFilterDateStart] = useState('');
     const [filterDateEnd, setFilterDateEnd] = useState('');
     const [filterSearch, setFilterSearch] = useState('');
+    if (prevIsMobile !== isMobile) {
+        setPrevIsMobile(isMobile);
+        if (isMobile && !presetTouched && filterDatePreset === 'todos') setFilterDatePreset('mes');
+        // A busca só existe no celular: ao sair dele, limpa (senão ficaria aplicada sem campo visível).
+        if (!isMobile && filterSearch) setFilterSearch('');
+    }
     const [expandedGroups, setExpandedGroups] = useState(new Set());
     const [openFilterDropdown, setOpenFilterDropdown] = useState(null);
 
@@ -189,13 +191,20 @@ export function Financas() {
         });
     };
 
+    // Toggle inverte o status: ignora um 2º disparo da mesma movimentação enquanto o 1º não terminou.
+    const cofreToggling = useRef(new Set());
     const handleToggleCofre = async (transacao) => {
+        const k = `${transacao.meta_id}:${transacao._movId}`;
+        if (cofreToggling.current.has(k)) return;
+        cofreToggling.current.add(k);
         try {
             await toggleMovimentacao(transacao.meta_id, transacao._movId);
-            fetchData();
+            await fetchData();
         } catch (error) {
             const msg = error.response?.data?.detail || 'Não foi possível alterar o status.';
             addToast({ type: 'error', title: 'Erro', description: msg });
+        } finally {
+            cofreToggling.current.delete(k);
         }
     };
 
@@ -266,7 +275,13 @@ export function Financas() {
         setActiveModal('category');
     };
 
-    const allTransactions = filterAndSortTransactions(data, filters, sortConfig);
+    const allTransactions = useMemo(
+        () => filterAndSortTransactions(data, {
+            tipo: filterTipo, status: filterStatus, categoria: filterCategoria, pagamento: filterPagamento,
+            datePreset: filterDatePreset, dateStart: filterDateStart, dateEnd: filterDateEnd, search: filterSearch,
+        }, sortConfig),
+        [data, filterTipo, filterStatus, filterCategoria, filterPagamento, filterDatePreset, filterDateStart, filterDateEnd, filterSearch, sortConfig],
+    );
     const totalPages = Math.ceil(allTransactions.length / PAGE_SIZE);
     const pagedTransactions = allTransactions.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
@@ -442,7 +457,7 @@ export function Financas() {
                                         <div className="filter-backdrop" onClick={() => setOpenFilterDropdown(null)}></div>
                                         <div className="filter-dropdown-menu">
                                             {[['todos','Tudo'],['semana','Esta semana'],['mes','Este mês'],['custom','Personalizado']].map(([val, label]) => (
-                                                <div key={val} className={`filter-dropdown-item ${filterDatePreset === val ? 'selected' : ''}`} onClick={() => { setFilterDatePreset(val); setCurrentPage(1); if (val !== 'custom') setOpenFilterDropdown(null); }}>{label}</div>
+                                                <div key={val} className={`filter-dropdown-item ${filterDatePreset === val ? 'selected' : ''}`} onClick={() => { setPresetTouched(true); setFilterDatePreset(val); setCurrentPage(1); if (val !== 'custom') setOpenFilterDropdown(null); }}>{label}</div>
                                             ))}
                                             {filterDatePreset === 'custom' && (
                                                 <div className="filter-date-range">

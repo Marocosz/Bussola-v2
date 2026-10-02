@@ -18,6 +18,7 @@ export function ActionSheet({ open, onClose, title, subtitle, icon, actions = []
                     <button
                         key={a.key}
                         type="button"
+                        disabled={a.disabled}
                         className={`action-sheet-item ${a.variant ? `is-${a.variant}` : ''}`}
                         onClick={() => { onClose(); a.onClick(); }}
                     >

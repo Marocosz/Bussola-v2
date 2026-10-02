@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { toggleStatusTransacao, deleteTransacao, stopRecorrencia } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 import { useConfirm } from '../../../context/ConfirmDialogContext';
@@ -29,12 +29,22 @@ export function useTransactionActions(transacao, onUpdate) {
     const [isDeleting, setIsDeleting] = useState(false);
     const deleteMode = seriesDeleteMode(transacao);
 
+    // O toggle é "inverte o status": um 2º toque durante a chamada desfaria o primeiro. Trava até a lista recarregar.
+    const toggleBusy = useRef(false);
+    const [toggling, setToggling] = useState(false);
+
     const handleToggleStatus = async () => {
+        if (toggleBusy.current) return;
+        toggleBusy.current = true;
+        setToggling(true);
         try {
             await toggleStatusTransacao(transacao.id);
-            onUpdate();
+            await onUpdate();
         } catch {
             addToast({ type: 'error', title: 'Erro', description: 'Não foi possível alterar o status.' });
+        } finally {
+            toggleBusy.current = false;
+            setToggling(false);
         }
     };
 
@@ -94,5 +104,5 @@ export function useTransactionActions(transacao, onUpdate) {
         await runDelete(() => stopRecorrencia(transacao.id), 'Cobranças futuras canceladas. Histórico mantido.', 'Série encerrada');
     };
 
-    return { isDeleting, deleteMode, handleToggleStatus, handleDelete };
+    return { isDeleting, deleteMode, toggling, handleToggleStatus, handleDelete };
 }

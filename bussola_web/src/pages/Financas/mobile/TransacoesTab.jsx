@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { activeFilterChips, groupByDay } from '../transactionsQuery';
 import { TransactionRowMobile } from './TransactionRowMobile';
 import { FiltersSheet } from './FiltersSheet';
@@ -17,6 +17,18 @@ export function TransacoesTab({ data, loading, transactions, filters, sortConfig
         setVisiveis(PAGINA);
     }
 
+    // Lista padrão ("Este mês", mais recentes primeiro): começa em hoje (ou no dia mais próximo ≤ hoje), uma vez por montagem.
+    const alvoRef = useRef(null);
+    const jaRolou = useRef(false);
+    const d0 = new Date();
+    const hoje = `${d0.getFullYear()}-${String(d0.getMonth() + 1).padStart(2, '0')}-${String(d0.getDate()).padStart(2, '0')}`;
+    const padrao = filters.datePreset === 'mes' && sortConfig.column === 'data' && sortConfig.dir === 'desc';
+    useEffect(() => {
+        if (loading || jaRolou.current) return;
+        jaRolou.current = true;
+        if (padrao) alvoRef.current?.scrollIntoView({ block: 'start' });
+    });
+
     const chips = activeFilterChips(filters, data);
     const n = chips.length;
     const mostradas = transactions.slice(0, visiveis);
@@ -25,6 +37,9 @@ export function TransacoesTab({ data, loading, transactions, filters, sortConfig
     const grupos = sortConfig.column === 'data'
         ? groupByDay(mostradas)
         : [{ key: 'todas', label: null, items: mostradas }];
+
+    // Grupos em ordem decrescente: o primeiro com dia ≤ hoje. Se for o 1º grupo, não há nada acima a pular.
+    const idxAlvo = padrao ? grupos.findIndex((g) => g.key <= hoje) : -1;
 
     return (
         <div className="m-tx">
@@ -75,8 +90,8 @@ export function TransacoesTab({ data, loading, transactions, filters, sortConfig
                 <p className="empty-list-msg">Nenhuma transação encontrada.</p>
             ) : (
                 <>
-                    {grupos.map((g) => (
-                        <section key={g.key} className="m-tx-day">
+                    {grupos.map((g, i) => (
+                        <section key={g.key} className="m-tx-day" ref={i === idxAlvo && i > 0 ? alvoRef : undefined}>
                             {g.label && <h3 className="m-tx-day-head">{g.label}</h3>}
                             <div className="m-tx-list">
                                 {g.items.map((t) => <TransactionRowMobile key={t.id} transacao={t} {...rowProps} />)}

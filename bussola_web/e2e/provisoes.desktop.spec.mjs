@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers.mjs';
+﻿import { test, expect } from '@playwright/test';
+import { gotoApp, apiJson } from './helpers.mjs';
 
 // Modais da página que os refactors deste plano tocam. Base gerada ANTES de mexer no código.
 const MODAIS = [
@@ -55,3 +55,44 @@ test('desktop provisões: nada do layout mobile aparece', async ({ page }) => {
   await expect(page.locator('.m-prov')).toHaveCount(0);
   await expect(page.locator('.app-fab')).toHaveCount(0);
 });
+
+// Baselines adicionadas na revisão final (antes de mexer no código dos modais/linhas expandidas).
+test('desktop provisões: MetasModal cofre e histórico inalterados', async ({ page, playwright }) => {
+  const r = await playwright.request.newContext();
+  const meta = await apiJson(r, 'POST', '/financas/metas', { nome: 'E2E Base desktop', valor_alvo: 1000, icone: 'fa-solid fa-piggy-bank', cor: '#4A6DFF' });
+  try {
+    await apiJson(r, 'POST', `/financas/metas/${meta.id}/movimentacoes`, { tipo: 'aporte', valor: 200, data: '2026-10-02T12:00:00-03:00' });
+    await gotoApp(page, '/financas');
+    await page.locator('.metas-entry:not(.cat-entry)').click();
+    await page.locator('.metas-modal').waitFor();
+    await page.locator('.meta-card').filter({ hasText: 'E2E Base desktop' }).getByRole('button', { name: 'Guardar' }).click();
+    await page.locator('.cofre-body').waitFor();
+    await page.waitForTimeout(600);
+    await expect(page.locator('.metas-modal')).toHaveScreenshot('metas-cofre.png');
+    await page.getByRole('button', { name: /Ver movimentações/ }).click();
+    await page.locator('.meta-timeline li').first().waitFor();
+    await page.waitForTimeout(400);
+    await expect(page.locator('.metas-modal')).toHaveScreenshot('metas-historico.png');
+  } finally {
+    for (const mv of await apiJson(r, 'GET', `/financas/metas/${meta.id}/movimentacoes`)) {
+      await apiJson(r, 'DELETE', `/financas/metas/${meta.id}/movimentacoes/${mv.id}`);
+    }
+    await apiJson(r, 'DELETE', `/financas/metas/${meta.id}`);
+    await r.dispose();
+  }
+});
+
+test('desktop provisões: parcelas expandidas inalteradas', async ({ page }) => {
+  await gotoApp(page, '/financas');
+  const wrapper = page.locator('.transacao-row-wrapper')
+    .filter({ hasText: /Macbook Air|Viagem Férias/ })
+    .filter({ has: page.locator('.btn-expand-parcelas') })
+    .first();
+  await wrapper.locator('.transacao-row').hover(); // as ações só aparecem no hover (desktop)
+  await wrapper.locator('.btn-expand-parcelas').click();
+  await wrapper.locator('.parcela-sub-row').first().waitFor();
+  await page.mouse.move(0, 0);
+  await page.waitForTimeout(400);
+  await expect(wrapper).toHaveScreenshot('parcelas-expandidas.png');
+});
+
