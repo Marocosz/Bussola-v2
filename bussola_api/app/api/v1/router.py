@@ -41,6 +41,7 @@ from app.api.v1.endpoints import (
     discord_link,
     oauth,
     mcp_tokens,
+    estudos,
 )
 
 # Instância principal que acumulará todas as rotas
@@ -66,6 +67,7 @@ api_router.include_router(registros.router, prefix="/registros", tags=["registro
 api_router.include_router(ritmo.router, prefix="/ritmo", tags=["ritmo"])
 api_router.include_router(cofre.router, prefix="/cofre", tags=["cofre"])
 api_router.include_router(panorama.router, prefix="/panorama", tags=["panorama"])
+api_router.include_router(estudos.router, prefix="/estudos", tags=["estudos"])
 
 # Módulo de IA (Serviço de Inteligência / Chat)
 api_router.include_router(ai.router, prefix="/ai", tags=["ai"]) 

@@ -22,6 +22,7 @@ Revogue qualquer conexão na mesma tela.
   erros de service em `ToolError`.
 - `resolvers.py` — "nome ou id" para categoria, meta, grupo e hábito.
 - `tools/<modulo>.py` — uma função por tool; regra de negócio fica nos services.
+- Estudos (`tools/estudos.py`): o formato dos materiais é o contrato de `catalogo_de_blocos`; detalhes em `docs/ESTUDOS.md`.
 - OAuth: `app/api/v1/endpoints/oauth.py` (`/.well-known/oauth-authorization-server`,
   `/oauth/register|authorize|token`, `/api/v1/oauth/consent`) e `app/services/mcp_auth.py`.
 

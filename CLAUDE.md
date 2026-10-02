@@ -48,7 +48,7 @@ venvbussola/Scripts/python.exe -m pytest -q                 # whole suite
 venvbussola/Scripts/python.exe -m pytest tests/test_metas_service.py -q   # one file
 venvbussola/Scripts/python.exe -m pytest tests/test_metas_api.py::test_criar_e_listar_via_api -v  # one test
 ```
-`tests/conftest.py` provides an in-memory SQLite `db` fixture, a persisted `user`, and a `client` (FastAPI `TestClient`) that overrides `deps.get_db` + `deps.get_current_user`. Tests cover `metas`/`financas` and the MCP layer (`tests/test_mcp_*.py`, which exercise every module through its tools); fixtures `mcp_call`, `mcp_db`, `outro_user` live in conftest.
+`tests/conftest.py` provides an in-memory SQLite `db` fixture, a persisted `user`, and a `client` (FastAPI `TestClient`) that overrides `deps.get_db` + `deps.get_current_user`. Tests cover `metas`/`financas`, `estudos` (`tests/test_estudos_*.py`) and the MCP layer (`tests/test_mcp_*.py`, which exercise every module through its tools); fixtures `mcp_call`, `mcp_db`, `outro_user` live in conftest.
 
 ### Frontend (bussola_web/)
 ```bash
@@ -88,6 +88,7 @@ All routes are prefixed `/api/v1` and registered centrally in `app/api/v1/router
 | Registros | `/registros` | Notes (rich text), tasks/subtasks, links |
 | Agenda | `/agenda` | Calendar events |
 | Cofre | `/cofre` | Fernet-encrypted password vault |
+| Estudos | `/estudos` | Study library: typed-block materials created by Claude via MCP, quizzes, "Pedir ao Claude" commands, downloadable kit (`bussola_api/kit/`). See `docs/ESTUDOS.md` |
 | Panorama | `/panorama` | Dashboard aggregating all modules |
 | Auth | `/auth` | JWT + Google OAuth2 |
 | AI | `/ai` | AI orchestration endpoint |
@@ -123,6 +124,7 @@ All routes are prefixed `/api/v1` and registered centrally in `app/api/v1/router
 - **ESLint is strict (eslint-plugin-react-hooks v7) — these are ERRORS:** `react-hooks/set-state-in-effect` (don't `setState` synchronously inside `useEffect`; reset form state via a render-time adjustment guarded by a "prev key" instead), `react-hooks/immutability` (no mutating accumulators inside `map`/`reduce` — hoist to a pure helper), `no-unused-vars` (use bare `catch {` when the error variable is unused).
 - **Modals** use the shared `<BaseModal onClose={} className="modal">` (`src/components/BaseModal.jsx`) wrapping `.modal-content` → `.modal-header`/`.modal-body`/`.modal-footer`; fields use `.form-row`/`.form-group`/`.form-input`; icon buttons use `.btn-action-icon .btn-edit`/`.btn-delete`. Mirror `pages/Financas/components/FinancasModals.jsx`.
 - **Chart.js has no global registration** — each charting page calls `ChartJS.register(...)` for the elements it needs (idempotent across modules).
+- **Estudos has one block contract and one inline grammar implemented twice.** Block schemas/limits live in `app/schemas/estudos_blocos.py` (exposed to Claude by the `catalogo_de_blocos` tool — bump `VERSAO_FORMATO` and the kit on incompatible changes). The inline grammar (`**`, `*`, `` ` ``, `[n]`, escapes) is in `estudos_blocos.py::citacoes` and `bussola_web/src/pages/Estudos/blocos/inline.js` — change both; run `node scripts/verificar-estudos.mjs` in `bussola_web/`. The kit lives in `bussola_api/kit/` because the backend Docker build context is `./bussola_api`.
 
 ## Production (Coolify)
 
@@ -162,4 +164,5 @@ Detailed module documentation lives in `docs/`:
 - `docs/SECURITY.md` — auth architecture, JWT flow, RBAC
 - `docs/FINANCE.md`, `docs/RITMO.md`, `docs/REGISTROS.md`, `docs/AGENDA.md`, `docs/COFRE.md`, `docs/PANORAMA.md` — module-specific logic
 - `docs/MCP.md` — servidor MCP, conexão no claude.ai/Claude Code, como adicionar módulos
+- `docs/ESTUDOS.md` — módulo Estudos: blocos tipados, gramática inline, kit, rotas e tools
 - Metas has no `docs/METAS.md` yet; its design spec and implementation plan live in `docs/superpowers/specs/2026-07-19-metas-cofrinhos-design.md` and `docs/superpowers/plans/2026-07-19-metas-cofrinhos.md`

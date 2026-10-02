@@ -10,7 +10,7 @@ from app.models.registros import GrupoAnotacao, Habito
 
 
 def normalizar(texto: str) -> str:
-    sem_acento = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode()
+    sem_acento = "".join(c for c in unicodedata.normalize("NFKD", texto) if not unicodedata.combining(c))
     return sem_acento.casefold().strip()
 
 
@@ -24,6 +24,8 @@ def resolver(db, model, user_id: int, valor, rotulo: str, campo: str = "nome", f
         return reg
 
     alvo = normalizar(texto)
+    if not alvo:
+        raise ToolError("Informe um nome ou id.")
     candidatos = query.all()
     exatos = [c for c in candidatos if normalizar(getattr(c, campo) or "") == alvo]
     if len(exatos) == 1:

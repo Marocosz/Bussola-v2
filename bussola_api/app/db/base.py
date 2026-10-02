@@ -53,3 +53,5 @@ from app.models.ritmo import (
     RitmoAlimentoItem
 )
 from app.models.mcp import McpClient, McpAuthCode, McpToken  # noqa: F401
+
+from app.models.estudos import EstudoTema, EstudoMaterial, EstudoResposta  # noqa: F401
