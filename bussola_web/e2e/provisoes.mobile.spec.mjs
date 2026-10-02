@@ -237,3 +237,106 @@ test.describe('layout mobile', () => {
     await expect(page.locator('.modal-overlay')).toHaveCount(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 3 — ações por toque
+// ---------------------------------------------------------------------------
+test.describe('ações da linha', () => {
+  test.describe.configure({ mode: 'serial' });
+  const DESC = 'E2E Café mobile';
+  const ITEM = '.action-sheet-item:not(.action-sheet-cancel)';
+
+  test('Fab → Pontual: valor decimal, Salvar visível com teclado, cria a transação de hoje', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    await page.getByRole('button', { name: 'Nova transação' }).click();
+    await page.locator('.action-sheet').getByRole('button', { name: 'Pontual' }).click();
+    const form = page.locator('.modal-overlay.is-sheet').first();
+    await expect(form.locator('h3')).toHaveText('Nova Transação Única');
+    await expect(form.locator('input[name="valor"]')).toHaveAttribute('inputmode', 'decimal');
+
+    await page.setViewportSize({ width: 390, height: 480 }); // teclado aberto
+    await expect(form.getByRole('button', { name: 'Salvar' })).toBeInViewport();
+
+    await form.locator('input[name="descricao"]').fill(DESC);
+    await form.locator('input[name="valor"]').fill('12.5');
+    await form.locator('.pk-trigger').click();
+    await page.locator('.pk-date-panel').getByRole('button', { name: 'Hoje' }).click();
+    await form.locator('.custom-select-trigger').nth(0).click();
+    await page.locator('.cs-sheet-list').getByRole('button', { name: /Alimentação/ }).click();
+    await form.locator('.custom-select-trigger').nth(1).click();
+    await page.locator('.cs-sheet-list').getByRole('button', { name: 'Pix' }).click();
+    await form.getByRole('button', { name: 'Salvar' }).click();
+    await expect(page.getByText('Salvo com sucesso.')).toBeVisible();
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await buscar(page, 'E2E Café');
+    const row = page.locator('.m-tx-row');
+    await expect(row).toHaveCount(1);
+    await expect(page.locator('.m-tx-day-head')).toHaveText(['Hoje · 02/10']);
+    await expect(row.locator('.m-tx-meta')).toHaveText('Alimentação · Pix');
+    await expect(row.locator('.m-tx-valor')).toHaveText(/−\sR\$\s12,50/);
+  });
+
+  test('pontual: ActionSheet com Editar e Excluir; Editar abre o form preenchido', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    await buscar(page, 'E2E Café');
+    await page.locator('.m-tx-row .m-tx-title').click();
+    const sheet = page.locator('.action-sheet');
+    await expect(sheet.locator('.action-sheet-titles strong')).toHaveText(DESC);
+    await expect(sheet.locator(ITEM)).toHaveText(['Editar', 'Excluir']);
+    await sheet.getByRole('button', { name: 'Editar' }).click();
+    const form = page.locator('.modal-overlay.is-sheet').first();
+    await expect(form.locator('h3')).toHaveText('Editar Transação');
+    await expect(form.locator('input[name="descricao"]')).toHaveValue(DESC);
+    await form.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(page.locator('.modal-overlay')).toHaveCount(0);
+  });
+
+  test('teclado: Enter na linha abre o ActionSheet', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    await buscar(page, 'E2E Café');
+    await page.locator('.m-tx-row').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.action-sheet')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.action-sheet')).toHaveCount(0);
+  });
+
+  test('recorrente com histórico: Efetivar primário, Ver histórico e Encerrar (sem Excluir)', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    await buscar(page, 'Netflix');
+    const pendente = page.locator('.m-tx-row').filter({ has: page.locator('.m-tx-efetivar') }).first();
+    const chip = await pendente.locator('.m-tx-efetivar').boundingBox();
+    expect(chip.height).toBeGreaterThanOrEqual(44);
+    expect(chip.width).toBeGreaterThanOrEqual(44);
+    await pendente.locator('.m-tx-title').click();
+    const items = page.locator('.action-sheet').locator(ITEM);
+    await expect(items).toHaveText(['Efetivar', 'Editar', 'Ver histórico', 'Encerrar recorrência']);
+    await expect(items.first()).toHaveClass(/is-primary/);
+    await expect(items.last()).toHaveClass(/is-danger/);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.action-sheet')).toHaveCount(0);
+  });
+
+  test('parcelada: Ver parcelas abre o sheet com todas as parcelas do grupo', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    await buscar(page, 'Macbook');
+    await page.locator('.m-tx-row .m-tx-title').first().click();
+    await page.locator('.action-sheet').getByRole('button', { name: 'Ver parcelas' }).click();
+    const sheet = page.locator('.m-parcelas');
+    await expect(sheet.locator('.parcela-sub-row')).toHaveCount(10);
+    await expect(sheet.locator('.parcela-sub-current')).toHaveCount(1);
+    expect(await overflowOffenders(page)).toEqual([]);
+    for (const r of await sheet.locator('.parcela-sub-row').all()) expect((await r.boundingBox()).height).toBeGreaterThanOrEqual(44);
+  });
+
+  test('Excluir pelo ActionSheet remove a transação', async ({ page }) => {
+    await gotoApp(page, '/financas');
+    await buscar(page, 'E2E Café');
+    await page.locator('.m-tx-row .m-tx-title').click();
+    await page.locator('.action-sheet').getByRole('button', { name: 'Excluir' }).click();
+    await page.getByRole('button', { name: 'Sim, excluir' }).click();
+    await expect(page.getByText('Transação removida.')).toBeVisible();
+    await expect(page.locator('.m-tx-row')).toHaveCount(0);
+  });
+});

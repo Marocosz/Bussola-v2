@@ -218,7 +218,7 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                 <div className="form-row grid-meta-icon-color">
                                     <div className="form-group">
                                         <label>{formData.tipo === 'receita' ? 'Meta' : 'Limite'}</label>
-                                        <input type="number" step="0.01" name="meta_limite" value={formData.meta_limite || ''} className="form-input" placeholder="0.00" onChange={handleChange} />
+                                        <input type="number" step="0.01" inputMode="decimal" name="meta_limite" value={formData.meta_limite || ''} className="form-input" placeholder="0.00" onChange={handleChange} />
                                     </div>
                                     
                                     <div className="form-group form-group-fixed">
@@ -265,7 +265,7 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                     </div>
                                     <div className="form-group">
                                         <label>Valor (R$)</label>
-                                        <input type="number" step="0.01" name="valor" value={formData.valor || ''} className="form-input" required onChange={handleChange} />
+                                        <input type="number" step="0.01" inputMode="decimal" name="valor" value={formData.valor || ''} className="form-input" required onChange={handleChange} />
                                     </div>
                                 </div>
                                 <div className="form-row grid-50-50">
@@ -313,7 +313,7 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                     </div>
                                     <div className="form-group">
                                         <label>{editingData ? 'Valor da Parcela' : 'Valor Total'}</label>
-                                        <input type="number" step="0.01" name="valor" value={formData.valor || ''} className="form-input" required onChange={handleChange} placeholder="Ex: 1000.00" />
+                                        <input type="number" step="0.01" inputMode="decimal" name="valor" value={formData.valor || ''} className="form-input" required onChange={handleChange} placeholder="Ex: 1000.00" />
                                     </div>
                                 </div>
                                 <div className="form-row grid-50-50">
@@ -331,6 +331,7 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                         <input
                                             type="number"
                                             name="total_parcelas"
+                                            inputMode="numeric"
                                             value={formData.total_parcelas || ''}
                                             className="form-input"
                                             min="2"
@@ -374,7 +375,7 @@ export function FinancasModals({ activeModal, closeModal, onUpdate, dashboardDat
                                     </div>
                                     <div className="form-group">
                                         <label>Valor Mensal</label>
-                                        <input type="number" step="0.01" name="valor" value={formData.valor || ''} className="form-input" required onChange={handleChange} placeholder="Ex: 39.90" />
+                                        <input type="number" step="0.01" inputMode="decimal" name="valor" value={formData.valor || ''} className="form-input" required onChange={handleChange} placeholder="Ex: 39.90" />
                                     </div>
                                 </div>
                                 <div className="form-row grid-50-50">
