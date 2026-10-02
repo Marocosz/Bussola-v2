@@ -34,7 +34,7 @@ from collections import defaultdict
 
 from app.models.financas import Transacao, Categoria
 from app.models.caixa import AjusteCaixa
-from app.schemas.financas import TransacaoCreate, TransacaoUpdate
+from app.schemas.financas import CategoriaCreate, CategoriaUpdate, TransacaoCreate, TransacaoUpdate
 from app.schemas.caixa import AjusteCaixaCreate, AjusteCaixaUpdate
 
 # Catálogo de ícones FontAwesome disponíveis para escolha no frontend
@@ -578,5 +578,118 @@ class FinancasService:
         db.delete(ajuste)
         db.commit()
         return True
+
+    # --- Consultas e regras usadas pelos endpoints e pelo MCP ---
+
+    def listar_transacoes(self, db: Session, user_id: int, mes: str = None, categoria_id: int = None,
+                          tipo: str = None, status: str = None, busca: str = None, limite: int = 50):
+        """Transações do usuário com filtros. `mes` = 'AAAA-MM'; `tipo` = tipo da categoria."""
+        query = db.query(Transacao).join(Categoria).filter(Transacao.user_id == user_id)
+        if mes:
+            inicio = datetime.strptime(mes, "%Y-%m")
+            query = query.filter(Transacao.data >= inicio, Transacao.data < inicio + relativedelta(months=1))
+        if categoria_id:
+            query = query.filter(Transacao.categoria_id == categoria_id)
+        if tipo:
+            query = query.filter(Categoria.tipo == tipo)
+        if status:
+            query = query.filter(Transacao.status == status)
+        if busca:
+            query = query.filter(Transacao.descricao.ilike(f"%{busca}%"))
+        return query.order_by(Transacao.data.desc(), Transacao.id.desc()).limit(limite).all()
+
+    def listar_categorias(self, db: Session, user_id: int, tipo: str = None):
+        query = db.query(Categoria).filter(Categoria.user_id == user_id)
+        if tipo:
+            query = query.filter(Categoria.tipo == tipo)
+        return query.order_by(Categoria.tipo, Categoria.nome).all()
+
+    def definir_status_transacao(self, db: Session, id: int, status: str, user_id: int):
+        transacao = db.query(Transacao).filter(Transacao.id == id, Transacao.user_id == user_id).first()
+        if not transacao:
+            return None
+        transacao.status = status
+        db.commit()
+        db.refresh(transacao)
+        return transacao
+
+    def excluir_transacao(self, db: Session, id: int, user_id: int) -> bool:
+        """
+        Exclui protegendo o histórico efetivado.
+        - Pontual: excluída normalmente.
+        - Recorrente/Parcelada: se QUALQUER ocorrência já foi 'Efetivada', bloqueia
+          (ValueError) — use encerrar_recorrencia. Se nenhuma foi, remove a série inteira.
+        """
+        transacao = db.query(Transacao).filter(Transacao.id == id, Transacao.user_id == user_id).first()
+        if not transacao:
+            return False
+
+        if transacao.id_grupo_recorrencia and transacao.tipo_recorrencia in ['recorrente', 'parcelada']:
+            grupo = db.query(Transacao).filter(
+                Transacao.id_grupo_recorrencia == transacao.id_grupo_recorrencia,
+                Transacao.user_id == user_id,
+            )
+            if grupo.filter(Transacao.status == 'Efetivada').count() > 0:
+                raise ValueError(
+                    "Série com lançamentos efetivados não pode ser excluída. "
+                    "Encerre a recorrência para cancelar os pendentes."
+                )
+            grupo.delete(synchronize_session=False)
+        else:
+            db.delete(transacao)
+
+        db.commit()
+        return True
+
+    def criar_categoria(self, db: Session, dados: CategoriaCreate, user_id: int) -> Categoria:
+        if "indefinida" in dados.nome.strip().lower():
+            raise ValueError("O nome 'Indefinida' é reservado pelo sistema.")
+        existe = db.query(Categoria).filter(
+            func.lower(Categoria.nome) == dados.nome.lower(),
+            Categoria.tipo == dados.tipo,
+            Categoria.user_id == user_id,
+        ).first()
+        if existe:
+            raise ValueError(f"Já existe uma categoria '{dados.nome}' do tipo {dados.tipo.value}.")
+        categoria = Categoria(**dados.model_dump(), user_id=user_id)
+        db.add(categoria)
+        db.commit()
+        db.refresh(categoria)
+        return categoria
+
+    def atualizar_categoria(self, db: Session, id: int, dados: CategoriaUpdate, user_id: int):
+        categoria = db.query(Categoria).filter(Categoria.id == id, Categoria.user_id == user_id).first()
+        if not categoria:
+            return None
+        if "indefinida" in categoria.nome.lower():
+            raise PermissionError("A categoria padrão do sistema não pode ser editada.")
+        for chave, valor in dados.model_dump(exclude_unset=True).items():
+            setattr(categoria, chave, valor)
+        db.commit()
+        db.refresh(categoria)
+        return categoria
+
+    def excluir_categoria(self, db: Session, id: int, user_id: int) -> bool:
+        """Exclui a categoria; transações dela vão para a 'Indefinida' do mesmo tipo."""
+        categoria = db.query(Categoria).filter(Categoria.id == id, Categoria.user_id == user_id).first()
+        if not categoria:
+            return False
+        if "indefinida" in categoria.nome.lower():
+            raise PermissionError("A categoria padrão do sistema não pode ser excluída.")
+
+        transacoes = db.query(Transacao).filter(Transacao.categoria_id == id, Transacao.user_id == user_id).all()
+        if transacoes:
+            destino = self.get_or_create_indefinida(db, categoria.tipo, user_id)
+            for transacao in transacoes:
+                transacao.categoria_id = destino.id
+            # Persiste a migração e recarrega a categoria antes de deletar: sem isso o
+            # cascade do relationship tentaria anular categoria_id (NOT NULL) das transações.
+            db.commit()
+            db.refresh(categoria)
+
+        db.delete(categoria)
+        db.commit()
+        return True
+
 
 financas_service = FinancasService()

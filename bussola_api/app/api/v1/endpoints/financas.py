@@ -26,14 +26,13 @@ COMUNICAÇÃO:
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc
 from typing import Any
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from collections import defaultdict
 
 from app.api import deps
-from app.models.financas import Transacao, Categoria 
+from app.models.financas import Transacao
 from app.schemas.financas import (
     CategoriaCreate, CategoriaUpdate, CategoriaResponse,
     TransacaoCreate, TransacaoUpdate, TransacaoResponse,
@@ -124,32 +123,12 @@ def delete_transacao(
         * Se NENHUMA foi efetivada (série nunca realizada), o grupo inteiro é
           removido (limpeza de algo criado por engano).
     """
-    transacao = db.query(Transacao).filter(Transacao.id == id, Transacao.user_id == current_user.id).first()
-    if not transacao:
+    try:
+        excluida = financas_service.excluir_transacao(db, id, current_user.id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if not excluida:
         raise HTTPException(status_code=404, detail="Transação não encontrada")
-
-    is_grupo = transacao.id_grupo_recorrencia and transacao.tipo_recorrencia in ['recorrente', 'parcelada']
-
-    if is_grupo:
-        tem_efetivada = db.query(Transacao).filter(
-            Transacao.id_grupo_recorrencia == transacao.id_grupo_recorrencia,
-            Transacao.user_id == current_user.id,
-            Transacao.status == 'Efetivada',
-        ).count() > 0
-        if tem_efetivada:
-            raise HTTPException(
-                status_code=400,
-                detail="Série com lançamentos efetivados não pode ser excluída. Encerre a recorrência para cancelar os pendentes.",
-            )
-        # Nenhuma efetivada → remove o grupo inteiro (nada a preservar).
-        db.query(Transacao).filter(
-            Transacao.id_grupo_recorrencia == transacao.id_grupo_recorrencia,
-            Transacao.user_id == current_user.id,
-        ).delete()
-    else:
-        db.delete(transacao)
-
-    db.commit()
     return {"status": "success"}
 
 @router.patch("/transacoes/{id}/encerrar-recorrencia")
@@ -233,24 +212,10 @@ def create_categoria(
     Cria uma nova categoria personalizada.
     Bloqueia o nome reservado "Indefinida".
     """
-    if "indefinida" in cat_in.nome.strip().lower():
-        raise HTTPException(status_code=400, detail="O nome 'Indefinida' é reservado pelo sistema.")
-
-    # Validação de duplicidade por usuário
-    exists = db.query(Categoria).filter(
-        func.lower(Categoria.nome) == cat_in.nome.lower(),
-        Categoria.tipo == cat_in.tipo,
-        Categoria.user_id == current_user.id
-    ).first()
-    
-    if exists:
-        raise HTTPException(status_code=400, detail=f"Já existe uma categoria '{cat_in.nome}' do tipo {cat_in.tipo}.")
-    
-    nova_cat = Categoria(**cat_in.model_dump(), user_id=current_user.id)
-    db.add(nova_cat)
-    db.commit()
-    db.refresh(nova_cat)
-    return nova_cat
+    try:
+        return financas_service.criar_categoria(db, cat_in, current_user.id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.put("/categorias/{id}", response_model=CategoriaResponse)
 def update_categoria(
@@ -259,20 +224,12 @@ def update_categoria(
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_user)
 ):
-    cat = db.query(Categoria).filter(Categoria.id == id, Categoria.user_id == current_user.id).first()
+    try:
+        cat = financas_service.atualizar_categoria(db, id, cat_in, current_user.id)
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
     if not cat:
         raise HTTPException(status_code=404, detail="Categoria não encontrada")
-    
-    # Proteção de sistema: Categorias padrão não podem ser editadas pelo usuário
-    if "indefinida" in cat.nome.lower():
-        raise HTTPException(status_code=403, detail="A categoria padrão do sistema não pode ser editada.")
-
-    update_data = cat_in.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(cat, key, value)
-
-    db.commit()
-    db.refresh(cat)
     return cat
 
 @router.delete("/categorias/{id}")
@@ -289,29 +246,10 @@ def delete_categoria(
         Elas são movidas automaticamente para a categoria de fallback "Indefinida"
         correspondente ao seu tipo (Receita ou Despesa).
     """
-    cat = db.query(Categoria).filter(Categoria.id == id, Categoria.user_id == current_user.id).first()
-    if not cat:
-        raise HTTPException(status_code=404, detail="Categoria não encontrada")
-    
-    if "indefinida" in cat.nome.lower():
-        raise HTTPException(status_code=403, detail="A categoria padrão do sistema não pode ser excluída.")
-
-    transacoes = db.query(Transacao).filter(Transacao.categoria_id == id).all()
-    
-    # Se houver órfãos, move para a categoria de sistema
-    if transacoes:
-        cat_destino = financas_service.get_or_create_indefinida(db, cat.tipo, current_user.id)
-        
-        for t in transacoes:
-            t.categoria_id = cat_destino.id
-        
-        db.commit()
-
     try:
-        db.delete(cat)
-        db.commit()
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail="Erro ao excluir categoria.")
-        
+        excluida = financas_service.excluir_categoria(db, id, current_user.id)
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    if not excluida:
+        raise HTTPException(status_code=404, detail="Categoria não encontrada")
     return {"status": "success", "message": "Categoria excluída e transações movidas."}
