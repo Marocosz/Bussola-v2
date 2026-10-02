@@ -52,3 +52,4 @@ from app.models.ritmo import (
     RitmoRefeicao, 
     RitmoAlimentoItem
 )
+from app.models.mcp import McpClient, McpAuthCode, McpToken  # noqa: F401

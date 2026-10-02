@@ -97,3 +97,4 @@ zstandard==0.25.0
 markdown==3.7
 playwright==1.52.0
 Pygments==2.19.1
+mcp==2.2.0

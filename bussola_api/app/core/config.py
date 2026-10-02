@@ -150,6 +150,9 @@ class Settings(BaseSettings):
     BOT_SERVICE_TOKEN: Optional[str] = None
     BOT_WEBHOOK_URL: Optional[str] = None
     FRONTEND_URL: str = "http://localhost:5173"
+    # URL pública do backend vista pelos clientes MCP (issuer OAuth e resource /mcp).
+    # Em produção: https://bussola.marocos.dev
+    PUBLIC_BASE_URL: str = "http://localhost:8000"
     
     # ----------------------------------------------------------------------------------
     # REDE E ARQUIVOS
