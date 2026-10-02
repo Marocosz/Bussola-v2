@@ -10,7 +10,8 @@ import './styles.css';
 export function Estudos() {
     const { addToast } = useToast();
     const [searchParams, setSearchParams] = useSearchParams();
-    const [dados, setDados] = useState({ carregado: false, temas: [], materiais: [] });
+    const [dados, setDados] = useState({ carregado: false, erro: false, temas: [], materiais: [] });
+    const [tentativa, setTentativa] = useState(0);
     const [tipo, setTipo] = useState('');
     const [soNaoEstudados, setSoNaoEstudados] = useState(false);
     const temaSelecionado = searchParams.get('tema') || '';
@@ -19,15 +20,20 @@ export function Estudos() {
         let ativo = true;
         Promise.all([getEstudosTemas(), getEstudosMateriais()])
             .then(([temas, materiais]) => {
-                if (ativo) setDados({ carregado: true, temas, materiais });
+                if (ativo) setDados({ carregado: true, erro: false, temas, materiais });
             })
             .catch(() => {
                 if (!ativo) return;
-                setDados({ carregado: true, temas: [], materiais: [] });
+                setDados({ carregado: true, erro: true, temas: [], materiais: [] });
                 addToast({ type: 'error', title: 'Erro', description: 'Falha ao carregar seus estudos.' });
             });
         return () => { ativo = false; };
-    }, [addToast]);
+    }, [addToast, tentativa]);
+
+    const tentarDeNovo = () => {
+        setDados({ carregado: false, erro: false, temas: [], materiais: [] });
+        setTentativa((n) => n + 1);
+    };
 
     const { temas, materiais } = dados;
     const totalEstudados = materiais.filter((m) => m.estudado).length;
@@ -85,7 +91,18 @@ export function Estudos() {
                     </div>
                 )}
 
-                {dados.carregado && materiais.length === 0 && (
+                {dados.carregado && dados.erro && (
+                    <div className="estudos-vazio">
+                        <i className="fa-solid fa-triangle-exclamation"></i>
+                        <h2>Não foi possível carregar seus estudos</h2>
+                        <p>Verifique sua conexão e tente de novo.</p>
+                        <button type="button" className="btn-primary" onClick={tentarDeNovo}>
+                            <i className="fa-solid fa-rotate-right"></i> Tentar de novo
+                        </button>
+                    </div>
+                )}
+
+                {dados.carregado && !dados.erro && materiais.length === 0 && (
                     <div className="estudos-vazio">
                         <i className="fa-solid fa-graduation-cap"></i>
                         <h2>Sua biblioteca está vazia</h2>
@@ -101,7 +118,7 @@ export function Estudos() {
                     </div>
                 )}
 
-                {dados.carregado && materiais.length > 0 && (
+                {dados.carregado && !dados.erro && materiais.length > 0 && (
                     <div className="estudos-layout">
                         <aside className="estudos-temas">
                             <h2>Temas</h2>

@@ -16,7 +16,7 @@ OBJETIVO:
 import re
 from typing import Annotated, Any, Literal, Optional, Union
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, StringConstraints, ValidationError
 
 VERSAO_FORMATO = 1
 
@@ -106,7 +106,7 @@ class BlocoCodigo(_Bloco):
 class LinhaComparacao(_Estrito):
     rotulo: Item
     valores: list[Item] = Field(min_length=1, max_length=6)
-    destaque: Optional[int] = None
+    destaque: Optional[StrictInt] = None
 
 
 class BlocoComparacao(_Bloco):
@@ -154,7 +154,7 @@ class BlocoQuiz(_Bloco):
     tipo: Literal["quiz"]
     pergunta: Item
     opcoes: list[Item] = Field(min_length=2, max_length=6)
-    correta: int
+    correta: StrictInt
     explicacao: Texto
 
 

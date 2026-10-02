@@ -292,3 +292,23 @@ def test_temas_em_outras_escritas_coexistem(db, user):
     assert ru.id != jp.id
     assert estudos_service.obter_ou_criar_tema(db, user.id, "日本語").id == jp.id
     assert estudos_service.obter_ou_criar_tema(db, user.id, "русский").id == ru.id
+
+
+def test_ids_removidos_nao_voltam_via_atualizar_material(db, user):
+    m = _material(db, user, blocos=[texto("a"), texto("b")])
+    estudos_service.editar_blocos(db, m.id, user.id, [{"op": "remover", "id": "b2"}])
+    with pytest.raises(ValueError, match="id desconhecido: b2; omita o id para bloco novo"):
+        estudos_service.atualizar_material(db, m.id, user.id, blocos=[
+            {"id": "b1", **texto("a")}, {"id": "b2", **texto("volta")}])
+    ok = estudos_service.atualizar_material(db, m.id, user.id, blocos=[
+        {"id": "b1", **texto("a")}, texto("novo")])
+    assert [b["id"] for b in ok.blocos] == ["b1", "b3"]
+
+
+def test_correta_e_destaque_rejeitam_booleano(db, user):
+    with pytest.raises(BlocosInvalidos):
+        _material(db, user, tipo="exercicios", blocos=[quiz(correta=True)])
+    with pytest.raises(BlocosInvalidos):
+        _material(db, user, tipo="comparativo", blocos=[{
+            "tipo": "comparacao", "colunas": ["A", "B"],
+            "linhas": [{"rotulo": "x", "valores": ["1", "2"], "destaque": True}]}])

@@ -41,7 +41,7 @@ export function LeituraEstudo() {
                 if (ativo) setEstado({ chave: id, material, erro: null });
             })
             .catch((err) => {
-                if (ativo) setEstado({ chave: id, material: null, erro: err?.response?.status === 404 ? 'nao-encontrado' : 'falha' });
+                if (ativo) setEstado({ chave: id, material: null, erro: [404, 422].includes(err?.response?.status) ? 'nao-encontrado' : 'falha' });
             });
         return () => { ativo = false; };
     }, [id]);

@@ -25,7 +25,8 @@ from sqlalchemy.orm import defer
 from app.core.timezone import now_utc
 from app.models.estudos import EstudoMaterial, EstudoResposta, EstudoTema
 from app.schemas.estudos_blocos import (
-    LIM_TAG, LIM_TITULO, MAX_TAGS, NIVEIS, TIPOS_RESPONDIVEIS, BlocosInvalidos, validar_fontes, validar_material,
+    LIM_TAG, LIM_TITULO, MAX_TAGS, NIVEIS, TIPOS_RESPONDIVEIS, BlocosInvalidos, _ID_GERADO, validar_fontes,
+    validar_material,
 )
 
 LIM_SUBTITULO = 300
@@ -73,6 +74,18 @@ def _indice(blocos: list[dict], bid: Any, n: int, op: str) -> int:
         if bloco.get("id") == bid:
             return i
     raise BlocosInvalidos(f"operação {n} ({op}): bloco '{bid}' não existe")
+
+
+def _rejeitar_ids_reaproveitados(blocos: Any, atuais: list[dict], seq_bloco: int) -> None:
+    """Um id gerado (b<n>, n <= seq_bloco) que não está no material atual foi removido: não pode voltar."""
+    if not isinstance(blocos, list):
+        return
+    presentes = {b.get("id") for b in atuais}
+    for bloco in blocos:
+        bid = bloco.get("id") if isinstance(bloco, dict) else None
+        m = _ID_GERADO.match(bid) if isinstance(bid, str) else None
+        if m and int(m.group(1)) <= seq_bloco and bid not in presentes:
+            raise BlocosInvalidos(f"id desconhecido: {bid}; omita o id para bloco novo")
 
 
 def _aplicar_operacoes(blocos: list[dict], operacoes: Any) -> list[dict]:
@@ -138,7 +151,7 @@ class EstudosService:
 
     def salvar_tema(self, db, user_id: int, tema_id: Optional[int] = None, nome: Optional[str] = None,
                     cor: Optional[str] = None, icone: Optional[str] = None,
-                    descricao: Optional[str] = None) -> Optional[EstudoTema]:
+                    descricao: Optional[str] = None, commit: bool = True) -> Optional[EstudoTema]:
         if tema_id is None:
             if not (nome or "").strip():
                 raise ValueError("Para criar um tema, informe o nome.")
@@ -171,12 +184,16 @@ class EstudosService:
             tema.descricao = descricao.strip() or None
         if tema.id is None:
             db.add(tema)
-        db.commit()
-        db.refresh(tema)
+        if commit:
+            db.commit()
+            db.refresh(tema)
+        else:  # fica na transação do chamador (flush só para obter o id)
+            db.flush()
         return tema
 
     def obter_ou_criar_tema(self, db, user_id: int, nome: str) -> EstudoTema:
-        return self.buscar_tema_por_nome(db, user_id, nome) or self.salvar_tema(db, user_id, nome=nome)
+        """Tema novo só é gravado (flush) na transação do chamador: se a escrita seguinte falhar, o rollback o desfaz."""
+        return self.buscar_tema_por_nome(db, user_id, nome) or self.salvar_tema(db, user_id, nome=nome, commit=False)
 
     def excluir_tema(self, db, tema_id: int, user_id: int) -> bool:
         tema = self.get_tema(db, tema_id, user_id)
@@ -287,6 +304,8 @@ class EstudosService:
         fontes = validar_fontes(campos["fontes"]) if "fontes" in campos else list(material.fontes or [])
         tipo = cabecalho.get("tipo", material.tipo)
         blocos = campos["blocos"] if "blocos" in campos else [dict(b) for b in material.blocos]
+        if "blocos" in campos:
+            _rejeitar_ids_reaproveitados(blocos, material.blocos or [], material.seq_bloco or 0)
         blocos_ok, seq = validar_material(tipo, blocos, len(fontes), material.seq_bloco or 0)
 
         for chave, valor in cabecalho.items():
@@ -304,6 +323,7 @@ class EstudosService:
         if not material:
             return None
         resultado = _aplicar_operacoes(material.blocos or [], operacoes)
+        _rejeitar_ids_reaproveitados(resultado, material.blocos or [], material.seq_bloco or 0)
         blocos_ok, seq = validar_material(material.tipo, resultado, len(material.fontes or []), material.seq_bloco or 0)
         material.blocos = blocos_ok
         material.seq_bloco = seq

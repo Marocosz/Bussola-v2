@@ -20,10 +20,12 @@ export function KitEstudos() {
                 if (ativo) setInfo({ versao: versao.versao, instrucoes: instrucoes.texto });
             })
             .catch(() => {
-                if (ativo) setInfo({ versao: '—', instrucoes: '' });
+                if (!ativo) return;
+                setInfo({ versao: '—', instrucoes: '' });
+                addToast({ type: 'error', title: 'Erro', description: 'Não foi possível carregar as informações do kit.' });
             });
         return () => { ativo = false; };
-    }, []);
+    }, [addToast]);
 
     const baixar = async (alvo) => {
         setBaixando(alvo);

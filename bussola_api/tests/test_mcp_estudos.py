@@ -33,6 +33,13 @@ def test_material_invalido_vira_toolerror_em_portugues_e_nada_grava(mcp_call):
     assert mcp_call("listar_materiais")["itens"] == []
 
 
+def test_falha_ao_salvar_nao_deixa_tema_novo_para_tras(mcp_call):
+    with pytest.raises(ToolError):
+        mcp_call("salvar_material", tema="Fantasma", tipo="exercicios", titulo="X",
+                 blocos=[quiz(opcoes=["a", "b"], correta=3, explicacao="porque")])
+    assert mcp_call("listar_temas_estudo")["itens"] == []
+
+
 def test_edicao_parcial_por_titulo_e_editar_blocos(mcp_call):
     r = mcp_call("salvar_material", tipo="resumo", titulo="Git básico", blocos=[texto("commit e push")])
     mcp_call("salvar_material", id=r["id"], subtitulo="O essencial")
