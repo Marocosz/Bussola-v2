@@ -26,7 +26,7 @@ export const SORT_OPTIONS = [
     { key: 'categoria-asc', label: 'Categoria A–Z', column: 'categoria', dir: 'asc' },
 ];
 
-const semAcento = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const semAcento = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
 export function filterAndSortTransactions(data, f, sortConfig) {
     if (!data) return [];

@@ -7,9 +7,10 @@ export function initVisualViewportVars() {
     let raf = 0;
     const apply = () => {
         raf = 0;
-        // Pinch-zoom também encolhe o visualViewport: não é teclado.
+        // Pinch-zoom também encolhe o visualViewport: não é teclado. Usa a altura do layout
+        // viewport. Um teclado aberto durante o zoom é ignorado de propósito (raro; sem inset).
         if (Math.abs((vv.scale || 1) - 1) > 0.01) {
-            root.style.setProperty('--vvh', `${window.innerHeight}px`);
+            root.style.setProperty('--vvh', `${document.documentElement.clientHeight}px`);
             root.style.setProperty('--kb-inset', '0px');
             return;
         }
