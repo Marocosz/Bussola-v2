@@ -1,0 +1,296 @@
+/* =========================================================
+   BLOCOS DO MÓDULO ESTUDOS — só tokens do tema.
+   --estudo-cor = cor do tema do material (definida na página de leitura).
+   ========================================================= */
+.estudo-coluna {
+    max-width: 760px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    font-size: 1.02rem;
+    line-height: 1.7;
+    color: var(--cor-texto-principal);
+}
+
+.estudo-paragrafo-quebra { display: block; height: 0.8rem; }
+
+.estudo-coluna figcaption {
+    font-size: 0.82rem;
+    color: var(--cor-texto-secundario);
+    padding: 0.45rem 0.9rem;
+    border-top: 1px solid var(--cor-borda);
+}
+
+.bloco-rotulo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--estudo-cor, var(--cor-azul-primario));
+    margin-bottom: 0.35rem;
+}
+
+/* ---- inline ---- */
+.estudo-inline-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88em;
+    background: var(--cor-card-secundario);
+    border: 1px solid var(--cor-borda);
+    border-radius: 5px;
+    padding: 0.05rem 0.35rem;
+}
+.estudo-citacao button {
+    background: none;
+    border: none;
+    padding: 0 0.1rem;
+    color: var(--cor-azul-primario);
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.estudo-citacao button:hover { text-decoration: underline; }
+.estudo-citacao-orfa { color: var(--cor-texto-secundario); opacity: 0.6; font-size: 0.72rem; vertical-align: super; }
+
+/* ---- seção / texto ---- */
+.bloco-secao {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    font-size: 1.35rem;
+    font-weight: 650;
+    margin: 1.6rem 0 0.2rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--cor-borda);
+    scroll-margin-top: 80px;
+}
+.bloco-secao-ancora { color: var(--cor-texto-secundario); opacity: 0; text-decoration: none; font-size: 0.9em; transition: opacity 0.15s; }
+.bloco-secao:hover .bloco-secao-ancora { opacity: 0.7; }
+.bloco-texto p { margin: 0 0 0.8rem; }
+.bloco-texto p:last-child { margin-bottom: 0; }
+
+/* ---- conceito / definição / analogia ---- */
+.bloco-conceito {
+    background: color-mix(in srgb, var(--estudo-cor, var(--cor-azul-primario)) 10%, var(--cor-card-principal));
+    border: 1px solid color-mix(in srgb, var(--estudo-cor, var(--cor-azul-primario)) 35%, var(--cor-borda));
+    border-left: 4px solid var(--estudo-cor, var(--cor-azul-primario));
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+}
+.bloco-conceito h3 { margin: 0 0 0.35rem; font-size: 1.1rem; }
+.bloco-conceito p { margin: 0; }
+
+.bloco-definicao {
+    margin: 0;
+    padding: 0.9rem 1.2rem;
+    border: 1px solid var(--cor-borda);
+    border-radius: 12px;
+    background: var(--cor-card-principal);
+}
+.bloco-definicao dt { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.25rem; }
+.bloco-definicao dd { margin: 0; }
+
+.bloco-analogia {
+    display: flex;
+    gap: 0.9rem;
+    padding: 0.9rem 1.1rem;
+    border-radius: 12px;
+    background: var(--cor-card-secundario);
+}
+.bloco-analogia > i { color: var(--cor-laranja-aviso); font-size: 1.2rem; margin-top: 0.3rem; }
+.bloco-analogia p { margin: 0; font-style: italic; }
+
+/* ---- passos ---- */
+.bloco-passos { list-style: none; margin: 0; padding: 0; counter-reset: passo; }
+.bloco-passos li { position: relative; padding: 0 0 1rem 2.6rem; }
+.bloco-passos li::before {
+    counter-increment: passo;
+    content: counter(passo);
+    position: absolute;
+    left: 0;
+    top: 0.1rem;
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #fff;
+    background: var(--estudo-cor, var(--cor-azul-primario));
+}
+.bloco-passos li:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    left: calc(0.9rem - 1px);
+    top: 2.1rem;
+    bottom: 0.2rem;
+    width: 2px;
+    background: var(--cor-borda);
+}
+.bloco-passos strong { display: block; }
+.bloco-passos p { margin: 0.15rem 0 0; }
+
+/* ---- código ---- */
+.bloco-codigo { margin: 0; border: 1px solid var(--cor-borda); border-radius: 12px; overflow: hidden; background: var(--cor-card-principal); }
+.bloco-codigo-topo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.35rem 0.8rem;
+    background: var(--cor-card-secundario);
+    font-size: 0.78rem;
+    color: var(--cor-texto-secundario);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.bloco-codigo-copiar {
+    background: none;
+    border: 1px solid var(--cor-borda);
+    color: var(--cor-texto-secundario);
+    border-radius: 6px;
+    padding: 0.15rem 0.55rem;
+    cursor: pointer;
+    font-size: 0.75rem;
+}
+.bloco-codigo-copiar:hover { color: var(--cor-texto-principal); background: var(--cor-fundo-hover); }
+.bloco-codigo-corpo pre { margin: 0; overflow-x: auto; font-size: 0.86rem; line-height: 1.55; }
+.bloco-codigo-corpo pre code { display: block; padding: 0.9rem 1rem; }
+
+/* ---- comparação ---- */
+.bloco-comparacao { overflow-x: auto; border: 1px solid var(--cor-borda); border-radius: 12px; }
+.bloco-comparacao table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+.bloco-comparacao th,
+.bloco-comparacao td { padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--cor-borda); text-align: left; vertical-align: top; }
+.bloco-comparacao thead th { background: var(--cor-card-secundario); font-weight: 650; }
+.bloco-comparacao .bloco-comparacao-criterio { color: var(--cor-texto-secundario); font-weight: 500; }
+.bloco-comparacao tbody th { font-weight: 600; color: var(--cor-texto-secundario); white-space: nowrap; }
+.bloco-comparacao tbody tr:last-child td,
+.bloco-comparacao tbody tr:last-child th { border-bottom: none; }
+.bloco-comparacao td.destaque { background: color-mix(in srgb, var(--cor-verde-sucesso) 14%, transparent); font-weight: 600; }
+.bloco-comparacao td.destaque i { color: var(--cor-verde-sucesso); margin-right: 0.35rem; }
+
+/* ---- decisão ---- */
+.bloco-decisao { display: flex; flex-direction: column; gap: 0.5rem; }
+.bloco-decisao-regra {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0.7rem;
+    align-items: center;
+    padding: 0.65rem 0.9rem;
+    border: 1px solid var(--cor-borda);
+    border-radius: 10px;
+    background: var(--cor-card-principal);
+}
+.bloco-decisao-se::before { content: "Se "; color: var(--cor-texto-secundario); font-weight: 600; }
+.bloco-decisao-regra > i { color: var(--estudo-cor, var(--cor-azul-primario)); }
+
+/* ---- lista ---- */
+.bloco-lista { margin: 0; padding-left: 1.3rem; }
+.bloco-lista li { margin: 0.25rem 0; }
+.bloco-lista.checklist { list-style: none; padding-left: 0; }
+.bloco-lista.checklist li { display: flex; gap: 0.6rem; }
+.bloco-lista.checklist li i { color: var(--cor-verde-sucesso); margin-top: 0.35rem; }
+
+/* ---- alerta ---- */
+.bloco-alerta.dica { --alerta-cor: var(--cor-azul-primario); }
+.bloco-alerta.atencao { --alerta-cor: var(--cor-laranja-aviso); }
+.bloco-alerta.erro { --alerta-cor: var(--cor-vermelho-delete); }
+.bloco-alerta {
+    display: flex;
+    gap: 0.8rem;
+    padding: 0.85rem 1.1rem;
+    border-radius: 12px;
+    border: 1px solid color-mix(in srgb, var(--alerta-cor) 40%, transparent);
+    background: color-mix(in srgb, var(--alerta-cor) 10%, var(--cor-card-principal));
+}
+.bloco-alerta > i { color: var(--alerta-cor); margin-top: 0.3rem; }
+.bloco-alerta strong { display: block; margin-bottom: 0.15rem; }
+.bloco-alerta p { margin: 0; }
+
+/* ---- fórmula / diagrama ---- */
+.bloco-formula,
+.bloco-diagrama { margin: 0; border: 1px solid var(--cor-borda); border-radius: 12px; background: var(--cor-card-principal); overflow-x: auto; }
+.bloco-formula-render { padding: 0.6rem 1rem; }
+.bloco-diagrama-render { padding: 1rem; display: flex; justify-content: center; }
+.bloco-diagrama-render svg { max-width: 100%; height: auto; }
+.bloco-carregando { padding: 1rem; color: var(--cor-texto-secundario); font-size: 0.85rem; }
+.bloco-carregando code { white-space: pre-wrap; }
+.bloco-aviso-render { padding: 0.8rem 1rem; }
+.bloco-aviso-render-titulo { color: var(--cor-laranja-aviso); font-weight: 600; font-size: 0.88rem; display: flex; gap: 0.4rem; align-items: center; }
+.bloco-aviso-render p { font-size: 0.8rem; color: var(--cor-texto-secundario); margin: 0.3rem 0; }
+.bloco-aviso-render pre {
+    margin: 0.3rem 0 0;
+    padding: 0.6rem;
+    background: var(--cor-card-secundario);
+    border-radius: 8px;
+    font-size: 0.78rem;
+    white-space: pre-wrap;
+    overflow-x: auto;
+}
+
+/* ---- quiz / questão aberta ---- */
+.bloco-quiz,
+.bloco-questao { border: 1px solid var(--cor-borda); border-radius: 14px; padding: 1rem 1.2rem; background: var(--cor-card-principal); }
+.bloco-quiz-pergunta,
+.bloco-questao-pergunta { font-weight: 600; margin: 0 0 0.8rem; }
+.bloco-quiz-opcoes { display: flex; flex-direction: column; gap: 0.5rem; }
+.bloco-quiz-opcao {
+    display: flex;
+    gap: 0.7rem;
+    align-items: flex-start;
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border-radius: 10px;
+    border: 1px solid var(--cor-borda);
+    background: var(--cor-fundo);
+    color: var(--cor-texto-principal);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+}
+.bloco-quiz-opcao:hover:not(:disabled) { border-color: var(--cor-azul-primario); background: var(--cor-fundo-hover); }
+.bloco-quiz-opcao:disabled { cursor: default; color: var(--cor-texto-principal); }
+.bloco-quiz-letra {
+    flex: 0 0 1.6rem;
+    height: 1.6rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+    background: var(--cor-card-secundario);
+}
+.bloco-quiz-opcao.correta { border-color: var(--cor-verde-sucesso); background: color-mix(in srgb, var(--cor-verde-sucesso) 14%, transparent); }
+.bloco-quiz-opcao.errada { border-color: var(--cor-vermelho-delete); background: color-mix(in srgb, var(--cor-vermelho-delete) 12%, transparent); }
+.bloco-quiz-feedback,
+.bloco-questao-resposta { margin-top: 0.9rem; padding: 0.8rem 1rem; border-radius: 10px; background: var(--cor-card-secundario); }
+.bloco-quiz-feedback.acerto strong { color: var(--cor-verde-sucesso); }
+.bloco-quiz-feedback.erro strong { color: var(--cor-vermelho-delete); }
+.bloco-quiz-feedback p,
+.bloco-questao-resposta p { margin: 0.3rem 0 0.6rem; }
+.bloco-questao-tentativa { width: 100%; resize: vertical; margin-bottom: 0.6rem; box-sizing: border-box; }
+.bloco-acoes-linha { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+.btn-pequeno { padding: 0.35rem 0.8rem; font-size: 0.82rem; display: inline-flex; gap: 0.4rem; align-items: center; }
+.btn-acertei { background: var(--cor-verde-sucesso); }
+.btn-errei:hover { background: var(--cor-vermelho-delete); }
+.bloco-questao-marcado { font-size: 0.85rem; font-weight: 600; }
+.bloco-questao-marcado.acerto { color: var(--cor-verde-sucesso); }
+.bloco-questao-marcado.erro { color: var(--cor-vermelho-delete); }
+
+.bloco-desconhecido {
+    padding: 0.7rem 1rem;
+    border: 1px dashed var(--cor-borda);
+    border-radius: 10px;
+    color: var(--cor-texto-secundario);
+    font-size: 0.85rem;
+}
+
+@media (max-width: 640px) {
+    .bloco-decisao-regra { grid-template-columns: 1fr; }
+    .bloco-decisao-regra > i { transform: rotate(90deg); justify-self: start; }
+}
