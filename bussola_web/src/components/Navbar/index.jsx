@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { loadSavedColorTheme } from '../../utils/colorTheme';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { useSystem } from '../../context/SystemContext';
 import { AdminUserModal } from '../AdminUserModal';
@@ -33,6 +33,7 @@ function lerRecolhida() {
 export function Navbar() {
     const { authenticated, logout, user, updateUserData } = useContext(AuthContext);
     const { isSelfHosted } = useSystem();
+    const { pathname } = useLocation();
 
     const [theme, setTheme] = useState('dark');
     const [showAdminModal, setShowAdminModal] = useState(false);
@@ -77,7 +78,7 @@ export function Navbar() {
         <>
             {/* Barra fina no topo — só aparece no celular */}
             <header className="mobile-topbar">
-                <Link to="/" className="nav-brand" onClick={closeMobileMenu}>
+                <Link to="/home" className="nav-brand" onClick={closeMobileMenu}>
                     <img src={bussolaLogo} alt="Logo Bússola" className="nav-logo" />
                 </Link>
                 <button
@@ -94,7 +95,7 @@ export function Navbar() {
             {isMobileMenuOpen && <div className="mobile-menu-overlay" onClick={closeMobileMenu} />}
 
             <aside className={`sidebar ${recolhida ? 'collapsed' : ''} ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
-                <Link to="/" className="sidebar-brand" onClick={closeMobileMenu}>
+                <Link to="/home" className="sidebar-brand" onClick={closeMobileMenu}>
                     <img src={bussolaLogo} alt="Logo Bússola" className="nav-logo" />
                     <span className="sidebar-label sidebar-brand-name">Bússola</span>
                 </Link>
@@ -104,7 +105,9 @@ export function Navbar() {
                         <NavLink
                             key={link.to}
                             to={link.to}
-                            className="sidebar-link"
+                            className={({ isActive }) =>
+                                `sidebar-link ${isActive || (link.to === '/home' && pathname === '/') ? 'active' : ''}`
+                            }
                             onClick={closeMobileMenu}
                             title={recolhida ? link.rotulo : undefined}
                         >

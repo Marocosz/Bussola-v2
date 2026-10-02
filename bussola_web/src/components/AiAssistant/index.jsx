@@ -19,10 +19,11 @@ export const AiAssistant = ({ context }) => {
   const [lastUpdateDisplay, setLastUpdateDisplay] = useState(null);
 
   // Smart Pos: x='left'|'right', y='up'|'down'
-  const [smartPos, setSmartPos] = useState({ x: 'right', y: 'up' });
+  const [smartPos, setSmartPos] = useState({ x: 'left', y: 'up' });
 
+  // Padrão: canto inferior direito (60px de botão + 30px de margem)
   const [position, setPosition] = useState(() => ({
-    x: 30,
+    x: typeof window !== 'undefined' ? window.innerWidth - 90 : 20,
     y: typeof window !== 'undefined' ? window.innerHeight - 100 : 20
   }));
 
