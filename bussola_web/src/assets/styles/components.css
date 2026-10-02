@@ -151,3 +151,70 @@ textarea.form-input {
         margin: 1rem;
     }
 }
+
+/* ========================================================= */
+/* MODAL → BOTTOM SHEET NO MOBILE (classe posta pelo BaseModal) */
+/* !important vence os estilos de modal com escopo de página   */
+/* e os style={{maxWidth}} inline dos componentes.             */
+/* ========================================================= */
+@media (max-width: 768px) {
+    .modal-overlay.is-sheet {
+        position: fixed !important;
+        inset: 0 !important;
+        display: flex !important;
+        align-items: flex-end !important;
+        justify-content: center !important;
+        padding: 0 !important;
+        z-index: var(--z-sheet) !important;
+        background: rgba(0, 0, 0, 0.55);
+    }
+
+    .modal-overlay.is-sheet > .modal-content {
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        height: auto !important;
+        max-height: 92dvh !important;
+        border-radius: 20px 20px 0 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow-y: auto !important;
+        overscroll-behavior: contain;
+        padding-bottom: var(--safe-bottom);
+        animation: sheetUp 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Com .modal-body: o corpo rola e cabeçalho/rodapé ficam fixos */
+    .modal-overlay.is-sheet > .modal-content:has(> .modal-body) {
+        overflow: hidden !important;
+    }
+
+    .modal-overlay.is-sheet > .modal-content > .modal-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto !important;
+        overscroll-behavior: contain;
+    }
+
+    .modal-overlay.is-sheet > .modal-content > .modal-header,
+    .modal-overlay.is-sheet > .modal-content > .modal-footer {
+        flex-shrink: 0;
+    }
+
+    .modal-overlay.is-sheet > .modal-content > .modal-footer {
+        padding-bottom: calc(var(--sp-3) + var(--safe-bottom)) !important;
+    }
+
+    .modal-overlay.is-sheet-full > .modal-content {
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        border-radius: 0 !important;
+        padding-top: var(--safe-top);
+    }
+}
+
+@keyframes sheetUp {
+    from { transform: translateY(24px); opacity: 0.6; }
+    to { transform: none; opacity: 1; }
+}

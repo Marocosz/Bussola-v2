@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -22,6 +22,9 @@ import { VerifyEmail } from '../pages/Auth/VerifyEmail';
 import { RegisterSuccess } from '../pages/Auth/RegisterSuccess';
 import { DiscordLink } from '../pages/Auth/DiscordLink';
 import { AutorizarConexao } from '../pages/Auth/AutorizarConexao';
+
+// Bancada de componentes (somente em desenvolvimento; removida do build de produção).
+const UiLab = import.meta.env.DEV ? lazy(() => import('../pages/UiLab').then((m) => ({ default: m.UiLab }))) : null;
 
 function RequireAuth({ children }) {
     const { authenticated, loading } = useAuth();
@@ -77,6 +80,9 @@ export function AppRoutes() {
             <Route path="/estudos/:id" element={<PrivateRoute><LeituraEstudo /></PrivateRoute>} />
             <Route path="/ritmo" element={<PrivateRoute><Ritmo /></PrivateRoute>} />
             <Route path="/cofre" element={<PrivateRoute><Cofre /></PrivateRoute>} />
+            {UiLab && (
+                <Route path="/__ui" element={<PrivateRoute><Suspense fallback={null}><UiLab /></Suspense></PrivateRoute>} />
+            )}
         </Routes>
     );
 }

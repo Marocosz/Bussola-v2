@@ -1,0 +1,186 @@
+/* ===== Sheet (base desktop: diálogo centralizado) ===== */
+.app-sheet-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--sp-4);
+    background: rgba(0, 0, 0, 0.6);
+    z-index: var(--z-sheet);
+}
+
+.app-sheet {
+    background: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    border-radius: 16px;
+    width: min(480px, 100%);
+    max-height: 85dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    color: var(--cor-texto-principal);
+}
+
+.sheet-grab {
+    display: none;
+    width: 38px;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--cor-cinza-botao-hover);
+    margin: var(--sp-2) auto 0;
+    flex-shrink: 0;
+}
+
+.app-sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-3);
+    padding: var(--sp-3) var(--sp-4);
+}
+
+.app-sheet-header h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.app-sheet-close {
+    width: var(--tap-min);
+    height: var(--tap-min);
+    flex-shrink: 0;
+    border: none;
+    border-radius: 50%;
+    background: var(--cor-card-secundario);
+    color: var(--cor-texto-secundario);
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.app-sheet-body {
+    padding: 0 var(--sp-4) var(--sp-4);
+    overflow-y: auto;
+}
+
+.app-sheet-footer {
+    display: flex;
+    gap: var(--sp-2);
+    padding: var(--sp-3) var(--sp-4);
+    border-top: 1px solid var(--cor-borda);
+}
+
+.app-sheet-footer > * {
+    flex: 1;
+    min-height: 48px;
+}
+
+@media (max-width: 768px) {
+    .sheet-grab { display: block; }
+}
+
+/* ===== ActionSheet ===== */
+.action-sheet-head {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    padding: var(--sp-2) 0 var(--sp-3);
+}
+
+.action-sheet-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background: var(--cor-card-secundario);
+    flex-shrink: 0;
+}
+
+.action-sheet-titles {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.action-sheet-titles strong {
+    font-size: 0.95rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.action-sheet-titles span {
+    font-size: 0.8rem;
+    color: var(--cor-texto-secundario);
+}
+
+.action-sheet-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.action-sheet-item {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    min-height: 52px;
+    padding: 0 var(--sp-1);
+    border: none;
+    border-top: 1px solid var(--cor-borda);
+    background: transparent;
+    color: var(--cor-texto-principal);
+    font: inherit;
+    font-size: 0.95rem;
+    text-align: left;
+    cursor: pointer;
+}
+
+.action-sheet-item i {
+    width: 24px;
+    text-align: center;
+    color: var(--cor-texto-secundario);
+}
+
+.action-sheet-item.is-primary {
+    justify-content: center;
+    min-height: 48px;
+    margin-bottom: var(--sp-2);
+    border: none;
+    border-radius: 14px;
+    background: var(--cor-azul-primario);
+    color: #fff;
+    font-weight: 600;
+}
+
+.action-sheet-item.is-primary i { color: #fff; }
+
+.action-sheet-item.is-danger,
+.action-sheet-item.is-danger i {
+    color: var(--cor-vermelho-delete);
+}
+
+/* ===== FAB ===== */
+.app-fab {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .app-fab {
+        position: fixed;
+        right: var(--sp-4);
+        bottom: calc(var(--bottom-nav-h) + var(--safe-bottom) + var(--sp-4));
+        z-index: var(--z-fab);
+        width: 56px;
+        height: 56px;
+        border: none;
+        border-radius: 18px;
+        display: grid;
+        place-items: center;
+        background: var(--cor-azul-primario);
+        color: #fff;
+        font-size: 1.35rem;
+        box-shadow: 0 8px 20px rgba(var(--cor-tema-rgb), 0.45);
+        cursor: pointer;
+    }
+}

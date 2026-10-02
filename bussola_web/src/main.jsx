@@ -5,6 +5,7 @@ import './assets/styles/tokens.css'
 import App from './App.jsx'
 import { ErrorBoundary } from './components/ErrorBoundary.tsx'
 
+import './components/mobile/mobile.css'
 import './assets/styles/components.css'
 import './assets/styles/global.css' 
 import 'weather-icons/css/weather-icons.css';

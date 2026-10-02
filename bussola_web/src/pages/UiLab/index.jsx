@@ -1,0 +1,74 @@
+import { useState } from 'react';
+import { BaseModal } from '../../components/BaseModal';
+import { Sheet } from '../../components/mobile/Sheet';
+import { ActionSheet } from '../../components/mobile/ActionSheet';
+import { Fab } from '../../components/mobile/Fab';
+import { useConfirm } from '../../context/ConfirmDialogContext';
+
+/** Bancada DEV-only (/__ui) para testar os primitivos mobile isoladamente. */
+export function UiLab() {
+    const [modal, setModal] = useState(false);
+    const [full, setFull] = useState(false);
+    const [actions, setActions] = useState(false);
+    const [ultima, setUltima] = useState('');
+    const confirm = useConfirm();
+
+    return (
+        <div className="container" style={{ paddingTop: 24, paddingBottom: 1200 }}>
+            <h2>UI Lab</h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                <button className="btn-primary" onClick={() => setModal(true)}>Abrir modal longo</button>
+                <button className="btn-primary" onClick={() => setFull(true)}>Abrir sheet cheio</button>
+                <button className="btn-primary" onClick={() => setActions(true)}>Abrir ações</button>
+            </div>
+            <p data-testid="ultima-acao">{ultima}</p>
+
+            {modal && (
+                <BaseModal onClose={() => setModal(false)} className="modal">
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>Modal longo</h3>
+                            <button type="button" className="app-sheet-close" aria-label="Fechar" onClick={() => setModal(false)}>
+                                <i className="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            {Array.from({ length: 14 }, (_, i) => (
+                                <div className="form-group" key={i}>
+                                    <label>Campo {i + 1}</label>
+                                    <input className="form-input" />
+                                </div>
+                            ))}
+                            <p>Fim do conteúdo</p>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn-secondary" onClick={() => confirm({ title: 'Confirmar?', description: 'Teste aninhado' })}>
+                                Abrir confirmação
+                            </button>
+                            <button className="btn-primary">Salvar</button>
+                        </div>
+                    </div>
+                </BaseModal>
+            )}
+
+            <Sheet open={full} onClose={() => setFull(false)} full title="Sheet cheio">
+                <p>Conteúdo em tela cheia.</p>
+            </Sheet>
+
+            <ActionSheet
+                open={actions}
+                onClose={() => setActions(false)}
+                title="Aluguel · parcela 10/12"
+                subtitle="05/10 · Casa · pendente"
+                icon="fa-solid fa-house"
+                actions={[
+                    { key: 'efetivar', icon: 'fa-solid fa-check', label: 'Efetivar pagamento', variant: 'primary', onClick: () => setUltima('efetivar') },
+                    { key: 'editar', icon: 'fa-solid fa-pen-to-square', label: 'Editar', onClick: () => setUltima('editar') },
+                    { key: 'excluir', icon: 'fa-solid fa-trash-can', label: 'Excluir', variant: 'danger', onClick: () => setUltima('excluir') },
+                ]}
+            />
+
+            <Fab label="Novo item" onClick={() => setUltima('fab')} />
+        </div>
+    );
+}

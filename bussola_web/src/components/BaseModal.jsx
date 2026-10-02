@@ -1,14 +1,19 @@
 import { useEffect, useRef, useCallback } from 'react';
+import { useIsMobile } from '../hooks/useIsMobile';
+import { lockScroll, unlockScroll } from '../utils/scrollLock';
 
-export function BaseModal({ children, onClose, className = '' }) {
+/**
+ * Overlay base de todos os modais. No mobile (≤768) vira bottom sheet:
+ * `sheet="auto"` (padrão) ancora no rodapé; `sheet="full"` ocupa a tela;
+ * `sheet={false}` mantém o modal centralizado também no celular.
+ */
+export function BaseModal({ children, onClose, className = '', sheet = 'auto' }) {
     const mouseDownTarget = useRef(null);
+    const isMobile = useIsMobile();
 
-    // Trava o scroll do body ao abrir
     useEffect(() => {
-        document.body.style.overflow = 'hidden';
-        return () => {
-            document.body.style.overflow = 'unset';
-        };
+        lockScroll();
+        return unlockScroll;
     }, []);
 
     // Fecha com ESC
@@ -28,9 +33,11 @@ export function BaseModal({ children, onClose, className = '' }) {
         mouseDownTarget.current = e.target;
     }, []);
 
+    const sheetClass = isMobile && sheet ? `is-sheet${sheet === 'full' ? ' is-sheet-full' : ''}` : '';
+
     return (
         <div
-            className={`modal-overlay ${className}`}
+            className={`modal-overlay ${className} ${sheetClass}`}
             onMouseDown={handleMouseDown}
             onClick={handleOverlayClick}
             style={{ display: 'flex' }}
