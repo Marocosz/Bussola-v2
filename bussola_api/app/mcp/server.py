@@ -19,9 +19,9 @@ from mcp.server.transport_security import TransportSecuritySettings
 from app.core.config import settings
 from app.mcp.auth import BussolaTokenVerifier
 from app.mcp.context import ESCOPO_LEITURA
-from app.mcp.tools import agenda, financas, habitos, metas, perfil, registros
+from app.mcp.tools import agenda, financas, habitos, metas, perfil, registros, ritmo
 
-MODULOS = (perfil, financas, metas, agenda, registros, habitos)
+MODULOS = (perfil, financas, metas, agenda, registros, habitos, ritmo)
 
 _base = settings.PUBLIC_BASE_URL.rstrip("/")
 
