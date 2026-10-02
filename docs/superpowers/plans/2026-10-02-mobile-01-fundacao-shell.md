@@ -18,7 +18,7 @@
 
 - **Não redesenhar cards existentes** (nota, compromisso, meta, categoria, plano/treino/refeição, widgets do Panorama). Só espaçamento, quebra, toque e ações visíveis.
 - **Ícones:** usar exatamente as classes Font Awesome já usadas no código. Navegação: `fa-chart-pie` Panorama, `fa-wallet` Provisões, `fa-calendar-days` Roteiro, `fa-book` Registros, `fa-dumbbell` Ritmo, `fa-vault` Cofre, `fa-house` Início; IA = `fa-robot`; Mais = `fa-ellipsis`.
-- **Rótulos:** Panorama, Provisões, Roteiro, Registros, Mais, Ritmo, Cofre, Início.
+- **Rótulos:** Panorama, Provisões, Roteiro, Registros, Mais, Ritmo, Cofre, Início, Estudos (`fa-graduation-cap`; módulo vindo de `feat/estudos`, mesclada nesta branch em `dd7c546`). Estudos fica no "Mais".
 - **Breakpoints (valores literais nos `@media`):** `≤480`, `≤768` (mobile), `769–1024` (tablet), `≥1025` (desktop).
 - **Espaçamento:** `--sp-1:4px --sp-2:8px --sp-3:12px --sp-4:16px --sp-5:24px --sp-6:32px`. Usar 8 dentro de card, 12 entre cards, 24 entre seções e gutter mobile de 16px.
 - **Toque:** alvo ≥ 44×44 (`pointer: coarse`); inputs, selects e textareas com 16px no mobile.
@@ -271,7 +271,7 @@ import { gotoApp } from './helpers.mjs';
 
 const ROUTES = [
   ['home', '/home'], ['panorama', '/panorama'], ['financas', '/financas'],
-  ['agenda', '/agenda'], ['registros', '/registros'], ['ritmo', '/ritmo'], ['cofre', '/cofre'],
+  ['agenda', '/agenda'], ['registros', '/registros'], ['estudos', '/estudos'], ['ritmo', '/ritmo'], ['cofre', '/cofre'],
 ];
 
 for (const [name, path] of ROUTES) {
@@ -306,12 +306,12 @@ for (const [name, path, open] of MODALS) {
 - [ ] **Step 8: Gerar as screenshots base (antes de qualquer mudança de código)**
 
 Run (em `bussola_web/`, PowerShell): `$env:BUSSOLA_PY='<caminho do python do venv do bussola_api>'; npm run e2e:update -- --project=desktop`
-Expected: 12 testes passam e são criados os arquivos `e2e/desktop-visual.desktop.spec.mjs-snapshots/*.png`. Abra 2 ou 3 PNGs e confirme que mostram a página logada (não o login nem o "Algo deu errado"). Se um seletor de modal não encontrar o botão, ajuste o seletor (não o app) até o screenshot mostrar o modal aberto.
+Expected: 13 testes passam e são criados os arquivos `e2e/desktop-visual.desktop.spec.mjs-snapshots/*.png`. Abra 2 ou 3 PNGs e confirme que mostram a página logada (não o login nem o "Algo deu errado"). Se um seletor de modal não encontrar o botão, ajuste o seletor (não o app) até o screenshot mostrar o modal aberto.
 
 - [ ] **Step 9: Confirmar que a base é estável**
 
 Run: `npm run e2e -- --project=desktop`
-Expected: 12 passed. Se algum teste falhar por diferença entre duas execuções sem mudança de código (algo dinâmico), adicione `mask: [page.locator('<seletor do elemento dinâmico>')]` naquele `toHaveScreenshot`, rode `e2e:update` de novo e repita até ficar estável.
+Expected: 13 passed. Se algum teste falhar por diferença entre duas execuções sem mudança de código (algo dinâmico), adicione `mask: [page.locator('<seletor do elemento dinâmico>')]` naquele `toHaveScreenshot`, rode `e2e:update` de novo e repita até ficar estável.
 
 - [ ] **Step 10: Commit**
 
@@ -426,7 +426,7 @@ Expected: nenhuma ocorrência.
 - [ ] **Step 6: Verificar**
 
 Run: `npm run build` → Expected: build OK.
-Run: `npm run e2e -- --project=desktop` → Expected: 12 passed. Se um screenshot mudou, a regra apagada estava viva: restaure-a (`git diff` mostra o bloco) e rode de novo. Exceção esperada: a troca de `--cor-texto-primario` pode mudar a cor do título do `page-header` (a variável inexistente fazia o título herdar a cor). Se só isso mudou, confira no PNG de diff (`test-results/`) que a diferença é a cor do h1 e regenere a base com `npm run e2e:update -- --project=desktop`.
+Run: `npm run e2e -- --project=desktop` → Expected: 13 passed. Se um screenshot mudou, a regra apagada estava viva: restaure-a (`git diff` mostra o bloco) e rode de novo. Exceção esperada: a troca de `--cor-texto-primario` pode mudar a cor do título do `page-header` (a variável inexistente fazia o título herdar a cor). Se só isso mudou, confira no PNG de diff (`test-results/`) que a diferença é a cor do h1 e regenere a base com `npm run e2e:update -- --project=desktop`.
 Run: `npm run lint 2>&1 | Select-String "error" | Measure-Object` antes e depois → Expected: contagem igual ou menor.
 
 - [ ] **Step 7: Commit**
@@ -483,7 +483,7 @@ Em `src/pages/Auth/styles.css`, renomear `.auth-container` → `.auth-simple-con
 - [ ] **Step 5: Verificar**
 
 Run: `npm run build` → OK.
-Run: `npm run e2e -- --project=desktop` → Expected: 12 passed, inclusive os 5 `modal-*`. Se um modal mudou, compare o diff: alguma regra de página sem escopo dependia da ordem antiga. Mova essa regra específica para `components.css` (ou dê a ela o escopo da página) até o screenshot voltar a ser igual.
+Run: `npm run e2e -- --project=desktop` → Expected: 13 passed, inclusive os 5 `modal-*`. Se um modal mudou, compare o diff: alguma regra de página sem escopo dependia da ordem antiga. Mova essa regra específica para `components.css` (ou dê a ela o escopo da página) até o screenshot voltar a ser igual.
 Abra `http://127.0.0.1:5173/forgot-password` no navegador desktop e confirme visualmente que não mudou. A página não tem screenshot base; compare com `main` se tiver dúvida.
 
 - [ ] **Step 6: Commit**
@@ -643,7 +643,7 @@ Em `src/components/Tooltip.jsx`, no início do `useEffect` de registro de evento
 - [ ] **Step 7: Rodar os testes**
 
 Run: `npm run e2e -- --project=mobile e2e/foundation.mobile.spec.mjs` → Expected: 3 passed.
-Run: `npm run e2e -- --project=desktop` → Expected: 12 passed.
+Run: `npm run e2e -- --project=desktop` → Expected: 13 passed.
 
 - [ ] **Step 8: Commit**
 
@@ -1328,7 +1328,7 @@ const UiLab = import.meta.env.DEV ? lazy(() => import('../pages/UiLab').then((m)
 - [ ] **Step 9: Rodar os testes**
 
 Run: `npm run e2e -- --project=mobile e2e/ui-lab.mobile.spec.mjs` → Expected: 7 passed.
-Run: `npm run e2e -- --project=desktop` → Expected: 12 passed (no desktop o BaseModal não ganha classe nova).
+Run: `npm run e2e -- --project=desktop` → Expected: 13 passed (no desktop o BaseModal não ganha classe nova).
 Run: `npm run build`, depois `git grep -n "UiLab" -- bussola_web/dist` → Expected: o build passa e não há nenhuma ocorrência no dist (a rota não vai para produção).
 
 - [ ] **Step 10: Commit**
@@ -1610,7 +1610,7 @@ Em `src/assets/styles/global.css`, logo após as regras `.drf-*`:
 - [ ] **Step 5: Rodar os testes**
 
 Run: `npm run e2e -- --project=mobile e2e/pickers.mobile.spec.mjs e2e/ui-lab.mobile.spec.mjs` → Expected: 11 passed.
-Run: `npm run e2e -- --project=desktop` → Expected: 12 passed.
+Run: `npm run e2e -- --project=desktop` → Expected: 13 passed.
 Run: `npm run lint` → Expected: sem novos erros em `Pickers/`, `CustomSelect/` e `DateRangeFilter.jsx`.
 
 - [ ] **Step 6: Commit**
@@ -1672,7 +1672,7 @@ test('"Mais" abre o sheet com módulos e conta; Ritmo ativa o "Mais"', async ({ 
   await gotoApp(page, '/panorama');
   await page.getByRole('button', { name: 'Mais' }).click();
   const sheet = page.locator('.modal-overlay.is-sheet');
-  for (const r of ['Ritmo', 'Cofre', 'Início', 'Minha Conta', 'Sair']) await expect(sheet.getByText(r, { exact: true })).toBeVisible();
+  for (const r of ['Ritmo', 'Cofre', 'Início', 'Estudos', 'Minha Conta', 'Sair']) await expect(sheet.getByText(r, { exact: true })).toBeVisible();
   await sheet.getByText('Ritmo', { exact: true }).click();
   await expect(page).toHaveURL(/\/ritmo$/);
   await expect(sheet).toHaveCount(0);
@@ -1759,6 +1759,7 @@ export const NAV_ITEMS = [
     { to: '/financas', icone: 'fa-wallet', rotulo: 'Provisões', bottom: true, aiContext: 'financas' },
     { to: '/agenda', icone: 'fa-calendar-days', rotulo: 'Roteiro', bottom: true, aiContext: 'roteiro' },
     { to: '/registros', icone: 'fa-book', rotulo: 'Registros', bottom: true, aiContext: 'registros' },
+    { to: '/estudos', icone: 'fa-graduation-cap', rotulo: 'Estudos' },
     { to: '/ritmo', icone: 'fa-dumbbell', rotulo: 'Ritmo', aiContext: 'ritmo' },
     { to: '/cofre', icone: 'fa-vault', rotulo: 'Cofre' },
 ];
@@ -2194,7 +2195,7 @@ Ao final de `src/components/mobile/mobile.css`:
 /* ===== Sheet "Mais" ===== */
 .more-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr); /* Início, Estudos, Ritmo, Cofre */
     gap: var(--sp-3);
     margin-bottom: var(--sp-4);
 }
@@ -2261,7 +2262,7 @@ Ao final de `src/components/mobile/mobile.css`:
 
 Run: `npm run e2e -- --project=mobile` → Expected: todos passam (shell + foundation + ui-lab + pickers).
 Run: `npm run e2e -- --project=tablet` → Expected: 1 passed.
-Run: `npm run e2e -- --project=desktop` → Expected: 12 passed (no desktop a sidebar é a mesma).
+Run: `npm run e2e -- --project=desktop` → Expected: 13 passed (no desktop a sidebar é a mesma).
 Tire screenshots manuais do shell (`npx playwright test --project=mobile e2e/shell.mobile.spec.mjs --headed` ou um script) em `/financas` e no "Mais" aberto, e confira o espaçamento contra os mockups aprovados (tela 1 do companion): barra clássica, pílula no ativo, topbar com título grande.
 
 - [ ] **Step 8: Commit**
@@ -2487,7 +2488,7 @@ Em `src/components/Navbar/index.jsx`:
 - [ ] **Step 6: Rodar os testes**
 
 Run: `npm run e2e -- --project=mobile` → Expected: todos passam.
-Run: `npm run e2e -- --project=desktop` → Expected: 12 passed. O robô flutuante do desktop continua igual nos screenshots de Financas, Agenda, Registros e Ritmo.
+Run: `npm run e2e -- --project=desktop` → Expected: 13 passed. O robô flutuante do desktop continua igual nos screenshots de Financas, Agenda, Registros e Ritmo.
 Run: `npm run lint` → Expected: sem novos erros em `AiAssistant/` e `Navbar/`.
 
 - [ ] **Step 7: Commit**
@@ -2526,7 +2527,7 @@ Requer o venv do `bussola_api` (sobe a API com um banco demo descartável em `bu
 
 - [ ] **Step 2: Suíte completa + build + lint**
 
-Run: `npm run e2e` → Expected: tudo passa (desktop 12, mobile ≥ 25, tablet 1).
+Run: `npm run e2e` → Expected: tudo passa (desktop 13, mobile ≥ 25, tablet 1).
 Run: `npm run build` → Expected: OK.
 Run: `npm run lint 2>&1 | Select-String " error " | Measure-Object` → Expected: contagem ≤ à do início do plano (registre os dois números no commit).
 
@@ -2550,7 +2551,7 @@ git commit -m "docs(e2e): como rodar a suite mobile/desktop"
 
 ## Próximos planos (escritos após este estar concluído)
 
-`mobile-02-provisoes` (inclui Metas, Categorias, Caixa), `mobile-03-registros`, `mobile-04-roteiro`, `mobile-05-panorama`, `mobile-06-ritmo`, `mobile-07-cofre`, `mobile-08-auth-inicio-pwa`. Cada um segue a seção 5 da spec e acrescenta, para as suas rotas, o teste `overflowOffenders(page)` vazio em 360/390/430/768 mais as asserções de layout da página.
+`mobile-02-provisoes` (inclui Metas, Categorias, Caixa), `mobile-03-registros`, `mobile-04-roteiro`, `mobile-05-panorama`, `mobile-06-ritmo`, `mobile-07-cofre`, `mobile-08-estudos`, `mobile-09-auth-inicio-pwa`. Cada um segue a seção 5 da spec e acrescenta, para as suas rotas, o teste `overflowOffenders(page)` vazio em 360/390/430/768 mais as asserções de layout da página.
 
 Ficam para os planos de página, de propósito:
 - os vazamentos restantes de CSS do Agenda (`.main-container` com `padding !important` e `.btn-action-icon` com `!important`), que mexem no layout de várias páginas e entram no `mobile-04-roteiro` com regressão visual;

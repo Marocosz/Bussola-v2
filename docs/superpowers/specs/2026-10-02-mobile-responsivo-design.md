@@ -103,7 +103,7 @@ A auditoria juntou 5 revisões de código e screenshots reais em 390px, com o ba
 | `useIsMobile()` (`src/hooks/useIsMobile.js`) | `matchMedia('(max-width: 768px)')` reativo | retorna `boolean` |
 | `<MobileTopbar title actions?>` | topbar fina e sticky: título grande, ações da página, `fa-robot` (abre a IA), avatar (abre a conta) | slot `actions` para ícones extras (ex.: `fa-calendar-days` no Roteiro) |
 | `<BottomNav>` | barra clássica fixa no rodapé (ícone + rótulo, pílula no ativo) com Panorama, Provisões, Roteiro, Registros e Mais; respeita `--safe-bottom` | sem props; lê a rota. Em Ritmo, Cofre e Início, o item "Mais" fica ativo |
-| `<MoreSheet>` | sheet do "Mais": grade com Ritmo, Cofre e Início, mais a lista Perfil e conta, Tema e cor, Conexões (MCP) e Sair | aberto pela BottomNav |
+| `<MoreSheet>` | sheet do "Mais": grade com Início, Estudos, Ritmo e Cofre, mais a lista Minha Conta (perfil, cor, conexões MCP), Tema, Novo Usuário (admin) e Sair | aberto pela BottomNav |
 | `<Sheet open onClose title? footer? fullScreen?>` | bottom sheet com alça, `max-height: 92dvh`, corpo rolável, rodapé fixo com safe-area, travamento de scroll que funciona no iOS (`position: fixed` no body + restaurar o scroll) e suporte a sheets aninhados | `fullScreen` para editores e builders |
 | `<ActionSheet title subtitle? actions>` | lista de ações (uma primária em destaque e as destrutivas em vermelho) | `actions: [{icon, label, onClick, variant}]` |
 | `<Fab icon onClick label>` | botão "+" da página no canto inferior direito, acima da BottomNav | um por página |
@@ -242,6 +242,10 @@ Gutter de 16px, a escala de espaçamento da seção 4.1, `<MobileTopbar>` no top
    - o valor num bloco monoespaçado grande, com os botões Revelar e Copiar de 48px;
    - o clipboard é limpo **ao fechar**, além do timer, e o resultado da escrita é verificado;
    - o toast só afirma "limpo" quando a escrita deu certo, e os erros são tratados.
+
+### 5.6b Estudos (módulo vindo de `feat/estudos`, mesclado nesta branch)
+
+Estudos fica no "Mais" (`fa-graduation-cap`). As rotas são `/estudos` (biblioteca), `/estudos/:id` (leitura) e `/estudos/kit`. O layout mobile segue as mesmas regras (16px de gutter, cards atuais em 1 coluna, ações visíveis, sheets) e é detalhado no plano `mobile-08-estudos`, depois de ler a página real.
 
 ### 5.7 Login, Registro, Auth e Início
 
