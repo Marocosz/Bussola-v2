@@ -667,4 +667,39 @@ class RegistrosService:
         return registros
 
 
+    # --- Consultas usadas pelo MCP ---
+
+    def listar_anotacoes(self, db: Session, user_id: int, grupo_id: int = None, busca: str = None, limite: int = 50):
+        query = db.query(Anotacao).filter(Anotacao.user_id == user_id)
+        if grupo_id:
+            query = query.filter(Anotacao.grupo_id == grupo_id)
+        if busca:
+            termo = f"%{busca}%"
+            query = query.filter(Anotacao.titulo.ilike(termo) | Anotacao.conteudo.ilike(termo))
+        return query.order_by(Anotacao.fixado.desc(), Anotacao.data_criacao.desc()).limit(limite).all()
+
+    def get_anotacao(self, db: Session, nota_id: int, user_id: int):
+        return db.query(Anotacao).filter(Anotacao.id == nota_id, Anotacao.user_id == user_id).first()
+
+    def listar_tarefas(self, db: Session, user_id: int, status: str = None, limite: int = 50):
+        query = db.query(Tarefa).filter(Tarefa.user_id == user_id)
+        if status:
+            query = query.filter(Tarefa.status == status)
+        return query.order_by(Tarefa.status, Tarefa.ordem, Tarefa.id).limit(limite).all()
+
+    def definir_subtarefa(self, db: Session, sub_id: int, user_id: int, concluido: bool):
+        """Define (não alterna) a conclusão; reaproveita o toggle, que propaga aos filhos."""
+        sub = (
+            db.query(Subtarefa)
+            .join(Tarefa, Subtarefa.tarefa_id == Tarefa.id)
+            .filter(Subtarefa.id == sub_id, Tarefa.user_id == user_id)
+            .first()
+        )
+        if not sub:
+            return None
+        if sub.concluido != concluido:
+            return self.toggle_subtarefa(db, sub_id, user_id)
+        return sub
+
+
 registros_service = RegistrosService()
