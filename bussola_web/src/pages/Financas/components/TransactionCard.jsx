@@ -2,6 +2,7 @@ import React from 'react';
 import { toggleStatusTransacao, deleteTransacao, stopRecorrencia } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 import { useConfirm } from '../../../context/ConfirmDialogContext';
+import { useAcoesDaLinha } from './RowActionsPopover';
 
 // Forma de pagamento → rótulo e ícone para o badge no card.
 const PAG_LABEL = { pix: 'Pix', credito: 'Crédito', debito: 'Débito', transferencia: 'Transferência' };
@@ -16,6 +17,7 @@ export function TransactionCard({ transacao, onUpdate, onEdit, onEditCofre, onTo
     const { addToast } = useToast();
     const confirm = useConfirm();
     const [isDeleting, setIsDeleting] = React.useState(false);
+    const { linhaProps, renderAcoes } = useAcoesDaLinha();
 
     const isEncerrada = transacao.recorrencia_encerrada === true;
     const tipo = transacao.tipo_recorrencia || 'pontual';
@@ -109,7 +111,7 @@ export function TransactionCard({ transacao, onUpdate, onEdit, onEditCofre, onTo
         const fmtC = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
         return (
             <div className={`transacao-row-wrapper ${isExpanded && cofreExpandable ? 'row-wrapper-expanded' : ''}`}>
-                <div className={`transacao-row transacao-row-cofre ${isArquivada ? 'row-encerrado' : ''}`}>
+                <div {...linhaProps} className={`transacao-row transacao-row-cofre ${isArquivada ? 'row-encerrado' : ''}`}>
                     <div className="row-cells">
                         <div className="row-cat-icon">
                             <i className={transacao.categoria?.icone || 'fa-solid fa-piggy-bank'}
@@ -136,8 +138,8 @@ export function TransactionCard({ transacao, onUpdate, onEdit, onEditCofre, onTo
                             <span className={`row-valor row-valor-cofre ${isArquivada ? 'row-valor-encerrado' : ''}`}>{isAporte ? '+' : '−'} {valorStr}</span>
                         </div>
                     </div>
-                    <div className="row-actions">
-                        <div className="row-actions-inner">
+                    {renderAcoes(
+                        <>
                             {!isArquivada && (
                                 <button
                                     onClick={() => onToggleCofre && onToggleCofre(transacao)}
@@ -174,8 +176,8 @@ export function TransactionCard({ transacao, onUpdate, onEdit, onEditCofre, onTo
                                     <i className={`fa-solid fa-chevron-${isExpanded ? 'up' : 'down'}`}></i>
                                 </button>
                             )}
-                        </div>
-                    </div>
+                        </>
+                    )}
                 </div>
 
                 {isExpanded && cofreExpandable && (
@@ -202,7 +204,7 @@ export function TransactionCard({ transacao, onUpdate, onEdit, onEditCofre, onTo
 
     return (
         <div className={`transacao-row-wrapper ${isDeleting ? 'row-wrapper-deleting' : ''} ${isExpanded && isExpandableGroup ? 'row-wrapper-expanded' : ''}`}>
-            <div className={`transacao-row ${transacao.status.toLowerCase()} ${isEncerrada ? 'row-encerrado' : ''}`}>
+            <div {...linhaProps} className={`transacao-row ${transacao.status.toLowerCase()} ${isEncerrada ? 'row-encerrado' : ''}`}>
 
                 {/* Células principais */}
                 <div className="row-cells">
@@ -269,9 +271,9 @@ export function TransactionCard({ transacao, onUpdate, onEdit, onEditCofre, onTo
                     </div>
                 </div>
 
-                {/* Ações — reveladas pela direita no hover */}
-                <div className="row-actions">
-                  <div className="row-actions-inner">
+                {/* Ações — balão flutuante no hover (desktop) ou inline (celular) */}
+                {renderAcoes(
+                  <>
                     {tipo !== 'pontual' && !isEncerrada && (
                         <button
                             onClick={handleToggleStatus}
@@ -297,8 +299,8 @@ export function TransactionCard({ transacao, onUpdate, onEdit, onEditCofre, onTo
                             <i className={`fa-solid fa-chevron-${isExpanded ? 'up' : 'down'}`}></i>
                         </button>
                     )}
-                  </div>
-                </div>
+                  </>
+                )}
             </div>
 
             {/* Sub-linhas expandidas (parcelas ou histórico recorrente) */}
