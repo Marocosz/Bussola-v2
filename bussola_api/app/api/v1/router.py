@@ -40,6 +40,7 @@ from app.api.v1.endpoints import (
     bot_auth,
     discord_link,
     oauth,
+    mcp_tokens,
 )
 
 # Instância principal que acumulará todas as rotas
@@ -81,3 +82,6 @@ api_router.include_router(discord_link.router, prefix="/discord/link", tags=["di
 
 # OAuth do MCP (consent/clientes chamados pelo SPA com JWT; o restante fica na raiz via main.py)
 api_router.include_router(oauth.router, prefix="/oauth", tags=["OAuth MCP"])
+
+# Conexões MCP (listar, criar PAT, revogar)
+api_router.include_router(mcp_tokens.router, prefix="/mcp-tokens", tags=["Conexões MCP"])
