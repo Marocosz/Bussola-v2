@@ -119,3 +119,24 @@ def test_isolamento(mcp_call, outro_user):
         mcp_call("editar_blocos", usuario=outro_user, material="Privado", operacoes=[{"op": "remover", "id": "b1"}])
     assert mcp_call("listar_materiais", usuario=outro_user)["itens"] == []
     assert mcp_call("listar_temas_estudo", usuario=outro_user)["itens"] == []
+
+
+def test_nomes_nao_latinos_resolvem_o_registro_certo(mcp_call):
+    ru = mcp_call("salvar_material", tipo="aula", titulo="Русский", blocos=[texto("ru")])
+    jp = mcp_call("salvar_material", tipo="aula", titulo="日本語", blocos=[texto("jp")])
+    assert mcp_call("marcar_estudado", material="Русский")["id"] == ru["id"]
+    e = mcp_call("editar_blocos", material="日本語", operacoes=[
+        {"op": "inserir", "blocos": [{"tipo": "alerta", "nivel": "dica", "texto": "x"}]}])
+    assert e["id"] == jp["id"]
+
+
+def test_nome_nao_latino_inexistente_nao_acerta_o_unico(mcp_call):
+    mcp_call("salvar_material", tipo="aula", titulo="日本語", blocos=[texto("jp")])
+    with pytest.raises(ToolError, match="não foi encontrado"):
+        mcp_call("marcar_estudado", material="Русский")
+
+
+def test_nome_vazio_vira_toolerror(mcp_call):
+    mcp_call("salvar_material", tipo="aula", titulo="Algo", blocos=[texto("x")])
+    with pytest.raises(ToolError, match="Informe um nome ou id"):
+        mcp_call("marcar_estudado", material="   ")

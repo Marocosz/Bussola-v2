@@ -186,7 +186,8 @@ def marcar_estudado(material: str, estudado: bool = True) -> dict[str, Any]:
     Pode repetir sem efeito colateral: a data da primeira marcação é mantida."""
     with usuario_e_db(ESCOPO_ESCRITA) as (db, user):
         alvo = _resolver_material(db, user.id, material)
-        atualizado = estudos_service.marcar_estudado(db, alvo.id, user.id, estudado)
+        atualizado = exigir(estudos_service.marcar_estudado(db, alvo.id, user.id, estudado),
+                            f"Material {material} não encontrado.")
         return {
             "id": atualizado.id,
             "estudado": atualizado.estudado,
