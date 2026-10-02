@@ -226,7 +226,7 @@ textarea.form-input {
     .modal-overlay.is-sheet-full > .modal-content {
         height: var(--vvh, 100dvh) !important;
         max-height: var(--vvh, 100dvh) !important;
-        margin-bottom: 0 !important;
+        margin-bottom: var(--kb-inset, 0px) !important;
         border-radius: 0 !important;
         padding-top: var(--safe-top);
     }

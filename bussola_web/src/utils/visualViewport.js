@@ -7,6 +7,12 @@ export function initVisualViewportVars() {
     let raf = 0;
     const apply = () => {
         raf = 0;
+        // Pinch-zoom também encolhe o visualViewport: não é teclado.
+        if (Math.abs((vv.scale || 1) - 1) > 0.01) {
+            root.style.setProperty('--vvh', `${window.innerHeight}px`);
+            root.style.setProperty('--kb-inset', '0px');
+            return;
+        }
         const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
         root.style.setProperty('--vvh', `${vv.height}px`);
         root.style.setProperty('--kb-inset', `${inset}px`);
