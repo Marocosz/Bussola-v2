@@ -25,6 +25,7 @@ def test_treino_criar_ativar_editar_excluir(mcp_call):
     dias[0]["nome"] = "Treino A (peito)"
     editado = mcp_call("salvar_treino", id=plano["id"], nome="ABC", dias=dias)
     assert editado["dias"][0]["nome"] == "Treino A (peito)"
+    assert editado["ativo"] is True  # omitir ativo na edição mantém o estado
     assert len(mcp_call("listar_treinos")["itens"]) == 1
     assert mcp_call("excluir_treino", id=plano["id"]) == {"ok": True}
     with pytest.raises(ToolError, match="não encontrado"):
@@ -34,6 +35,8 @@ def test_treino_criar_ativar_editar_excluir(mcp_call):
 def test_dieta_e_alimentos(mcp_call):
     dieta = mcp_call("salvar_dieta", nome="Cutting", refeicoes=REFEICOES, ativo=True)
     assert dieta["calorias_calculadas"] == 155 and dieta["ativo"] is True
+    editada = mcp_call("salvar_dieta", id=dieta["id"], nome="Cutting 2", refeicoes=REFEICOES)
+    assert editada["ativo"] is True and editada["nome"] == "Cutting 2"
     assert len(mcp_call("listar_dietas")["itens"]) == 1
     alimentos = mcp_call("buscar_alimento", q="arroz")["itens"]
     assert alimentos and {"nome", "calorias_100g"} <= alimentos[0].keys()

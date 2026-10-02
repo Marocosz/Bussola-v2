@@ -65,17 +65,22 @@ def listar_treinos() -> dict[str, Any]:
         return {"itens": [_plano(p) for p in RitmoService.get_planos(db, user.id)]}
 
 
-def salvar_treino(nome: str, dias: list[DiaTreinoCreate], id: Optional[int] = None, ativo: bool = False) -> dict[str, Any]:
+def salvar_treino(nome: str, dias: list[DiaTreinoCreate], id: Optional[int] = None, ativo: Optional[bool] = None) -> dict[str, Any]:
     """Cria (sem id) ou substitui (com id) um plano de treino COMPLETO. Para editar, pegue o plano em
     listar_treinos e reenvie com os ids de dias/exercícios; item sem id é criado, item omitido é removido.
-    ativo=True torna este o único plano ativo."""
+    ativo=True torna este o único ativo; omitido na edição mantém o estado atual."""
     with usuario_e_db(ESCOPO_ESCRITA) as (db, user):
-        dados = PlanoTreinoCreate(nome=nome, ativo=ativo, dias=dias)
+        atual = ativo
+        if id is not None and ativo is None:
+            existente = exigir(next((p for p in RitmoService.get_planos(db, user.id) if p.id == id), None),
+                               f"Plano {id} não encontrado.")
+            atual = existente.ativo
+        dados = PlanoTreinoCreate(nome=nome, ativo=bool(atual), dias=dias)
         if id is None:
             plano = RitmoService.create_plano_completo(db, user.id, dados)
         else:
             plano = exigir(RitmoService.update_plano_completo(db, user.id, id, dados), f"Plano {id} não encontrado.")
-        if ativo:
+        if ativo is True:
             plano = RitmoService.toggle_plano_ativo(db, user.id, plano.id)
         return _plano(plano)
 
@@ -93,17 +98,22 @@ def listar_dietas() -> dict[str, Any]:
         return {"itens": [_dieta(d) for d in RitmoService.get_dietas(db, user.id)]}
 
 
-def salvar_dieta(nome: str, refeicoes: list[RefeicaoCreate], id: Optional[int] = None, ativo: bool = False) -> dict[str, Any]:
+def salvar_dieta(nome: str, refeicoes: list[RefeicaoCreate], id: Optional[int] = None, ativo: Optional[bool] = None) -> dict[str, Any]:
     """Cria (sem id) ou substitui (com id) uma dieta COMPLETA. Cada alimento leva os macros já calculados
     para a quantidade (use buscar_alimento para os valores por 100g). Edição funciona como em salvar_treino.
-    ativo=True torna esta a única dieta ativa."""
+    ativo=True torna esta a única ativa; omitido na edição mantém o estado atual."""
     with usuario_e_db(ESCOPO_ESCRITA) as (db, user):
-        dados = DietaConfigCreate(nome=nome, ativo=ativo, refeicoes=refeicoes)
+        atual = ativo
+        if id is not None and ativo is None:
+            existente = exigir(next((d for d in RitmoService.get_dietas(db, user.id) if d.id == id), None),
+                               f"Dieta {id} não encontrada.")
+            atual = existente.ativo
+        dados = DietaConfigCreate(nome=nome, ativo=bool(atual), refeicoes=refeicoes)
         if id is None:
             dieta = RitmoService.create_dieta_completa(db, user.id, dados)
         else:
             dieta = exigir(RitmoService.update_dieta_completa(db, user.id, id, dados), f"Dieta {id} não encontrada.")
-        if ativo:
+        if ativo is True:
             dieta = RitmoService.toggle_dieta_ativa(db, user.id, dieta.id)
         return _dieta(dieta)
 
