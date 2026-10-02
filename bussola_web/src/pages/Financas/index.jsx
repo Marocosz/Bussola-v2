@@ -13,6 +13,7 @@ import { useConfirm } from '../../context/ConfirmDialogContext';
 import { AiAssistant } from '../../components/AiAssistant';
 import { DatePicker } from '../../components/Pickers';
 import { CustomSelect } from '../../components/CustomSelect';
+import { filterAndSortTransactions } from './transactionsQuery';
 import './styles.css';
 
 export function Financas() {
@@ -119,128 +120,16 @@ export function Financas() {
         });
     };
 
-    // Achata, filtra, agrupa parceladas e ordena todas as transações
-    const getAllTransactions = () => {
-        if (!data) return [];
-        const pontuais = Object.values(data.transacoes_pontuais || {}).flat();
-        const recorrentes = Object.values(data.transacoes_recorrentes || {}).flat();
-
-        // Cofre: CADA movimentação vira uma linha própria (transferência neutra — não
-        // conta em receita/despesa). Guarda o grupo inteiro para o expand ver o histórico.
-        const cofreRows = (data.transacoes_cofre || []).flatMap(g =>
-            (g.movimentacoes || []).map(mv => ({
-                _isCofre: true,
-                id: `cofremov-${mv.id}`,
-                _movId: mv.id,
-                id_grupo_recorrencia: g.id_grupo,
-                tipo_recorrencia: 'cofre',
-                descricao: `${mv.tipo === 'aporte' ? 'Aporte' : 'Retirada'} · ${g.nome}`,
-                data: mv.data,
-                valor: mv.valor,
-                status: mv.status,
-                tipo_mov: mv.tipo,
-                origem: mv.origem,
-                categoria: { nome: g.nome, icone: g.icone, cor: g.cor },
-                meta_id: g.meta_id,
-                _cofreArquivada: !!g.arquivada,
-                _cofreMovs: (g.movimentacoes || []).length > 1 ? g.movimentacoes : undefined,
-            }))
-        );
-
-        let all = [...pontuais, ...recorrentes, ...cofreRows];
-
-        if (filterTipo !== 'todos') {
-            all = all.filter(t => (t.tipo_recorrencia || 'pontual') === filterTipo);
-        }
-        if (filterStatus !== 'todos') {
-            all = all.filter(t => {
-                switch (filterStatus) {
-                    case 'Efetivada':
-                        return (t.tipo_recorrencia || 'pontual') === 'pontual' || t.status === 'Efetivada';
-                    case 'Pendente':
-                        return t.status === 'Pendente';
-                    case 'Encerrada':
-                        return t.recorrencia_encerrada === true;
-                    case 'Arquivado':
-                        return t._cofreArquivada === true;
-                    case 'Automatico':
-                        return t._isCofre && t.tipo_mov && t.origem === 'agendado';
-                    case 'Manual':
-                        return t._isCofre && t.origem === 'manual';
-                    default:
-                        return true;
-                }
-            });
-        }
-        if (filterCategoria) {
-            all = all.filter(t => t.categoria?.id === filterCategoria);
-        }
-        if (filterPagamento !== 'todos') {
-            all = all.filter(t => t.tipo_pagamento === filterPagamento);
-        }
-
-        // Filtro de data
-        if (filterDatePreset !== 'todos') {
-            const today = new Date();
-            let start = null, end = null;
-            if (filterDatePreset === 'semana') {
-                start = new Date(today); start.setDate(today.getDate() - 6); start.setHours(0,0,0,0);
-                end = new Date(today); end.setHours(23,59,59,999);
-            } else if (filterDatePreset === 'mes') {
-                start = new Date(today.getFullYear(), today.getMonth(), 1);
-                end = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
-            } else if (filterDatePreset === 'custom') {
-                start = filterDateStart ? new Date(filterDateStart + 'T00:00:00') : null;
-                end = filterDateEnd ? new Date(filterDateEnd + 'T23:59:59') : null;
-            }
-            if (start || end) {
-                all = all.filter(t => {
-                    const d = new Date(t.data);
-                    if (start && d < start) return false;
-                    if (end && d > end) return false;
-                    return true;
-                });
-            }
-        }
-
-        // NÃO colapsa grupos: toda ocorrência é uma linha própria (30/07, 30/06, 30/05…).
-        // Cada linha de parcelada/recorrente carrega o histórico COMPLETO do grupo
-        // (todas as ocorrências) apenas para o expand — sem esconder nenhuma linha.
-        const groupHistory = {};
-        for (const t of recorrentes) {
-            if (t.id_grupo_recorrencia) {
-                if (!groupHistory[t.id_grupo_recorrencia]) groupHistory[t.id_grupo_recorrencia] = [];
-                groupHistory[t.id_grupo_recorrencia].push(t);
-            }
-        }
-        Object.values(groupHistory).forEach(list =>
-            list.sort((a, b) => new Date(b.data) - new Date(a.data))  // histórico: mais recente primeiro
-        );
-
-        all = all.map(t => {
-            if ((t.tipo_recorrencia === 'parcelada' || t.tipo_recorrencia === 'recorrente') && t.id_grupo_recorrencia) {
-                const grupo = groupHistory[t.id_grupo_recorrencia];
-                if (grupo && grupo.length > 1) return { ...t, _allParcelas: grupo };
-            }
-            return t;
-        });
-
-        const { column, dir } = sortConfig;
-        const mult = dir === 'asc' ? 1 : -1;
-        return all.sort((a, b) => {
-            let cmp = 0;
-            if (column === 'valor') {
-                cmp = Number(a.valor || 0) - Number(b.valor || 0);
-            } else if (column === 'descricao') {
-                cmp = String(a.descricao || '').localeCompare(String(b.descricao || ''), 'pt-BR');
-            } else if (column === 'categoria') {
-                cmp = String(a.categoria?.nome || '').localeCompare(String(b.categoria?.nome || ''), 'pt-BR');
-            } else { // data (default)
-                cmp = new Date(a.data) - new Date(b.data);
-            }
-            if (cmp === 0) cmp = new Date(a.data) - new Date(b.data); // desempate por data
-            return cmp * mult;
-        });
+    // Filtros aplicados (desktop: dropdowns; celular: sheet de filtros + busca).
+    const filters = {
+        tipo: filterTipo,
+        status: filterStatus,
+        categoria: filterCategoria,
+        pagamento: filterPagamento,
+        datePreset: filterDatePreset,
+        dateStart: filterDateStart,
+        dateEnd: filterDateEnd,
+        search: '',
     };
 
     const handleEditTransaction = (transacao) => {
@@ -327,7 +216,7 @@ export function Financas() {
         }
     };
 
-    const allTransactions = getAllTransactions();
+    const allTransactions = filterAndSortTransactions(data, filters, sortConfig);
     const totalPages = Math.ceil(allTransactions.length / PAGE_SIZE);
     const pagedTransactions = allTransactions.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 

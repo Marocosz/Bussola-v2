@@ -1,96 +1,13 @@
-import React from 'react';
-import { toggleStatusTransacao, deleteTransacao, stopRecorrencia } from '../../../services/api';
-import { useToast } from '../../../context/ToastContext';
-import { useConfirm } from '../../../context/ConfirmDialogContext';
-
-// Forma de pagamento → rótulo e ícone para o badge no card.
-const PAG_LABEL = { pix: 'Pix', credito: 'Crédito', debito: 'Débito', transferencia: 'Transferência' };
-const PAG_ICONE = {
-    pix: 'fa-solid fa-bolt',
-    credito: 'fa-solid fa-credit-card',
-    debito: 'fa-solid fa-money-check-dollar',
-    transferencia: 'fa-solid fa-right-left',
-};
+import { useTransactionActions } from './useTransactionActions';
+import { ParcelaSubList } from './ParcelaSubList';
+import { PAG_LABEL, PAG_ICONE } from './pagamento';
 
 export function TransactionCard({ transacao, onUpdate, onEdit, onEditCofre, onToggleCofre, onDeleteCofre, isExpanded, onToggleExpand }) {
-    const { addToast } = useToast();
-    const confirm = useConfirm();
-    const [isDeleting, setIsDeleting] = React.useState(false);
+    const { isDeleting, handleToggleStatus, handleDelete } = useTransactionActions(transacao, onUpdate);
 
     const isEncerrada = transacao.recorrencia_encerrada === true;
     const tipo = transacao.tipo_recorrencia || 'pontual';
     const isExpandableGroup = transacao._allParcelas && transacao._allParcelas.length > 1;
-
-    const handleToggleStatus = async () => {
-        try {
-            await toggleStatusTransacao(transacao.id);
-            onUpdate();
-        } catch {
-            addToast({ type: 'error', title: 'Erro', description: 'Não foi possível alterar o status.' });
-        }
-    };
-
-    const handleDelete = async () => {
-        // Pontual: exclusão direta (lançamento manual avulso).
-        if (tipo === 'pontual') {
-            const ok = await confirm({
-                title: 'Excluir transação?',
-                description: 'Tem certeza que deseja excluir esta transação? Essa ação não pode ser desfeita.',
-                confirmLabel: 'Sim, excluir', variant: 'danger',
-            });
-            if (!ok) return;
-            await runDelete(() => deleteTransacao(transacao.id), 'Transação removida.');
-            return;
-        }
-
-        // Recorrente/Parcelada: proteger histórico efetivado.
-        const grupoRows = (transacao._allParcelas && transacao._allParcelas.length)
-            ? transacao._allParcelas : [transacao];
-        const hasEfetivada = grupoRows.some(t => t.status === 'Efetivada');
-        const hasPendentes = grupoRows.some(t => t.status === 'Pendente');
-
-        // Já encerrada ou totalmente efetivada (sem pendentes): nada a fazer.
-        if (isEncerrada || (hasEfetivada && !hasPendentes)) {
-            addToast({
-                type: 'info', title: 'Não é possível excluir',
-                description: 'Lançamentos já efetivados são histórico e não podem ser excluídos. Não há cobranças pendentes para cancelar.',
-            });
-            return;
-        }
-
-        // Série nunca efetivada → pode ser removida por completo.
-        if (!hasEfetivada) {
-            const ok = await confirm({
-                title: 'Excluir série?',
-                description: 'Nenhum lançamento desta série foi efetivado ainda — ela será removida por completo.',
-                confirmLabel: 'Sim, excluir', variant: 'danger',
-            });
-            if (!ok) return;
-            await runDelete(() => deleteTransacao(transacao.id), 'Série removida.');
-            return;
-        }
-
-        // Tem efetivadas E pendentes → encerrar (cancela pendentes, mantém histórico).
-        const ok = await confirm({
-            title: 'Encerrar recorrência?',
-            description: 'As próximas cobranças (pendentes) serão canceladas e o histórico já efetivado será mantido como "Encerrado". Os lançamentos efetivados não podem ser excluídos.',
-            confirmLabel: 'Sim, encerrar', variant: 'warning',
-        });
-        if (!ok) return;
-        await runDelete(() => stopRecorrencia(transacao.id), 'Cobranças futuras canceladas. Histórico mantido.', 'Série encerrada');
-    };
-
-    const runDelete = async (fn, successDesc, successTitle = 'Concluído') => {
-        try {
-            await fn();
-            addToast({ type: 'success', title: successTitle, description: successDesc });
-            setIsDeleting(true);
-            setTimeout(() => onUpdate(), 450);
-        } catch (error) {
-            const msg = error.response?.data?.detail || 'Erro ao processar a solicitação.';
-            addToast({ type: 'error', title: 'Erro', description: msg });
-        }
-    };
 
     const dateObj = new Date(transacao.data);
     const dateStr = dateObj.toLocaleDateString('pt-BR');
@@ -106,7 +23,6 @@ export function TransactionCard({ transacao, onUpdate, onEdit, onEditCofre, onTo
         const isArquivada = transacao._cofreArquivada === true;
         const isAgendado = transacao.origem === 'agendado';
         const isPendente = transacao.status === 'Pendente';
-        const fmtC = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
         return (
             <div className={`transacao-row-wrapper ${isExpanded && cofreExpandable ? 'row-wrapper-expanded' : ''}`}>
                 <div className={`transacao-row transacao-row-cofre ${isArquivada ? 'row-encerrado' : ''}`}>
@@ -178,24 +94,7 @@ export function TransactionCard({ transacao, onUpdate, onEdit, onEditCofre, onTo
                     </div>
                 </div>
 
-                {isExpanded && cofreExpandable && (
-                    <div className="parcela-expanded-list">
-                        {movs.map(mv => {
-                            const d = new Date(mv.data);
-                            const isSelf = mv.id === transacao._movId;
-                            return (
-                                <div key={mv.id} className={`parcela-sub-row ${isSelf ? 'parcela-sub-current' : ''}`}>
-                                    <span className="parcela-sub-badge">{mv.tipo === 'aporte' ? 'Aporte' : 'Retirada'}</span>
-                                    <span className="parcela-sub-data">{d.toLocaleDateString('pt-BR')}</span>
-                                    <span className={`tag tag-status tag-${mv.status.toLowerCase()}`}>{mv.status}</span>
-                                    <span className="parcela-sub-valor row-valor-cofre">
-                                        {mv.tipo === 'aporte' ? '+' : '−'} {fmtC(mv.valor)}
-                                    </span>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
+                {isExpanded && cofreExpandable && <ParcelaSubList transacao={transacao} />}
             </div>
         );
     }
@@ -302,31 +201,7 @@ export function TransactionCard({ transacao, onUpdate, onEdit, onEditCofre, onTo
             </div>
 
             {/* Sub-linhas expandidas (parcelas ou histórico recorrente) */}
-            {isExpanded && transacao._allParcelas && (
-                <div className="parcela-expanded-list">
-                    {transacao._allParcelas.map(p => {
-                        const d = new Date(p.data);
-                        const isSelf = p.id === transacao.id;  // destaca a linha que foi clicada
-                        const pValorStr = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.valor);
-                        return (
-                            <div key={p.id} className={`parcela-sub-row ${isSelf ? 'parcela-sub-current' : ''}`}>
-                                {tipo === 'parcelada' ? (
-                                    <span className="parcela-sub-badge">{p.parcela_atual}/{p.total_parcelas}</span>
-                                ) : (
-                                    <span className="parcela-sub-badge parcela-sub-badge-month">
-                                        {d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })}
-                                    </span>
-                                )}
-                                <span className="parcela-sub-data">{d.toLocaleDateString('pt-BR')}</span>
-                                <span className={`tag tag-status tag-${p.status.toLowerCase()}`}>{p.status}</span>
-                                <span className={`parcela-sub-valor ${p.categoria?.tipo}`}>
-                                    {p.categoria?.tipo === 'despesa' ? '−' : '+'} {pValorStr}
-                                </span>
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
+            {isExpanded && transacao._allParcelas && <ParcelaSubList transacao={transacao} />}
         </div>
     );
 }
