@@ -30,6 +30,7 @@
     min-width: 450px;      /* Garante que não fique muito fino em telas pequenas */
     max-width: 800px;      /* Limite para telas ultrawide */
     height: 100vh;
+    height: 100dvh;
     
     background: var(--cor-card-principal);
     box-shadow: 10px 0 40px rgba(0,0,0,0.3); /* Sombra mais difusa */

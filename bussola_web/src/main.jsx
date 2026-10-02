@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { GoogleOAuthProvider } from '@react-oauth/google'; // [NOVO] Apenas este import
+import './assets/styles/tokens.css'
 import App from './App.jsx'
 import { ErrorBoundary } from './components/ErrorBoundary.tsx'
 

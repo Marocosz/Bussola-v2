@@ -1,0 +1,55 @@
+/* ========================================================= */
+/* TOKENS DE LAYOUT (mobile-first)                            */
+/* Breakpoints (literais nos @media): ≤480 celular pequeno,   */
+/* ≤768 mobile, 769–1024 tablet, ≥1025 desktop.               */
+/* Espaçamento: 8 dentro do card, 12 entre cards, 24 entre    */
+/* seções, gutter mobile 16.                                   */
+/* ========================================================= */
+:root {
+    --sp-1: 4px;
+    --sp-2: 8px;
+    --sp-3: 12px;
+    --sp-4: 16px;
+    --sp-5: 24px;
+    --sp-6: 32px;
+
+    --z-nav: 100;
+    --z-fab: 110;
+    --z-drawer: 200;
+    --z-sheet: 300;
+    --z-popover: 400;
+    --z-toast: 500;
+
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --bottom-nav-h: 64px;
+    --topbar-h: 56px;
+    --tap-min: 44px;
+}
+
+/* --- Toque: alvos mínimos de 44px em dispositivos de ponteiro grosso --- */
+@media (pointer: coarse) {
+    .btn-action-icon {
+        min-width: var(--tap-min);
+        min-height: var(--tap-min);
+    }
+}
+
+/* --- Mobile: inputs de 16px (o iOS não dá zoom) --- */
+@media (max-width: 768px) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
+}
+
+/* --- Movimento reduzido: pausa animações infinitas --- */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-iteration-count: 1 !important;
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

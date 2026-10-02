@@ -30,6 +30,9 @@ export function TooltipHost() {
   const ref = useRef(null);
 
   useEffect(() => {
+    // Toque não tem hover: o balão apareceria no "mouseover" sintético do tap e
+    // forçaria dois toques no iOS. Informação crítica não pode depender de tooltip.
+    if (!window.matchMedia('(hover: hover)').matches) return undefined;
     let current = null;
     let raf = 0;
 

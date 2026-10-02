@@ -138,10 +138,12 @@ a {
     background: linear-gradient(90deg, var(--cor-azul-primario), var(--cor-acento));
 }
 
-.btn-primary:hover,
-.submit-button:hover {
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    transform: translateY(-2px);
+@media (hover: hover) and (pointer: fine) {
+    .btn-primary:hover,
+    .submit-button:hover {
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        transform: translateY(-2px);
+    }
 }
 
 .btn-primary.large-button {
@@ -155,9 +157,11 @@ a {
     background-color: var(--cor-cinza-botao);
 }
 
-.btn-secondary:hover {
-    background-color: var(--cor-cinza-botao-hover);
-    transform: translateY(-2px);
+@media (hover: hover) and (pointer: fine) {
+    .btn-secondary:hover {
+        background-color: var(--cor-cinza-botao-hover);
+        transform: translateY(-2px);
+    }
 }
 
 /* Botão Delete */
@@ -165,9 +169,11 @@ a {
     background-color: var(--cor-vermelho-delete);
 }
 
-.btn-delete:hover {
-    background-color: var(--cor-vermelho-delete-hover);
-    transform: translateY(-2px);
+@media (hover: hover) and (pointer: fine) {
+    .btn-delete:hover {
+        background-color: var(--cor-vermelho-delete-hover);
+        transform: translateY(-2px);
+    }
 }
 
 /* Desabilitado: sem efeito de hover */
