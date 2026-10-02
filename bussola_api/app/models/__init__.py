@@ -52,3 +52,5 @@ from .ritmo import (
     RitmoAlimentoItem
 )
 from .mcp import McpClient, McpAuthCode, McpToken
+
+from .estudos import EstudoTema, EstudoMaterial, EstudoResposta
