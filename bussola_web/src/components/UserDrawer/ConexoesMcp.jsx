@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { BaseModal } from '../BaseModal';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmDialogContext';
@@ -22,6 +23,7 @@ export function ConexoesMcp() {
     const [nome, setNome] = useState('Claude Code');
     const [podeEscrever, setPodeEscrever] = useState(true);
     const [tokenGerado, setTokenGerado] = useState('');
+    const [gerando, setGerando] = useState(false);
 
     useEffect(() => {
         let ativo = true;
@@ -34,6 +36,7 @@ export function ConexoesMcp() {
     const recarregar = () => setVersao((v) => v + 1);
 
     const gerar = async () => {
+        setGerando(true);
         try {
             const dados = await criarTokenMcp({
                 nome,
@@ -44,6 +47,8 @@ export function ConexoesMcp() {
             recarregar();
         } catch {
             addToast({ type: 'error', title: 'Erro', description: 'Não foi possível gerar o token.' });
+        } finally {
+            setGerando(false);
         }
     };
 
@@ -112,7 +117,7 @@ export function ConexoesMcp() {
                 Novo token
             </button>
 
-            {modalAberto && (
+            {modalAberto && createPortal(
                 <BaseModal onClose={fecharModal} className="modal">
                     <div className="modal-content">
                         <div className="modal-header">
@@ -151,13 +156,14 @@ export function ConexoesMcp() {
                                 </>
                             ) : (
                                 <>
-                                    <button type="button" className="mcp-btn" onClick={fecharModal}>Cancelar</button>
-                                    <button type="button" className="mcp-btn primario" disabled={!nome.trim()} onClick={gerar}>Gerar</button>
+                                    <button type="button" className="mcp-btn" disabled={gerando} onClick={fecharModal}>Cancelar</button>
+                                    <button type="button" className="mcp-btn primario" disabled={!nome.trim() || gerando} onClick={gerar}>Gerar</button>
                                 </>
                             )}
                         </div>
                     </div>
-                </BaseModal>
+                </BaseModal>,
+                document.body
             )}
         </>
     );

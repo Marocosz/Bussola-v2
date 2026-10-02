@@ -4,6 +4,7 @@
     align-items: center;
     justify-content: center;
     padding: 16px;
+    background: var(--cor-fundo);
 }
 
 .autorizar-card {
@@ -11,7 +12,7 @@
     max-width: 420px;
     padding: 28px;
     border-radius: 16px;
-    background: var(--cor-fundo-card);
+    background: var(--cor-card-principal);
     display: flex;
     flex-direction: column;
     gap: 12px;

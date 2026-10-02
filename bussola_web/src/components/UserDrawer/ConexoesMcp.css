@@ -20,7 +20,7 @@
     gap: 8px;
     padding: 8px 10px;
     border-radius: 10px;
-    background: var(--cor-fundo-card);
+    background: var(--cor-card-secundario);
 }
 
 .mcp-item-info {
