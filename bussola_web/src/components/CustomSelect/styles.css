@@ -266,3 +266,23 @@
     color: var(--cor-azul-primario);
     font-weight: 600;
 }
+/* ===== Mobile: opções em bottom sheet ===== */
+.cs-sheet-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.cs-sheet-list .custom-option {
+    width: 100%;
+    min-height: 48px;
+    border: none;
+    border-top: 1px solid var(--cor-borda);
+    background: transparent;
+    color: var(--cor-texto-principal);
+    font: inherit;
+    text-align: left;
+}
+
+@media (pointer: coarse) {
+    .custom-select-trigger { min-height: var(--tap-min); }
+}

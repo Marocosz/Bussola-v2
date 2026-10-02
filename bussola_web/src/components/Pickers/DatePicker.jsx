@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import './pickers.css';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -102,6 +103,7 @@ export const DatePicker = React.memo(function DatePicker({
     required = false,
     size,
 }) {
+    const isMobile = useIsMobile();
     const today    = new Date();
     const todayStr = formatDate(today);
 
@@ -154,6 +156,7 @@ export const DatePicker = React.memo(function DatePicker({
             setOpen(false);
         };
         const onScroll  = (e) => {
+            if (isMobile) return;
             if (panelRef.current?.contains(e.target)) return;
             setOpen(false);
         };
@@ -168,7 +171,7 @@ export const DatePicker = React.memo(function DatePicker({
             window.removeEventListener('scroll', onScroll, { capture: true });
             document.removeEventListener('keydown', onKeyDown);
         };
-    }, [open]);
+    }, [open, isMobile]);
 
     // ── Navegação de mês ────────────────────────────────────────────────────
     const prevMonth = useCallback(() => {
@@ -208,14 +211,10 @@ export const DatePicker = React.memo(function DatePicker({
     const panel = open ? (
         <div
             ref={panelRef}
-            className="pk-panel pk-date-panel"
-            style={{
-                position: 'fixed',
-                top:      panelPos.top,
-                left:     panelPos.left,
-                width:    panelPos.width,
-                zIndex:   9999,
-            }}
+            className={`pk-panel pk-date-panel${isMobile ? ' pk-panel--sheet' : ''}`}
+            style={isMobile
+                ? { position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 'var(--z-popover)' }
+                : { position: 'fixed', top: panelPos.top, left: panelPos.left, width: panelPos.width, zIndex: 9999 }}
             onMouseDown={e => e.stopPropagation()}
         >
             {/* ── Header ── */}
@@ -308,7 +307,13 @@ export const DatePicker = React.memo(function DatePicker({
                 )}
             </button>
 
-            {createPortal(panel, document.body)}
+            {open && createPortal(
+                <>
+                    {isMobile && <div className="pk-backdrop" />}
+                    {panel}
+                </>,
+                document.body,
+            )}
         </div>
     );
 });

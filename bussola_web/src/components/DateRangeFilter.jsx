@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { DatePicker } from './Pickers';
+import { useIsMobile } from '../hooks/useIsMobile';
+import { Sheet } from './mobile/Sheet';
 import { DATE_PRESETS, computeRange, presetLabel } from '../utils/dateRange';
 
 /**
@@ -9,6 +11,7 @@ import { DATE_PRESETS, computeRange, presetLabel } from '../utils/dateRange';
  * Os presets e o cálculo vivem em utils/dateRange.js.
  */
 export function DateRangeFilter({ initialPreset = 'mes', onChange }) {
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [preset, setPreset] = useState(initialPreset);
   const [start, setStart] = useState('');
@@ -37,6 +40,27 @@ export function DateRangeFilter({ initialPreset = 'mes', onChange }) {
     ? `${start.split('-').reverse().join('/')} — ${end.split('-').reverse().join('/')}`
     : presetLabel(preset);
 
+  const menuItems = (
+    <>
+      {DATE_PRESETS.map((p) => (
+        <div
+          key={p.key}
+          className={`drf-item ${preset === p.key ? 'selected' : ''}`}
+          onClick={() => selectPreset(p.key)}
+        >
+          {p.label}
+        </div>
+      ))}
+      {preset === 'custom' && (
+        <div className="drf-range">
+          <DatePicker size="sm" value={start} onChange={onCustomStart} placeholder="Início" />
+          <span className="drf-range-sep">—</span>
+          <DatePicker size="sm" value={end} onChange={onCustomEnd} placeholder="Fim" />
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div className="drf-wrapper">
       <button className={`drf-trigger ${preset !== 'mes' ? 'active' : ''}`} onClick={() => setOpen((o) => !o)}>
@@ -44,28 +68,16 @@ export function DateRangeFilter({ initialPreset = 'mes', onChange }) {
         <span>{triggerLabel}</span>
         <i className="fa-solid fa-chevron-down"></i>
       </button>
-      {open && (
+      {open && !isMobile && (
         <>
           <div className="drf-backdrop" onClick={() => setOpen(false)}></div>
-          <div className="drf-menu">
-            {DATE_PRESETS.map((p) => (
-              <div
-                key={p.key}
-                className={`drf-item ${preset === p.key ? 'selected' : ''}`}
-                onClick={() => selectPreset(p.key)}
-              >
-                {p.label}
-              </div>
-            ))}
-            {preset === 'custom' && (
-              <div className="drf-range">
-                <DatePicker size="sm" value={start} onChange={onCustomStart} placeholder="Início" />
-                <span className="drf-range-sep">—</span>
-                <DatePicker size="sm" value={end} onChange={onCustomEnd} placeholder="Fim" />
-              </div>
-            )}
-          </div>
+          <div className="drf-menu">{menuItems}</div>
         </>
+      )}
+      {isMobile && (
+        <Sheet open={open} onClose={() => setOpen(false)} title="Período">
+          <div className="drf-sheet">{menuItems}</div>
+        </Sheet>
       )}
     </div>
   );

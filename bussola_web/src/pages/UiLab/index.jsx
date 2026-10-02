@@ -3,6 +3,9 @@ import { BaseModal } from '../../components/BaseModal';
 import { Sheet } from '../../components/mobile/Sheet';
 import { ActionSheet } from '../../components/mobile/ActionSheet';
 import { Fab } from '../../components/mobile/Fab';
+import { DatePicker, TimePicker } from '../../components/Pickers';
+import { CustomSelect } from '../../components/CustomSelect';
+import { DateRangeFilter } from '../../components/DateRangeFilter';
 import { useConfirm } from '../../context/ConfirmDialogContext';
 
 /** Bancada DEV-only (/__ui) para testar os primitivos mobile isoladamente. */
@@ -13,6 +16,10 @@ export function UiLab() {
     const [full, setFull] = useState(false);
     const [actions, setActions] = useState(false);
     const [ultima, setUltima] = useState('');
+    const [data, setData] = useState('');
+    const [hora, setHora] = useState('');
+    const [cat, setCat] = useState('');
+    const [periodo, setPeriodo] = useState('');
     const confirm = useConfirm();
 
     return (
@@ -25,6 +32,14 @@ export function UiLab() {
                 <button className="btn-primary" onClick={() => setActions(true)}>Abrir ações</button>
             </div>
             <p data-testid="ultima-acao">{ultima}</p>
+            <div style={{ display: 'grid', gap: 12, maxWidth: 360, marginTop: 16 }}>
+                <DatePicker label="Data" value={data} onChange={(e) => setData(e.target.value)} />
+                <TimePicker label="Hora" value={hora} onChange={(e) => setHora(e.target.value)} />
+                <CustomSelect label="Categoria" value={cat} onChange={(e) => setCat(e.target.value)}
+                    options={[{ value: '1', label: 'Alimentação' }, { value: '2', label: 'Casa' }, { value: '3', label: 'Lazer' }]} />
+                <DateRangeFilter onChange={(r) => setPeriodo(`${r.start}|${r.end}`)} />
+                <p data-testid="valores">{`${data}|${hora}|${cat}|${periodo}`}</p>
+            </div>
 
             {modal && (
                 <BaseModal onClose={() => setModal(false)} className="modal">

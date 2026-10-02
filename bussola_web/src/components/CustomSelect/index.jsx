@@ -1,19 +1,23 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useIsMobile } from '../../hooks/useIsMobile';
+import { Sheet } from '../mobile/Sheet';
 import './styles.css';
 
 export const CustomSelect = React.memo(function CustomSelect({ label, options, value, onChange, placeholder = "Selecione...", name }) {
+    const isMobile = useIsMobile();
     const [isOpen, setIsOpen] = useState(false);
     const wrapperRef = useRef(null);
 
     useEffect(() => {
         function handleClickOutside(event) {
+            if (isMobile) return;
             if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
                 setIsOpen(false);
             }
         }
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
+    }, [isMobile]);
 
     const selectedOpt = useMemo(
         () => options.find(opt => String(opt.value) === String(value)),
@@ -27,6 +31,26 @@ export const CustomSelect = React.memo(function CustomSelect({ label, options, v
     }, [onChange, name]);
 
     const toggleOpen = useCallback(() => setIsOpen(prev => !prev), []);
+
+    const renderOption = (opt, asButton = false) => {
+        const Tag = asButton ? 'button' : 'div';
+        return (
+            <Tag
+                key={opt.value}
+                type={asButton ? 'button' : undefined}
+                className={`custom-option ${String(value) === String(opt.value) ? 'selected' : ''}`}
+                onClick={() => handleSelect(opt.value)}
+            >
+                {opt.color && (
+                    <span className="cs-opt-icon-wrap" style={{ backgroundColor: opt.color }}>
+                        {opt.icon && <i className={opt.icon}></i>}
+                    </span>
+                )}
+                <span className="cs-opt-label">{opt.label}</span>
+                {opt.type && <span className={`cs-opt-type cs-opt-type-${String(opt.type).toLowerCase()}`}>{opt.type}</span>}
+            </Tag>
+        );
+    };
 
     return (
         <div className="custom-select-wrapper" ref={wrapperRef} style={{ position: 'relative', zIndex: isOpen ? 100 : 1, width: '100%' }}>
@@ -48,24 +72,18 @@ export const CustomSelect = React.memo(function CustomSelect({ label, options, v
                 <i className="fa-solid fa-chevron-down arrow-icon"></i>
             </div>
 
-            {isOpen && (
+            {isOpen && !isMobile && (
                 <div className="custom-select-options">
-                    {options.map(opt => (
-                        <div
-                            key={opt.value}
-                            className={`custom-option ${String(value) === String(opt.value) ? 'selected' : ''}`}
-                            onClick={() => handleSelect(opt.value)}
-                        >
-                            {opt.color && (
-                                <span className="cs-opt-icon-wrap" style={{ backgroundColor: opt.color }}>
-                                    {opt.icon && <i className={opt.icon}></i>}
-                                </span>
-                            )}
-                            <span className="cs-opt-label">{opt.label}</span>
-                            {opt.type && <span className={`cs-opt-type cs-opt-type-${String(opt.type).toLowerCase()}`}>{opt.type}</span>}
-                        </div>
-                    ))}
+                    {options.map(opt => renderOption(opt))}
                 </div>
+            )}
+
+            {isMobile && (
+                <Sheet open={isOpen} onClose={() => setIsOpen(false)} title={label || placeholder}>
+                    <div className="cs-sheet-list">
+                        {options.map(opt => renderOption(opt, true))}
+                    </div>
+                </Sheet>
             )}
         </div>
     );

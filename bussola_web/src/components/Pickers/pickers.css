@@ -397,3 +397,23 @@
     width: 110px;
     flex-shrink: 0;
 }
+
+/* ===== Mobile: painel vira bottom sheet ===== */
+.pk-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-popover);
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.pk-panel.pk-panel--sheet {
+    width: auto !important;
+    border-radius: 20px 20px 0 0;
+    padding-bottom: calc(var(--sp-4) + var(--safe-bottom));
+    animation: sheetUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (pointer: coarse) {
+    .pk-cal-nav-btn { min-width: var(--tap-min); min-height: var(--tap-min); }
+    .pk-panel--sheet .pk-cal-day { min-height: 44px; }
+}

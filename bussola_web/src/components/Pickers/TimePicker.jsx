@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import './pickers.css';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -41,6 +42,7 @@ export function TimePicker({
     placeholder = 'Selecione...',
     required = false,
 }) {
+    const isMobile = useIsMobile();
     const [open, setOpen]         = useState(false);
     const [panelPos, setPanelPos] = useState({ top: 0, left: 0, width: 0 });
 
@@ -99,6 +101,7 @@ export function TimePicker({
             setOpen(false);
         };
         const onScroll  = (e) => {
+            if (isMobile) return;
             if (panelRef.current?.contains(e.target)) return;
             setOpen(false);
         };
@@ -113,7 +116,7 @@ export function TimePicker({
             window.removeEventListener('scroll', onScroll, { capture: true });
             document.removeEventListener('keydown', onKeyDown);
         };
-    }, [open]);
+    }, [open, isMobile]);
 
     // ── Selecionar hora ou minuto ────────────────────────────────────────────
     const emitChange = (h, m) => {
@@ -132,14 +135,10 @@ export function TimePicker({
     const panel = open ? (
         <div
             ref={panelRef}
-            className="pk-panel pk-time-panel"
-            style={{
-                position: 'fixed',
-                top:      panelPos.top,
-                left:     panelPos.left,
-                width:    panelPos.width,
-                zIndex:   9999,
-            }}
+            className={`pk-panel pk-time-panel${isMobile ? ' pk-panel--sheet' : ''}`}
+            style={isMobile
+                ? { position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 'var(--z-popover)' }
+                : { position: 'fixed', top: panelPos.top, left: panelPos.left, width: panelPos.width, zIndex: 9999 }}
             onMouseDown={e => e.stopPropagation()}
         >
             <div className="pk-time-cols">
@@ -215,7 +214,13 @@ export function TimePicker({
                 )}
             </button>
 
-            {createPortal(panel, document.body)}
+            {open && createPortal(
+                <>
+                    {isMobile && <div className="pk-backdrop" />}
+                    {panel}
+                </>,
+                document.body,
+            )}
         </div>
     );
 }

@@ -833,6 +833,8 @@ textarea:focus:invalid {
 .drf-item.selected { color: var(--cor-azul-primario); font-weight: 600; }
 .drf-range { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 6px 8px; border-top: 1px solid var(--cor-borda); margin-top: 4px; }
 .drf-range-sep { color: var(--cor-texto-secundario); flex-shrink: 0; }
+.drf-sheet .drf-item { min-height: 48px; display: flex; align-items: center; }
+@media (pointer: coarse) { .drf-trigger { height: var(--tap-min); } }
 
 /* ========================================================= */
 /* SELO FLUTUANTE — marcador de cor unificado dos cards       */
