@@ -840,13 +840,6 @@
     background: var(--cor-fundo-hover);
     overflow: hidden;
 }
-/* Barra de acento sutil à esquerda */
-.financas-scope .transacao-row-wrapper.row-wrapper-expanded::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0; width: 2px; z-index: 2;
-    background: color-mix(in srgb, var(--cor-azul-primario) 50%, transparent);
-}
 /* Some com o separador padrão ao redor do bloco expandido */
 .financas-scope .row-wrapper-expanded + .transacao-row-wrapper { border-top: none; }
 /* Linha-mãe e lista herdam o fundo do bloco */
@@ -1141,9 +1134,8 @@
     opacity: 0.7;
 }
 
-/* Ações da linha — sobrepostas à coluna de tags, encostadas no valor, no hover.
-   O valor continua visível; nada se desloca e não há elemento flutuante fora da linha.
-   Posição: padding da linha (14px) + coluna de valor (125px, ver grid de .row-cells) + folga. */
+/* Ações da linha — sobrepostas à ponta direita da própria linha, no hover.
+   Nada se desloca (sem reflow) e não há elemento flutuante fora da linha. */
 .financas-scope .transacao-row {
     position: relative;
 }
@@ -1151,7 +1143,7 @@
 .financas-scope .row-actions {
     position: absolute;
     top: 0;
-    right: calc(14px + 125px + 10px);
+    right: 0;
     bottom: 0;
     display: flex;
     align-items: center;
@@ -1186,7 +1178,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    padding-right: 6px;
+    padding-right: 14px;
     white-space: nowrap;
 }
 
