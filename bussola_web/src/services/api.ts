@@ -958,6 +958,52 @@ export const revogarClienteMcp = async (clientId: string) => {
     return response.data;
 };
 
+// ---- ESTUDOS (biblioteca de materiais; criados pelo Claude via MCP) ----
+export const getEstudosTemas = async () => {
+    const response = await api.get('/estudos/temas');
+    return response.data;
+};
+
+export const getEstudosMateriais = async (params: any = {}) => {
+    const response = await api.get('/estudos/materiais', { params });
+    return response.data;
+};
+
+export const getEstudoMaterial = async (id: number | string) => {
+    const response = await api.get(`/estudos/materiais/${id}`);
+    return response.data;
+};
+
+export const responderEstudo = async (id: number | string, data: any) => {
+    const response = await api.post(`/estudos/materiais/${id}/respostas`, data);
+    return response.data;
+};
+
+export const marcarEstudoEstudado = async (id: number | string, estudado: boolean) => {
+    const response = await api.patch(`/estudos/materiais/${id}/estudado`, { estudado });
+    return response.data;
+};
+
+export const deleteEstudoMaterial = async (id: number | string) => {
+    const response = await api.delete(`/estudos/materiais/${id}`);
+    return response.data;
+};
+
+export const getKitEstudosVersao = async () => {
+    const response = await api.get('/estudos/kit/versao');
+    return response.data;
+};
+
+export const getKitEstudosInstrucoes = async () => {
+    const response = await api.get('/estudos/kit/instrucoes-projeto');
+    return response.data;
+};
+
+export const baixarKitEstudos = async (alvo: string) => {
+    const response = await api.get(`/estudos/kit/${alvo}.zip`, { responseType: 'blob' });
+    return response.data;
+};
+
 export default api;
 
 // --- METAS & COFRINHOS ---
