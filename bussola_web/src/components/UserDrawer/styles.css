@@ -150,15 +150,14 @@
 
 .drawer-content .form-group label {
     display: block;
-    margin-bottom: 0.6rem;
+    margin-bottom: 0.05rem;
     font-weight: 500;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: var(--cor-texto-secundario);
 }
 
 .drawer-content .form-input {
-    padding: 1rem; /* Inputs mais altos/confortáveis */
-    font-size: 1rem;
+    padding: 0.75rem;
     background: var(--cor-fundo);
     border-color: var(--cor-borda);
 }
