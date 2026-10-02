@@ -4,12 +4,14 @@ quem cria/edita material é o Claude, via MCP."""
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.api import deps
 from app.schemas.estudos import (
     EstudadoUpdate, MaterialResponse, MaterialResumo, RespostaCreate, RespostaResponse, TemaResponse,
 )
+from app.services import estudos_kit
 from app.services.estudos import estudos_service
 
 router = APIRouter()
@@ -73,3 +75,25 @@ def excluir_material(material_id: int, db: Session = Depends(deps.get_db), curre
     if not estudos_service.excluir_material(db, material_id, current_user.id):
         raise HTTPException(status_code=404, detail="Material não encontrado")
     return {"ok": True}
+
+
+# ---------- kit do Claude ----------
+@router.get("/kit/versao")
+def kit_versao(current_user=Depends(deps.get_current_user)):
+    return {"versao": estudos_kit.versao()}
+
+
+@router.get("/kit/instrucoes-projeto")
+def kit_instrucoes_projeto(current_user=Depends(deps.get_current_user)):
+    return {"texto": estudos_kit.instrucoes_projeto()}
+
+
+@router.get("/kit/{alvo}.zip")
+def kit_zip(alvo: str, current_user=Depends(deps.get_current_user)):
+    if alvo not in estudos_kit.ALVOS:
+        raise HTTPException(status_code=404, detail="Kit não encontrado")
+    return Response(
+        content=estudos_kit.montar_zip(alvo),
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="bussola-estudos-{alvo}.zip"'},
+    )

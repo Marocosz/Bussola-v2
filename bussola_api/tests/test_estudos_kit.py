@@ -76,3 +76,73 @@ def test_readmes_e_instrucoes():
     assert "claude mcp add --transport http bussola" in (KIT / "claude-code" / "README.md").read_text(encoding="utf-8")
     assert "estudos.zip" in (KIT / "claude-ai" / "README.md").read_text(encoding="utf-8")
     assert "skill **estudos**" in (KIT / "claude-ai" / "instrucoes-do-projeto.md").read_text(encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# Download (Task 5)
+# ---------------------------------------------------------------------------
+import io
+import zipfile
+
+from app.services.estudos_kit import montar_zip
+
+BASE = "/api/v1/estudos"
+ESPERADO_CLAUDE_CODE = {
+    "VERSION",
+    "README.md",
+    "skills/estudos/SKILL.md",
+    *[f"skills/estudos/references/{r}" for r in REFERENCIAS],
+    "agents/estudos-escritor.md",
+    "agents/estudos-pesquisador.md",
+    "agents/estudos-revisor.md",
+}
+SKILL_CLAUDE_AI = {"estudos/SKILL.md", *[f"estudos/references/{r}" for r in REFERENCIAS]}
+ESPERADO_CLAUDE_AI = {"VERSION", "README.md", "instrucoes-do-projeto.md", "estudos.zip", *SKILL_CLAUDE_AI}
+
+
+def _baixar(client, alvo):
+    r = client.get(f"{BASE}/kit/{alvo}.zip")
+    assert r.status_code == 200, r.text
+    assert r.headers["content-type"] == "application/zip"
+    assert f'filename="bussola-estudos-{alvo}.zip"' in r.headers["content-disposition"]
+    return zipfile.ZipFile(io.BytesIO(r.content))
+
+
+def test_versao_e_instrucoes_via_api(client):
+    assert client.get(f"{BASE}/kit/versao").json() == {"versao": (KIT / "VERSION").read_text(encoding="utf-8").strip()}
+    texto = client.get(f"{BASE}/kit/instrucoes-projeto").json()["texto"]
+    assert texto == (KIT / "claude-ai" / "instrucoes-do-projeto.md").read_text(encoding="utf-8")
+
+
+def test_zip_claude_code_tem_exatamente_os_arquivos_esperados(client):
+    zf = _baixar(client, "claude-code")
+    assert set(zf.namelist()) == ESPERADO_CLAUDE_CODE
+    assert zf.read("skills/estudos/references/acoes.md") == (KIT / "compartilhado" / "references" / "acoes.md").read_bytes()
+    assert zf.read("agents/estudos-revisor.md") == (KIT / "claude-code" / "agents" / "estudos-revisor.md").read_bytes()
+
+
+def test_zip_claude_ai_traz_skill_pronta_para_upload(client):
+    zf = _baixar(client, "claude-ai")
+    assert set(zf.namelist()) == ESPERADO_CLAUDE_AI
+    interno = zipfile.ZipFile(io.BytesIO(zf.read("estudos.zip")))
+    assert set(interno.namelist()) == SKILL_CLAUDE_AI
+    assert interno.read("estudos/SKILL.md") == (KIT / "claude-ai" / "estudos" / "SKILL.md").read_bytes()
+
+
+def test_alvo_invalido_404(client):
+    r = client.get(f"{BASE}/kit/outro.zip")
+    assert r.status_code == 404 and r.json()["detail"] == "Kit não encontrado"
+    assert client.get(f"{BASE}/kit/compartilhado.zip").status_code == 404
+    assert client.get(f"{BASE}/kit/..%2Fclaude-code.zip").status_code == 404
+    assert client.get(f"{BASE}/kit/claude-code.tar").status_code == 404
+    with pytest.raises(KeyError):
+        montar_zip("../claude-code")
+
+
+def test_kit_exige_login(client):
+    from app.api import deps
+    from app.main import app
+
+    del app.dependency_overrides[deps.get_current_user]
+    assert client.get(f"{BASE}/kit/claude-code.zip").status_code == 401
+    assert client.get(f"{BASE}/kit/versao").status_code == 401
