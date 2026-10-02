@@ -205,4 +205,13 @@ class AgendaService:
         if comp: db.delete(comp); db.commit(); return True
         return False
 
+    def listar_periodo(self, db: Session, user_id: int, de: datetime, ate: datetime):
+        """Compromissos com data_hora em [de, ate), em ordem cronológica."""
+        return (
+            db.query(Compromisso)
+            .filter(Compromisso.user_id == user_id, Compromisso.data_hora >= de, Compromisso.data_hora < ate)
+            .order_by(Compromisso.data_hora)
+            .all()
+        )
+
 agenda_service = AgendaService()
