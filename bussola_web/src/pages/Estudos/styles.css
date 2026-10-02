@@ -1,0 +1,395 @@
+/* =========================================================
+   ESTUDOS — biblioteca (+ partes compartilhadas com leitura/kit)
+   Só tokens do tema; cores dos tipos derivam de tokens existentes.
+   ========================================================= */
+.estudos-scope {
+    --tipo-aula: var(--cor-azul-primario);
+    --tipo-resumo: var(--cor-verde-sucesso);
+    --tipo-comparativo: var(--cor-acento);
+    --tipo-exercicios: var(--cor-laranja-aviso);
+}
+
+.estudos-scope a.ph-kpi { text-decoration: none; }
+
+.estudos-wrapper {
+    max-width: 90%;
+    margin: 0 auto 3rem auto;
+}
+
+.estudos-carregando {
+    padding: 4rem 1rem;
+    text-align: center;
+    color: var(--cor-texto-secundario);
+}
+.estudos-carregando i { font-size: 2rem; color: var(--cor-azul-primario); margin-bottom: 0.8rem; }
+
+/* ---- etiquetas de tipo ---- */
+.tipo-aula { --tipo-cor: var(--tipo-aula); }
+.tipo-resumo { --tipo-cor: var(--tipo-resumo); }
+.tipo-comparativo { --tipo-cor: var(--tipo-comparativo); }
+.tipo-exercicios { --tipo-cor: var(--tipo-exercicios); }
+
+.estudo-etiqueta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.18rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--tipo-cor, var(--cor-texto-secundario));
+    background: color-mix(in srgb, var(--tipo-cor, var(--cor-texto-secundario)) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--tipo-cor, var(--cor-texto-secundario)) 35%, transparent);
+    white-space: nowrap;
+}
+
+/* ---- estado vazio ---- */
+.estudos-vazio {
+    max-width: 560px;
+    margin: 3rem auto;
+    text-align: center;
+    padding: 2.5rem 2rem;
+    background: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    border-radius: 16px;
+}
+.estudos-vazio > i { font-size: 2.6rem; color: var(--cor-azul-primario); }
+.estudos-vazio h2 { margin: 0.8rem 0 0.4rem; }
+.estudos-vazio p { color: var(--cor-texto-secundario); line-height: 1.6; margin-bottom: 1.4rem; }
+.estudos-vazio code { background: var(--cor-card-secundario); padding: 0.1rem 0.4rem; border-radius: 5px; }
+.estudos-vazio .btn-primary { display: inline-flex; gap: 0.5rem; align-items: center; text-decoration: none; color: #fff; }
+
+/* ---- layout biblioteca ---- */
+.estudos-layout {
+    display: grid;
+    grid-template-columns: 230px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.estudos-temas {
+    position: sticky;
+    top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.9rem;
+    background: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    border-radius: 14px;
+}
+.estudos-temas h2 {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--cor-texto-secundario);
+    margin: 0 0 0.4rem 0.4rem;
+}
+
+.estudos-tema {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.5rem 0.6rem;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--cor-texto-principal);
+    font: inherit;
+    font-size: 0.9rem;
+    text-align: left;
+    cursor: pointer;
+}
+.estudos-tema:hover { background: var(--cor-fundo-hover); }
+.estudos-tema.ativo { background: rgba(var(--cor-tema-rgb), 0.14); color: var(--cor-azul-primario); font-weight: 600; }
+.estudos-tema-cor { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 10px; }
+.estudos-tema-nome { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.estudos-tema-total { font-size: 0.75rem; color: var(--cor-texto-secundario); }
+
+.estudos-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+.estudos-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.estudos-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.32rem 0.8rem;
+    border-radius: 999px;
+    border: 1px solid var(--cor-borda);
+    background: var(--cor-card-principal);
+    color: var(--cor-texto-secundario);
+    font: inherit;
+    font-size: 0.82rem;
+    cursor: pointer;
+}
+.estudos-chip:hover { border-color: var(--tipo-cor, var(--cor-azul-primario)); }
+.estudos-chip.ativo {
+    color: var(--tipo-cor, var(--cor-azul-primario));
+    border-color: var(--tipo-cor, var(--cor-azul-primario));
+    background: color-mix(in srgb, var(--tipo-cor, var(--cor-azul-primario)) 12%, var(--cor-card-principal));
+    font-weight: 600;
+}
+.estudos-check { display: inline-flex; gap: 0.45rem; align-items: center; font-size: 0.86rem; color: var(--cor-texto-secundario); cursor: pointer; }
+.estudos-nada { color: var(--cor-texto-secundario); padding: 2rem 0; text-align: center; }
+
+.estudos-grade {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+}
+
+.estudo-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    padding: 1rem 1.1rem;
+    background: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    border-top: 3px solid var(--estudo-cor);
+    border-radius: 14px;
+    color: var(--cor-texto-principal);
+    text-decoration: none;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+.estudo-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18); }
+.estudo-card-topo { display: flex; justify-content: space-between; align-items: center; }
+.estudo-card-estudado { color: var(--cor-verde-sucesso); }
+.estudo-card h3 { margin: 0.15rem 0 0; font-size: 1.02rem; line-height: 1.35; }
+.estudo-card-sub {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--cor-texto-secundario);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.estudo-card-rodape { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: auto; padding-top: 0.4rem; }
+.estudo-card-tema,
+.estudo-card-nivel,
+.estudo-tag {
+    font-size: 0.72rem;
+    padding: 0.12rem 0.5rem;
+    border-radius: 6px;
+    background: var(--cor-card-secundario);
+    color: var(--cor-texto-secundario);
+}
+.estudo-card-tema { color: var(--estudo-cor); font-weight: 600; }
+
+@media (max-width: 860px) {
+    .estudos-wrapper { max-width: 100%; padding: 0 1rem; }
+    .estudos-layout { grid-template-columns: 1fr; }
+    .estudos-temas { position: static; flex-direction: row; flex-wrap: wrap; }
+    .estudos-temas h2 { width: 100%; }
+    .estudos-tema { width: auto; }
+}
+
+/* =========================================================
+   ESTUDOS — leitura
+   ========================================================= */
+.estudo-leitura { max-width: 90%; margin: 0 auto 4rem auto; }
+
+.estudo-breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    align-items: center;
+    font-size: 0.85rem;
+    color: var(--cor-texto-secundario);
+    margin-bottom: 1.2rem;
+}
+.estudo-breadcrumb a { color: var(--cor-texto-secundario); text-decoration: none; }
+.estudo-breadcrumb a:hover { color: var(--cor-azul-primario); }
+.estudo-breadcrumb > i { font-size: 0.6rem; opacity: 0.6; }
+
+.estudo-cabecalho { max-width: 760px; margin: 0 auto 2rem auto; }
+.estudo-etiquetas { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin-bottom: 0.7rem; }
+.estudo-chip-info {
+    font-size: 0.74rem;
+    padding: 0.18rem 0.6rem;
+    border-radius: 999px;
+    background: var(--cor-card-secundario);
+    color: var(--cor-texto-secundario);
+}
+.estudo-chip-info.estudado { color: var(--cor-verde-sucesso); background: color-mix(in srgb, var(--cor-verde-sucesso) 12%, transparent); }
+.estudo-cabecalho h1 { font-size: 1.9rem; line-height: 1.25; margin: 0 0 0.4rem; }
+.estudo-subtitulo { color: var(--cor-texto-secundario); font-size: 1.05rem; margin: 0 0 1.1rem; }
+
+.estudo-acoes { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.estudo-acoes .btn-secondary,
+.estudo-acoes .btn-primary { display: inline-flex; gap: 0.45rem; align-items: center; }
+.estudo-btn-estudado.ativo { background: var(--cor-verde-sucesso); }
+.estudo-btn-excluir {
+    background: transparent;
+    border: 1px solid var(--cor-borda);
+    color: var(--cor-texto-secundario);
+    border-radius: 8px;
+    padding: 0.5rem 0.7rem;
+    cursor: pointer;
+}
+.estudo-btn-excluir:hover { color: var(--cor-vermelho-delete); border-color: var(--cor-vermelho-delete); }
+.estudo-destino { display: inline-flex; border: 1px solid var(--cor-borda); border-radius: 8px; overflow: hidden; margin-left: auto; }
+.estudo-destino button {
+    border: none;
+    background: transparent;
+    color: var(--cor-texto-secundario);
+    padding: 0.45rem 0.75rem;
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+.estudo-destino button.ativo { background: rgba(var(--cor-tema-rgb), 0.16); color: var(--cor-azul-primario); font-weight: 600; }
+
+.estudo-bloco { position: relative; scroll-margin-top: 80px; }
+.estudo-bloco-acoes { position: absolute; top: 0.2rem; right: -2.7rem; opacity: 0; transition: opacity 0.15s; z-index: 2; }
+.estudo-bloco:hover .estudo-bloco-acoes,
+.estudo-bloco:focus-within .estudo-bloco-acoes { opacity: 1; }
+
+.estudo-fontes { max-width: 760px; margin: 3rem auto 0 auto; padding-top: 1.2rem; border-top: 1px solid var(--cor-borda); }
+.estudo-fontes h2 { font-size: 1rem; margin: 0 0 0.7rem; }
+.estudo-fontes ol { margin: 0; padding-left: 1.4rem; display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.9rem; }
+.estudo-fontes li { scroll-margin-top: 120px; border-radius: 6px; padding: 0.1rem 0.3rem; transition: background 0.3s; }
+.estudo-fontes a { color: var(--cor-azul-primario); }
+.estudo-fonte-dominio { margin-left: 0.5rem; font-size: 0.78rem; color: var(--cor-texto-secundario); }
+.estudo-fonte-destaque { background: rgba(var(--cor-tema-rgb), 0.18); }
+
+/* ---- Pedir ao Claude ---- */
+.pedir-claude { position: relative; display: inline-block; }
+.pedir-claude-gatilho-bloco {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 8px;
+    border: 1px solid var(--cor-borda);
+    background: var(--cor-card-principal);
+    color: var(--cor-acento);
+    cursor: pointer;
+}
+.pedir-claude-gatilho-bloco:hover { background: var(--cor-fundo-hover); }
+.pedir-claude-fundo { position: fixed; inset: 0; z-index: 98; }
+.pedir-claude-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 99;
+    min-width: 260px;
+    padding: 0.4rem;
+    display: flex;
+    flex-direction: column;
+    background: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+.pedir-claude:not(.compacto) .pedir-claude-menu { left: 0; right: auto; }
+.pedir-claude-menu > button {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    padding: 0.5rem 0.65rem;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--cor-texto-principal);
+    font: inherit;
+    font-size: 0.88rem;
+    text-align: left;
+    cursor: pointer;
+}
+.pedir-claude-menu > button:hover { background: var(--cor-fundo-hover); }
+.pedir-claude-menu > button i { width: 1rem; color: var(--cor-acento); }
+.pedir-claude-alvo {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--cor-texto-secundario);
+    padding: 0.3rem 0.65rem;
+}
+.pedir-claude-pergunta { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.3rem; }
+.pedir-claude-pergunta textarea { resize: vertical; width: 100%; box-sizing: border-box; }
+.pedir-claude-pergunta div { display: flex; gap: 0.4rem; justify-content: flex-end; }
+
+@media (hover: none), (max-width: 1000px) {
+    .estudo-bloco-acoes { position: static; opacity: 1; display: flex; justify-content: flex-end; margin-bottom: 0.2rem; }
+}
+@media (max-width: 860px) {
+    .estudo-leitura { max-width: 100%; padding: 0 1rem; }
+    .estudo-destino { margin-left: 0; }
+    .estudo-cabecalho h1 { font-size: 1.5rem; }
+}
+
+/* =========================================================
+   ESTUDOS — kit do Claude
+   ========================================================= */
+.kit-intro,
+.kit-rodape { max-width: 760px; color: var(--cor-texto-secundario); line-height: 1.6; }
+.kit-rodape { margin-top: 1.5rem; font-size: 0.9rem; }
+
+.kit-grade {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.2rem;
+    margin-top: 1.2rem;
+}
+
+.kit-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.3rem 1.4rem;
+    background: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    border-radius: 16px;
+}
+.kit-card header { display: flex; gap: 0.9rem; align-items: flex-start; }
+.kit-card header > i {
+    font-size: 1.3rem;
+    color: var(--cor-azul-primario);
+    background: rgba(var(--cor-tema-rgb), 0.12);
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 2.6rem;
+}
+.kit-card h2 { margin: 0 0 0.2rem; font-size: 1.1rem; }
+.kit-card header p { margin: 0; color: var(--cor-texto-secundario); font-size: 0.88rem; }
+
+.kit-passos { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.9rem; line-height: 1.55; }
+.kit-passos code {
+    background: var(--cor-card-secundario);
+    padding: 0.05rem 0.35rem;
+    border-radius: 5px;
+    font-size: 0.85em;
+    word-break: break-all;
+}
+.kit-comando {
+    display: flex;
+    gap: 0.4rem;
+    align-items: flex-start;
+    margin-top: 0.4rem;
+    padding: 0.5rem 0.6rem;
+    background: var(--cor-fundo);
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+}
+.kit-comando code { background: none; padding: 0; flex: 1; }
+.kit-comando button {
+    border: none;
+    background: transparent;
+    color: var(--cor-texto-secundario);
+    cursor: pointer;
+    padding: 0.1rem 0.3rem;
+}
+.kit-comando button:hover { color: var(--cor-azul-primario); }
+
+.kit-botoes { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: auto; }
+.kit-baixar { display: inline-flex; gap: 0.4rem; align-items: center; justify-content: center; }
+.kit-card > .kit-baixar { margin-top: auto; align-self: flex-start; }

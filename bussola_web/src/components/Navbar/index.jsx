@@ -16,6 +16,7 @@ const LINKS = [
     { to: '/financas', icone: 'fa-wallet', rotulo: 'Provisões' },
     { to: '/agenda', icone: 'fa-calendar-days', rotulo: 'Roteiro' },
     { to: '/registros', icone: 'fa-book', rotulo: 'Registros' },
+    { to: '/estudos', icone: 'fa-graduation-cap', rotulo: 'Estudos' },
     { to: '/ritmo', icone: 'fa-dumbbell', rotulo: 'Ritmo' },
     { to: '/cofre', icone: 'fa-vault', rotulo: 'Cofre' },
 ];
