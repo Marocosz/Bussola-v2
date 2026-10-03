@@ -264,6 +264,7 @@ body.light-theme .pcard {
   .pv2-attn-row.is-carousel::-webkit-scrollbar { display: none; }
   .pv2-attn-row.is-carousel > .pv2-alert { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; padding: var(--sp-4); gap: var(--sp-3); }
   .pv2-alert-sev { font-size: 11px; }
+  .pv2-alert-detail { font-size: 14px; }
   .pv2-attn-pips { display: flex; justify-content: center; align-items: center; gap: var(--sp-2); margin-top: calc(var(--sp-3) * -1); }
   .pv2-attn-pip { width: 7px; height: 7px; border-radius: 50%; background: var(--border); transition: width .2s, background .2s; }
   .pv2-attn-pip.active { width: 18px; border-radius: 4px; background: var(--blue); }
