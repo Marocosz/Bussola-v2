@@ -117,3 +117,32 @@ export const textoX = (loc) => loc.evaluate((e) => {
   const s = getComputedStyle(e);
   return e.getBoundingClientRect().left + parseFloat(s.borderLeftWidth) + parseFloat(s.paddingLeft);
 });
+
+// Como overflowOffenders, mas aceita o que está dentro de um contêiner com rolagem horizontal
+// própria (tabela ou código que rola dentro do bloco), desde que o contêiner caiba na tela.
+export async function overflowOffendersOutsideScrollers(page) {
+  return page.evaluate(() => {
+    const vw = window.innerWidth;
+    const out = [];
+    const isOut = (r) => r.right > vw + 1 || r.left < -1;
+    const dentroDeRolagem = (el) => {
+      for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+        const ox = getComputedStyle(p).overflowX;
+        if ((ox === 'auto' || ox === 'scroll') && !isOut(p.getBoundingClientRect())) return true;
+      }
+      return false;
+    };
+    for (const el of document.querySelectorAll('body *')) {
+      const r = el.getBoundingClientRect();
+      if (!r.width || !r.height || !isOut(r)) continue;
+      const cs = getComputedStyle(el);
+      if (cs.visibility === 'hidden' || cs.display === 'none') continue;
+      if (el.closest('[data-offscreen-ok]')) continue;
+      if (dentroDeRolagem(el)) continue;
+      const p = el.parentElement;
+      if (p && isOut(p.getBoundingClientRect())) continue;
+      out.push(`${el.tagName.toLowerCase()}.${[...el.classList].join('.')} [${Math.round(r.left)}→${Math.round(r.right)}]`);
+    }
+    return out;
+  });
+}
