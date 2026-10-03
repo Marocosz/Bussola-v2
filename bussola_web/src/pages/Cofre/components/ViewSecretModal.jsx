@@ -21,6 +21,13 @@ export function ViewSecretModal({ segredoId, onClose, titulo }) {
     const [timeLeft, setTimeLeft] = useState(null);
     // Cópia pendente de limpeza e o intervalo do contador (lidos também ao desmontar).
     const sessao = useRef({ pendente: false, intervalo: null });
+    // Falso depois de fechar/desmontar: uma escrita que termina tarde não pode iniciar o timer.
+    const montado = useRef(true);
+    useEffect(() => {
+        montado.current = true;
+        const m = montado;
+        return () => { m.current = false; };
+    }, []);
     const onCloseRef = useRef(onClose);
     useEffect(() => { onCloseRef.current = onClose; });
     const loading = estado.id !== segredoId;
@@ -76,6 +83,12 @@ export function ViewSecretModal({ segredoId, onClose, titulo }) {
         const ok = await escreverClipboard(estado.valor);
         if (!ok) {
             addToast({ type: 'error', title: 'Não foi possível copiar', description: 'Toque em Revelar e copie manualmente.' });
+            return;
+        }
+        // Fechou enquanto a escrita estava pendente: a senha acabou de ir para a área de
+        // transferência sem ninguém para limpá-la depois. Limpa já, sem timer.
+        if (!montado.current) {
+            escreverClipboard('').then((limpou) => addToast(limpou ? TOAST_LIMPO : TOAST_NAO_LIMPOU));
             return;
         }
         const s = sessao.current;

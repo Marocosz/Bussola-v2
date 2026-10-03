@@ -42,6 +42,12 @@ async function stubClipboard(page) {
       get: () => ({
         writeText: (t) => {
           if (window.__clipFalha) return Promise.reject(new DOMException('negado', 'NotAllowedError'));
+          if (window.__clipAtrasar && t !== '') {
+            // Escrita lenta: só conclui quando o teste chama window.__clipLiberar().
+            return new Promise((resolve) => {
+              window.__clipLiberar = () => { window.__clip.push(t); resolve(); };
+            });
+          }
           window.__clip.push(t);
           return Promise.resolve();
         },
@@ -346,17 +352,20 @@ test.describe('edição preserva a validade', () => {
 
   test('item sem validade: nenhum texto auxiliar', async ({ page, request }) => {
     const criado = await apiJson(request, 'POST', '/cofre/', { titulo: 'E2E Sem validade', servico: 'E2E', valor: 'E2E-sv' });
-    await gotoApp(page, '/cofre');
-    await page.getByRole('button', { name: 'Mais ações de E2E Sem validade' }).click();
-    await page.locator('.action-sheet').getByRole('button', { name: 'Editar' }).click();
-    await expect(page.locator('#segredo-titulo')).toHaveValue('E2E Sem validade');
-    await expect(page.locator('.segredo-dias-ajuda')).toHaveCount(0);
-    // Contraste: o expirado ainda tem data, então mostra o texto auxiliar.
-    await page.locator('.modal-overlay.is-sheet').getByRole('button', { name: 'Fechar' }).click();
-    await page.getByRole('button', { name: 'Mais ações de E2E Expirado' }).click();
-    await page.locator('.action-sheet').getByRole('button', { name: 'Editar' }).click();
-    await expect(page.locator('.segredo-dias-ajuda')).toHaveCount(1);
-    await apiJson(request, 'DELETE', `/cofre/${criado.id}`);
+    try {
+      await gotoApp(page, '/cofre');
+      await page.getByRole('button', { name: 'Mais ações de E2E Sem validade' }).click();
+      await page.locator('.action-sheet').getByRole('button', { name: 'Editar' }).click();
+      await expect(page.locator('#segredo-titulo')).toHaveValue('E2E Sem validade');
+      await expect(page.locator('.segredo-dias-ajuda')).toHaveCount(0);
+      // Contraste: o expirado ainda tem data, então mostra o texto auxiliar.
+      await page.locator('.modal-overlay.is-sheet').getByRole('button', { name: 'Fechar' }).click();
+      await page.getByRole('button', { name: 'Mais ações de E2E Expirado' }).click();
+      await page.locator('.action-sheet').getByRole('button', { name: 'Editar' }).click();
+      await expect(page.locator('.segredo-dias-ajuda')).toHaveCount(1);
+    } finally {
+      await apiJson(request, 'DELETE', `/cofre/${criado.id}`);
+    }
   });
 });
 
@@ -477,6 +486,25 @@ test.describe('ver segredo e área de transferência', () => {
     await expect(page.getByRole('button', { name: 'Copiar', exact: true })).toBeVisible();
     // Fechar depois do timer não limpa de novo
     await fechar(page).click();
+    expect(await clip(page)).toEqual(['E2E-senha-123', '']);
+  });
+
+  test('fechou com a escrita ainda pendente: limpa na hora, sem timer órfão', async ({ page }) => {
+    await stubClipboard(page);
+    await page.clock.install({ time: FIXED_NOW });
+    await page.goto('/cofre');
+    await page.waitForLoadState('networkidle');
+    await abrirSegredo(page, 'E2E Banco Zeta');
+    await page.evaluate(() => { window.__clipAtrasar = true; });
+    await page.getByRole('button', { name: 'Copiar', exact: true }).click();
+    await fechar(page).click();
+    await expect(page.locator('.modal-overlay.is-sheet')).toHaveCount(0);
+    await page.evaluate(() => { window.__clipAtrasar = false; window.__clipLiberar(); });
+    // A senha chegou à área de transferência depois de fechar: tem que ser limpa em seguida.
+    await expect.poll(() => clip(page)).toEqual(['E2E-senha-123', '']);
+    await expect(toast(page, 'Área de transferência limpa')).toBeVisible();
+    // Sem timer órfão: avançar 2 min não escreve de novo na área de transferência.
+    await page.clock.runFor(120_000);
     expect(await clip(page)).toEqual(['E2E-senha-123', '']);
   });
 

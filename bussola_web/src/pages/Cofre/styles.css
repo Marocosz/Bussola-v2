@@ -97,10 +97,6 @@
     border-bottom: none;
 }
 
-.cofre-scope .data-table tr:hover {
-    background-color: var(--cor-fundo-hover);
-}
-
 /* Coluna Notas Interativa */
 .cofre-scope .column-notas {
     max-width: 300px;
@@ -121,11 +117,6 @@
     padding: 4px 8px;
     border-radius: 4px;
     transition: background 0.2s;
-}
-
-.cofre-scope .notes-preview:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-    color: var(--cor-texto-principal);
 }
 
 .cofre-scope .notes-expand-icon {
@@ -182,31 +173,7 @@
     transition: background-color 0.2s, color 0.2s, border-color 0.2s;
 }
 
-.cofre-scope .btn-action-icon:hover {
-    background: var(--cor-fundo-hover);
-    color: var(--cor-texto-principal);
-    border-color: var(--cor-texto-secundario);
-}
-
 /* Botão Olho (Ver) */
-.cofre-scope .btn-view-secret:hover {
-    color: var(--cor-azul-primario);
-    background: rgba(59, 130, 246, 0.1);
-    border-color: var(--cor-azul-primario);
-}
-
-.cofre-scope .btn-edit-segredo:hover {
-    color: #f59e0b;
-    background: rgba(245, 158, 11, 0.1);
-    border-color: #f59e0b;
-}
-
-.cofre-scope .btn-delete:hover {
-    color: #ef4444;
-    background: rgba(239, 68, 68, 0.1);
-    border-color: #ef4444;
-}
-
 /* ============================================= */
 /* 6. MODAIS E INPUTS (NOVOS ESTILOS)            */
 /* ============================================= */
@@ -223,11 +190,6 @@
     height: 45px;
     cursor: pointer;
     transition: background-color 0.2s, color 0.2s, border-color 0.2s;
-}
-
-.cofre-scope .locked-input-wrapper:hover {
-    border-color: var(--cor-texto-secundario);
-    background-color: rgba(255,255,255,0.05);
 }
 
 .cofre-scope .fake-input-locked {
@@ -323,6 +285,84 @@
     border: 1px solid var(--cor-borda);
     max-height: 60vh;
     overflow-y: auto;
+}
+
+/* ============================================= */
+/* 6b. HOVER SÓ COM MOUSE                        */
+/* ============================================= */
+@media (hover: hover) and (pointer: fine) {
+    .cofre-scope .data-table tr:hover {
+        background-color: var(--cor-fundo-hover);
+    }
+
+    .cofre-scope .notes-preview:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+        color: var(--cor-texto-principal);
+    }
+
+    .cofre-scope .btn-action-icon:hover {
+        background: var(--cor-fundo-hover);
+        color: var(--cor-texto-principal);
+        border-color: var(--cor-texto-secundario);
+    }
+
+    .cofre-scope .btn-view-secret:hover {
+        color: var(--cor-azul-primario);
+        background: rgba(59, 130, 246, 0.1);
+        border-color: var(--cor-azul-primario);
+    }
+
+    .cofre-scope .btn-edit-segredo:hover {
+        color: #f59e0b;
+        background: rgba(245, 158, 11, 0.1);
+        border-color: #f59e0b;
+    }
+
+    .cofre-scope .btn-delete:hover {
+        color: #ef4444;
+        background: rgba(239, 68, 68, 0.1);
+        border-color: #ef4444;
+    }
+
+    .cofre-scope .locked-input-wrapper:hover {
+        border-color: var(--cor-texto-secundario);
+        background-color: rgba(255,255,255,0.05);
+    }
+}
+
+/* ============================================= */
+/* 6c. TABLET (769–1024) E TOQUE                 */
+/* ============================================= */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .cofre-scope .data-table th,
+    .cofre-scope .data-table td {
+        padding: var(--sp-3) var(--sp-4);
+    }
+
+    .cofre-scope .column-notas {
+        max-width: 200px;
+    }
+}
+
+/* Tablet estreito: os 3 botões de 44px + 4 colunas não cabem com o respiro de 16px. */
+@media (min-width: 769px) and (max-width: 900px) {
+    .cofre-scope .data-table th,
+    .cofre-scope .data-table td {
+        padding: var(--sp-3) var(--sp-2);
+    }
+
+    .cofre-scope .column-notas {
+        max-width: 120px;
+    }
+}
+
+@media (pointer: coarse) {
+    .cofre-scope .section-header-flex .btn-primary,
+    .cofre-scope .modal-footer button,
+    .cofre-scope .secret-actions button,
+    .cofre-scope .locked-input-wrapper button {
+        min-height: var(--tap-min);
+    }
 }
 
 /* ============================================= */
