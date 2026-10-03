@@ -1302,3 +1302,118 @@
         padding: 1rem;
     }
 }
+
+/* ============================================= */
+/* 11. CELULAR (≤768): VISÃO BIO "GRADE 2×4"     */
+/* Escala: 8 dentro do card, 12 entre cards,     */
+/* 16 entre blocos e gutter, 24 entre seções.    */
+/* ============================================= */
+@media (max-width: 768px) {
+    .ritmo-scope.main-container {
+        padding-top: var(--sp-4) !important;
+    }
+
+    .ritmo-scope .ritmo-content-wrapper {
+        max-width: 100%;
+        gap: var(--sp-4);
+    }
+
+    .ritmo-scope .bio-overview-section {
+        gap: var(--sp-4);
+        margin-bottom: var(--sp-2); /* + 16 do gap do wrapper = 24 até as abas */
+    }
+
+    /* 7 chips + "Ajustar Perfil" numa grade 2×4 (o chip mantém o visual) */
+    .ritmo-scope .bio-stat-strip {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .ritmo-scope .bio-stat-chip {
+        gap: var(--sp-2);
+        padding: var(--sp-3);
+        border-bottom: 1px solid var(--cor-borda);
+    }
+
+    .ritmo-scope .bio-stat-chip:nth-child(2n) {
+        border-right: none;
+    }
+
+    .ritmo-scope .bio-stat-chip:nth-child(7) {
+        border-bottom: none;
+    }
+
+    .ritmo-scope .chip-label {
+        font-size: 0.6875rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .ritmo-scope .chip-value em {
+        font-size: 0.75rem;
+    }
+
+    .ritmo-scope .btn-adjust-profile-chip {
+        justify-content: center;
+        gap: var(--sp-2);
+        padding: var(--sp-3);
+        min-height: var(--tap-min);
+        font-size: 0.875rem;
+    }
+
+    /* Painéis empilhados em largura total */
+    .ritmo-scope .bio-panels-row {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--sp-4);
+    }
+
+    .ritmo-scope .bio-panel {
+        padding: var(--sp-4);
+        gap: var(--sp-3);
+    }
+
+    .ritmo-scope .bio-panel-header {
+        flex-wrap: wrap;
+        row-gap: var(--sp-1);
+    }
+
+    .ritmo-scope .bio-panel-sub {
+        flex-basis: 100%;
+        margin-left: 0;
+        font-size: 0.75rem;
+    }
+
+    /* Volume: rótulo de 76px; a trilha nunca fica com largura negativa */
+    .ritmo-scope .vol-bars-list {
+        gap: var(--sp-2);
+    }
+
+    .ritmo-scope .vol-bar-row {
+        grid-template-columns: 76px minmax(0, 1fr) 28px;
+        gap: var(--sp-2);
+    }
+
+    .ritmo-scope .vol-bar-label,
+    .ritmo-scope .vol-bar-count {
+        font-size: 0.8125rem;
+    }
+
+    .ritmo-scope .vol-blocks-track.is-continuous .vol-block {
+        flex: 1 1 auto;
+    }
+
+    /* Macros */
+    .ritmo-scope .macro-bars-list {
+        gap: var(--sp-3);
+    }
+
+    .ritmo-scope .macro-kcal-row {
+        flex-wrap: wrap;
+        row-gap: var(--sp-1);
+        padding-top: var(--sp-3);
+    }
+
+    .ritmo-scope .kcal-diff {
+        font-size: 0.75rem;
+    }
+}

@@ -4,6 +4,7 @@ import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmDialogContext';
 import { logger } from '../../utils/logger';
 import { AiAssistant } from '../../components/AiAssistant';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 import {
     getBioData,
@@ -23,10 +24,14 @@ import { DietaModal } from './components/DietaModal';
 
 import './styles.css';
 
+// No celular, acima disto a linha de volume vira uma barra contínua (blocos de 3px não cabem).
+const VOL_MAX_BLOCOS = 12;
+
 export function Ritmo() {
     const { addToast } = useToast();
     // [NOVO] Inicializa o Dialog
     const confirm = useConfirm();
+    const isMobile = useIsMobile();
 
     // Estados de Dados
     const [bio, setBio] = useState(null);
@@ -134,7 +139,7 @@ export function Ritmo() {
             await ativarPlano(id);
             addToast({ type: 'success', title: 'Treino Ativado', description: 'Seu plano de treinamento foi atualizado.' });
             await loadData(false);
-        } catch (error) {
+        } catch {
             addToast({ type: 'error', title: 'Erro', description: 'Não foi possível ativar este treino.' });
             setRefreshing(false);
         }
@@ -161,7 +166,7 @@ export function Ritmo() {
             await deletePlano(id);
             addToast({ type: 'success', title: 'Excluído', description: 'Plano de treino removido.' });
             await loadData(false);
-        } catch (error) {
+        } catch {
             addToast({ type: 'error', title: 'Erro', description: 'Erro ao excluir plano de treino.' });
             setRefreshing(false);
         }
@@ -179,7 +184,7 @@ export function Ritmo() {
             await ativarDieta(id);
             addToast({ type: 'success', title: 'Dieta Ativada', description: 'Plano alimentar atualizado com sucesso.' });
             await loadData(false);
-        } catch (error) {
+        } catch {
             addToast({ type: 'error', title: 'Erro', description: 'Não foi possível ativar esta dieta.' });
             setRefreshing(false);
         }
@@ -206,7 +211,7 @@ export function Ritmo() {
             await deleteDieta(id);
             addToast({ type: 'success', title: 'Excluído', description: 'Dieta removida do histórico.' });
             await loadData(false);
-        } catch (error) {
+        } catch {
             addToast({ type: 'error', title: 'Erro', description: 'Erro ao excluir dieta.' });
             setRefreshing(false);
         }
@@ -235,16 +240,19 @@ export function Ritmo() {
 
     return (
         <div className="ritmo-scope container main-container">
-            <div className="page-header">
-                <div className="page-header-main">
-                    <h1><i className="fa-solid fa-dumbbell"></i> Ritmo</h1>
+            {/* No celular o título vai para a topbar; os KPIs repetem o peso (chip) e o plano ativo (biblioteca). */}
+            {!isMobile && (
+                <div className="page-header">
+                    <div className="page-header-main">
+                        <h1><i className="fa-solid fa-dumbbell"></i> Ritmo</h1>
+                    </div>
+                    <div className="page-header-kpis">
+                        <span className="ph-kpi"><i className="fa-solid fa-dumbbell"></i> {treinoAtivo ? treinoAtivo.nome : 'Sem plano ativo'}</span>
+                        <span className="ph-kpi"><i className="fa-solid fa-utensils"></i> {dietaAtiva ? dietaAtiva.nome : 'Sem dieta ativa'}</span>
+                        {bio?.peso && <span className="ph-kpi"><i className="fa-solid fa-weight-scale"></i> {bio.peso} kg</span>}
+                    </div>
                 </div>
-                <div className="page-header-kpis">
-                    <span className="ph-kpi"><i className="fa-solid fa-dumbbell"></i> {treinoAtivo ? treinoAtivo.nome : 'Sem plano ativo'}</span>
-                    <span className="ph-kpi"><i className="fa-solid fa-utensils"></i> {dietaAtiva ? dietaAtiva.nome : 'Sem dieta ativa'}</span>
-                    {bio?.peso && <span className="ph-kpi"><i className="fa-solid fa-weight-scale"></i> {bio.peso} kg</span>}
-                </div>
-            </div>
+            )}
 
             <div className="ritmo-content-wrapper">
                 {/* ── BIO OVERVIEW ── */}
@@ -319,18 +327,22 @@ export function Ritmo() {
                             </div>
                             {Object.entries(volumeSemanal).length > 0 ? (
                                 <div className="vol-bars-list">
-                                    {Object.entries(volumeSemanal).map(([grupo, sets]) => (
-                                        <div key={grupo} className="vol-bar-row">
-                                            <span className="vol-bar-label">{grupo}</span>
-                                            {/* Largura proporcional ao maior grupo: o maior ocupa a linha inteira */}
-                                            <div className="vol-blocks-track" style={{ width: `${(sets / maxSetsSemana) * 100}%` }}>
-                                                {Array.from({ length: sets }).map((_, i) => (
-                                                    <div key={i} className="vol-block"></div>
-                                                ))}
+                                    {Object.entries(volumeSemanal).map(([grupo, sets]) => {
+                                        // Celular: com muitos sets os blocos não cabem e viram uma barra contínua.
+                                        const continuo = isMobile && sets > VOL_MAX_BLOCOS;
+                                        return (
+                                            <div key={grupo} className="vol-bar-row">
+                                                <span className="vol-bar-label">{grupo}</span>
+                                                {/* Largura proporcional ao maior grupo: o maior ocupa a linha inteira */}
+                                                <div className={`vol-blocks-track${continuo ? ' is-continuous' : ''}`} style={{ width: `${(sets / maxSetsSemana) * 100}%` }}>
+                                                    {Array.from({ length: continuo ? 1 : sets }).map((_, i) => (
+                                                        <div key={i} className="vol-block"></div>
+                                                    ))}
+                                                </div>
+                                                <span className="vol-bar-count">{sets}</span>
                                             </div>
-                                            <span className="vol-bar-count">{sets}</span>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             ) : (
                                 <p className="bio-panel-empty">Configure um plano de treino para ver o volume semanal.</p>
