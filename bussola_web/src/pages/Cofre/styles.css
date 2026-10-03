@@ -301,46 +301,173 @@
     overflow-y: auto;
 }
 
-/* Responsividade */
+/* ============================================= */
+/* 7. CELULAR (≤768): LISTA COMPACTA             */
+/* ============================================= */
 @media (max-width: 768px) {
-    .cofre-scope .section-header-flex {
+    .cofre-scope.main-container {
+        padding-bottom: 0;
+        min-height: 0;
+    }
+
+    .cofre-scope .cofre-content-wrapper {
+        padding: 0;
+    }
+
+    .cofre-m {
+        display: flex;
         flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
+        gap: var(--sp-4);
+        padding-top: var(--sp-4);
+    }
+
+    .cofre-m-busca {
+        position: relative;
+        display: block;
+    }
+
+    .cofre-m-busca > i {
+        position: absolute;
+        left: var(--sp-4);
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--cor-texto-secundario);
+        pointer-events: none;
+    }
+
+    .cofre-scope .cofre-m-busca .form-input {
+        display: block;
+        height: 48px;
+        padding: 0 var(--sp-4) 0 calc(var(--sp-6) + var(--sp-3));
         border-radius: 12px;
+        background-color: var(--cor-card-principal);
     }
 
-    .cofre-scope .section-header-flex .btn-primary {
-        width: 100%;
-        justify-content: center;
+    .cofre-m-lista {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        background: var(--cor-card-principal);
+        border: 1px solid var(--cor-borda);
+        border-radius: 16px;
+        overflow: hidden;
     }
 
-    .cofre-scope .table-container {
+    .cofre-m-item {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-3);
+        min-height: 64px;
+        padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-4);
+    }
+
+    .cofre-m-item + .cofre-m-item {
         border-top: 1px solid var(--cor-borda);
+    }
+
+    .cofre-m-icone {
+        width: 36px;
+        height: 36px;
+        flex-shrink: 0;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        background: var(--cor-card-secundario);
+        color: var(--cor-azul-primario);
+        font-size: 0.95rem;
+    }
+
+    .cofre-m-textos {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-1);
+    }
+
+    .cofre-m-titulo {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: var(--cor-texto-principal);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .cofre-m-sub {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--sp-2);
+        font-size: 0.75rem;
+        color: var(--cor-texto-secundario);
+        min-width: 0;
+    }
+
+    .cofre-m-sub:empty {
+        display: none;
+    }
+
+    .cofre-m-validade.is-perto {
+        color: var(--cor-laranja-aviso);
+        font-weight: 600;
+    }
+
+    .cofre-m-validade.is-expirado {
+        color: var(--cor-vermelho-delete);
+        font-weight: 600;
+    }
+
+    .cofre-m-ver,
+    .cofre-m-mais {
+        width: var(--tap-min);
+        height: var(--tap-min);
+        flex-shrink: 0;
+        border: none;
         border-radius: 12px;
-        margin-top: 1rem;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+        display: grid;
+        place-items: center;
+        font-size: 1rem;
+        cursor: pointer;
     }
 
-    .cofre-scope .data-table {
-        min-width: 560px;
+    .cofre-m-ver {
+        background: rgba(var(--cor-tema-rgb), 0.15);
+        color: var(--cor-azul-primario);
     }
 
-    .cofre-scope .data-table th,
-    .cofre-scope .data-table td {
-        padding: 0.8rem 1rem;
+    .cofre-m-mais {
+        background: transparent;
+        color: var(--cor-texto-secundario);
     }
 
-    .cofre-scope .column-notas {
-        max-width: 100px;
+    .cofre-m-nada {
+        margin: 0;
+        padding: var(--sp-5) var(--sp-4);
+        text-align: center;
+        font-size: 0.875rem;
+        color: var(--cor-texto-secundario);
     }
 
-    .cofre-scope .internal-hero {
-        padding: 2rem 1rem 3rem 1rem;
+    .cofre-m-vazio {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--sp-3);
+        padding: var(--sp-6) var(--sp-4);
+        text-align: center;
+        font-size: 0.875rem;
+        color: var(--cor-texto-secundario);
+        background: var(--cor-card-principal);
+        border: 1px solid var(--cor-borda);
+        border-radius: 16px;
     }
 
-    .cofre-scope .internal-hero h1 {
+    .cofre-m-vazio i {
         font-size: 2rem;
+        opacity: 0.4;
+        color: var(--cor-texto-principal);
     }
 }

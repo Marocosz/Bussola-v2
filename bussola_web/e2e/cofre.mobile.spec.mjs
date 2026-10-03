@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, apiJson } from './helpers.mjs';
+import { gotoApp, apiJson, overflowOffenders, smallTargets, animacoesAcabaram } from './helpers.mjs';
 
 // ---------------------------------------------------------------------------
 // Infra do arquivo
@@ -29,6 +29,8 @@ test.afterAll(async ({ playwright }) => {
   await limparE2E(r);
   await r.dispose();
 });
+
+const linha = (page, titulo) => page.locator('.cofre-m-item').filter({ has: page.locator('.cofre-m-titulo', { hasText: titulo }) });
 
 // Área de transferência falsa: registra as escritas e pode falhar (como o Safari fora de um gesto).
 async function stubClipboard(page) {
@@ -105,5 +107,128 @@ test.describe('lógica pura', () => {
       return { ok, falha, gravados: window.__clip };
     });
     expect(r).toEqual({ ok: true, falha: false, gravados: ['abc'] });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Task 2 — lista compacta
+// ---------------------------------------------------------------------------
+test.describe('lista compacta', () => {
+  test('topbar "Cofre", sem tabela nem cabeçalho de seção; Fab "Guardar segredo"', async ({ page }) => {
+    await gotoApp(page, '/cofre');
+    await expect(page.locator('.m-topbar-title')).toHaveText('Cofre');
+    await expect(page.locator('.data-table')).toHaveCount(0);
+    await expect(page.locator('.section-header-flex')).toHaveCount(0);
+    await expect(page.locator('.cofre-m-item').first()).toBeVisible();
+    const fab = page.locator('.app-fab');
+    await expect(fab).toHaveCount(1);
+    await expect(fab).toHaveAttribute('aria-label', 'Guardar segredo');
+  });
+
+  for (const w of [360, 390, 430, 768]) {
+    test(`sem overflow horizontal em ${w}px`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: 844 });
+      await gotoApp(page, '/cofre');
+      await expect(page.locator('.cofre-m-item').first()).toBeVisible();
+      expect(await overflowOffenders(page), `${w}px`).toEqual([]);
+    });
+  }
+
+  test('alvos de toque ≥ 44px (página e sheet de ações)', async ({ page }) => {
+    await gotoApp(page, '/cofre');
+    await expect(page.locator('.cofre-m-item').first()).toBeVisible();
+    expect(await smallTargets(page, '.cofre-scope')).toEqual([]);
+    await page.getByRole('button', { name: 'Mais ações de E2E Banco Zeta' }).click();
+    await expect(page.locator('.action-sheet .action-sheet-item').first()).toBeVisible();
+    await animacoesAcabaram(page);
+    await expect.poll(() => smallTargets(page, '.action-sheet')).toEqual([]);
+  });
+
+  test('espaçamento: gutter de 16px, 16px entre busca e lista, linhas com 64px+', async ({ page }) => {
+    await gotoApp(page, '/cofre');
+    await expect(page.locator('.cofre-m-item').first()).toBeVisible();
+    const busca = await page.getByRole('searchbox', { name: 'Buscar segredos' }).boundingBox();
+    const lista = await page.locator('.cofre-m-lista').boundingBox();
+    const vw = page.viewportSize().width;
+    expect(Math.round(lista.x)).toBe(16);
+    expect(Math.round(lista.width)).toBe(vw - 32);
+    expect(Math.round(busca.x)).toBe(16);
+    expect(Math.round(lista.y - (busca.y + busca.height))).toBe(16);
+    for (const b of await page.locator('.cofre-m-item').all()) {
+      expect((await b.boundingBox()).height).toBeGreaterThanOrEqual(64);
+    }
+  });
+
+  test('linha: título, serviço e validade em alerta', async ({ page }) => {
+    await gotoApp(page, '/cofre');
+    const zeta = linha(page, 'E2E Banco Zeta');
+    await expect(zeta.locator('.cofre-m-icone i')).toHaveClass(/fa-key/);
+    await expect(zeta.locator('.cofre-m-titulo')).toHaveText('E2E Banco Zeta');
+    await expect(zeta.locator('.service-tag')).toHaveText('E2E Financeiro');
+    const perto = zeta.locator('.cofre-m-validade');
+    await expect(perto).toHaveText('Expira em 5 dias');
+    await expect(perto).toHaveClass(/is-perto/);
+    expect(await perto.evaluate((e) => getComputedStyle(e).color)).toBe('rgb(243, 156, 18)');
+    const exp = linha(page, 'E2E Expirado').locator('.cofre-m-validade');
+    await expect(exp).toHaveText('Expirou em 30/09/2026');
+    await expect(exp).toHaveClass(/is-expirado/);
+    const titulo = await zeta.locator('.cofre-m-titulo').evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
+    expect(titulo).toBeGreaterThanOrEqual(15);
+  });
+
+  test('busca sem acento por título e por serviço', async ({ page }) => {
+    await gotoApp(page, '/cofre');
+    const busca = page.getByRole('searchbox', { name: 'Buscar segredos' });
+    await busca.fill('zeta');
+    await expect(page.locator('.cofre-m-item')).toHaveCount(1);
+    await busca.fill('E2E FINANCÉIRO'); // o seed demo também tem um serviço "Financeiro"
+    await expect(page.locator('.cofre-m-item')).toHaveCount(1);
+    await busca.fill('nada-que-exista');
+    await expect(page.locator('.cofre-m-item')).toHaveCount(0);
+    await expect(page.locator('.cofre-m-nada')).toContainText('Nenhum segredo encontrado');
+    await busca.fill('');
+    expect(await page.locator('.cofre-m-item').count()).toBeGreaterThan(2);
+  });
+
+  test('⋯ abre Editar / Ver notas / Excluir; sem notas não mostra "Ver notas"', async ({ page }) => {
+    await gotoApp(page, '/cofre');
+    await page.getByRole('button', { name: 'Mais ações de E2E Banco Zeta' }).click();
+    const sheet = page.locator('.action-sheet');
+    await expect(sheet.locator('.action-sheet-titles strong')).toHaveText('E2E Banco Zeta');
+    await expect(sheet.locator('.action-sheet-item')).toHaveText(['Editar', 'Ver notas', 'Excluir', 'Cancelar']);
+    await expect(sheet.locator('.action-sheet-item.is-danger')).toHaveText('Excluir');
+    await sheet.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(sheet).toHaveCount(0);
+    await page.getByRole('button', { name: 'Mais ações de E2E Expirado' }).click();
+    await expect(page.locator('.action-sheet .action-sheet-item')).toHaveText(['Editar', 'Excluir', 'Cancelar']);
+  });
+
+  test('Ver notas abre o texto completo em sheet', async ({ page }) => {
+    await gotoApp(page, '/cofre');
+    await page.getByRole('button', { name: 'Mais ações de E2E Banco Zeta' }).click();
+    await page.locator('.action-sheet').getByRole('button', { name: 'Ver notas' }).click();
+    const sheet = page.locator('.modal-overlay.is-sheet');
+    await expect(sheet.locator('.notes-full-view')).toContainText('E2E nota do banco');
+    await expect(sheet.locator('h3')).toContainText('E2E Banco Zeta');
+  });
+
+  test('Excluir pelo ⋯ pede confirmação e remove só aquele', async ({ page, request }) => {
+    await apiJson(request, 'POST', '/cofre/', { titulo: 'E2E Apagar', servico: 'E2E', valor: 'x' });
+    await gotoApp(page, '/cofre');
+    await expect(linha(page, 'E2E Apagar')).toHaveCount(1);
+    const antes = await page.locator('.cofre-m-item').count();
+    await page.getByRole('button', { name: 'Mais ações de E2E Apagar' }).click();
+    await page.locator('.action-sheet').getByRole('button', { name: 'Excluir' }).click();
+    await page.getByRole('button', { name: 'Sim, Excluir' }).click();
+    await expect(linha(page, 'E2E Apagar')).toHaveCount(0);
+    await expect(page.locator('.cofre-m-item')).toHaveCount(antes - 1);
+    await expect(linha(page, 'E2E Banco Zeta')).toHaveCount(1);
+  });
+
+  test('olho pede confirmação e abre o segredo em sheet', async ({ page }) => {
+    await gotoApp(page, '/cofre');
+    await page.getByRole('button', { name: 'Ver senha de E2E Banco Zeta' }).click();
+    await page.getByRole('button', { name: 'Visualizar', exact: true }).click();
+    await expect(page.locator('.modal-overlay.is-sheet .secret-display-box')).toBeVisible();
   });
 });

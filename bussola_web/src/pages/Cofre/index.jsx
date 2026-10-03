@@ -6,6 +6,9 @@ import { ViewSecretModal } from './components/ViewSecretModal'; // Novo Import
 import { ViewNotesModal } from './components/ViewNotesModal';   // Novo Import
 import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmDialogContext';
+import { CofreLista } from './components/CofreLista';
+import { Fab } from '../../components/mobile/Fab';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { formatarData } from './cofreLista';
 import './styles.css';
 
@@ -22,6 +25,7 @@ export function Cofre() {
     
     const { addToast } = useToast();
     const dialogConfirm = useConfirm();
+    const isMobile = useIsMobile();
 
     const fetchData = async () => {
         try {
@@ -91,6 +95,20 @@ export function Cofre() {
                 </div>
             </div>
             <div className="cofre-content-wrapper">
+                {isMobile ? (
+                    loading ? (
+                        <LoadingState />
+                    ) : (
+                        <CofreLista
+                            segredos={segredos}
+                            onVer={handleViewSecret}
+                            onEditar={handleEdit}
+                            onNotas={setViewNotesItem}
+                            onExcluir={handleDelete}
+                        />
+                    )
+                ) : (
+                <>
                 <div className="section-header-flex">
                     <h2>Lista de Segredos</h2>
                     <button className="btn-primary" onClick={handleNew}>
@@ -163,7 +181,11 @@ export function Cofre() {
                         </table>
                     )}
                 </div>
+                </>
+                )}
             </div>
+
+            {isMobile && <Fab icon="fa-plus" label="Guardar segredo" onClick={handleNew} />}
 
             {/* Modais */}
             <SegredoModal 
