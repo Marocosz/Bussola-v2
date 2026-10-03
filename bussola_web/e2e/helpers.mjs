@@ -108,3 +108,12 @@ export async function smallTargets(page, rootSelector) {
     return out;
   }, rootSelector);
 }
+
+// Espera as animações em curso (abertura de modal/sheet) terminarem antes de medir ou capturar.
+export const animacoesAcabaram = (page) => page.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.effect && a.effect.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => null))));
+
+// X (px) onde o texto digitado de um input começa (borda + padding esquerdo).
+export const textoX = (loc) => loc.evaluate((e) => {
+  const s = getComputedStyle(e);
+  return e.getBoundingClientRect().left + parseFloat(s.borderLeftWidth) + parseFloat(s.paddingLeft);
+});

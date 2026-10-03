@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, overflowOffenders, apiJson, smallTargets } from './helpers.mjs';
+import { gotoApp, overflowOffenders, apiJson, smallTargets, animacoesAcabaram, textoX } from './helpers.mjs';
 
 // ---------------------------------------------------------------------------
 // Infra do arquivo
@@ -568,12 +568,27 @@ test.describe('perfil', () => {
 // ---------------------------------------------------------------------------
 // Task 7: capturas (abrir os PNGs e conferir espaçamento contra o mockup)
 // ---------------------------------------------------------------------------
-const animacoesAcabaram = (page) => page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => null))));
+test('builder de treino: nome do dia alinhado com os rótulos e rótulo de volume sem corte', async ({ page }) => {
+  for (const w of [360, 430]) {
+    await page.setViewportSize({ width: w, height: 844 });
+    await gotoApp(page, '/ritmo');
+    const cortes = await page.locator('.vol-bar-label').evaluateAll((els) => els.filter((e) => e.scrollWidth > e.clientWidth + 1 || e.getBoundingClientRect().right > e.parentElement.getBoundingClientRect().left + 77).map((e) => e.textContent));
+    expect(cortes, `rótulos de volume cortados @ ${w}`).toEqual([]);
+    await page.getByRole('button', { name: 'Novo treino' }).click();
+    await page.getByRole('button', { name: '+ Add Exercício' }).click();
+    await animacoesAcabaram(page);
+    const dia = await textoX(page.locator('.rb-day-name').first());
+    const rotulo = (await page.locator('.rb-label').first().boundingBox()).x;
+    expect(Math.abs(dia - rotulo), `Treino A x=${dia} rótulo x=${rotulo} @ ${w}`).toBeLessThanOrEqual(2);
+    await page.locator('.modal-overlay.is-sheet-full').getByRole('button', { name: 'Cancelar' }).click();
+  }
+});
 
 test('capturas para a conferência visual (360/390/430)', async ({ page }, testInfo) => {
   for (const w of [360, 390, 430]) {
     await page.setViewportSize({ width: w, height: 844 });
     await gotoApp(page, '/ritmo');
+    expect(await overflowOffenders(page), `treino @ ${w}`).toEqual([]);
     await page.screenshot({ path: testInfo.outputPath(`ritmo-${w}-treino.png`), fullPage: true });
     await abrirAba(page, 'Plano de Dieta');
     await page.screenshot({ path: testInfo.outputPath(`ritmo-${w}-dieta.png`), fullPage: true });
@@ -590,6 +605,8 @@ test('capturas para a conferência visual (360/390/430)', async ({ page }, testI
     await page.locator('.modal-overlay.is-sheet-full').getByRole('button', { name: 'Cancelar' }).click();
     await page.getByRole('button', { name: 'Ajustar Perfil' }).click();
     await animacoesAcabaram(page);
+    expect(await overflowOffenders(page), `perfil @ ${w}`).toEqual([]);
+    await expect(page.locator('.modal-overlay.is-sheet').getByRole('button', { name: 'Cancelar' })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath(`ritmo-${w}-perfil.png`) });
     await page.locator('.modal-overlay.is-sheet').getByRole('button', { name: 'Cancelar' }).click();
   }

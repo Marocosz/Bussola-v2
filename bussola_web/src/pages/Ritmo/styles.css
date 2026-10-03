@@ -1398,6 +1398,11 @@
         font-size: 0.875rem;
     }
 
+    /* Coluna fixa de 76px: "Quadríceps" cabe com tracking menor, sem reticências */
+    .ritmo-scope .vol-bar-label {
+        letter-spacing: -0.03em;
+    }
+
     .ritmo-scope .vol-blocks-track.is-continuous .vol-block {
         flex: 1 1 auto;
     }
@@ -1719,9 +1724,10 @@
         gap: var(--sp-2);
     }
 
-    .ritmo-scope .rb-day-name {
+    .ritmo-scope .rb-day-head input.rb-day-name {
         flex: 1 1 auto;
         min-width: 0;
+        padding: 0;
     }
 
     .ritmo-scope .rb-icon-btn {
@@ -1950,10 +1956,36 @@
     .ritmo-scope .chip-label {
         overflow: hidden;
         text-overflow: ellipsis;
+        font-size: 0.6875rem; /* 11px: piso para rótulo em caixa alta no toque */
+        letter-spacing: 0.02em;
+    }
+
+    .ritmo-scope .bio-stat-chip {
+        padding: 12px 8px;
+        gap: 6px;
     }
 
     .ritmo-scope .btn-adjust-profile-chip {
         justify-content: center;
+    }
+
+    /* Escala de 24px entre seções (bio → abas → biblioteca) */
+    .ritmo-scope .bio-overview-section {
+        margin-bottom: 0;
+    }
+
+    .ritmo-scope .ritmo-content-wrapper {
+        gap: var(--sp-5);
+    }
+
+    /* Rótulos do builder: piso de 12px (não são caixa alta) */
+    .ritmo-scope .rb-label {
+        font-size: 0.75rem;
+    }
+
+    /* Nome do dia/refeição alinhado com os rótulos (o inline do treino não zera o padding) */
+    .ritmo-scope .rb-day-head input.rb-day-name {
+        padding: 0;
     }
 }
 
