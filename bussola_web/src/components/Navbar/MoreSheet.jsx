@@ -1,11 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 import { Sheet } from '../mobile/Sheet';
 import { NAV_ITEMS } from './navItems';
+import { navegarFechandoSheet } from '../../utils/sheetHistory';
 
 /** Sheet "Mais": módulos fora da barra inferior + conta, tema, admin e sair. */
 export function MoreSheet({ open, onClose, theme, onToggleTheme, onOpenAccount, showAdmin, onOpenAdmin, onLogout }) {
     const navigate = useNavigate();
-    const go = (to) => { onClose(); navigate(to); };
+    // A rota nova substitui a entrada de histórico do sheet (sem corrida com o Voltar).
+    const go = (to) => { onClose(); navegarFechandoSheet(navigate, to); };
 
     return (
         <Sheet open={open} onClose={onClose} title="Mais" className="more-sheet">

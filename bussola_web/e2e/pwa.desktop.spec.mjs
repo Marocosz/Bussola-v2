@@ -73,6 +73,7 @@ test('index.html: manifest, theme-color, apple-touch-icon e capable', async ({ p
 
 test('sem service worker', async ({ page }) => {
   await gotoApp(page, '/home');
-  await page.waitForTimeout(500);
+  // gotoApp espera o load + networkidle: um register() no boot já teria criado o registro.
   expect(await page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length)).toBe(0);
+  expect(await page.evaluate(() => navigator.serviceWorker.controller)).toBeNull();
 });

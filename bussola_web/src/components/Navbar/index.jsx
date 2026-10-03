@@ -13,6 +13,7 @@ import { BottomNav } from './BottomNav';
 import { MoreSheet } from './MoreSheet';
 import { Sheet } from '../mobile/Sheet';
 import { AiMobilePanel } from '../AiAssistant/AiInsightPanel';
+import { navegarFechandoSheet } from '../../utils/sheetHistory';
 
 import bussolaLogo from '../../assets/images/bussola.svg';
 import '../../assets/styles/layout.css';
@@ -53,7 +54,7 @@ export function Navbar() {
         setMoreOpen(false);
     }
     const current = findNavItem(pathname);
-    const sairMobile = () => { logout(); navigate('/login'); };
+    const sairMobile = () => { logout(); navegarFechandoSheet(navigate, '/login'); };
     // Voltar da sub-rota: idx do react-router > 0 garante que a entrada anterior é do app
     // (idx 0 = primeira entrada, ex.: link direto); nesse caso troca a entrada pelo destino.
     const voltarTopbar = () => {

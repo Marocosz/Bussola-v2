@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { lockScroll, unlockScroll } from '../utils/scrollLock';
+import { useSheetHistory } from '../hooks/useSheetHistory';
 
 /**
  * Overlay base de todos os modais. No mobile (≤768) vira bottom sheet:
@@ -10,6 +11,8 @@ import { lockScroll, unlockScroll } from '../utils/scrollLock';
 export function BaseModal({ children, onClose, className = '', sheet = 'auto' }) {
     const mouseDownTarget = useRef(null);
     const isMobile = useIsMobile();
+    // Celular: o Voltar (Android/navegador) fecha o modal/sheet de cima.
+    useSheetHistory(isMobile, onClose);
 
     useEffect(() => {
         lockScroll();
