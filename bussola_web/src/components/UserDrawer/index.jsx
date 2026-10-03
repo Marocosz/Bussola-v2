@@ -8,6 +8,7 @@ import { COLOR_PRESETS, applyColorTheme, getActivePresetId } from '../../utils/c
 import { ConexoesMcp } from './ConexoesMcp';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { lockScroll, unlockScroll } from '../../utils/scrollLock';
+import { useSheetHistory } from '../../hooks/useSheetHistory';
 import './styles.css';
 
 export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
@@ -56,6 +57,8 @@ export function UserDrawer({ isOpen, onClose, user, updateUserData }) {
         lockScroll();
         return unlockScroll;
     }, [isOpen, isMobile]);
+    // ...e o Voltar (Android/navegador) fecha o drawer em vez de navegar por baixo dele.
+    useSheetHistory(isMobile && isOpen, onClose);
 
     useEffect(() => {
         if (user && isOpen) {

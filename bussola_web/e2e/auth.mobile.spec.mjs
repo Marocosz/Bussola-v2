@@ -123,6 +123,21 @@ test.describe('login e registro no celular', () => {
     await expect(entrar).toBeInViewport();
   });
 
+  for (const w of [390, 769]) {
+    test(`sem efeito de hover no toque (Entrar e Enviar do Esqueci) em ${w}px`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: 844 });
+      for (const [rota, card] of [['/login', '.auth-card'], ['/forgot-password', '.auth-simple-card']]) {
+        await abrir(page, rota, card);
+        const btn = page.locator(`${card} .btn-primary`).first();
+        const antes = await btn.evaluate((e) => [getComputedStyle(e).transform, getComputedStyle(e).boxShadow]);
+        await btn.hover();
+        await expect.poll(() => btn.evaluate((e) => (e.getAnimations().some((a) => a.playState === 'running')
+          ? 'animando' : [getComputedStyle(e).transform, getComputedStyle(e).boxShadow])), rota).toEqual(antes);
+        expect(antes[0], rota).toBe('none');
+      }
+    });
+  }
+
   test('login de verdade pelo celular leva ao Início', async ({ page }) => {
     await abrir(page, '/login', '.auth-card');
     await page.getByLabel('E-mail').fill('demo@bussola.dev');

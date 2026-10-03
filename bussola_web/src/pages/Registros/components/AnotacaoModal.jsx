@@ -115,21 +115,31 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
         setFixado(inicial.fixado);
     }, [active, editingData]);
 
-    // ── ✕ do celular: pergunta antes de descartar alterações não salvas ──
+    // ── ✕, Voltar e ESC do celular: pergunta antes de descartar alterações não salvas ──
+    // Devolve false quando o usuário desiste (o Voltar refaz a entrada do editor).
+    const confirmandoRef = useRef(false);
     const fecharMobile = async () => {
+        if (confirmandoRef.current) return false; // ESC com o diálogo já aberto: não empilha outro
         const ini = inicialRef.current;
         const alterou = !ini || titulo !== ini.titulo || conteudo !== ini.conteudo
             || String(grupoId ?? '') !== String(ini.grupoId ?? '') || Boolean(fixado) !== Boolean(ini.fixado);
         if (alterou) {
-            const ok = await confirm({
-                title: 'Descartar alterações?',
-                description: 'O que você mudou nesta nota ainda não foi salvo.',
-                confirmLabel: 'Descartar',
-                variant: 'danger',
-            });
-            if (!ok) return;
+            confirmandoRef.current = true;
+            let ok;
+            try {
+                ok = await confirm({
+                    title: 'Descartar alterações?',
+                    description: 'O que você mudou nesta nota ainda não foi salvo.',
+                    confirmLabel: 'Descartar',
+                    variant: 'danger',
+                });
+            } finally {
+                confirmandoRef.current = false;
+            }
+            if (!ok) return false;
         }
         closeModal();
+        return true;
     };
 
     // ── Fechar dropdown ao clicar fora ─────────────────────────────
@@ -252,7 +262,7 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
 
     return (
         <>
-        <BaseModal onClose={closeModal} className="registros-scope" sheet="full">
+        <BaseModal onClose={closeModal} onBack={isMobile ? fecharMobile : undefined} className="registros-scope" sheet="full">
             <div
                 className={`modal-content large-modal nota-editor${isFullscreen ? ' md-modal-fullscreen' : ''}`}
                 onClick={e => e.stopPropagation()}

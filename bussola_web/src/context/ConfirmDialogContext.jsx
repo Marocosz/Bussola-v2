@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useRef } from 'react';
+import { useIsMobile } from '../hooks/useIsMobile';
+import { useSheetHistory } from '../hooks/useSheetHistory';
 
 const ConfirmDialogContext = createContext();
 
@@ -40,6 +42,11 @@ export function ConfirmDialogProvider({ children }) {
             awaitingPromiseRef.current = null;
         }
     };
+
+    // Celular: o diálogo fica no topo da pilha do Voltar — o Voltar cancela só ele (o sheet de
+    // baixo continua aberto).
+    const isMobile = useIsMobile();
+    useSheetHistory(isMobile && dialogState.isOpen, () => handleClose(dialogState.options ? null : false));
 
     return (
         <ConfirmDialogContext.Provider value={openDialog}>

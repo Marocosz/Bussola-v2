@@ -88,6 +88,14 @@ test('efeitos globais preservados ao escopar o Auth (labels, input inválido, ho
   await expect.poll(() => salvar.evaluate((e) => getComputedStyle(e).filter)).toBe('brightness(1.1)');
 });
 
+// DiscordLink passou a usar o card .auth-status-* (fundo e borda reais): base desta aparência.
+// Sem ?token= a tela vai direto ao estado de erro, sem chamada de API nem toast.
+test('desktop discord-link (sem token) com card visível', async ({ page }) => {
+  await gotoApp(page, '/discord/link');
+  await expect(page.locator('.auth-status-card')).toContainText('Link inválido');
+  await expect(page).toHaveScreenshot('discord-link.png');
+});
+
 test.describe('status (base depois da correção das variáveis)', () => {
   test.use({ storageState: DESLOGADO });
   for (const [nome, rota] of [['verify-email', '/verify-email'], ['register-success', '/register-success']]) {

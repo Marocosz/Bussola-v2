@@ -7,12 +7,15 @@ import { useSheetHistory } from '../hooks/useSheetHistory';
  * Overlay base de todos os modais. No mobile (≤768) vira bottom sheet:
  * `sheet="auto"` (padrão) ancora no rodapé; `sheet="full"` ocupa a tela;
  * `sheet={false}` mantém o modal centralizado também no celular.
+ * `onBack` (opcional, padrão `onClose`): o que o Voltar do celular e o ESC chamam — ex.: uma checagem
+ * de alterações não salvas. Devolver false (ou promessa de false) mantém o modal com entrada de Voltar.
  */
-export function BaseModal({ children, onClose, className = '', sheet = 'auto' }) {
+export function BaseModal({ children, onClose, onBack, className = '', sheet = 'auto' }) {
     const mouseDownTarget = useRef(null);
     const isMobile = useIsMobile();
+    const pedirFechar = onBack ?? onClose;
     // Celular: o Voltar (Android/navegador) fecha o modal/sheet de cima.
-    useSheetHistory(isMobile, onClose);
+    useSheetHistory(isMobile, pedirFechar);
 
     useEffect(() => {
         lockScroll();
@@ -22,11 +25,11 @@ export function BaseModal({ children, onClose, className = '', sheet = 'auto' })
     // Fecha com ESC
     useEffect(() => {
         const handleKeyDown = (e) => {
-            if (e.key === 'Escape') onClose();
+            if (e.key === 'Escape') pedirFechar();
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [onClose]);
+    }, [pedirFechar]);
 
     const handleOverlayClick = useCallback((e) => {
         if (e.target === e.currentTarget && mouseDownTarget.current === e.currentTarget) onClose();

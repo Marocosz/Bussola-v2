@@ -14,6 +14,7 @@ test('manifest com nome, standalone, cores e ícones 192/512 + maskable', async 
   expect(res.ok()).toBe(true);
   const m = await res.json();
   expect(m).toMatchObject({
+    id: '/',
     name: 'Bússola',
     short_name: 'Bússola',
     display: 'standalone',

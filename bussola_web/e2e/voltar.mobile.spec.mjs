@@ -159,3 +159,185 @@ test('Voltar da topbar (TopbarTitle) segue usando o idx do router depois de abri
   await expect(page).toHaveURL(/\/estudos$/);
   expect(await page.evaluate(() => window.history.state.idx)).toBe(idx - 1);
 });
+
+// ---------------------------------------------------------------------------
+// Correções finais: editor de nota (alterações não salvas), confirmação, conta, picker, rotação, recarga
+// ---------------------------------------------------------------------------
+const editor = (page) => page.locator('.modal-overlay.is-sheet-full');
+const tituloNota = (page) => editor(page).getByRole('textbox', { name: 'Título', exact: true });
+const dialogo = (page) => page.locator('.confirm-modal');
+
+async function irParaRegistros(page) {
+  await gotoApp(page, '/financas');
+  await nav(page).getByText('Registros', { exact: true }).click();
+  await expect(page).toHaveURL(/\/registros$/);
+}
+
+test('editor de nota: Voltar sem alterações fecha direto; com alterações pede confirmação, Cancelar mantém e o próximo Voltar pergunta de novo', async ({ page }) => {
+  await irParaRegistros(page);
+  await page.locator('.app-fab').click();
+  await expect(editor(page)).toBeVisible();
+  await expect.poll(() => marca(page)).not.toBeNull();
+  await voltar(page);
+  await expect(editor(page)).toHaveCount(0);
+  await expect(dialogo(page)).toHaveCount(0);
+  await expect.poll(() => marca(page)).toBeNull();
+
+  await page.locator('.app-fab').click();
+  await tituloNota(page).fill('E2E voltar editor');
+  await expect.poll(() => marca(page)).not.toBeNull();
+  await voltar(page);
+  await expect(dialogo(page)).toContainText('Descartar alterações?');
+  await expect(editor(page)).toBeVisible();
+  await dialogo(page).getByRole('button', { name: 'Cancelar' }).click();
+  await expect(dialogo(page)).toHaveCount(0);
+  await expect(tituloNota(page)).toHaveValue('E2E voltar editor');
+  await tick(page);
+  await expect.poll(() => marca(page)).not.toBeNull();
+  await expect(page).toHaveURL(/\/registros$/);
+
+  // o editor voltou a ter entrada: o próximo Voltar pergunta de novo (não sai da rota)
+  await voltar(page);
+  await expect(dialogo(page)).toContainText('Descartar alterações?');
+  await expect(editor(page)).toBeVisible();
+  await expect(page).toHaveURL(/\/registros$/);
+  await dialogo(page).getByRole('button', { name: 'Descartar' }).click();
+  await expect(editor(page)).toHaveCount(0);
+  await tick(page);
+  await expect.poll(() => marca(page)).toBeNull();
+  await expect(page).toHaveURL(/\/registros$/);
+  await voltar(page);
+  await expect(page).toHaveURL(/\/financas$/);
+});
+
+test('editor de nota: ESC passa pela mesma confirmação (sem empilhar diálogos)', async ({ page }) => {
+  await irParaRegistros(page);
+  await page.locator('.app-fab').click();
+  await tituloNota(page).fill('E2E esc editor');
+  await page.keyboard.press('Escape');
+  await expect(dialogo(page)).toContainText('Descartar alterações?');
+  await expect(editor(page)).toBeVisible();
+  await page.keyboard.press('Escape'); // com o diálogo aberto: não abre outro nem fecha o editor
+  await expect(dialogo(page)).toHaveCount(1);
+  await expect(editor(page)).toBeVisible();
+  await dialogo(page).getByRole('button', { name: 'Cancelar' }).click();
+  await expect(dialogo(page)).toHaveCount(0);
+  await expect(tituloNota(page)).toHaveValue('E2E esc editor');
+  await tituloNota(page).press('Escape');
+  await expect(dialogo(page)).toContainText('Descartar alterações?');
+  await dialogo(page).getByRole('button', { name: 'Descartar' }).click();
+  await expect(editor(page)).toHaveCount(0);
+  await tick(page);
+  await expect.poll(() => marca(page)).toBeNull();
+  await expect(page).toHaveURL(/\/registros$/);
+});
+
+test('Voltar sobre uma confirmação fecha só a confirmação; o sheet de baixo continua', async ({ page }) => {
+  await gotoApp(page, '/__ui');
+  await page.getByRole('button', { name: 'Abrir modal longo' }).click();
+  const modal = page.locator('.modal-overlay.is-sheet');
+  await expect.poll(() => marca(page)).not.toBeNull();
+  await modal.getByRole('button', { name: 'Abrir confirmação' }).click();
+  await expect(dialogo(page)).toBeVisible();
+  await voltar(page);
+  await expect(dialogo(page)).toHaveCount(0);
+  await tick(page);
+  await expect(modal).toBeVisible();
+  await expect.poll(() => marca(page)).not.toBeNull();
+  await expect(page).toHaveURL(/\/__ui$/);
+
+  // Cancelar pelo botão também tira só a entrada do diálogo
+  await modal.getByRole('button', { name: 'Abrir confirmação' }).click();
+  await dialogo(page).getByRole('button', { name: 'Cancelar' }).click();
+  await expect(dialogo(page)).toHaveCount(0);
+  await tick(page);
+  await expect(modal).toBeVisible();
+  await expect.poll(() => marca(page)).not.toBeNull();
+
+  await voltar(page);
+  await expect(modal).toHaveCount(0);
+  await expect(page).toHaveURL(/\/__ui$/);
+  await expect.poll(() => marca(page)).toBeNull();
+});
+
+test('Voltar sobre o "Descartar alterações?" do ✕ fecha só o diálogo; o editor continua com entrada', async ({ page }) => {
+  await irParaRegistros(page);
+  await page.locator('.app-fab').click();
+  await tituloNota(page).fill('E2E voltar dialogo');
+  await editor(page).locator('.nota-m-topbar').getByRole('button', { name: 'Fechar', exact: true }).click();
+  await expect(dialogo(page)).toContainText('Descartar alterações?');
+  await voltar(page);
+  await expect(dialogo(page)).toHaveCount(0);
+  await tick(page);
+  await expect(editor(page)).toBeVisible();
+  await expect(tituloNota(page)).toHaveValue('E2E voltar dialogo');
+  await expect.poll(() => marca(page)).not.toBeNull();
+  await voltar(page);
+  await expect(dialogo(page)).toContainText('Descartar alterações?');
+  await dialogo(page).getByRole('button', { name: 'Descartar' }).click();
+  await expect(editor(page)).toHaveCount(0);
+  await expect(page).toHaveURL(/\/registros$/);
+});
+
+test('Voltar fecha o painel "Minha conta" e fica na rota', async ({ page }) => {
+  await irParaPanorama(page);
+  await page.getByRole('button', { name: 'Minha conta' }).click();
+  const drawer = page.locator('.drawer-content.open');
+  await expect(drawer).toBeVisible();
+  await expect.poll(() => marca(page)).not.toBeNull();
+  await voltar(page);
+  await expect(drawer).toHaveCount(0);
+  await expect(page).toHaveURL(/\/panorama$/);
+  await expect.poll(() => marca(page)).toBeNull();
+  await voltar(page);
+  await expect(page).toHaveURL(/\/financas$/);
+});
+
+test('form em tela cheia com picker aninhado: Voltar fecha o picker, depois o form', async ({ page }) => {
+  await gotoApp(page, '/financas');
+  await page.getByRole('button', { name: 'Nova transação' }).click();
+  await page.locator('.action-sheet').getByRole('button', { name: 'Pontual' }).click();
+  const form = page.locator('.modal-overlay.is-sheet', { has: page.locator('input[name="valor"]') });
+  await expect(form).toBeVisible();
+  await form.locator('.custom-select-trigger').nth(0).click();
+  const lista = page.locator('.cs-sheet-list');
+  await expect(lista).toBeVisible();
+  await voltar(page);
+  await expect(lista).toHaveCount(0);
+  await expect(form).toBeVisible();
+  await tick(page);
+  await expect(form).toBeVisible();
+  await voltar(page);
+  await expect(form).toHaveCount(0);
+  await expect(page).toHaveURL(/\/financas$/);
+  await expect.poll(() => marca(page)).toBeNull();
+});
+
+test('girar para > 768 com um modal aberto tira a entrada; voltar a 390 recoloca', async ({ page }) => {
+  await gotoApp(page, '/__ui');
+  await page.getByRole('button', { name: 'Abrir modal longo' }).click();
+  const modal = page.locator('.modal-overlay');
+  await expect.poll(() => marca(page)).not.toBeNull();
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await expect.poll(() => marca(page)).toBeNull();
+  await expect(modal).toBeVisible();
+  await expect(page).toHaveURL(/\/__ui$/);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect.poll(() => marca(page)).not.toBeNull();
+  await voltar(page);
+  await expect(modal).toHaveCount(0);
+  await expect(page).toHaveURL(/\/__ui$/);
+  await expect.poll(() => marca(page)).toBeNull();
+});
+
+test('recarregar com um sheet aberto não deixa um Voltar "morto"', async ({ page }) => {
+  await irParaPanorama(page);
+  await nav(page).getByRole('button', { name: 'Mais' }).click();
+  await expect.poll(() => marca(page)).not.toBeNull();
+  await page.reload();
+  await expect(nav(page)).toBeVisible();
+  await expect.poll(() => marca(page)).toBeNull();
+  await expect(page).toHaveURL(/\/panorama$/);
+  await voltar(page);
+  await expect(page).toHaveURL(/\/financas$/);
+});
