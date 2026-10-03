@@ -319,7 +319,8 @@
 /* === CELULAR (≤768): formulário primeiro, sem ilustração e sem
 /* === parágrafo, 16px de gutter e página rolável (teclado aberto)
 /* =================================================================== */
-@media (max-width: 768px) {
+/* Tablet touch em retrato (769-1024) recebe o mesmo layout: o formulário não pode ficar abaixo da dobra */
+@media (max-width: 768px), (pointer: coarse) and (max-width: 1024px) and (orientation: portrait) {
     .auth-page {
         align-items: flex-start;
         overflow: visible;
@@ -387,5 +388,18 @@
 
     .auth-intro h1 {
         font-size: clamp(1.5rem, 7vw, 2rem);
+    }
+}
+
+/* Tablet touch em retrato: card com largura de leitura, centralizado */
+@media (min-width: 769px) and (pointer: coarse) and (max-width: 1024px) and (orientation: portrait) {
+    .auth-card {
+        width: 100%;
+        max-width: 480px;
+        margin-inline: auto;
+    }
+
+    .auth-intro h1 {
+        font-size: 2rem;
     }
 }
