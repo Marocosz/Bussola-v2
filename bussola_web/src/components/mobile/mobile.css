@@ -78,6 +78,8 @@
 }
 
 @media (max-width: 768px) {
+    /* Respiro padrão: o corpo de todo Sheet começa 16px abaixo da linha do cabeçalho */
+    .modal-content.app-sheet > .app-sheet-body { padding-top: var(--sp-4); }
     .sheet-grab { display: block; }
     .is-sheet-full .sheet-grab { display: none; }
 }

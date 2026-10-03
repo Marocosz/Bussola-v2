@@ -333,6 +333,7 @@ test.describe('ações da linha', () => {
     const sheet = page.locator('.m-parcelas');
     await expect(sheet.locator('.parcela-sub-row')).toHaveCount(10);
     await expect(sheet.locator('.parcela-sub-current')).toHaveCount(1);
+    await page.waitForTimeout(450); // fim da animação do sheet (o scale em andamento dá 43.99997)
     expect(await overflowOffenders(page)).toEqual([]);
     for (const r of await sheet.locator('.parcela-sub-row').all()) expect((await r.boundingBox()).height).toBeGreaterThanOrEqual(44);
   });

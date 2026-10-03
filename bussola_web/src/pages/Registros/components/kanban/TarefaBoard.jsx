@@ -109,6 +109,10 @@ export function TarefaBoard({ novaRef }) {
 
     useEffect(() => { carregar(); }, [carregar]);
 
+    // Espelho do estado atual, para o caminho de erro de salvarColuna comparar com o que ele produziu.
+    const colunasRef = useRef(colunas);
+    useEffect(() => { colunasRef.current = colunas; }, [colunas]);
+
     // Estado do quadro antes do arraste: volta para ele se o arraste for cancelado ou a API falhar.
     const antesDoArrasteRef = useRef(null);
 
@@ -133,11 +137,14 @@ export function TarefaBoard({ novaRef }) {
             return true;
         } catch (e) {
             logger.error('Erro ao reordenar', { error: String(e) });
-            setColunas(anterior);
+            // Só desfaz se o quadro ainda é o que este salvamento produziu; se outra mudança
+            // já o alterou, reverter apagaria essa mudança: recarrega do servidor.
+            if (colunasRef.current === novo) setColunas(cur => (cur === novo ? anterior : cur));
+            else carregar();
             addToast({ type: 'error', title: 'Erro', description: 'Não consegui salvar a mudança.' });
             return false;
         }
-    }, [addToast]);
+    }, [addToast, carregar]);
 
     // O novo estado é calculado aqui, a partir do `colunas` atual, e não dentro de um updater do
     // setColunas: updaters rodam depois, então os ids lidos logo em seguida ainda seriam nulos
@@ -195,13 +202,35 @@ export function TarefaBoard({ novaRef }) {
     }, [busca, filtroPrio]);
 
     // --- Celular: uma coluna por vez. O chip leva à coluna; o swipe (scroll-snap) atualiza o chip. ---
+    // Enquanto o scroll suave iniciado pelo chip roda, o scroll não atualiza o chip ativo
+    // (senão o destaque passaria pelos chips intermediários).
+    const rolandoChipRef = useRef(false);
+    const rolandoTimerRef = useRef(null);
+    const fimRolagemChip = useCallback(() => {
+        rolandoChipRef.current = false;
+        clearTimeout(rolandoTimerRef.current);
+        // Sincroniza com onde a rolagem realmente parou (ex.: o usuário arrastou durante o scroll suave).
+        const el = boardRef.current;
+        if (el && el.clientWidth) {
+            const idx = Math.round(el.scrollLeft / el.clientWidth);
+            setColAtiva((prev) => (prev === idx ? prev : idx));
+        }
+    }, []);
+
     const irParaColuna = useCallback((idx) => {
         setColAtiva(idx);
         const el = boardRef.current;
-        if (el) el.scrollTo({ left: idx * el.clientWidth, behavior: 'smooth' });
-    }, []);
+        if (!el) return;
+        rolandoChipRef.current = true;
+        clearTimeout(rolandoTimerRef.current);
+        rolandoTimerRef.current = setTimeout(fimRolagemChip, 800); // fallback p/ navegadores sem scrollend
+        el.scrollTo({ left: idx * el.clientWidth, behavior: 'smooth' });
+    }, [fimRolagemChip]);
+
+    useEffect(() => () => clearTimeout(rolandoTimerRef.current), []);
 
     const onBoardScroll = useCallback((e) => {
+        if (rolandoChipRef.current) return;
         const el = e.currentTarget;
         if (!el.clientWidth) return;
         const idx = Math.round(el.scrollLeft / el.clientWidth);
@@ -283,7 +312,7 @@ export function TarefaBoard({ novaRef }) {
                     onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd} onDragCancel={onDragCancel}
                 >
                     {/* data-offscreen-ok: as colunas fora da tela fazem parte de um carrossel rolável */}
-                    <div className="kb-board" ref={boardRef} data-offscreen-ok onScroll={isMobile ? onBoardScroll : undefined}>
+                    <div className="kb-board" ref={boardRef} data-offscreen-ok onScroll={isMobile ? onBoardScroll : undefined} onScrollEnd={isMobile ? fimRolagemChip : undefined}>
                         {COLUNAS.map(col => (
                             <BoardColumn
                                 key={col.key} coluna={col} tarefas={colunas[col.key]}
