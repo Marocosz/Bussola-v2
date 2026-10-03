@@ -149,3 +149,18 @@
     min-height: 48px;
     background: var(--cor-fundo);
 }
+
+/* Toque (modal do desktop em tablet): alvos de 44px sem mexer no layout com mouse */
+@media (pointer: coarse) {
+    .admin-modal-close-btn {
+        min-width: var(--tap-min);
+        min-height: var(--tap-min);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .admin-modal-footer button {
+        min-height: var(--tap-min);
+    }
+}
