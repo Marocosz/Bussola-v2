@@ -40,7 +40,7 @@ export function Login() {
 
                 if (result.success) {
                     addToast({ type: 'success', title: 'Login com Google', description: 'Bem-vindo de volta!' });
-                    navigate(nextUrl);
+                    navigate(nextUrl, { replace: true });
                 } else {
                     addToast({ type: 'error', title: 'Falha', description: 'Não foi possível autenticar com o Google.' });
                 }
@@ -66,7 +66,7 @@ export function Login() {
 
             if (result.success) {
                 addToast({ type: 'success', title: 'Bem-vindo!', description: 'Login realizado com sucesso.' });
-                navigate(nextUrl);
+                navigate(nextUrl, { replace: true });
             } else {
                 // Tratamento específico para conta não verificada (Backend retorna 401 com mensagem)
                 const errorMsg = result.message || 'Credenciais inválidas.';
@@ -77,7 +77,7 @@ export function Login() {
                     addToast({ type: 'error', title: 'Falha no Login', description: errorMsg });
                 }
             }
-        } catch (error) {
+        } catch {
             addToast({ type: 'error', title: 'Erro', description: 'Servidor indisponível no momento.' });
         } finally {
             setLoading(false);

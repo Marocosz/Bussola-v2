@@ -389,6 +389,8 @@ test.describe('kit', () => {
   test('cards em 1 coluna, botões em largura total, alvos ≥ 44px, sem o link "Biblioteca"', async ({ page }) => {
     await mockEstudos(page);
     await gotoApp(page, '/estudos/kit');
+    await page.locator('.kit-card').first().waitFor();
+    await animacoesAcabaram(page);
     const cards = await Promise.all((await page.locator('.kit-card').all()).map((c) => c.boundingBox()));
     expect(cards).toHaveLength(2);
     expect(Math.round(cards[0].x)).toBe(16);
@@ -397,10 +399,16 @@ test.describe('kit', () => {
     for (const b of await page.locator('.kit-baixar').all()) {
       const box = await b.boundingBox();
       expect(box.height).toBeGreaterThanOrEqual(48);
-      expect(Math.round(box.width)).toBe(390 - 32 - 32 - 2); // gutter, padding do card e as bordas de 1px
+      // largura total da área útil do card (sem depender da borda nem do padding)
+      const interna = await b.evaluate((e) => {
+        const c = e.closest('.kit-card');
+        const s = getComputedStyle(c);
+        return c.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight);
+      });
+      expect(Math.round(box.width)).toBe(Math.round(interna));
     }
     await expect(page.locator('.estudos-kit-voltar')).toBeHidden();
-    expect(await smallTargets(page, '.estudos-scope')).toEqual([]);
+    await expect.poll(() => smallTargets(page, '.estudos-scope')).toEqual([]);
   });
 
   test('copiar o comando do MCP e baixar o kit', async ({ page }) => {
@@ -412,5 +420,39 @@ test.describe('kit', () => {
     const download = page.waitForEvent('download');
     await page.getByRole('button', { name: /Baixar kit para Claude Code/ }).click();
     expect((await download).suggestedFilename()).toBe('bussola-estudos-claude-code.zip');
+  });
+
+  test('botão de copiar tem nome acessível e o texto do kit está na escala (14px)', async ({ page }) => {
+    await mockEstudos(page);
+    await gotoApp(page, '/estudos/kit');
+    await expect(page.getByRole('button', { name: 'Copiar comando' })).toHaveCount(1);
+    await expect(page.locator('.kit-comando button')).toHaveAttribute('aria-label', 'Copiar comando');
+    for (const sel of ['.kit-intro', '.kit-rodape']) {
+      expect(await page.locator(sel).first().evaluate((e) => getComputedStyle(e).fontSize), sel).toBe('14px');
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Correção final — link direto sem sessão
+// ---------------------------------------------------------------------------
+test.describe('link direto deslogado', () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  test('depois do login, Voltar não cai na tela de login', async ({ page }) => {
+    await mockEstudos(page);
+    await gotoApp(page, '/estudos/9101');
+    await expect(page).toHaveURL(/\/login\?next=/);
+    await page.locator('#username').fill('demo@bussola.dev');
+    await page.locator('#password').fill('Demo12345!');
+    await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+    await expect(page).toHaveURL(/\/estudos\/9101$/);
+    await page.locator('.bloco-quiz').first().waitFor();
+    await animacoesAcabaram(page);
+    expect(await page.evaluate(() => window.history.state.idx)).toBe(0);
+    await voltar(page).click();
+    // Voltar da leitura preserva o filtro do tema (?tema=901)
+    await expect(page).toHaveURL(/\/estudos(\?tema=\d+)?$/);
+    await expect(tituloTopbar(page)).toHaveText('Estudos');
   });
 });

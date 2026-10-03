@@ -86,7 +86,7 @@ export function KitEstudos() {
                                 Em <strong>Configurações da Conta → Conexões MCP</strong>, crie um token (ler e escrever) e conecte:
                                 <div className="kit-comando">
                                     <code>{COMANDO_MCP}</code>
-                                    <button type="button" onClick={() => copiar(COMANDO_MCP, 'Comando copiado')} title="Copiar comando">
+                                    <button type="button" onClick={() => copiar(COMANDO_MCP, 'Comando copiado')} title="Copiar comando" aria-label="Copiar comando">
                                         <i className="fa-regular fa-copy"></i>
                                     </button>
                                 </div>

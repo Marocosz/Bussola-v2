@@ -37,7 +37,7 @@ function RequireAuth({ children }) {
 
     if (!authenticated) {
         const next = encodeURIComponent(location.pathname + location.search);
-        return <Navigate to={`/login?next=${next}`} />;
+        return <Navigate to={`/login?next=${next}`} replace />;
     }
 
     return children;

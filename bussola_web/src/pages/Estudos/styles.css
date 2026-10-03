@@ -509,13 +509,12 @@
     /* ---- kit ---- */
     .estudos-scope .page-header .estudos-kit-voltar { display: none; } /* a topbar tem o Voltar */
     .kit-intro,
-    .kit-rodape { font-size: 0.9375rem; }
+    .kit-rodape { font-size: 0.875rem; }
     .kit-grade { grid-template-columns: 1fr; gap: var(--sp-3); margin-top: var(--sp-4); }
     .kit-card { padding: var(--sp-4); gap: var(--sp-4); }
     .kit-card header { gap: var(--sp-3); }
     .kit-passos { gap: var(--sp-3); }
     .kit-comando { padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-3); align-items: center; }
-    .kit-card > .kit-baixar { align-self: stretch; }
     .kit-botoes { flex-direction: column; gap: var(--sp-2); }
     .kit-baixar { width: 100%; min-height: 48px; }
 }

@@ -317,7 +317,7 @@
 
 /* ---- celular (≤768) ---- */
 @media (max-width: 768px) {
-    /* Identificadores/URLs longos quebram em vez de estourar; a tabela rola dentro do bloco */
+    /* Coluna de leitura: 16px, blocos com 16px entre si */
     .estudo-coluna { font-size: 1rem; gap: var(--sp-4); }
 
     .bloco-secao { font-size: 1.2rem; margin: var(--sp-5) 0 0; }

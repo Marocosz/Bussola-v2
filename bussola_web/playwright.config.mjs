@@ -31,6 +31,8 @@ export default defineConfig({
     {
       command: 'npm run dev -- --host 127.0.0.1 --port 5173 --strictPort',
       url: 'http://127.0.0.1:5173',
+      // A tela de login monta o GoogleOAuthProvider, que exige um client_id (o valor não é usado).
+      env: { VITE_GOOGLE_CLIENT_ID: process.env.VITE_GOOGLE_CLIENT_ID || 'e2e-client-id.apps.googleusercontent.com' },
       reuseExistingServer: true,
       timeout: 120_000,
     },
