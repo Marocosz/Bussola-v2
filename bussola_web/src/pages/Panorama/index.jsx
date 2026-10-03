@@ -258,6 +258,7 @@ function PayBars({ items }) {
 // para alinhar com os botões de mês em HTML (que substituem os rótulos SVG), coluna `sel`
 // destacada; tocar numa coluna chama onSel(i). Sem compact: desenho do desktop, intocado.
 function Evolution({ ev, compact = false, sel = -1, onSel }) {
+  const touch = !!onSel; // toque: sem rótulos SVG (viram botões HTML), coluna selecionada em destaque
   const VBW = compact ? 320 : 640, VBH = compact ? 166 : 210;
   const X0 = compact ? 0 : 42, X1 = compact ? 320 : 624, W = X1 - X0, Y0 = compact ? 10 : 18, Y1 = compact ? 156 : 178, Hh = Y1 - Y0;
   const maxBar = Math.max(...ev.map(e => Math.max(e.rec, e.desp)), 1);
@@ -268,10 +269,10 @@ function Evolution({ ev, compact = false, sel = -1, onSel }) {
     const cx = X0 + gw * i + gw / 2; const rh = e.rec / maxBar * Hh, dh = e.desp / maxBar * Hh;
     return (
       <g key={i}>
-        {compact && i === sel && <rect className="pv2-evo-sel" x={X0 + gw * i + 2} y={Y0 - 6} width={gw - 4} height={Hh + 6} rx="8" />}
+        {touch && i === sel && <rect className="pv2-evo-sel" x={X0 + gw * i + 2} y={Y0 - 6} width={gw - 4} height={Hh + 6} rx="8" />}
         <rect x={cx - bw - 1} y={Y1 - rh} width={bw} height={rh} rx="3" style={{ fill: 'var(--green)', fillOpacity: 0.85 }} />
         <rect x={cx + 1} y={Y1 - dh} width={bw} height={dh} rx="3" style={{ fill: 'var(--red)', fillOpacity: 0.8 }} />
-        {!compact && <text x={cx} y="196" textAnchor="middle" style={{ fill: 'var(--muted2)', fontSize: 10 }}>{e.m}</text>}
+        {!touch && <text x={cx} y="196" textAnchor="middle" style={{ fill: 'var(--muted2)', fontSize: 10 }}>{e.m}</text>}
         {/* alvo de hover da coluna inteira → valores do mês (no toque, seleciona) */}
         <rect x={cx - gw / 2} y={Y0} width={gw} height={Hh} data-tooltip={tipFor(e)} onClick={onSel ? () => onSel(i) : undefined} style={{ fill: 'transparent', pointerEvents: 'all', cursor: onSel ? 'pointer' : 'help' }} />
       </g>
@@ -655,8 +656,9 @@ export function Panorama() {
         </div>
         {evTouch ? (
           <>
-            <Evolution ev={evShown} compact sel={evIdx} onSel={setEvoSel} />
-            <div className="pv2-evo-months" style={{ gridTemplateColumns: `repeat(${evShown.length}, minmax(0, 1fr))` }}>
+            <Evolution ev={evShown} compact={isMobile} sel={evIdx} onSel={setEvoSel} />
+            {/* Celular: colunas de borda a borda. Tablet: geometria do desktop (X 42–624 de 640), botões alinhados a ela. */}
+            <div className="pv2-evo-months" style={{ gridTemplateColumns: `repeat(${evShown.length}, minmax(0, 1fr))`, ...(isMobile ? {} : { marginLeft: `${42 / 640 * 100}%`, width: `${582 / 640 * 100}%` }) }}>
               {evShown.map((e, i) => (
                 <button key={i} type="button" className={`pv2-evo-month ${i === evIdx ? 'active' : ''}`} aria-pressed={i === evIdx} onClick={() => setEvoSel(i)}>{e.m}</button>
               ))}
@@ -731,9 +733,9 @@ export function Panorama() {
         </div>
         {week.length ? (
           <>
-            <Weekday days={week} compact={isMobile} sel={isMobile ? weekIdx : -1} onSel={isMobile ? setWeekSel : undefined} />
+            <Weekday days={week} compact={isMobile} sel={evTouch ? weekIdx : -1} onSel={evTouch ? setWeekSel : undefined} />
             {/* Celular: a média de cada dia (antes só no tooltip). ‹ › porque 7 colunas não dão 44px em 360. */}
-            {isMobile && (
+            {evTouch && (
               <div className="pv2-readout pv2-week-readout" aria-live="polite">
                 <button type="button" className="pv2-readout-step" aria-label="Dia anterior" onClick={() => setWeekSel((weekIdx - 1 + week.length) % week.length)}><i className="fa-solid fa-chevron-left"></i></button>
                 <span className="pv2-readout-text"><b>{week[weekIdx].d}</b> · média <b data-money="">{fmt(week[weekIdx].v)}</b></span>

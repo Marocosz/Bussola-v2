@@ -312,6 +312,11 @@ test.describe('widgets', () => {
     await expect(linhas.nth(3)).toHaveText(/Transporte\s*R\$\s210\s*5%/);
     const nome = await legenda.locator('.pv2-donut-legend-name').first().evaluate((e) => getComputedStyle(e).fontSize);
     expect(parseFloat(nome)).toBeGreaterThanOrEqual(14);
+    // amostras da legenda = cores dos segmentos do gráfico, na mesma ordem
+    const amostras = await legenda.locator('.pv2-donut-legend-sw').evaluateAll((els) => els.map((e) => getComputedStyle(e).backgroundColor));
+    const tracos = await page.locator('[data-widget="donut"] svg circle').evaluateAll((els) => els.map((e) => getComputedStyle(e).stroke));
+    expect(amostras).toHaveLength(4);
+    expect(amostras).toEqual(tracos);
   });
 
   test('Evolução: 6 meses, botões de 44px e leitura fixa (botão e coluna dão o mesmo mês)', async ({ page }) => {

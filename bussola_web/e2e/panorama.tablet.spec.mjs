@@ -62,7 +62,43 @@ test('tablet (sem hover): Evolução com botões de mês e leitura por toque', a
   const card = page.locator('[data-widget="evolucao"]');
   const meses = card.locator('.pv2-evo-month');
   expect(await meses.count()).toBeGreaterThanOrEqual(6);
-  await meses.nth((await meses.count()) - 2).click();
-  await expect(card.locator('.pv2-readout')).toHaveText(/Receita.*Despesa.*Caixa/);
+  const n = await meses.count();
+  const leitura = card.locator('.pv2-readout');
+  await expect(leitura).toHaveText(/out\/26.*Receita\s*R\$\s8\.400/); // padrão: mês atual
+  const alvo = meses.nth(n - 2);
+  const nome = (await alvo.textContent()).trim();
+  await alvo.click();
+  await expect(alvo).toHaveAttribute('aria-pressed', 'true');
+  await expect(meses.last()).toHaveAttribute('aria-pressed', 'false');
+  await expect(leitura).toHaveText(new RegExp(`^${nome}.*Receita.*Despesa.*Caixa`));
+  await expect(leitura).not.toHaveText(/out\/26/);
   expect((await meses.first().boundingBox()).height).toBeGreaterThanOrEqual(44);
+  // geometria do desktop (sem texto no SVG); botões alinhados às colunas (12 colunas em 582/640 da largura)
+  await expect(card.locator('svg text')).toHaveCount(0);
+  const svg = await card.locator('svg').boundingBox();
+  const b = await meses.first().boundingBox();
+  expect(Math.abs(b.width - (svg.width * 582 / 640) / n)).toBeLessThanOrEqual(1);
+  expect(Math.abs(b.x - (svg.x + svg.width * 42 / 640))).toBeLessThanOrEqual(1);
+  // proporção do desenho do desktop (640x210), não o compacto ampliado
+  expect(Math.abs(svg.width / svg.height - 640 / 210)).toBeLessThan(0.05);
+});
+
+test('tablet (sem hover): Média por dia com leitura e ‹ › (valor muda)', async ({ page }) => {
+  await usarFixture(page);
+  await gotoApp(page, '/panorama');
+  const card = page.locator('[data-widget="media"]');
+  const leitura = card.locator('.pv2-week-readout');
+  await expect(leitura).toHaveText(/Qua\s*·\s*média\s*R\$\s80/);
+  await card.getByRole('button', { name: 'Próximo dia' }).click();
+  await expect(leitura).toHaveText(/Qui\s*·\s*média\s*R\$\s40/);
+  await card.getByRole('button', { name: 'Dia anterior' }).click();
+  await card.getByRole('button', { name: 'Dia anterior' }).click();
+  await expect(leitura).toHaveText(/Ter\s*·\s*média\s*R\$\s30/);
+  for (const nm of ['Dia anterior', 'Próximo dia']) {
+    expect(Math.round((await card.getByRole('button', { name: nm }).boundingBox()).height)).toBeGreaterThanOrEqual(44);
+  }
+  // tocar na coluna também seleciona (Sáb = 7ª de 7)
+  const svg = await card.locator('svg').boundingBox();
+  await page.mouse.click(svg.x + svg.width * (6.5 / 7.2), svg.y + svg.height * 0.4);
+  await expect(leitura).not.toHaveText(/Ter\s*·/);
 });
