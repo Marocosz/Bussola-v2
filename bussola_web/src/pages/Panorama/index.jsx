@@ -5,6 +5,7 @@ import { logger } from '../../utils/logger';
 import { useToast } from '../../context/ToastContext';
 import { DateRangeFilter } from '../../components/DateRangeFilter';
 import { computeRange } from '../../utils/dateRange';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import './styles.css';
 import './panorama-v2.css';
 
@@ -22,8 +23,11 @@ const SEV = {
 const insightIcon = (it) => it.severidade === 'perigo' ? 'fa-solid fa-triangle-exclamation' : it.severidade === 'aviso' ? 'fa-solid fa-clock' : 'fa-solid fa-circle-info';
 
 // Ordem das seções do topo e dos widgets do grid (chaves dos objetos `topo` e `widgets`).
+// No celular (≤768) vale a ordem aprovada no mockup "Cubo em cima"; o tablet usa a do desktop.
 const TOPO_DESKTOP = ['atencao', 'hero', 'kpis'];
+const TOPO_MOBILE = ['hero', 'kpis', 'atencao'];
 const WIDGETS_DESKTOP = ['evolucao', 'donut', 'orcamento', 'cofrinhos', 'pagamento', 'media', 'ritmo', 'produtividade', 'agenda', 'cofre'];
+const WIDGETS_MOBILE = ['orcamento', 'cofrinhos', 'donut', 'evolucao', 'pagamento', 'media', 'ritmo', 'produtividade', 'agenda', 'cofre'];
 
 // Dispensar/snooze de alertas: guarda id → timestamp de expiração (24h) no localStorage.
 const DISMISS_KEY = 'panorama_dismissed';
@@ -317,6 +321,7 @@ export function Panorama() {
   const [privacy, setPrivacy] = useState(() => localStorage.getItem('panorama_privacy') === 'true');
   const [attnPage, setAttnPage] = useState(0);
   const [dismissed, setDismissed] = useState(loadDismissed);
+  const isMobile = useIsMobile();
 
   const dismissInsight = (id) => {
     const next = { ...dismissed, [id]: Date.now() + DISMISS_MS };
@@ -713,9 +718,9 @@ export function Panorama() {
       <div className="pv2-root" data-privacy={privacy ? 'on' : 'off'}>
         <div className="pv2-inner">
           {/* Fragment com key: trocar a ordem MOVE os nós (o DateRangeFilter do hero não remonta). */}
-          {TOPO_DESKTOP.map((k) => topo[k] && <React.Fragment key={k}>{topo[k]}</React.Fragment>)}
+          {(isMobile ? TOPO_MOBILE : TOPO_DESKTOP).map((k) => topo[k] && <React.Fragment key={k}>{topo[k]}</React.Fragment>)}
           <div className="pv2-grid">
-            {WIDGETS_DESKTOP.map((k) => <React.Fragment key={k}>{widgets[k]}</React.Fragment>)}
+            {(isMobile ? WIDGETS_MOBILE : WIDGETS_DESKTOP).map((k) => <React.Fragment key={k}>{widgets[k]}</React.Fragment>)}
           </div>
           <div style={{ height: 20 }} />
         </div>

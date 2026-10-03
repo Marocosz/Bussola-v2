@@ -98,8 +98,6 @@ body.light-theme .panorama-scope {
 
 /* Grid + glass cards */
 .pv2-grid { display: grid; grid-template-columns: repeat(12,1fr); gap: 18px; margin-top: 34px; }
-@media (max-width: 960px) { .pv2-grid { grid-template-columns: repeat(6,1fr); } }
-@media (max-width: 600px) { .pv2-grid { grid-template-columns: repeat(2,1fr); } }
 /* Sombra neumórfica (brilho externo) nos dois temas. */
 .pcard { position: relative; border-radius: 20px; background: var(--bg); padding: 20px; border: none;
   box-shadow: -7px -7px 18px rgba(255,255,255,.028), 9px 11px 26px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.05), inset 1px 0 0 rgba(255,255,255,.05); }
@@ -130,7 +128,6 @@ body.light-theme .pcard {
 .pv2-eq .pv2-budget::-webkit-scrollbar { width: 6px; }
 .pv2-eq .pv2-budget::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 .pv2-eq .pv2-goals { flex: 1; min-height: 0; align-items: center; align-content: center; }
-@media (max-width: 600px) { .pv2-eq { height: auto; } }
 
 /* Orçamento */
 .pv2-budget { display: flex; flex-direction: column; gap: 15px; }
@@ -174,3 +171,32 @@ body.light-theme .pcard {
 .pv2-divider { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
 .pv2-empty-note { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--muted); padding: 1rem; text-align: center; min-height: 120px; }
 .pv2-empty-note i { font-size: 1.6rem; opacity: .5; }
+
+/* =======================================================================
+   RESPONSIVO — tablet (769–1024) e celular (≤768). Desktop (≥1025) não muda.
+   ======================================================================= */
+
+/* Tablet: 6 colunas; widgets em metades, Evolução e Pagamento em largura total.
+   "dense" sobe a Média por dia para o lado de Cofrinhos (sem buraco antes do Pagamento). */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .pv2-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-flow: dense; }
+  .pv2-grid > .span-4,
+  .pv2-grid > .span-6,
+  .pv2-grid > .span-8,
+  .pv2-grid > .span-12 { grid-column: span 3; }
+  .pv2-grid > .is-wide-tablet { grid-column: 1 / -1; }
+  .pv2-eq { height: auto; min-height: 340px; }
+}
+
+/* Celular — grade: 1 coluna, 12px entre cards, 24px entre seções, 16px dentro do card. */
+@media (max-width: 768px) {
+  .panorama-scope.main-container { padding-bottom: var(--sp-4) !important; }
+  .pv2-grid { grid-template-columns: minmax(0, 1fr); gap: var(--sp-3); margin-top: var(--sp-5); }
+  .pv2-grid > .span-4,
+  .pv2-grid > .span-6,
+  .pv2-grid > .span-8,
+  .pv2-grid > .span-12 { grid-column: 1 / -1; }
+  .pcard { padding: var(--sp-4); }
+  .pv2-eq { height: auto; }
+  .pv2-card-head { margin-bottom: var(--sp-3); }
+}
