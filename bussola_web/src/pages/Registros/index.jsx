@@ -1,32 +1,7 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { getRegistrosDashboard, deleteGrupo } from '../../services/api';
 
-// ── Helpers de Jornada ──────────────────────────────────────────────────────
-function getTodayKey() {
-    const dias = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
-    return dias[new Date().getDay()];
-}
-function calcularProgressoJornada(habitos) {
-    const hoje = getTodayKey();
-    const ativos = habitos.filter(h => h.status === 'ativo' && h.frequencia.includes(hoje));
-    if (!ativos.length) return { pct: 0, mensagem: 'Comece sua jornada!' };
-    const feitos = ativos.filter(h => h.registro_hoje?.concluido).length;
-    const pct = Math.round((feitos / ativos.length) * 100);
-    const mensagem = pct === 0 ? 'Comece sua jornada!'
-        : pct < 25 ? 'Você está começando.'
-        : pct < 50 ? 'Siga em frente!'
-        : pct < 75 ? 'Mais da metade. Bora!'
-        : pct < 100 ? 'Quase lá, não pare!'
-        : 'Jornada completa! 🎉';
-    return { pct, mensagem };
-}
-function formatarDataJornada() {
-    const d = new Date();
-    const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
-    const meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-    return `${diasSemana[d.getDay()]}, ${d.getDate()} de ${meses[d.getMonth()]}`;
-}
-// ────────────────────────────────────────────────────────────────────────────
+import { calcularProgressoJornada, formatarDataJornada } from './jornadaUtils';
 import { AnotacaoCard } from './components/AnotacaoCard';
 import { AnotacaoModal } from './components/AnotacaoModal';
 import { TarefaBoard } from './components/kanban/TarefaBoard';
