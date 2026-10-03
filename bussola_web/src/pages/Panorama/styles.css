@@ -1,6 +1,7 @@
 .panorama-scope.main-container {
     padding-bottom: 5rem;
     min-height: 100vh;
+    min-height: 100dvh;
     padding-top: 0 !important;
 }
 
@@ -31,115 +32,9 @@
     color: var(--cor-texto-secundario);
 }
 
-/* ============================ */
-/* MODAIS, OVERLAY E TABELAS    */
-/* ============================ */
-/* OVERLAY FIXO */
-.panorama-scope .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.75);
-    z-index: 99999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: fadeInOverlay 0.2s ease-out;
-}
-
-/* CAIXA DO MODAL - ESTILO PADRÃO */
-.panorama-scope .modal-content {
-    background: var(--cor-card-principal);
-    border: 1px solid var(--cor-borda);
-    border-radius: 16px;
-    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    animation: scaleInModal 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    overflow: hidden;
-}
-
-/* HEADER DO MODAL */
-.panorama-scope .modal-header {
-    padding: 1.5rem 2rem;
-    border-bottom: 1px solid var(--cor-borda);
-    background: var(--cor-card-secundario);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.panorama-scope .modal-header h2 {
-    font-size: 1.4rem;
-    margin: 0;
-    color: var(--cor-texto-principal);
-    font-weight: 600;
-}
-
-.panorama-scope .close-btn {
-    background: none;
-    border: none;
-    padding: 0;
-    font-size: 1.8rem;
-    color: var(--cor-texto-secundario);
-    cursor: pointer;
-    line-height: 1;
-    transition: color 0.2s;
-}
-
-.panorama-scope .close-btn:hover {
-    color: var(--cor-texto-principal);
-}
-
-.empty-cell {
-    text-align: center;
-    padding: 4rem !important;
-    color: var(--cor-texto-secundario);
-    font-style: italic;
-    font-size: 1rem;
-}
-
-.text-center {
-    text-align: center;
-}
-
-/* FOOTER DO MODAL */
-.panorama-scope .modal-footer {
-    padding: 1.5rem 2rem;
-    border-top: 1px solid var(--cor-borda);
-    display: flex;
-    justify-content: flex-end;
-    background: var(--cor-card-secundario);
-    flex-shrink: 0;
-}
-
-.panorama-scope .btn-secondary {
-    background: var(--cor-fundo);
-    border: 1px solid var(--cor-borda);
-    color: var(--cor-texto-principal);
-    padding: 10px 24px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
-}
-
-.panorama-scope .btn-secondary:hover {
-    background: var(--cor-fundo-hover);
-    border-color: var(--cor-texto-secundario);
-}
-
-@keyframes fadeInOverlay {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
-}
-
+/* NÃO É MORTO: pela ordem de import das páginas, esta é a definição vencedora do
+   @keyframes scaleInModal global, usada pelos modais de Registros e do AdminUserModal.
+   Fica aqui até os keyframes compartilhados irem para components.css. */
 @keyframes scaleInModal {
     from {
         opacity: 0;

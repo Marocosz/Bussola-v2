@@ -21,6 +21,10 @@ const SEV = {
 };
 const insightIcon = (it) => it.severidade === 'perigo' ? 'fa-solid fa-triangle-exclamation' : it.severidade === 'aviso' ? 'fa-solid fa-clock' : 'fa-solid fa-circle-info';
 
+// Ordem das seções do topo e dos widgets do grid (chaves dos objetos `topo` e `widgets`).
+const TOPO_DESKTOP = ['atencao', 'hero', 'kpis'];
+const WIDGETS_DESKTOP = ['evolucao', 'donut', 'orcamento', 'cofrinhos', 'pagamento', 'media', 'ritmo', 'produtividade', 'agenda', 'cofre'];
+
 // Dispensar/snooze de alertas: guarda id → timestamp de expiração (24h) no localStorage.
 const DISMISS_KEY = 'panorama_dismissed';
 const DISMISS_MS = 24 * 60 * 60 * 1000;
@@ -430,6 +434,275 @@ export function Panorama() {
     { label: 'Balanço', value: fmt(bal), arrow: bal >= 0 ? '▲' : '▼', delta: fmtPct(dBal), dc: bal >= 0 ? 'var(--green)' : 'var(--red)', vc: bal >= 0 ? 'var(--text)' : 'var(--red)', tip: 'Receitas menos despesas efetivadas no período. Positivo = sobrou; negativo = gastou mais do que entrou.' },
   ];
 
+  // ---------- Atenção agora ----------
+  const renderAlert = (it) => {
+    const s = SEV[it.severidade] || SEV.info;
+    return (
+      <div key={it.id} className="pcard pv2-alert">
+        <div className="pv2-alert-top">
+          <div className="pv2-alert-chip" style={{ background: s.bg, color: s.c }}><i className={insightIcon(it)}></i></div>
+          <div className="pv2-alert-sev" style={{ color: s.c }}>{s.label}</div>
+          <button className="pv2-alert-dismiss" title="Dispensar por 24h" onClick={(e) => { e.stopPropagation(); dismissInsight(it.id); }}>
+            <i className="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div>
+          <div className="pv2-alert-title">{it.titulo}</div>
+          {it.detalhe && <div className="pv2-alert-detail">{it.detalhe}</div>}
+        </div>
+        {it.acao && (
+          <button className="pv2-btn pv2-alert-cta" style={{ color: s.c, background: s.bg, border: 'none' }} onClick={() => navigate(it.acao)}>Ver →</button>
+        )}
+      </div>
+    );
+  };
+
+  // Some por completo (título + cards) quando não há alertas.
+  const atencao = insights.length > 0 && (
+    <div className="pv2-section-top">
+      <div className="pv2-attn-head">
+        <span className="pv2-attn-dot" />
+        <span className="pv2-attn-title">Atenção agora</span>
+        <span className="pv2-attn-count">{insights.length ? `${insights.length} ${insights.length === 1 ? 'alerta' : 'alertas'}` : ''}</span>
+        {attnPages > 1 && (
+          <div className="pv2-attn-nav">
+            <button className="pv2-btn pv2-attn-arrow" onClick={() => setAttnPage(p => (p - 1 + attnPages) % attnPages)} aria-label="Anteriores"><i className="fa-solid fa-chevron-left"></i></button>
+            <div className="pv2-attn-dots">
+              {Array.from({ length: attnPages }, (_, i) => (
+                <button key={i} className={`pv2-attn-dot-btn ${i === pageIdx ? 'active' : ''}`} onClick={() => setAttnPage(i)} aria-label={`Página ${i + 1}`} />
+              ))}
+            </div>
+            <button className="pv2-btn pv2-attn-arrow" onClick={() => setAttnPage(p => (p + 1) % attnPages)} aria-label="Próximos"><i className="fa-solid fa-chevron-right"></i></button>
+          </div>
+        )}
+      </div>
+      <div className="pv2-attn-row" key={pageIdx}>
+        {alertSlots.map((it, idx) => (it ? renderAlert(it) : (
+          <div key={`empty-${idx}`} className="pcard pv2-alert pv2-alert-empty">
+            <i className="fa-solid fa-circle-check" style={{ fontSize: 20, color: 'var(--green)', opacity: 0.7 }}></i>
+            <div className="pv2-alert-detail" style={{ marginTop: 0 }}>Sem aviso aqui</div>
+          </div>
+        )))}
+      </div>
+    </div>
+  );
+
+  // ---------- Hero: Caixa ----------
+  const hero = (
+    <div className="pv2-hero">
+      <div className="pv2-hero-jar"><Reservoir total={total} disp={disp} guard={guardado} cap={cap} startLevel={startLevel} /></div>
+      <div className="pv2-hero-info">
+        <div className="pv2-hero-top">
+          <div className="pv2-hero-label">Caixa · patrimônio<span className="pv2-hero-label-extra"> acumulado</span></div>
+          <div className="pv2-hero-controls">
+            <DateRangeFilter initialPreset="mes" onChange={setRange} />
+            <button className={`btn-privacy-toggle ${privacy ? 'active' : ''}`} onClick={togglePrivacy} title={privacy ? 'Mostrar valores' : 'Ocultar valores'}>
+              <i className={`fa-solid ${privacy ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+            </button>
+          </div>
+        </div>
+        <div className="pv2-hero-total"><span data-money="">{fmt(total)}</span></div>
+        <div className="pv2-hero-bars">
+          <div className="pv2-hero-bar">
+            <div className="pv2-hero-bar-head">
+              <span className="lbl">Disponível <span>livre</span></span>
+              <span className="val" style={{ color: disp < 0 ? 'var(--red)' : 'var(--text)' }}><span data-money="">{fmt(disp)}</span></span>
+            </div>
+            <div className="pv2-track"><div style={{ width: `${Math.max(2, Math.abs(disp) / denom * 100)}%`, height: '100%', borderRadius: 4, background: disp < 0 ? 'var(--red)' : 'linear-gradient(90deg,var(--blue),#7b8cff)' }} /></div>
+          </div>
+          <div className="pv2-hero-bar">
+            <div className="pv2-hero-bar-head">
+              <span className="lbl">Guardado <span><i className="fa-solid fa-lock" style={{ fontSize: 10 }}></i> travado</span></span>
+              <span className="val"><span data-money="">{fmt(guardado)}</span></span>
+            </div>
+            <div className="pv2-track"><div style={{ width: `${guardado / denom * 100}%`, height: '100%', borderRadius: 4, background: 'rgba(74,109,255,.4)' }} /></div>
+          </div>
+        </div>
+        {neg && (
+          <div className="pv2-hero-neg"><span />Descoberto de {fmt(Math.abs(disp))} — cubra o disponível ou libere um cofrinho.</div>
+        )}
+        <div className="pv2-hero-note">Guardar é transferência neutra — sai do disponível, vira guardado, o total não muda.</div>
+      </div>
+    </div>
+  );
+
+  // ---------- Faixa de KPIs ----------
+  const kpiCells = kpiList.map((k, i) => (
+    <div key={`kpi-${i}`} className="pv2-kpi" data-tooltip={k.tip}>
+      <div className="pv2-kpi-label">{k.label}</div>
+      <div className="pv2-kpi-value" style={{ color: k.vc }}><span data-money="">{k.value}</span></div>
+      <div className="pv2-kpi-delta" style={{ color: k.dc }}>{k.arrow} {k.delta} <span className="muted">vs anterior</span></div>
+    </div>
+  ));
+  const projecao = fc && (
+    <div key="projecao" className="pv2-kpi-extra pv2-kpi-proj" data-tooltip="Projeção de fechamento do período: o realizado até agora mais as pendências conhecidas. 'Seguro' quando deve fechar positivo.">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <span className="pv2-kpi-label">Projeção</span>
+        <span className="pv2-proj-chip" style={{ color: seguro ? 'var(--green)' : 'var(--red)', background: seguro ? 'rgba(39,174,96,.15)' : 'rgba(231,76,60,.15)' }}>{seguro ? 'seguro' : 'alerta'}</span>
+      </div>
+      <div className="pv2-track" style={{ marginBottom: 8 }}><div style={{ width: `${Math.min(100, Math.round(fc.realizado / (fc.projetado || 1) * 100))}%`, height: '100%', background: seguro ? 'var(--blue)' : 'var(--red)', borderRadius: 4 }} /></div>
+      <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>Fecha em <b style={{ color: seguro ? 'var(--green)' : 'var(--red)' }}><span data-money="">{fmt(fcClose)}</span></b> · projetado <span data-money="">{fmt(fc.projetado)}</span></div>
+    </div>
+  );
+  const poupanca = (
+    <div key="poupanca" className="pv2-kpi-extra" data-tooltip="Taxa de poupança: percentual da receita do período que não foi gasto (quanto maior, mais você guardou).">
+      <div className="pv2-kpi-label">Poupança</div>
+      <div className="pv2-kpi-big">{savingsPct}<span style={{ fontSize: '.55em' }}>%</span></div>
+      <div className="pv2-track"><div style={{ width: `${Math.min(100, savingsPct)}%`, height: '100%', background: 'var(--green)', borderRadius: 4 }} /></div>
+    </div>
+  );
+  const kpiBand = (
+    <div className="pv2-kpiband">
+      {[...kpiCells, projecao, poupanca]}
+    </div>
+  );
+
+  // ---------- Widgets do grid (design atual; só a ordem/largura muda por tela) ----------
+  const widgets = {
+    evolucao: (
+      <div className="pcard span-8 is-wide-tablet" data-widget="evolucao">
+        <div className="pv2-card-head">
+          <span className="pv2-card-title">Evolução · últimos 12 meses</span>
+          <div className="pv2-legend">
+            <span className="pv2-legend-item"><span style={{ width: 9, height: 9, borderRadius: 2, background: 'var(--green)' }} />Receita</span>
+            <span className="pv2-legend-item"><span style={{ width: 9, height: 9, borderRadius: 2, background: 'var(--red)' }} />Despesa</span>
+            <span className="pv2-legend-item"><span style={{ width: 14, height: 3, borderRadius: 2, background: 'var(--blue)' }} />Caixa</span>
+          </div>
+        </div>
+        <Evolution ev={ev.length ? ev : [{ m: '—', rec: 0, desp: 0, caixa: 0 }]} />
+      </div>
+    ),
+    donut: (
+      <div className="pcard span-4" data-widget="donut">
+        <div className="pv2-card-title" style={{ marginBottom: 12 }}>Gastos por categoria</div>
+        <Donut cats={cats} />
+      </div>
+    ),
+    orcamento: (
+      <div className="pcard pv2-eq span-6" data-widget="orcamento">
+        <div className="pv2-card-title" style={{ marginBottom: 16 }}>
+          Orçamento por categoria
+          {(budget[0]?.meses || 1) > 1 && <span className="chart-subtitle"> · limite × {budget[0].meses} meses</span>}
+        </div>
+        {budget.length ? (
+          <div className="pv2-budget">
+            {budget.map((b) => {
+              const over = b.pct != null && b.pct > 100;
+              const near = b.pct != null && b.pct >= 90;
+              const budgetTip = `${b.nome}: gasto ${fmt(b.gasto)}${b.limite > 0 ? ` de ${fmt(b.limite)}${b.pct != null ? ` (${Math.round(b.pct)}%)` : ''}` : ' · sem limite definido'}`;
+              return (
+                <div key={b.nome} data-tooltip={budgetTip}>
+                  <div className="pv2-budget-head">
+                    <span className="n">{b.nome} {over && <span className="pv2-badge-over">{Math.round(b.pct)}%</span>}</span>
+                    <span className="amt"><span data-money="">{fmt(b.gasto)}</span>{b.limite > 0 ? <> / <span data-money="">{fmt(b.limite)}</span></> : ''}</span>
+                  </div>
+                  {b.limite > 0 && (
+                    <div className="pv2-bar9"><div style={{ width: `${Math.min(100, b.pct || 0)}%`, height: '100%', borderRadius: 5, background: over ? 'var(--red)' : near ? 'var(--orange)' : 'var(--blue)' }} /></div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="pv2-empty-note"><i className="fa-solid fa-list-check"></i><span>Sem orçamento no período (defina limites nas categorias).</span></div>
+        )}
+      </div>
+    ),
+    cofrinhos: (
+      <div className="pcard pv2-eq span-6" data-widget="cofrinhos">
+        <div className="pv2-card-title" style={{ marginBottom: 16 }}>Cofrinhos &amp; metas</div>
+        <div className="pv2-goals">
+          {goalSlots.map((m, i) => <MiniJar key={m ? m.id : `empty-${i}`} meta={m} />)}
+        </div>
+      </div>
+    ),
+    pagamento: (
+      <div className="pcard span-12 is-wide-tablet" data-widget="pagamento">
+        <div className="pv2-card-title" style={{ marginBottom: 16 }}>Gastos por forma de pagamento</div>
+        <PayBars items={payItems} />
+      </div>
+    ),
+    media: (
+      <div className="pcard span-4" data-widget="media">
+        <div className="pv2-card-head">
+          <span className="pv2-card-title">Média por dia</span>
+          <span style={{ fontSize: 12, color: 'var(--muted2)' }}>média <span data-money="">{fmt(weekAvg)}</span></span>
+        </div>
+        {week.length ? <Weekday days={week} /> : <div className="pv2-empty-note"><span>Sem dados.</span></div>}
+      </div>
+    ),
+    ritmo: (
+      <div className="pcard span-4" data-widget="ritmo">
+        <div className="pv2-card-title" style={{ marginBottom: 14 }}>Ritmo</div>
+        {ritmo ? (
+          <>
+            <div className="pv2-row-baseline">
+              <span style={{ fontSize: 30, fontWeight: 800 }}>{ritmo.peso_atual != null ? String(ritmo.peso_atual).replace('.', ',') : '—'}</span>
+              <span style={{ fontSize: 14, color: 'var(--muted)' }}>kg</span>
+              {ritmo.peso_delta != null && <span style={{ fontSize: 13, fontWeight: 700, color: ritmo.peso_delta <= 0 ? 'var(--green)' : 'var(--orange)', marginLeft: 'auto' }}>{ritmo.peso_delta <= 0 ? '▼' : '▲'} {Math.abs(ritmo.peso_delta)} kg</span>}
+            </div>
+            {ritmo.objetivo && <div style={{ fontSize: 12, color: 'var(--muted2)', marginTop: 2 }}>objetivo {ritmo.objetivo}</div>}
+            <div className="pv2-divider" style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+              <div className="pv2-ritmo-row"><i className="fa-solid fa-dumbbell" style={{ color: 'var(--blue)', width: 16, textAlign: 'center' }}></i><span style={{ color: 'var(--muted)' }}>Treino ativo</span><b style={{ marginLeft: 'auto' }}>{ritmo.plano_ativo || '—'}</b></div>
+              {ritmo.dieta_calorias ? <div className="pv2-ritmo-row"><i className="fa-solid fa-fire" style={{ color: 'var(--orange)', width: 16, textAlign: 'center' }}></i><span style={{ color: 'var(--muted)' }}>Meta calórica</span><b style={{ marginLeft: 'auto' }}>{Math.round(ritmo.dieta_calorias)} kcal</b></div> : null}
+            </div>
+          </>
+        ) : (
+          <div className="pv2-empty-note"><i className="fa-solid fa-heart-pulse"></i><span>Sem dados de saúde. Registre no Ritmo.</span></div>
+        )}
+      </div>
+    ),
+    produtividade: (
+      <div className="pcard span-4" data-widget="produtividade">
+        <div className="pv2-card-head">
+          <span className="pv2-card-title">Produtividade</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--green)' }}>{doneP}% feitas</span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+          {prios.map((p, i) => (
+            <div key={i} className="pv2-prio">
+              <span className="pv2-prio-dot" style={{ background: p.color }} />
+              <span style={{ flex: 1, color: 'var(--muted)' }}>{p.label}</span>
+              <b>{p.count}</b>
+            </div>
+          ))}
+        </div>
+        <div className="pv2-divider">
+          <div style={{ fontSize: 11.5, color: 'var(--muted2)', textTransform: 'uppercase', letterSpacing: '.08em', fontWeight: 700 }}>Anotações no período</div>
+          <div style={{ fontSize: 22, fontWeight: 800, marginTop: 4 }}>{kpis.total_anotacoes || 0}</div>
+        </div>
+      </div>
+    ),
+    agenda: (
+      <div className="pcard span-8" data-widget="agenda" style={{ display: 'flex', gap: 22, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ flex: '1 1 220px', minWidth: 200 }}>
+          <div className="pv2-card-title" style={{ marginBottom: 14 }}>Agenda</div>
+          <div className="pv2-mini-stats">
+            <div className="pv2-mini-stat"><div className="num" style={{ color: 'var(--green)' }}>{kpis.compromissos_realizados || 0}</div><div className="cap">realizados</div></div>
+            <div className="pv2-mini-stat"><div className="num" style={{ color: 'var(--blue)' }}>{kpis.compromissos_pendentes || 0}</div><div className="cap">pendentes</div></div>
+            <div className="pv2-mini-stat"><div className="num" style={{ color: 'var(--red)' }}>{kpis.compromissos_perdidos || 0}</div><div className="cap">perdidos</div></div>
+          </div>
+        </div>
+        <div className="pv2-next">
+          <div style={{ fontSize: 11.5, color: 'var(--muted2)', textTransform: 'uppercase', letterSpacing: '.1em', fontWeight: 700 }}>Próximo compromisso</div>
+          <div style={{ fontSize: 19, fontWeight: 800, margin: '8px 0 4px' }}>{prox?.titulo || 'Nada agendado'}</div>
+          <div style={{ fontSize: 13, color: 'var(--muted)' }}><i className="fa-regular fa-clock"></i> {prox?.data ? fmtDateTime(prox.data) : '—'}</div>
+        </div>
+      </div>
+    ),
+    cofre: (
+      <div className="pcard span-4" data-widget="cofre" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700, color: 'var(--muted)', marginBottom: 14 }}><i className="fa-solid fa-key"></i> Cofre de senhas</div>
+        <div style={{ display: 'flex', gap: 20 }}>
+          <div><div style={{ fontSize: 26, fontWeight: 800, color: 'var(--green)' }}>{kpis.chaves_ativas || 0}</div><div className="pv2-cofre-cap">chaves ativas</div></div>
+          <div><div style={{ fontSize: 26, fontWeight: 800, color: 'var(--orange)' }}>{kpis.chaves_expiradas || 0}</div><div className="pv2-cofre-cap">expiradas</div></div>
+        </div>
+      </div>
+    ),
+  };
+
+  const topo = { atencao, hero, kpis: kpiBand };
+
   return (
     <div className="container main-container panorama-scope">
       <div className="page-header">
@@ -439,256 +712,10 @@ export function Panorama() {
       </div>
       <div className="pv2-root" data-privacy={privacy ? 'on' : 'off'}>
         <div className="pv2-inner">
-
-          {/* ATENÇÃO AGORA — some por completo (título + cards) quando não há alertas */}
-          {insights.length > 0 && (
-          <div className="pv2-section-top">
-            <div className="pv2-attn-head">
-              <span className="pv2-attn-dot" />
-              <span className="pv2-attn-title">Atenção agora</span>
-              <span className="pv2-attn-count">{insights.length ? `${insights.length} ${insights.length === 1 ? 'alerta' : 'alertas'}` : ''}</span>
-              {attnPages > 1 && (
-                <div className="pv2-attn-nav">
-                  <button className="pv2-btn pv2-attn-arrow" onClick={() => setAttnPage(p => (p - 1 + attnPages) % attnPages)} aria-label="Anteriores"><i className="fa-solid fa-chevron-left"></i></button>
-                  <div className="pv2-attn-dots">
-                    {Array.from({ length: attnPages }, (_, i) => (
-                      <button key={i} className={`pv2-attn-dot-btn ${i === pageIdx ? 'active' : ''}`} onClick={() => setAttnPage(i)} aria-label={`Página ${i + 1}`} />
-                    ))}
-                  </div>
-                  <button className="pv2-btn pv2-attn-arrow" onClick={() => setAttnPage(p => (p + 1) % attnPages)} aria-label="Próximos"><i className="fa-solid fa-chevron-right"></i></button>
-                </div>
-              )}
-            </div>
-            <div className="pv2-attn-row" key={pageIdx}>
-              {alertSlots.map((it, idx) => {
-                if (!it) {
-                  return (
-                    <div key={`empty-${idx}`} className="pcard pv2-alert pv2-alert-empty">
-                      <i className="fa-solid fa-circle-check" style={{ fontSize: 20, color: 'var(--green)', opacity: 0.7 }}></i>
-                      <div className="pv2-alert-detail" style={{ marginTop: 0 }}>Sem aviso aqui</div>
-                    </div>
-                  );
-                }
-                const s = SEV[it.severidade] || SEV.info;
-                return (
-                  <div key={it.id} className="pcard pv2-alert">
-                    <div className="pv2-alert-top">
-                      <div className="pv2-alert-chip" style={{ background: s.bg, color: s.c }}><i className={insightIcon(it)}></i></div>
-                      <div className="pv2-alert-sev" style={{ color: s.c }}>{s.label}</div>
-                      <button className="pv2-alert-dismiss" title="Dispensar por 24h" onClick={(e) => { e.stopPropagation(); dismissInsight(it.id); }}>
-                        <i className="fa-solid fa-xmark"></i>
-                      </button>
-                    </div>
-                    <div>
-                      <div className="pv2-alert-title">{it.titulo}</div>
-                      {it.detalhe && <div className="pv2-alert-detail">{it.detalhe}</div>}
-                    </div>
-                    {it.acao && (
-                      <button className="pv2-btn pv2-alert-cta" style={{ color: s.c, background: s.bg, border: 'none' }} onClick={() => navigate(it.acao)}>Ver →</button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          )}
-
-          {/* HERO: CAIXA */}
-          <div className="pv2-hero">
-            <div className="pv2-hero-jar"><Reservoir total={total} disp={disp} guard={guardado} cap={cap} startLevel={startLevel} /></div>
-            <div>
-              <div className="pv2-hero-top">
-                <div className="pv2-hero-label">Caixa · patrimônio acumulado</div>
-                <div className="pv2-hero-controls">
-                  <DateRangeFilter initialPreset="mes" onChange={setRange} />
-                  <button className={`btn-privacy-toggle ${privacy ? 'active' : ''}`} onClick={togglePrivacy} title={privacy ? 'Mostrar valores' : 'Ocultar valores'}>
-                    <i className={`fa-solid ${privacy ? 'fa-eye-slash' : 'fa-eye'}`}></i>
-                  </button>
-                </div>
-              </div>
-              <div className="pv2-hero-total"><span data-money="">{fmt(total)}</span></div>
-              <div className="pv2-hero-bars">
-                <div className="pv2-hero-bar">
-                  <div className="pv2-hero-bar-head">
-                    <span className="lbl">Disponível <span>livre</span></span>
-                    <span className="val" style={{ color: disp < 0 ? 'var(--red)' : 'var(--text)' }}><span data-money="">{fmt(disp)}</span></span>
-                  </div>
-                  <div className="pv2-track"><div style={{ width: `${Math.max(2, Math.abs(disp) / denom * 100)}%`, height: '100%', borderRadius: 4, background: disp < 0 ? 'var(--red)' : 'linear-gradient(90deg,var(--blue),#7b8cff)' }} /></div>
-                </div>
-                <div className="pv2-hero-bar">
-                  <div className="pv2-hero-bar-head">
-                    <span className="lbl">Guardado <span><i className="fa-solid fa-lock" style={{ fontSize: 10 }}></i> travado</span></span>
-                    <span className="val"><span data-money="">{fmt(guardado)}</span></span>
-                  </div>
-                  <div className="pv2-track"><div style={{ width: `${guardado / denom * 100}%`, height: '100%', borderRadius: 4, background: 'rgba(74,109,255,.4)' }} /></div>
-                </div>
-              </div>
-              {neg && (
-                <div className="pv2-hero-neg"><span />Descoberto de {fmt(Math.abs(disp))} — cubra o disponível ou libere um cofrinho.</div>
-              )}
-              <div className="pv2-hero-note">Guardar é transferência neutra — sai do disponível, vira guardado, o total não muda.</div>
-            </div>
-          </div>
-
-          {/* KPI BAND */}
-          <div className="pv2-kpiband">
-            {kpiList.map((k, i) => (
-              <div key={i} className="pv2-kpi" data-tooltip={k.tip}>
-                <div className="pv2-kpi-label">{k.label}</div>
-                <div className="pv2-kpi-value" style={{ color: k.vc }}><span data-money="">{k.value}</span></div>
-                <div className="pv2-kpi-delta" style={{ color: k.dc }}>{k.arrow} {k.delta} <span className="muted">vs anterior</span></div>
-              </div>
-            ))}
-            {fc && (
-              <div className="pv2-kpi-extra" data-tooltip="Projeção de fechamento do período: o realizado até agora mais as pendências conhecidas. 'Seguro' quando deve fechar positivo.">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <span className="pv2-kpi-label">Projeção</span>
-                  <span style={{ fontSize: 10.5, fontWeight: 700, padding: '2px 8px', borderRadius: 20, color: seguro ? 'var(--green)' : 'var(--red)', background: seguro ? 'rgba(39,174,96,.15)' : 'rgba(231,76,60,.15)' }}>{seguro ? 'seguro' : 'alerta'}</span>
-                </div>
-                <div className="pv2-track" style={{ marginBottom: 8 }}><div style={{ width: `${Math.min(100, Math.round(fc.realizado / (fc.projetado || 1) * 100))}%`, height: '100%', background: seguro ? 'var(--blue)' : 'var(--red)', borderRadius: 4 }} /></div>
-                <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>Fecha em <b style={{ color: seguro ? 'var(--green)' : 'var(--red)' }}><span data-money="">{fmt(fcClose)}</span></b> · projetado <span data-money="">{fmt(fc.projetado)}</span></div>
-              </div>
-            )}
-            <div className="pv2-kpi-extra" data-tooltip="Taxa de poupança: percentual da receita do período que não foi gasto (quanto maior, mais você guardou).">
-              <div className="pv2-kpi-label">Poupança</div>
-              <div style={{ fontSize: 'clamp(28px,3.4vw,38px)', fontWeight: 800, color: 'var(--green)', lineHeight: 1, margin: '8px 0' }}>{savingsPct}<span style={{ fontSize: '.55em' }}>%</span></div>
-              <div className="pv2-track"><div style={{ width: `${Math.min(100, savingsPct)}%`, height: '100%', background: 'var(--green)', borderRadius: 4 }} /></div>
-            </div>
-          </div>
-
-          {/* GRID */}
+          {/* Fragment com key: trocar a ordem MOVE os nós (o DateRangeFilter do hero não remonta). */}
+          {TOPO_DESKTOP.map((k) => topo[k] && <React.Fragment key={k}>{topo[k]}</React.Fragment>)}
           <div className="pv2-grid">
-
-            <div className="pcard" style={{ gridColumn: 'span 8' }}>
-              <div className="pv2-card-head">
-                <span className="pv2-card-title">Evolução · últimos 12 meses</span>
-                <div style={{ display: 'flex', gap: 14, fontSize: 11.5, color: 'var(--muted)' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ width: 9, height: 9, borderRadius: 2, background: 'var(--green)' }} />Receita</span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ width: 9, height: 9, borderRadius: 2, background: 'var(--red)' }} />Despesa</span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ width: 14, height: 3, borderRadius: 2, background: 'var(--blue)' }} />Caixa</span>
-                </div>
-              </div>
-              <Evolution ev={ev.length ? ev : [{ m: '—', rec: 0, desp: 0, caixa: 0 }]} />
-            </div>
-
-            <div className="pcard" style={{ gridColumn: 'span 4' }}>
-              <div className="pv2-card-title" style={{ marginBottom: 12 }}>Gastos por categoria</div>
-              <Donut cats={cats} />
-            </div>
-
-            <div className="pcard pv2-eq" style={{ gridColumn: 'span 6' }}>
-              <div className="pv2-card-title" style={{ marginBottom: 16 }}>
-                Orçamento por categoria
-                {(budget[0]?.meses || 1) > 1 && <span className="chart-subtitle"> · limite × {budget[0].meses} meses</span>}
-              </div>
-              {budget.length ? (
-                <div className="pv2-budget">
-                  {budget.map((b) => {
-                    const over = b.pct != null && b.pct > 100;
-                    const near = b.pct != null && b.pct >= 90;
-                    const budgetTip = `${b.nome}: gasto ${fmt(b.gasto)}${b.limite > 0 ? ` de ${fmt(b.limite)}${b.pct != null ? ` (${Math.round(b.pct)}%)` : ''}` : ' · sem limite definido'}`;
-                    return (
-                      <div key={b.nome} data-tooltip={budgetTip}>
-                        <div className="pv2-budget-head">
-                          <span className="n">{b.nome} {over && <span className="pv2-badge-over">{Math.round(b.pct)}%</span>}</span>
-                          <span className="amt"><span data-money="">{fmt(b.gasto)}</span>{b.limite > 0 ? <> / <span data-money="">{fmt(b.limite)}</span></> : ''}</span>
-                        </div>
-                        {b.limite > 0 && (
-                          <div className="pv2-bar9"><div style={{ width: `${Math.min(100, b.pct || 0)}%`, height: '100%', borderRadius: 5, background: over ? 'var(--red)' : near ? 'var(--orange)' : 'var(--blue)' }} /></div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="pv2-empty-note"><i className="fa-solid fa-list-check"></i><span>Sem orçamento no período (defina limites nas categorias).</span></div>
-              )}
-            </div>
-
-            <div className="pcard pv2-eq" style={{ gridColumn: 'span 6' }}>
-              <div className="pv2-card-title" style={{ marginBottom: 16 }}>Cofrinhos &amp; metas</div>
-              <div className="pv2-goals">
-                {goalSlots.map((m, i) => <MiniJar key={m ? m.id : `empty-${i}`} meta={m} />)}
-              </div>
-            </div>
-
-            <div className="pcard" style={{ gridColumn: 'span 12' }}>
-              <div className="pv2-card-title" style={{ marginBottom: 16 }}>Gastos por forma de pagamento</div>
-              <PayBars items={payItems} />
-            </div>
-
-            <div className="pcard" style={{ gridColumn: 'span 4' }}>
-              <div className="pv2-card-head">
-                <span className="pv2-card-title">Média por dia</span>
-                <span style={{ fontSize: 12, color: 'var(--muted2)' }}>média <span data-money="">{fmt(weekAvg)}</span></span>
-              </div>
-              {week.length ? <Weekday days={week} /> : <div className="pv2-empty-note"><span>Sem dados.</span></div>}
-            </div>
-
-            <div className="pcard" style={{ gridColumn: 'span 4' }}>
-              <div className="pv2-card-title" style={{ marginBottom: 14 }}>Ritmo</div>
-              {ritmo ? (
-                <>
-                  <div className="pv2-row-baseline">
-                    <span style={{ fontSize: 30, fontWeight: 800 }}>{ritmo.peso_atual != null ? String(ritmo.peso_atual).replace('.', ',') : '—'}</span>
-                    <span style={{ fontSize: 14, color: 'var(--muted)' }}>kg</span>
-                    {ritmo.peso_delta != null && <span style={{ fontSize: 13, fontWeight: 700, color: ritmo.peso_delta <= 0 ? 'var(--green)' : 'var(--orange)', marginLeft: 'auto' }}>{ritmo.peso_delta <= 0 ? '▼' : '▲'} {Math.abs(ritmo.peso_delta)} kg</span>}
-                  </div>
-                  {ritmo.objetivo && <div style={{ fontSize: 12, color: 'var(--muted2)', marginTop: 2 }}>objetivo {ritmo.objetivo}</div>}
-                  <div className="pv2-divider" style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 13 }}><i className="fa-solid fa-dumbbell" style={{ color: 'var(--blue)', width: 16, textAlign: 'center' }}></i><span style={{ color: 'var(--muted)' }}>Treino ativo</span><b style={{ marginLeft: 'auto' }}>{ritmo.plano_ativo || '—'}</b></div>
-                    {ritmo.dieta_calorias ? <div style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 13 }}><i className="fa-solid fa-fire" style={{ color: 'var(--orange)', width: 16, textAlign: 'center' }}></i><span style={{ color: 'var(--muted)' }}>Meta calórica</span><b style={{ marginLeft: 'auto' }}>{Math.round(ritmo.dieta_calorias)} kcal</b></div> : null}
-                  </div>
-                </>
-              ) : (
-                <div className="pv2-empty-note"><i className="fa-solid fa-heart-pulse"></i><span>Sem dados de saúde. Registre no Ritmo.</span></div>
-              )}
-            </div>
-
-            <div className="pcard" style={{ gridColumn: 'span 4' }}>
-              <div className="pv2-card-head">
-                <span className="pv2-card-title">Produtividade</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--green)' }}>{doneP}% feitas</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-                {prios.map((p, i) => (
-                  <div key={i} className="pv2-prio">
-                    <span className="pv2-prio-dot" style={{ background: p.color }} />
-                    <span style={{ flex: 1, color: 'var(--muted)' }}>{p.label}</span>
-                    <b>{p.count}</b>
-                  </div>
-                ))}
-              </div>
-              <div className="pv2-divider">
-                <div style={{ fontSize: 11.5, color: 'var(--muted2)', textTransform: 'uppercase', letterSpacing: '.08em', fontWeight: 700 }}>Anotações no período</div>
-                <div style={{ fontSize: 22, fontWeight: 800, marginTop: 4 }}>{kpis.total_anotacoes || 0}</div>
-              </div>
-            </div>
-
-            <div className="pcard" style={{ gridColumn: 'span 8', display: 'flex', gap: 22, flexWrap: 'wrap', alignItems: 'center' }}>
-              <div style={{ flex: '1 1 220px', minWidth: 200 }}>
-                <div className="pv2-card-title" style={{ marginBottom: 14 }}>Agenda</div>
-                <div className="pv2-mini-stats">
-                  <div className="pv2-mini-stat"><div className="num" style={{ color: 'var(--green)' }}>{kpis.compromissos_realizados || 0}</div><div className="cap">realizados</div></div>
-                  <div className="pv2-mini-stat"><div className="num" style={{ color: 'var(--blue)' }}>{kpis.compromissos_pendentes || 0}</div><div className="cap">pendentes</div></div>
-                  <div className="pv2-mini-stat"><div className="num" style={{ color: 'var(--red)' }}>{kpis.compromissos_perdidos || 0}</div><div className="cap">perdidos</div></div>
-                </div>
-              </div>
-              <div className="pv2-next">
-                <div style={{ fontSize: 11.5, color: 'var(--muted2)', textTransform: 'uppercase', letterSpacing: '.1em', fontWeight: 700 }}>Próximo compromisso</div>
-                <div style={{ fontSize: 19, fontWeight: 800, margin: '8px 0 4px' }}>{prox?.titulo || 'Nada agendado'}</div>
-                <div style={{ fontSize: 13, color: 'var(--muted)' }}><i className="fa-regular fa-clock"></i> {prox?.data ? fmtDateTime(prox.data) : '—'}</div>
-              </div>
-            </div>
-
-            <div className="pcard" style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700, color: 'var(--muted)', marginBottom: 14 }}><i className="fa-solid fa-key"></i> Cofre de senhas</div>
-              <div style={{ display: 'flex', gap: 20 }}>
-                <div><div style={{ fontSize: 26, fontWeight: 800, color: 'var(--green)' }}>{kpis.chaves_ativas || 0}</div><div style={{ fontSize: 11.5, color: 'var(--muted2)' }}>chaves ativas</div></div>
-                <div><div style={{ fontSize: 26, fontWeight: 800, color: 'var(--orange)' }}>{kpis.chaves_expiradas || 0}</div><div style={{ fontSize: 11.5, color: 'var(--muted2)' }}>expiradas</div></div>
-              </div>
-            </div>
-
+            {WIDGETS_DESKTOP.map((k) => <React.Fragment key={k}>{widgets[k]}</React.Fragment>)}
           </div>
           <div style={{ height: 20 }} />
         </div>
