@@ -120,7 +120,7 @@ export function Estudos() {
 
                 {dados.carregado && !dados.erro && materiais.length > 0 && (
                     <div className="estudos-layout">
-                        <aside className="estudos-temas">
+                        <aside className="estudos-temas" aria-label="Temas" data-offscreen-ok>
                             <h2>Temas</h2>
                             {botaoTema('', 'Todos', 'var(--cor-texto-secundario)', materiais.length)}
                             {temas.map((t) => botaoTema(String(t.id), t.nome, t.cor || 'var(--cor-azul-primario)', t.total_materiais))}

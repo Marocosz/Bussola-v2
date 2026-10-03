@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, overflowOffenders, overflowOffendersOutsideScrollers, animacoesAcabaram } from './helpers.mjs';
-import { mockEstudos } from './fixtures/estudos.mjs';
+import { gotoApp, overflowOffenders, overflowOffendersOutsideScrollers, smallTargets, animacoesAcabaram } from './helpers.mjs';
+import { mockEstudos, MATERIAIS } from './fixtures/estudos.mjs';
 
 const tituloTopbar = (page) => page.locator('.m-topbar-title');
 const voltar = (page) => page.getByRole('button', { name: 'Voltar' });
@@ -103,5 +103,88 @@ test.describe('topbar das sub-rotas', () => {
     const bar = await page.locator('.m-topbar').boundingBox();
     expect(bar.x + bar.width).toBeLessThanOrEqual(360);
     expect(await overflowOffendersOutsideScrollers(page)).not.toContainEqual(expect.stringContaining('m-topbar'));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Task 3 — biblioteca
+// ---------------------------------------------------------------------------
+test.describe('biblioteca', () => {
+  for (const w of [360, 390, 430, 768]) {
+    test(`sem overflow horizontal em ${w}px (com materiais)`, async ({ page }) => {
+      await mockEstudos(page);
+      await page.setViewportSize({ width: w, height: 844 });
+      await gotoApp(page, '/estudos');
+      await page.locator('.estudo-card').first().waitFor();
+      expect(await overflowOffenders(page), `${w}px`).toEqual([]);
+      const temas = await page.locator('.estudos-temas').boundingBox();
+      expect(temas.x).toBeGreaterThanOrEqual(0);
+      expect(temas.x + temas.width).toBeLessThanOrEqual(w);
+    });
+  }
+
+  test('biblioteca vazia (banco real) sem overflow em 360px e botão de 48px', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await gotoApp(page, '/estudos');
+    await expect(page.locator('.estudos-vazio h2')).toHaveText('Sua biblioteca está vazia');
+    expect(await overflowOffenders(page)).toEqual([]);
+    expect((await page.locator('.estudos-vazio .btn-primary').boundingBox()).height).toBeGreaterThanOrEqual(48);
+  });
+
+  test('alvos de toque ≥ 44px', async ({ page }) => {
+    await mockEstudos(page);
+    await gotoApp(page, '/estudos');
+    await page.locator('.estudo-card').first().waitFor();
+    await animacoesAcabaram(page);
+    await expect.poll(() => smallTargets(page, '.estudos-scope')).toEqual([]);
+  });
+
+  test('cards em 1 coluna: gutter de 16px e 12px entre eles; textos ≥ 12px', async ({ page }) => {
+    await mockEstudos(page);
+    await gotoApp(page, '/estudos');
+    const cards = await page.locator('.estudo-card').all();
+    expect(cards).toHaveLength(MATERIAIS.length);
+    const caixas = await Promise.all(cards.map((c) => c.boundingBox()));
+    for (const b of caixas) {
+      expect(Math.round(b.x)).toBe(16);
+      expect(Math.round(b.width)).toBe(390 - 32);
+    }
+    expect(Math.round(caixas[1].y - (caixas[0].y + caixas[0].height))).toBe(12);
+    for (const sel of ['.estudo-card-tema', '.estudo-card-nivel', '.estudo-tag', '.estudo-etiqueta']) {
+      const px = await page.locator(sel).first().evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
+      expect(px, sel).toBeGreaterThanOrEqual(12);
+    }
+  });
+
+  test('faixa de temas rola na horizontal e filtra', async ({ page }) => {
+    await mockEstudos(page);
+    await gotoApp(page, '/estudos');
+    const faixa = page.locator('.estudos-temas');
+    await expect(faixa).toHaveAttribute('aria-label', 'Temas');
+    await expect(faixa.locator('h2')).toBeHidden();
+    expect(await faixa.evaluate((e) => e.scrollWidth > e.clientWidth)).toBe(true);
+    await faixa.locator('.estudos-tema', { hasText: 'Banco de Dados' }).click();
+    await expect(page.locator('.estudo-card')).toHaveCount(2);
+    await faixa.locator('.estudos-tema', { hasText: 'Sem tema' }).click();
+    await expect(page.locator('.estudo-card')).toHaveCount(1);
+  });
+
+  test('chips de tipo e "Só não estudados" filtram', async ({ page }) => {
+    await mockEstudos(page);
+    await gotoApp(page, '/estudos');
+    await page.locator('.estudos-chips').getByRole('button', { name: 'Resumo' }).click();
+    await expect(page.locator('.estudo-card')).toHaveCount(1);
+    await page.locator('.estudos-chips').getByRole('button', { name: 'Todos' }).click();
+    await page.locator('.estudos-check').click();
+    await expect(page.locator('.estudo-card')).toHaveCount(MATERIAIS.length - 1);
+  });
+
+  test('sem efeito de hover no toque', async ({ page }) => {
+    await mockEstudos(page);
+    await gotoApp(page, '/estudos');
+    const card = page.locator('.estudo-card').first();
+    await card.hover();
+    await animacoesAcabaram(page);
+    await expect.poll(() => card.evaluate((e) => getComputedStyle(e).transform)).toBe('none');
   });
 });

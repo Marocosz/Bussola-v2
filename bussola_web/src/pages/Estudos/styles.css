@@ -101,7 +101,7 @@
     text-align: left;
     cursor: pointer;
 }
-.estudos-tema:hover { background: var(--cor-fundo-hover); }
+@media (hover: hover) and (pointer: fine) { .estudos-tema:not(.ativo):hover { background: var(--cor-fundo-hover); } }
 .estudos-tema.ativo { background: rgba(var(--cor-tema-rgb), 0.14); color: var(--cor-azul-primario); font-weight: 600; }
 .estudos-tema-cor { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 10px; }
 .estudos-tema-nome { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -129,7 +129,7 @@
     font-size: 0.82rem;
     cursor: pointer;
 }
-.estudos-chip:hover { border-color: var(--tipo-cor, var(--cor-azul-primario)); }
+@media (hover: hover) and (pointer: fine) { .estudos-chip:not(.ativo):hover { border-color: var(--tipo-cor, var(--cor-azul-primario)); } }
 .estudos-chip.ativo {
     color: var(--tipo-cor, var(--cor-azul-primario));
     border-color: var(--tipo-cor, var(--cor-azul-primario));
@@ -158,7 +158,7 @@
     text-decoration: none;
     transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
 }
-.estudo-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18); }
+@media (hover: hover) and (pointer: fine) { .estudo-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18); } }
 .estudo-card-topo { display: flex; justify-content: space-between; align-items: center; }
 .estudo-card-estudado { color: var(--cor-verde-sucesso); }
 .estudo-card h3 { margin: 0.15rem 0 0; font-size: 1.02rem; line-height: 1.35; }
@@ -206,7 +206,7 @@
     margin-bottom: 1.2rem;
 }
 .estudo-breadcrumb a { color: var(--cor-texto-secundario); text-decoration: none; }
-.estudo-breadcrumb a:hover { color: var(--cor-azul-primario); }
+@media (hover: hover) and (pointer: fine) { .estudo-breadcrumb a:hover { color: var(--cor-azul-primario); } }
 .estudo-breadcrumb > i { font-size: 0.6rem; opacity: 0.6; }
 
 .estudo-cabecalho { max-width: 760px; margin: 0 auto 2rem auto; }
@@ -234,7 +234,7 @@
     padding: 0.5rem 0.7rem;
     cursor: pointer;
 }
-.estudo-btn-excluir:hover { color: var(--cor-vermelho-delete); border-color: var(--cor-vermelho-delete); }
+@media (hover: hover) and (pointer: fine) { .estudo-btn-excluir:hover { color: var(--cor-vermelho-delete); border-color: var(--cor-vermelho-delete); } }
 .estudo-destino { display: inline-flex; border: 1px solid var(--cor-borda); border-radius: 8px; overflow: hidden; margin-left: auto; }
 .estudo-destino button {
     border: none;
@@ -271,7 +271,7 @@
     color: var(--cor-acento);
     cursor: pointer;
 }
-.pedir-claude-gatilho-bloco:hover { background: var(--cor-fundo-hover); }
+@media (hover: hover) and (pointer: fine) { .pedir-claude-gatilho-bloco:hover { background: var(--cor-fundo-hover); } }
 .pedir-claude-fundo { position: fixed; inset: 0; z-index: 98; }
 .pedir-claude-menu {
     position: absolute;
@@ -302,7 +302,7 @@
     text-align: left;
     cursor: pointer;
 }
-.pedir-claude-menu > button:hover { background: var(--cor-fundo-hover); }
+@media (hover: hover) and (pointer: fine) { .pedir-claude-menu > button:hover { background: var(--cor-fundo-hover); } }
 .pedir-claude-menu > button i { width: 1rem; color: var(--cor-acento); }
 .pedir-claude-alvo {
     font-size: 0.7rem;
@@ -388,8 +388,84 @@
     cursor: pointer;
     padding: 0.1rem 0.3rem;
 }
-.kit-comando button:hover { color: var(--cor-azul-primario); }
+@media (hover: hover) and (pointer: fine) { .kit-comando button:hover { color: var(--cor-azul-primario); } }
 
 .kit-botoes { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: auto; }
 .kit-baixar { display: inline-flex; gap: 0.4rem; align-items: center; justify-content: center; }
 .kit-card > .kit-baixar { margin-top: auto; align-self: flex-start; }
+
+/* =========================================================
+   ESTUDOS — toque (celular e tablet): alvos de 44px
+   ========================================================= */
+@media (pointer: coarse) {
+    .estudos-scope .page-header .ph-kpi-btn { min-height: var(--tap-min); }
+    .estudos-tema { min-height: var(--tap-min); }
+    .estudos-chip { min-height: var(--tap-min); padding-top: 0; padding-bottom: 0; }
+    .estudos-check { min-height: var(--tap-min); }
+    .estudo-acoes .btn-secondary,
+    .estudo-acoes .btn-primary { min-height: var(--tap-min); }
+    .estudo-btn-excluir { min-width: var(--tap-min); min-height: var(--tap-min); }
+    .estudo-destino button { min-height: var(--tap-min); }
+    .pedir-claude-gatilho-bloco { width: var(--tap-min); height: var(--tap-min); }
+    .kit-comando button { min-width: var(--tap-min); min-height: var(--tap-min); }
+    .kit-baixar { min-height: var(--tap-min); }
+}
+
+/* =========================================================
+   ESTUDOS — celular (≤768)
+   ========================================================= */
+@media (max-width: 768px) {
+    /* O .container já dá 16px de gutter: os wrappers não somam outro */
+    .estudos-wrapper,
+    .estudo-leitura {
+        max-width: 100%;
+        padding: 0;
+        margin-bottom: var(--sp-5);
+    }
+
+    .estudos-scope .page-header { margin-bottom: var(--sp-4); }
+    .estudos-scope .page-header-kpis { gap: var(--sp-2); }
+    .estudos-carregando { padding: var(--sp-6) var(--sp-4); }
+
+    /* ---- biblioteca ---- */
+    .estudos-layout { gap: var(--sp-4); }
+
+    .estudos-temas {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: var(--sp-2);
+        padding: var(--sp-2);
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        scrollbar-width: none;
+    }
+
+    .estudos-temas::-webkit-scrollbar { display: none; }
+    .estudos-temas h2 { display: none; }
+
+    .estudos-tema {
+        flex: 0 0 auto;
+        width: auto;
+        padding: 0 var(--sp-3);
+        border-radius: 999px;
+        scroll-snap-align: start;
+    }
+
+    .estudos-tema-nome { max-width: 60vw; }
+
+    .estudos-filtros { gap: var(--sp-3); margin-bottom: var(--sp-4); }
+    .estudos-chips { gap: var(--sp-2); }
+    .estudos-chip { padding-left: var(--sp-3); padding-right: var(--sp-3); font-size: 0.875rem; }
+    .estudos-check { font-size: 0.875rem; }
+
+    .estudos-grade { grid-template-columns: 1fr; gap: var(--sp-3); }
+    .estudo-card { padding: var(--sp-4); gap: var(--sp-2); }
+
+    .estudo-card-tema,
+    .estudo-card-nivel,
+    .estudo-tag,
+    .estudo-etiqueta { font-size: 0.75rem; }
+
+    .estudos-vazio { margin: var(--sp-5) 0; padding: var(--sp-5) var(--sp-4); }
+    .estudos-vazio .btn-primary { min-height: 48px; }
+}
