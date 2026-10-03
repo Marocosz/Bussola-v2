@@ -1,0 +1,396 @@
+/* ========================================================= */
+/* REGISTROS NO CELULAR (≤768), TABLET E TOQUE                */
+/* Carrega depois de styles.css, markdown.css e kanban.css    */
+/* (mesma especificidade vence) e antes de mobile.css,        */
+/* components.css e global.css: para vencer `.app-sheet > …`  */
+/* use 3 classes; para vencer as regras de sheet com          */
+/* !important, `.registros-scope.modal-overlay.is-sheet > …`  */
+/* com !important.                                            */
+/* Sheets (portal no body) não herdam .registros-scope: as    */
+/* classes usadas neles têm prefixo .reg- e não têm escopo.   */
+/* Escala: 8 dentro do card, 12 entre cards, 16 gutter e      */
+/* blocos, 24 entre seções.                                   */
+/* ========================================================= */
+
+/* --- Peças compartilhadas (página e sheets) --- */
+.reg-chip {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-2);
+    min-height: var(--tap-min);
+    min-width: var(--tap-min);
+    padding: 0 var(--sp-4);
+    border: 1px solid var(--cor-borda);
+    border-radius: 999px;
+    background: var(--cor-card-principal);
+    color: var(--cor-texto-principal);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.reg-chip.active {
+    background: rgba(var(--cor-tema-rgb), 0.16);
+    border-color: var(--cor-azul-primario);
+    color: var(--cor-azul-primario);
+    font-weight: 600;
+}
+
+.reg-chip-ghost {
+    border-style: dashed;
+    color: var(--cor-texto-secundario);
+}
+
+.reg-chip-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    flex-shrink: 0;
+}
+
+.reg-chip-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-2);
+}
+
+.reg-icon-btn {
+    width: var(--tap-min);
+    height: var(--tap-min);
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--cor-borda);
+    border-radius: 12px;
+    background: var(--cor-card-principal);
+    color: var(--cor-texto-secundario);
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.reg-icon-btn.is-danger {
+    color: var(--cor-vermelho-delete);
+}
+
+.reg-grupo-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.reg-grupo-row {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    min-height: 56px;
+    border-top: 1px solid var(--cor-borda);
+}
+
+.reg-grupo-row:first-child {
+    border-top: none;
+}
+
+.reg-grupo-nome {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.9375rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.reg-sheet-empty {
+    margin: 0;
+    padding: var(--sp-4) 0;
+    color: var(--cor-texto-secundario);
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+.reg-opcoes {
+    display: flex;
+    flex-direction: column;
+}
+
+.reg-opcao {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    min-height: 52px;
+    padding: 0 var(--sp-1);
+    border: none;
+    border-top: 1px solid var(--cor-borda);
+    background: transparent;
+    color: var(--cor-texto-principal);
+    font: inherit;
+    font-size: 0.9375rem;
+    text-align: left;
+    cursor: pointer;
+}
+
+.reg-opcao:first-child {
+    border-top: none;
+}
+
+.reg-opcao.selected {
+    color: var(--cor-azul-primario);
+    font-weight: 600;
+}
+
+.reg-opcao .fa-check {
+    margin-left: auto;
+}
+
+.reg-sheet-campos {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+}
+
+.reg-sheet-campos .reg-chip-grid + .reg-sheet-label {
+    margin-top: var(--sp-2);
+}
+
+.reg-sheet-label,
+.reg-campo-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--cor-texto-secundario);
+}
+
+/* --- Página no celular --- */
+@media (max-width: 768px) {
+    .registros-scope.main-container {
+        min-height: 0;
+        padding-top: var(--sp-4);
+        padding-bottom: calc(56px + var(--sp-4)) !important; /* o último card não fica sob o Fab */
+    }
+
+    .registros-scope .registros-wrapper {
+        max-width: 100%;
+        gap: var(--sp-4);
+    }
+
+    .registros-scope .column-scroll-content {
+        padding-top: 0;
+    }
+
+    /* Barra do Caderno */
+    .registros-scope .reg-m-toolbar {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-2);
+    }
+
+    .registros-scope .reg-m-search {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .registros-scope .reg-m-search i {
+        position: absolute;
+        left: var(--sp-3);
+        color: var(--cor-texto-secundario);
+        pointer-events: none;
+    }
+
+    .registros-scope .reg-m-search input {
+        width: 100%;
+        height: var(--tap-min);
+        padding: 0 var(--sp-3) 0 calc(var(--sp-6) + var(--sp-2));
+        border: 1px solid var(--cor-borda);
+        border-radius: 12px;
+        background: var(--cor-card-principal);
+        color: var(--cor-texto-principal);
+        outline: none;
+        box-sizing: border-box;
+    }
+
+    .registros-scope .reg-m-search input:focus {
+        border-color: var(--cor-azul-primario);
+    }
+
+    .registros-scope .reg-m-chips {
+        display: flex;
+        gap: var(--sp-2);
+        overflow-x: auto;
+        scrollbar-width: none;
+        overscroll-behavior-x: contain;
+    }
+
+    /* Acordeões e notas em 1 coluna (o card mantém o selo flutuante) */
+    .registros-scope .group-accordion {
+        margin-bottom: var(--sp-5);
+    }
+
+    .registros-scope .accordion-header {
+        min-height: 48px;
+        padding: var(--sp-2) 0;
+        gap: var(--sp-3);
+    }
+
+    .registros-scope .header-title-wrapper {
+        min-width: 0;
+        font-size: 0.875rem;
+    }
+
+    .registros-scope .header-title-wrapper > span:last-child {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .registros-scope .accordion-content-padding {
+        padding-top: 0;
+    }
+
+    .registros-scope .notes-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--sp-3);
+        padding-top: var(--sp-1); /* + margin-top do card = espaço do selo (22px + anel de 4px) */
+    }
+
+    .registros-scope .anotacao-card {
+        margin-top: var(--sp-5);
+        padding: var(--sp-6) var(--sp-4) var(--sp-4);
+        gap: var(--sp-2);
+    }
+
+    .registros-scope .anotacao-header {
+        gap: var(--sp-2);
+    }
+
+    .registros-scope .anotacao-footer {
+        padding-top: var(--sp-2);
+    }
+
+    .registros-scope .footer-pin-btn {
+        min-width: var(--tap-min);
+        min-height: var(--tap-min);
+        justify-content: center;
+    }
+
+    .registros-scope .reg-card-more {
+        width: var(--tap-min);
+        height: var(--tap-min);
+        flex-shrink: 0;
+        margin: calc(-1 * var(--sp-2)) calc(-1 * var(--sp-3)) 0 0;
+        display: grid;
+        place-items: center;
+        border: none;
+        border-radius: 12px;
+        background: transparent;
+        color: var(--cor-texto-secundario);
+        font-size: 1rem;
+        cursor: pointer;
+    }
+
+    .registros-scope .empty-state {
+        padding: var(--sp-6) var(--sp-4);
+    }
+
+    /* Modais da página (todos viram sheet pelo BaseModal) */
+    .registros-scope .modal-header,
+    .registros-scope .view-modal-header {
+        padding: var(--sp-3) var(--sp-4);
+        gap: var(--sp-3);
+    }
+
+    .registros-scope.is-sheet-full .modal-header,
+    .registros-scope.is-sheet-full .view-modal-header {
+        border-radius: 0;
+    }
+
+    .registros-scope .modal-header h2 {
+        font-size: 1.15rem;
+        min-width: 0;
+    }
+
+    .registros-scope .close-btn {
+        width: var(--tap-min);
+        height: var(--tap-min);
+        flex-shrink: 0;
+    }
+
+    .registros-scope .modal-body {
+        padding: var(--sp-4);
+        gap: var(--sp-4);
+    }
+
+    .registros-scope .form-row {
+        flex-direction: column;
+        gap: var(--sp-4);
+    }
+
+    .registros-scope .modal-footer,
+    .registros-scope .modal-footer-custom {
+        padding: var(--sp-3) var(--sp-4);
+        gap: var(--sp-2);
+    }
+
+    .registros-scope .modal-footer > .btn-primary,
+    .registros-scope .modal-footer > .btn-secondary,
+    .registros-scope .modal-footer-custom > .btn-primary,
+    .registros-scope .modal-footer-custom > .btn-secondary {
+        flex: 1;
+        min-height: 48px;
+    }
+
+    /* .modal-footer-custom (Anotação/Hábito) fixo como o .modal-footer nos sheets */
+    .registros-scope.modal-overlay.is-sheet > .modal-content > .modal-footer-custom,
+    .registros-scope.modal-overlay.is-sheet > .modal-content > form > .modal-footer-custom {
+        flex-shrink: 0;
+        padding-bottom: calc(var(--sp-3) + var(--safe-bottom));
+    }
+
+    .registros-scope.modal-overlay.is-sheet > .modal-content:has(> .modal-footer-custom, > form > .modal-footer-custom) {
+        padding-bottom: 0;
+    }
+
+    /* GrupoModal: cores à vista */
+    .registros-scope .grupo-cores-m {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, var(--tap-min));
+        gap: var(--sp-2);
+    }
+
+    .registros-scope .grupo-cor-m {
+        width: var(--tap-min);
+        height: var(--tap-min);
+        border-radius: 12px;
+        border: 2px solid transparent;
+        cursor: pointer;
+    }
+
+    .registros-scope .grupo-cor-m.selected {
+        border-color: var(--cor-texto-principal);
+        box-shadow: 0 0 0 2px var(--cor-azul-primario);
+    }
+
+    .registros-scope .grupo-cores-vazio {
+        margin: 0;
+        font-size: 0.875rem;
+        color: var(--cor-texto-secundario);
+    }
+}
+
+/* --- Sem hover (celular e tablet): ações sempre visíveis e sem "levantada" presa --- */
+@media (hover: none) {
+    .registros-scope .anotacao-actions,
+    .registros-scope .dropdown-item-actions,
+    .registros-scope .jk-habit-actions {
+        opacity: 1;
+    }
+
+    .registros-scope .selo-card:hover .selo-badge {
+        transform: none;
+    }
+}

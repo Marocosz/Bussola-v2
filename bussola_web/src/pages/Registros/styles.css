@@ -5,6 +5,7 @@
 .registros-scope.main-container {
     padding-bottom: 5rem !important;
     min-height: 100vh;
+    min-height: 100dvh;
     box-sizing: border-box;
 }
 
@@ -15,8 +16,11 @@
     height: auto;
 }
 
-.registros-scope *::-webkit-scrollbar {
-    display: none;
+/* Só com mouse: no toque a barra de rolagem nativa é a pista de que dá para rolar. */
+@media (hover: hover) and (pointer: fine) {
+    .registros-scope *::-webkit-scrollbar {
+        display: none;
+    }
 }
 
 /* ============================================= */
@@ -134,6 +138,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     z-index: 98;
     cursor: default;
 }
@@ -376,11 +381,13 @@
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
 }
 
-.registros-scope .anotacao-card:hover {
-    transform: translateY(-4px);
-    border-color: color-mix(in srgb, var(--card-accent) 40%, var(--cor-borda));
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08),
-        0 0 0 3px color-mix(in srgb, var(--card-accent) 12%, transparent);
+@media (hover: hover) and (pointer: fine) {
+    .registros-scope .anotacao-card:hover {
+        transform: translateY(-4px);
+        border-color: color-mix(in srgb, var(--card-accent) 40%, var(--cor-borda));
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08),
+            0 0 0 3px color-mix(in srgb, var(--card-accent) 12%, transparent);
+    }
 }
 
 .registros-scope .anotacao-card.fixado {
@@ -465,12 +472,14 @@
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.registros-scope .footer-pin-btn:hover {
-    color: var(--cor-azul-primario);
-}
+@media (hover: hover) and (pointer: fine) {
+    .registros-scope .footer-pin-btn:hover {
+        color: var(--cor-azul-primario);
+    }
 
-.registros-scope .footer-pin-btn:hover i {
-    transform: rotate(-20deg) scale(1.2);
+    .registros-scope .footer-pin-btn:hover i {
+        transform: rotate(-20deg) scale(1.2);
+    }
 }
 
 .registros-scope .footer-pin-btn.pinned {
@@ -481,8 +490,10 @@
     transform: rotate(45deg);
 }
 
-.registros-scope .footer-pin-btn.pinned:hover i {
-    transform: rotate(20deg) scale(1.2);
+@media (hover: hover) and (pointer: fine) {
+    .registros-scope .footer-pin-btn.pinned:hover i {
+        transform: rotate(20deg) scale(1.2);
+    }
 }
 
 /* ============================================= */
@@ -512,6 +523,7 @@
     display: flex;
     flex-direction: column;
     max-height: 90vh;
+    max-height: 90dvh;
     animation: scaleInModal 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
     /* Padrão: Visível para popups (GrupoModal) */
@@ -568,6 +580,7 @@
 .registros-scope .large-modal {
     max-width: 1000px;
     height: 85vh;
+    height: 85dvh;
 }
 
 /* Body */
@@ -977,11 +990,13 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.registros-scope .color-swatch:hover {
-    transform: scale(1.15);
-    border-color: white;
-    z-index: 2;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+@media (hover: hover) and (pointer: fine) {
+    .registros-scope .color-swatch:hover {
+        transform: scale(1.15);
+        border-color: white;
+        z-index: 2;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
 }
 
 @keyframes fadeInOverlay {

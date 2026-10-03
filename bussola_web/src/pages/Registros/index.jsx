@@ -13,8 +13,20 @@ import { JornadaTimeline } from './components/JornadaTimeline';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmDialogContext';
 import { AiAssistant } from '../../components/AiAssistant';
+import { useIsMobile } from '../../hooks/useIsMobile';
+import { Segmented } from '../../components/mobile/Segmented';
+import { Fab } from '../../components/mobile/Fab';
+import { CadernoToolbar } from './mobile/CadernoToolbar';
+import { GruposSheet } from './mobile/GruposSheet';
 import './styles.css';
+import './styles/registros-mobile.css';
 import { logger } from '../../utils/logger';
+
+const ABAS = [
+    { value: 'caderno', label: 'Caderno' },
+    { value: 'tarefas', label: 'Tarefas' },
+    { value: 'jornada', label: 'Jornada' },
+];
 
 export function Registros() {
     const [data, setData] = useState(null);
@@ -24,6 +36,7 @@ export function Registros() {
     // Hooks de Contexto
     const { addToast } = useToast();
     const dialogConfirm = useConfirm();
+    const isMobile = useIsMobile();
 
     // Permite que o botão "Tarefa" do cabeçalho abra o modal de nova tarefa do board.
     const novaTarefaRef = useRef(null);
@@ -42,6 +55,7 @@ export function Registros() {
     const [viewingNota, setViewingNota] = useState(null);
     const [editingGrupo, setEditingGrupo] = useState(null);
     const [editingHabito, setEditingHabito] = useState(null);
+    const [gruposSheetOpen, setGruposSheetOpen] = useState(false);
 
     // UI State - Filtros e Accordions (Caderno)
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -119,6 +133,13 @@ export function Registros() {
     }, [data, searchTerm, filtroGrupo]);
 
     const grupos = data?.grupos_disponiveis || [];
+
+    // Chip "Indefinido" só aparece se houver nota sem grupo.
+    const temIndefinido = useMemo(() => {
+        if (!data) return false;
+        const todas = [...(data.anotacoes_fixadas || []), ...Object.values(data.anotacoes_por_mes || {}).flat()];
+        return todas.some((n) => !n.grupo);
+    }, [data]);
 
     // --- HANDLERS ---
     const handleSilentRefresh = useCallback(() => fetchData(true), []);
@@ -204,7 +225,7 @@ export function Registros() {
     if (!data && !loading) return null;
 
     return (
-        <div className="container main-container registros-scope">
+        <div className={['container main-container registros-scope', isMobile && `reg-m reg-m-${activeTab}`].filter(Boolean).join(' ')}>
 
             <div className="page-header">
                 <div className="page-header-main">
@@ -214,7 +235,16 @@ export function Registros() {
 
             <div className="registros-wrapper">
 
-                {/* HEADER ÚNICO COM ABAS */}
+                {/* HEADER ÚNICO COM ABAS (no celular: abas segmentadas + a barra da aba) */}
+                {isMobile ? (
+                    <Segmented
+                        label="Seções de Registros"
+                        options={ABAS}
+                        value={activeTab}
+                        onChange={setActiveTab}
+                        className="reg-m-tabs"
+                    />
+                ) : (
                 <div className="column-header-flex registros-main-header">
                     <div className="tab-selector-wrapper">
                         <button
@@ -341,6 +371,19 @@ export function Registros() {
                     )}
 
                 </div>
+                )}
+
+                {isMobile && activeTab === 'caderno' && (
+                    <CadernoToolbar
+                        searchTerm={searchTerm}
+                        onSearch={setSearchTerm}
+                        grupos={grupos}
+                        filtroGrupo={filtroGrupo}
+                        onFiltro={setFiltroGrupo}
+                        temIndefinido={temIndefinido}
+                        onOpenGrupos={() => setGruposSheetOpen(true)}
+                    />
+                )}
 
                 {/* CONTEÚDO: CADERNO */}
                 {activeTab === 'caderno' && (
@@ -473,6 +516,22 @@ export function Registros() {
                 onEdit={handleEditHabitoFromLista}
                 onUpdate={handleSilentRefresh}
             />
+
+            {/* Celular: o "+" da aba ativa e a gestão de grupos (fecha antes de abrir o GrupoModal,
+                que é BaseModal na árvore e ficaria atrás do sheet em portal). */}
+            {isMobile && activeTab === 'caderno' && <Fab label="Nova nota" onClick={handleNewNota} />}
+            {isMobile && activeTab === 'tarefas' && <Fab label="Nova tarefa" onClick={() => novaTarefaRef.current?.()} />}
+            {isMobile && activeTab === 'jornada' && <Fab label="Novo hábito" onClick={handleNewHabito} />}
+            {isMobile && (
+                <GruposSheet
+                    open={gruposSheetOpen}
+                    onClose={() => setGruposSheetOpen(false)}
+                    grupos={grupos}
+                    onNew={() => { setGruposSheetOpen(false); handleNewGrupo(); }}
+                    onEdit={(g, e) => { setGruposSheetOpen(false); handleEditGrupo(g, e); }}
+                    onDelete={handleDeleteGrupo}
+                />
+            )}
 
             <AiAssistant context="registros" />
         </div>

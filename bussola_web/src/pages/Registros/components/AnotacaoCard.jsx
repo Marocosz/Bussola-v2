@@ -1,13 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import { deleteAnotacao, toggleFixarAnotacao } from '../../../services/api';
 import { useConfirm } from '../../../context/ConfirmDialogContext';
+import { useIsMobile } from '../../../hooks/useIsMobile';
+import { ActionSheet } from '../../../components/mobile/ActionSheet';
 
 export const AnotacaoCard = React.memo(function AnotacaoCard({ anotacao, onUpdate, onEdit, onView }) {
     const confirm = useConfirm();
+    const isMobile = useIsMobile();
     const [isDeleting, setIsDeleting] = useState(false);
+    const [menuAberto, setMenuAberto] = useState(false);
 
+    // `e` é opcional: o ActionSheet chama os handlers sem evento.
     const handleDelete = async (e) => {
-        e.stopPropagation();
+        e?.stopPropagation();
 
         const isConfirmed = await confirm({
             title: 'Excluir Anotação?',
@@ -24,7 +29,7 @@ export const AnotacaoCard = React.memo(function AnotacaoCard({ anotacao, onUpdat
     };
 
     const handlePin = async (e) => {
-        e.stopPropagation();
+        e?.stopPropagation();
         await toggleFixarAnotacao(anotacao.id);
         onUpdate();
     };
@@ -58,6 +63,7 @@ export const AnotacaoCard = React.memo(function AnotacaoCard({ anotacao, onUpdat
     }, [anotacao.conteudo]);
     
     return (
+        <>
         <div
             className={`anotacao-card selo-card ${anotacao.fixado ? 'fixado' : ''} ${isDeleting ? 'card-deleting' : ''}`}
             onClick={() => onView(anotacao)}
@@ -74,6 +80,16 @@ export const AnotacaoCard = React.memo(function AnotacaoCard({ anotacao, onUpdat
                     <span className="anotacao-data">{dateStr}</span>
                 </div>
                 
+                {isMobile ? (
+                    <button
+                        type="button"
+                        className="reg-card-more"
+                        aria-label={`Ações de ${anotacao.titulo}`}
+                        onClick={(e) => { e.stopPropagation(); setMenuAberto(true); }}
+                    >
+                        <i className="fa-solid fa-ellipsis"></i>
+                    </button>
+                ) : (
                 <div className="anotacao-actions">
                     {/* Botões padronizados com Finanças */}
                     <button className="btn-action-icon btn-edit" onClick={handleEditClick} title="Editar">
@@ -83,6 +99,7 @@ export const AnotacaoCard = React.memo(function AnotacaoCard({ anotacao, onUpdat
                         <i className="fa-solid fa-trash-can"></i>
                     </button>
                 </div>
+                )}
             </div>
 
             <div className="anotacao-conteudo">
@@ -102,5 +119,22 @@ export const AnotacaoCard = React.memo(function AnotacaoCard({ anotacao, onUpdat
 
             </div>
         </div>
+
+        {/* Irmão do card (nunca dentro dele): o clique do sheet não pode subir até o onClick do card. */}
+        {isMobile && (
+            <ActionSheet
+                open={menuAberto}
+                onClose={() => setMenuAberto(false)}
+                title={anotacao.titulo}
+                subtitle={anotacao.grupo?.nome || 'Sem grupo'}
+                icon="fa-solid fa-note-sticky"
+                actions={[
+                    { key: 'editar', icon: 'fa-solid fa-pen-to-square', label: 'Editar', onClick: () => onEdit(anotacao) },
+                    { key: 'fixar', icon: 'fa-solid fa-thumbtack', label: anotacao.fixado ? 'Desafixar' : 'Fixar no topo', onClick: handlePin },
+                    { key: 'excluir', icon: 'fa-solid fa-trash-can', label: 'Excluir', variant: 'danger', onClick: handleDelete },
+                ]}
+            />
+        )}
+        </>
     );
 });

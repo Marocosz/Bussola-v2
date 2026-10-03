@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createGrupo, updateGrupo } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 import { BaseModal } from '../../../components/BaseModal';
+import { useIsMobile } from '../../../hooks/useIsMobile';
 import '../styles.css';
 import { logger } from '../../../utils/logger';
 
@@ -14,6 +15,7 @@ const PRESET_COLORS = [
 
 export function GrupoModal({ active, closeModal, onUpdate, editingData, existingGroups = [] }) {
     const { addToast } = useToast();
+    const isMobile = useIsMobile();
     const [nome, setNome] = useState('');
     const [cor, setCor] = useState(PRESET_COLORS[0]);
     const [showColorPicker, setShowColorPicker] = useState(false);
@@ -84,6 +86,40 @@ export function GrupoModal({ active, closeModal, onUpdate, editingData, existing
                 
                 <form onSubmit={handleSubmit}>
                     <div className="modal-body" style={{overflow: 'visible', paddingBottom: '1rem', position: 'relative', zIndex: 10}}> 
+                        {isMobile ? (
+                            <>
+                                <div className="form-group">
+                                    <label htmlFor="grupo-nome-m">Nome do Grupo</label>
+                                    <input
+                                        id="grupo-nome-m"
+                                        className="form-input"
+                                        value={nome}
+                                        onChange={e => setNome(e.target.value)}
+                                        placeholder="Ex: Estudos..."
+                                        required
+                                    />
+                                </div>
+                                {/* No celular as cores ficam à vista (o popover cortaria dentro do sheet). */}
+                                <div className="form-group">
+                                    <label id="grupo-cor-m">Cor</label>
+                                    <div className="grupo-cores-m" role="radiogroup" aria-labelledby="grupo-cor-m">
+                                        {availableColors.map(c => (
+                                            <button
+                                                key={c}
+                                                type="button"
+                                                role="radio"
+                                                aria-checked={cor === c}
+                                                aria-label={`Cor ${c}`}
+                                                className={`grupo-cor-m ${cor === c ? 'selected' : ''}`}
+                                                style={{ backgroundColor: c }}
+                                                onClick={() => setCor(c)}
+                                            />
+                                        ))}
+                                    </div>
+                                    {availableColors.length === 0 && <p className="grupo-cores-vazio">Todas as cores já estão em uso.</p>}
+                                </div>
+                            </>
+                        ) : (
                         <div className="form-row" style={{display:'grid', gridTemplateColumns:'1fr auto', alignItems:'end', gap:'15px'}}>
                             <div className="form-group">
                                 <label>Nome do Grupo</label>
@@ -124,6 +160,7 @@ export function GrupoModal({ active, closeModal, onUpdate, editingData, existing
                                 </div>
                             </div>
                         </div>
+                        )}
                     </div>
 
                     <div className="modal-footer" style={{position: 'relative', zIndex: 1}}>
