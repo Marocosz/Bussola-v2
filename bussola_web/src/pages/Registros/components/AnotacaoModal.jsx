@@ -5,6 +5,7 @@ import { logger } from '../../../utils/logger';
 import { BaseModal } from '../../../components/BaseModal';
 import { MarkdownViewer } from './MarkdownViewer';
 import { useIsMobile } from '../../../hooks/useIsMobile';
+import { useConfirm } from '../../../context/ConfirmDialogContext';
 import { GrupoPickerSheet } from '../mobile/GrupoPickerSheet';
 import '../styles.css';
 import '../styles/markdown.css';
@@ -70,6 +71,9 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
 
     const dropdownRef = useRef(null);
     const textareaRef = useRef(null);
+    // Valores com que o editor abriu (para saber se há alterações não salvas).
+    const inicialRef = useRef(null);
+    const confirm = useConfirm();
 
     // ── Word count / reading time ──────────────────────────────────
     const wordCount   = useMemo(() => countWords(conteudo), [conteudo]);
@@ -95,22 +99,38 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
         setIsFullscreen(false);
         setDropdownOpen(false);
 
+        let inicial;
         if (editingData) {
-            setTitulo(editingData.titulo);
-            setGrupoId(editingData.grupo?.id || '');
-            setFixado(editingData.fixado);
-
             let content = editingData.conteudo || '';
             if (isHtmlContent(content)) content = htmlToMarkdown(content);
-            setConteudo(content);
+            inicial = { titulo: editingData.titulo, conteudo: content, grupoId: editingData.grupo?.id || '', fixado: editingData.fixado };
         } else {
             const draft = localStorage.getItem(getDraftKey(null));
-            setTitulo('');
-            setConteudo(draft || '');
-            setGrupoId(gruposDisponiveis.length > 0 ? gruposDisponiveis[0].id : '');
-            setFixado(false);
+            inicial = { titulo: '', conteudo: draft || '', grupoId: gruposDisponiveis.length > 0 ? gruposDisponiveis[0].id : '', fixado: false };
         }
+        inicialRef.current = inicial;
+        setTitulo(inicial.titulo);
+        setConteudo(inicial.conteudo);
+        setGrupoId(inicial.grupoId);
+        setFixado(inicial.fixado);
     }, [active, editingData]);
+
+    // ── ✕ do celular: pergunta antes de descartar alterações não salvas ──
+    const fecharMobile = async () => {
+        const ini = inicialRef.current;
+        const alterou = !ini || titulo !== ini.titulo || conteudo !== ini.conteudo
+            || String(grupoId ?? '') !== String(ini.grupoId ?? '') || Boolean(fixado) !== Boolean(ini.fixado);
+        if (alterou) {
+            const ok = await confirm({
+                title: 'Descartar alterações?',
+                description: 'O que você mudou nesta nota ainda não foi salvo.',
+                confirmLabel: 'Descartar',
+                variant: 'danger',
+            });
+            if (!ok) return;
+        }
+        closeModal();
+    };
 
     // ── Fechar dropdown ao clicar fora ─────────────────────────────
     useEffect(() => {
@@ -240,7 +260,7 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
                 {/* ── Header ─────────────────────────────────── */}
                 {isMobile ? (
                     <div className="nota-m-topbar">
-                        <button type="button" className="nota-m-icon" onClick={closeModal} aria-label="Fechar">
+                        <button type="button" className="nota-m-icon" onClick={fecharMobile} aria-label="Fechar">
                             <i className="fa-solid fa-xmark"></i>
                         </button>
                         <span className="nota-m-titulo">{editingData ? 'Editar nota' : 'Nova nota'}</span>

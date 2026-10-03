@@ -220,7 +220,7 @@ export function ViewAnotacaoModal({ active, closeModal, nota, onEdit }) {
                 actions={[
                     ...(!conteudoIsHtml ? [{ key: 'md', icon: 'fa-brands fa-markdown', label: 'Copiar Markdown', onClick: () => handleCopy('md') }] : []),
                     { key: 'texto', icon: 'fa-regular fa-copy', label: 'Copiar texto', onClick: () => handleCopy('text') },
-                    { key: 'pdf', icon: 'fa-solid fa-download', label: pdfLoading ? 'Gerando PDF...' : 'Baixar PDF', onClick: handleDownloadPdf },
+                    { key: 'pdf', icon: 'fa-solid fa-download', label: pdfLoading ? 'Gerando PDF...' : 'Baixar PDF', onClick: handleDownloadPdf, disabled: pdfLoading },
                 ]}
             />
         )}

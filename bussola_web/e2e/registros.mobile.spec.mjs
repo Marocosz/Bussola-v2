@@ -276,6 +276,30 @@ test.describe('editor e visualização de nota', () => {
     expect(nota).toMatchObject({ conteudo: 'texto****', fixado: true, grupo: { nome: 'Estudos' } });
   });
 
+  test('✕ do editor: fecha direto sem mudanças; com mudanças pergunta antes de descartar', async ({ page, request }) => {
+    await gotoApp(page, '/registros');
+    const ov = page.locator('.modal-overlay.is-sheet-full');
+    const fechar = () => ov.locator('.nota-m-topbar').getByRole('button', { name: 'Fechar', exact: true }).click();
+    await page.locator('.app-fab').click();
+    await expect(ov).toBeVisible();
+    await fechar();
+    await expect(ov).toHaveCount(0);
+    await expect(page.locator('.confirm-modal')).toHaveCount(0);
+
+    await page.locator('.app-fab').click();
+    await ov.getByRole('textbox', { name: 'Título', exact: true }).fill('E2E descartar');
+    await fechar();
+    const dlg = page.locator('.confirm-modal');
+    await expect(dlg).toContainText('Descartar alterações?');
+    await dlg.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(dlg).toHaveCount(0);
+    await expect(ov.getByRole('textbox', { name: 'Título', exact: true })).toHaveValue('E2E descartar');
+    await fechar();
+    await page.locator('.confirm-modal').getByRole('button', { name: 'Descartar' }).click();
+    await expect(ov).toHaveCount(0);
+    expect(await notaPorTitulo(request, 'E2E descartar')).toBeNull();
+  });
+
   test('ver nota: tela cheia; ⋯ com copiar/PDF e cópia confirmada por toast', async ({ page, context, request }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await criarNota(request, { titulo: 'E2E ver nota', conteudo: '# Olá\n\ntexto da nota', fixado: true });
@@ -424,6 +448,94 @@ test.describe('Tarefas', () => {
     await expect(page.locator('.kb-card--overlay')).toHaveCount(0);
     expect(await card.evaluate((e) => getComputedStyle(e).touchAction)).toBe('manipulation');
   });
+
+  test('quadro desatualizado não reverte o status mudado em outro aparelho', async ({ page, request }) => {
+    try {
+      const x = await criarTarefa(request, { titulo: 'E2E outro aparelho', status: 'Pendente' });
+      await criarTarefa(request, { titulo: 'E2E vem pra fila', status: 'Em andamento' });
+      await abrirTarefas(page);
+      await expect(page.locator('.kb-column').first().locator('.kb-card', { hasText: 'E2E outro aparelho' })).toHaveCount(1);
+      // Outro aparelho conclui X; esta página não recarrega.
+      await apiJson(request, 'PATCH', `/registros/tarefas/${x.id}/status`, { status: 'Concluído' });
+      await irParaColuna(page, 1);
+      await page.locator('.kb-card', { hasText: 'E2E vem pra fila' }).getByRole('button', { name: /^Ações de/ }).click();
+      await page.locator('.action-sheet').getByRole('button', { name: 'Mover para…' }).click();
+      await page.locator('.reg-sheet').getByRole('button', { name: 'A Fazer' }).click();
+      await expect.poll(async () => (await tarefaPorTitulo(request, 'E2E vem pra fila'))?.status).toBe('Pendente');
+      expect((await tarefaPorTitulo(request, 'E2E outro aparelho')).status).toBe('Concluído');
+      await expect(page.locator('.kb-column').nth(3).locator('.kb-card', { hasText: 'E2E outro aparelho' })).toHaveCount(1);
+    } finally {
+      await limparRegistrosE2E(request);
+    }
+  });
+
+  test('voltar para a página recarrega o quadro (mudança feita em outro aparelho aparece)', async ({ page, request }) => {
+    try {
+      const t = await criarTarefa(request, { titulo: 'E2E volta visível', status: 'Pendente' });
+      await abrirTarefas(page);
+      await expect(page.locator('.kb-column').first().locator('.kb-card', { hasText: 'E2E volta visível' })).toHaveCount(1);
+      await apiJson(request, 'PATCH', `/registros/tarefas/${t.id}/status`, { status: 'Bloqueado' });
+      await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+      await expect(page.locator('.kb-column').nth(2).locator('.kb-card', { hasText: 'E2E volta visível' })).toHaveCount(1);
+      await expect(page.locator('.kb-column').first().locator('.kb-card', { hasText: 'E2E volta visível' })).toHaveCount(0);
+    } finally {
+      await limparRegistrosE2E(request);
+    }
+  });
+
+  test('"Mover para…" Concluído coloca o card no topo da coluna', async ({ page, request }) => {
+    try {
+      await criarTarefa(request, { titulo: 'E2E vai concluir', status: 'Pendente' });
+      await abrirTarefas(page);
+      await page.locator('.kb-card', { hasText: 'E2E vai concluir' }).getByRole('button', { name: /^Ações de/ }).click();
+      await page.locator('.action-sheet').getByRole('button', { name: 'Mover para…' }).click();
+      await page.locator('.reg-sheet').getByRole('button', { name: 'Concluído' }).click();
+      await expect(page.locator('.kb-column').nth(3).locator('.kb-card').first()).toContainText('E2E vai concluir');
+      await expect.poll(async () => (await tarefaPorTitulo(request, 'E2E vai concluir'))?.status).toBe('Concluído');
+    } finally {
+      await limparRegistrosE2E(request);
+    }
+  });
+
+  test('toque longo reordena dentro da coluna e grava a ordem; não troca de coluna', async ({ page, request }) => {
+    try {
+      await criarTarefa(request, { titulo: 'E2E ordem A', status: 'Bloqueado' });
+      await criarTarefa(request, { titulo: 'E2E ordem B', status: 'Bloqueado' });
+      const ordemApi = async () => (await apiJson(request, 'GET', '/registros/tarefas/board')).bloqueado.map((t) => `${t.titulo}|${t.status}`);
+      expect(await ordemApi()).toEqual(['E2E ordem A|Bloqueado', 'E2E ordem B|Bloqueado']);
+      await abrirTarefas(page);
+      await irParaColuna(page, 2);
+      const col = page.locator('.kb-column').nth(2);
+      await expect(col.locator('.kb-card')).toHaveText([/E2E ordem A/, /E2E ordem B/]);
+      const cdp = await page.context().newCDPSession(page);
+      const toque = (type, px, py) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x: px, y: py }] });
+
+      // Arrastar A para baixo de B (mesma coluna).
+      const a = await col.locator('.kb-card', { hasText: 'E2E ordem A' }).boundingBox();
+      const b = await col.locator('.kb-card', { hasText: 'E2E ordem B' }).boundingBox();
+      const x = a.x + a.width / 3;
+      await toque('touchStart', x, a.y + a.height / 2);
+      await page.waitForTimeout(350);
+      for (let i = 1; i <= 10; i += 1) {
+        await toque('touchMove', x, a.y + a.height / 2 + ((b.y + b.height * 0.75) - (a.y + a.height / 2)) * (i / 10));
+      }
+      await toque('touchEnd');
+      await expect.poll(ordemApi).toEqual(['E2E ordem B|Bloqueado', 'E2E ordem A|Bloqueado']);
+
+      // Arrastar até a borda direita e segurar: o quadro não rola para outra coluna e nada muda de status.
+      const a2 = await col.locator('.kb-card', { hasText: 'E2E ordem A' }).boundingBox();
+      await toque('touchStart', a2.x + a2.width / 3, a2.y + a2.height / 2);
+      await page.waitForTimeout(350);
+      for (let i = 1; i <= 10; i += 1) await toque('touchMove', a2.x + a2.width / 3 + ((385 - a2.x - a2.width / 3) * i) / 10, a2.y + a2.height / 2);
+      for (let i = 0; i < 15; i += 1) { await toque('touchMove', 385 + (i % 2), a2.y + a2.height / 2); await page.waitForTimeout(60); }
+      await toque('touchEnd');
+      await page.waitForTimeout(300);
+      expect(await page.locator('.kb-board').evaluate((e) => Math.round(e.scrollLeft / e.clientWidth))).toBe(2);
+      expect(await ordemApi()).toEqual(['E2E ordem B|Bloqueado', 'E2E ordem A|Bloqueado']);
+    } finally {
+      await limparRegistrosE2E(request);
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -508,6 +620,20 @@ test.describe('Jornada', () => {
     const barra = page.getByRole('progressbar', { name: 'Hábitos de hoje' });
     await expect(barra).toHaveAttribute('aria-valuenow', String(feitos));
     await expect(barra).toHaveAttribute('aria-valuemax', String(hoje.length));
+  });
+
+  test('sem hábitos para hoje: "Nenhum hábito hoje" e sem barra de progresso', async ({ page, request }) => {
+    await criarHabito(request, { titulo: 'E2E fora de hoje', frequencia: ['seg'] });
+    // Todos os hábitos passam a cair só em segunda (hoje é sexta no relógio fixo).
+    await page.route(/\/api\/v1\/registros\/$/, async (route) => {
+      const res = await route.fetch();
+      const json = await res.json();
+      json.habitos = (json.habitos || []).map((h) => ({ ...h, frequencia: ['seg'] }));
+      await route.fulfill({ response: res, json });
+    });
+    await abrirJornada(page);
+    await expect(page.locator('.reg-m-jornada-linha')).toHaveText('Sexta-feira, 2 de out · Nenhum hábito hoje');
+    await expect(page.getByRole('progressbar', { name: 'Hábitos de hoje' })).toHaveCount(0);
   });
 
   test('check-in: círculo ≥ 44px alterna o registro do dia', async ({ page, request }) => {
