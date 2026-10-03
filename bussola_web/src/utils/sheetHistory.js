@@ -58,15 +58,17 @@ function empilhar(reg) {
     const token = `${SESSAO}:${seq}`;
     const { [MARCA]: anterior, ...estado } = window.history.state ?? {};
     const reaproveitar = ehOrfa(tokenAtual());
+    // ANTES do push: o modo de restauração é por entrada e a nova copia o da atual (a da rota).
+    travarRestauracao();
     try {
         // Safari lança SecurityError acima de 100 push/replaceState em 30 s: o sheet só fica sem entrada.
         if (reaproveitar) window.history.replaceState({ ...estado, [MARCA]: token }, '');
         else window.history.pushState({ ...estado, [MARCA]: token }, '');
     } catch {
+        liberarRestauracao();
         return;
     }
     if (reaproveitar) aguardandoSaida.delete(anterior);
-    travarRestauracao();
     reg.n = seq;
     reg.token = token;
     reg.empilhado = true;
