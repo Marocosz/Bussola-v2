@@ -233,8 +233,17 @@ test.describe('abas, biblioteca e cards', () => {
     await page.getByRole('button', { name: 'Novo treino' }).click();
     const sheet = page.locator('.modal-overlay.is-sheet');
     await expect(sheet.locator('h2')).toHaveText('Configurar Treino');
-    await page.waitForTimeout(400);
-    await sheet.getByRole('button', { name: 'Cancelar' }).click();
+    const cancelar = sheet.getByRole('button', { name: 'Cancelar' });
+    await expect(cancelar).toBeVisible();
+    // animação do sheet concluída: o botão para de se mover
+    let ultimo = null;
+    await expect.poll(async () => {
+      const y = (await cancelar.boundingBox()).y;
+      const parado = ultimo !== null && Math.abs(y - ultimo) < 0.5;
+      ultimo = y;
+      return parado;
+    }).toBe(true);
+    await cancelar.click();
     await abrirAba(page, 'Plano de Dieta');
     await expect(page.locator('.app-fab')).toHaveCount(1);
     await page.getByRole('button', { name: 'Nova dieta' }).click();
@@ -269,7 +278,10 @@ test.describe('abas, biblioteca e cards', () => {
     const vazio = page.locator('.empty-state');
     await expect(vazio).toBeVisible();
     expect(await vazio.evaluate((e) => parseFloat(getComputedStyle(e).paddingLeft))).toBeLessThanOrEqual(16);
-    await page.waitForTimeout(600); // o toast de sucesso ainda desliza para dentro da tela
+    // o toast de sucesso ainda desliza para dentro da tela: espera ele caber na viewport (ou sumir)
+    await expect(page.locator('.toast-notification').last()).toBeVisible();
+    await expect.poll(() => page.evaluate(() => [...document.querySelectorAll('.toast-notification')]
+      .every((t) => t.getBoundingClientRect().right <= window.innerWidth + 0.5))).toBe(true);
     expect(await overflowOffenders(page)).toEqual([]);
 
     await original.getByRole('button', { name: 'Ativar' }).click();
@@ -319,5 +331,84 @@ test.describe('abas, biblioteca e cards', () => {
     for (const fs of await page.locator('.vol-bar-label, .vol-bar-count').evaluateAll((els) => els.map((e) => parseFloat(getComputedStyle(e).fontSize)))) {
       expect(fs).toBe(14);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Task 4 — builder de treino
+// ---------------------------------------------------------------------------
+test.describe('builder de treino', () => {
+  for (const w of [360, 430]) {
+    test(`sheet cheio em ${w}px: exercício em bloco empilhado, sem overflow, alvos de 44px`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: 800 });
+      await gotoApp(page, '/ritmo');
+      await page.getByRole('button', { name: 'Novo treino' }).click();
+      const sheet = page.locator('.modal-overlay.is-sheet-full');
+      await expect(sheet).toBeVisible();
+      await sheet.getByRole('button', { name: '+ Add Exercício' }).click();
+      const row = sheet.locator('.rb-ex-row').first();
+      const r = await row.boundingBox();
+      const [nome, grupo, sets, min, max, rm] = await Promise.all(
+        ['.rb-f-nome', '.rb-f-grupo', '.rb-f-sets', '.rb-f-min', '.rb-f-max', '.rb-remove'].map((s) => row.locator(s).boundingBox()));
+      expect(Math.abs(nome.width - r.width)).toBeLessThan(2);   // nome em largura total
+      expect(Math.abs(grupo.width - r.width)).toBeLessThan(2);  // grupo em largura total
+      expect(grupo.y).toBeGreaterThanOrEqual(nome.y + nome.height - 1);
+      expect(sets.y).toBeGreaterThanOrEqual(grupo.y + grupo.height - 1);
+      for (const b of [min, max]) expect(Math.abs(b.y - sets.y)).toBeLessThan(2); // linha numérica
+      expect(rm.width).toBeGreaterThanOrEqual(44);
+      expect(rm.height).toBeGreaterThanOrEqual(44);
+      expect(Math.abs((rm.y + rm.height) - (sets.y + sets.height))).toBeLessThan(2);
+      for (const f of ['.rb-f-sets', '.rb-f-min', '.rb-f-max']) {
+        await expect(row.locator(`${f} input`)).toHaveAttribute('inputmode', 'numeric');
+      }
+      expect(await overflowOffenders(page)).toEqual([]);
+      expect(await smallTargets(page, '.modal-overlay.is-sheet-full')).toEqual([]);
+      expect(await textosPequenos(page, '.modal-overlay.is-sheet-full')).toEqual([]);
+    });
+  }
+
+  test('builder de treino: Salvar visível com o teclado aberto e corpo rolando', async ({ page }) => {
+    await gotoApp(page, '/ritmo');
+    await teclado(page);
+    await page.getByRole('button', { name: 'Novo treino' }).click();
+    const sheet = page.locator('.modal-overlay.is-sheet-full');
+    for (let i = 0; i < 3; i += 1) await sheet.getByRole('button', { name: '+ Add Exercício' }).click();
+    const salvar = sheet.getByRole('button', { name: 'Salvar Plano' });
+    await expect(salvar).toBeVisible();
+    await expect.poll(async () => { const b = await salvar.boundingBox(); return b.y + b.height; }).toBeLessThanOrEqual(420);
+    await sheet.locator('.modal-body').evaluate((b) => b.scrollTo(0, 99999));
+    const addDia = await sheet.getByRole('button', { name: 'Adicionar Dia' }).boundingBox();
+    expect(addDia.y + addDia.height).toBeLessThanOrEqual((await salvar.boundingBox()).y);
+  });
+
+  test('Novo treino pelo Fab: cria com grupo no sheet, ativa e exclui', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 780 });
+    await gotoApp(page, '/ritmo');
+    await page.getByRole('button', { name: 'Novo treino' }).click();
+    const sheet = page.locator('.modal-overlay.is-sheet-full');
+    await expect(sheet.locator('h2')).toHaveText('Configurar Treino');
+    await sheet.locator('input[placeholder="Ex: Push Pull Legs"]').fill('E2E Treino');
+    await sheet.getByRole('button', { name: '+ Add Exercício' }).click();
+    const row = sheet.locator('.rb-ex-row').first();
+    await row.locator('.rb-f-nome input').fill('E2E Supino');
+    await row.locator('.rb-f-grupo .custom-select-trigger').click();
+    await page.locator('.cs-sheet-list .custom-option', { hasText: /^Peito$/ }).click();
+    await expect(row.locator('.rb-f-grupo .custom-select-trigger')).toContainText('Peito');
+    await row.locator('.rb-f-sets input').fill('4');
+    await sheet.getByRole('button', { name: 'Salvar Plano' }).click();
+    await expect(page.getByText('Plano salvo.')).toBeVisible();
+
+    const card = page.locator('.plan-mini-card', { hasText: 'E2E Treino' });
+    await expect(card).toHaveClass(/active/);
+    const dia = page.locator('.refeicao-card-pro', { hasText: 'E2E Supino' });
+    await expect(dia).toContainText('Peito');
+    await expect(dia.locator('.ref-total-badge')).toHaveText('4 séries');
+
+    const original = page.locator('.plan-mini-card', { hasText: 'Hipertrofia ABC 2025' });
+    await original.getByRole('button', { name: 'Ativar' }).click();
+    await expect(original).toHaveClass(/active/);
+    await card.getByRole('button', { name: 'Excluir' }).click();
+    await page.getByRole('button', { name: 'Sim, Excluir' }).click();
+    await expect(card).toHaveCount(0);
   });
 });
