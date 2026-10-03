@@ -513,3 +513,54 @@ test.describe('builder de dieta', () => {
     await expect(card).toHaveCount(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 6 — perfil (BioModal). Nunca salvar: o POST /bio muda a base do desktop.
+// ---------------------------------------------------------------------------
+test.describe('perfil', () => {
+  test('perfil: coluna única, regra do Sugerido visível, toque aplica a sugestão, inputMode', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 780 });
+    await gotoApp(page, '/ritmo');
+    await page.getByRole('button', { name: 'Ajustar Perfil' }).click();
+    const sheet = page.locator('.modal-overlay.is-sheet').first();
+    await expect(sheet.locator('.modal-title')).toHaveText('Perfil Biológico & Metas');
+    const colunas = (loc) => loc.evaluate((e) => getComputedStyle(e).gridTemplateColumns.split(' ').length);
+    expect(await colunas(sheet.locator('.bio-modal-grid'))).toBe(1);
+    for (const g of await sheet.locator('.form-grid.two-cols').all()) expect(await colunas(g)).toBe(1);
+
+    for (const n of ['peso', 'altura', 'bf_estimado', 'gasto_calorico_total', 'meta_proteina', 'meta_carbo', 'meta_gordura', 'meta_agua']) {
+      await expect(sheet.locator(`input[name="${n}"]`)).toHaveAttribute('inputmode', 'decimal');
+    }
+    await expect(sheet.locator('input[name="idade"]')).toHaveAttribute('inputmode', 'numeric');
+
+    const regras = sheet.locator('.meta-hint');
+    await expect(regras).toHaveCount(5);
+    await expect(regras.first()).toBeVisible();
+    await expect(regras.first()).toHaveText('Regra: TMB x Fator Ativ. +/- Objetivo');
+    await expect(regras.nth(1)).toHaveText('Regra: 2.0g por kg corporal');
+    const badge0 = sheet.locator('.suggestion-badge').first();
+    expect(await badge0.evaluate((e) => getComputedStyle(e, '::after').display)).toBe('none');
+
+    const prot = sheet.locator('input[name="meta_proteina"]');
+    await prot.fill('');
+    const badge = sheet.locator('.meta-input-group', { has: page.locator('input[name="meta_proteina"]') }).locator('.suggestion-badge');
+    const sugerido = (await badge.innerText()).match(/[\d.]+/)[0];
+    await badge.click();
+    await expect(prot).toHaveValue(sugerido);
+
+    expect(await overflowOffenders(page)).toEqual([]);
+    expect(await smallTargets(page, '.modal-overlay.is-sheet')).toEqual([]);
+    expect(await textosPequenos(page, '.modal-overlay.is-sheet')).toEqual([]);
+    await sheet.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(page.locator('.modal-overlay')).toHaveCount(0);
+  });
+
+  test('perfil: Confirmar visível com o teclado aberto', async ({ page }) => {
+    await gotoApp(page, '/ritmo');
+    await teclado(page);
+    await page.getByRole('button', { name: 'Ajustar Perfil' }).click();
+    const confirmar = page.locator('.modal-overlay.is-sheet').getByRole('button', { name: 'Confirmar' });
+    await expect(confirmar).toBeVisible();
+    await expect.poll(async () => { const b = await confirmar.boundingBox(); return b.y + b.height; }).toBeLessThanOrEqual(420);
+  });
+});

@@ -76,3 +76,14 @@ test('desktop ritmo: nada do layout mobile aparece', async ({ page }) => {
   expect(await page.locator('.bio-stat-strip').evaluate((e) => getComputedStyle(e).display)).toBe('flex');
   expect(await page.locator('.bio-panels-row').evaluate((e) => getComputedStyle(e).gridTemplateColumns.split(' ').length)).toBe(2);
 });
+
+test('desktop ritmo: regra do Sugerido continua só no tooltip (texto auxiliar oculto)', async ({ page }) => {
+  await gotoApp(page, '/ritmo');
+  await page.getByRole('button', { name: 'Ajustar Perfil' }).click();
+  await page.locator('.bio-modal-grid').waitFor();
+  const regras = page.locator('.meta-hint');
+  await expect(regras).toHaveCount(5);
+  await expect(regras.first()).toBeHidden();
+  const badge = page.locator('.suggestion-badge').first();
+  expect(await badge.evaluate((e) => getComputedStyle(e, '::after').display)).not.toBe('none');
+});

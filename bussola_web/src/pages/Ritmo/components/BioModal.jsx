@@ -122,42 +122,51 @@ export function BioModal({ onClose, onSuccess, initialData }) {
             await createBioData(payload);
             addToast({ type: 'success', title: 'Perfil Atualizado!', description: 'Metas salvas com sucesso.' });
             onSuccess(); onClose();
-        } catch (error) {
+        } catch {
             addToast({ type: 'error', title: 'Erro', description: 'Falha ao salvar dados.' });
         } finally { setLoading(false); }
     };
 
-    // Helper para input com sugestão inteligente e tooltip
-    const renderMetaInput = (label, name, suggestionVal, unit, hintText, isCalories = false) => (
-        <div className="meta-input-group">
-            <div className={`meta-label-row ${isCalories ? 'row-calorias' : ''}`}>
-                <span className="meta-label-text">{label}</span>
-                <span 
-                    className="suggestion-badge" 
-                    data-tooltip={`Cálculo Automático: ${suggestionVal}${unit}\nRegra: ${hintText}`}
-                    onClick={() => setCustomMetas(prev => ({...prev, [name]: suggestionVal}))}
-                >
-                    Sugerido: {suggestionVal}{unit}
-                </span>
+    // Campo de meta com sugestão. Com mouse a regra aparece no tooltip (hover);
+    // no toque (ou ≤768) ela aparece como texto auxiliar abaixo do campo.
+    const renderMetaInput = (label, name, suggestionVal, unit, hintText, isCalories = false) => {
+        const aplicarSugestao = () => setCustomMetas(prev => ({ ...prev, [name]: suggestionVal }));
+        return (
+            <div className="meta-input-group">
+                <div className={`meta-label-row ${isCalories ? 'row-calorias' : ''}`}>
+                    <span className="meta-label-text">{label}</span>
+                    <span
+                        className="suggestion-badge"
+                        role="button"
+                        tabIndex={0}
+                        data-tooltip={`Cálculo Automático: ${suggestionVal}${unit}\nRegra: ${hintText}`}
+                        onClick={aplicarSugestao}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); aplicarSugestao(); } }}
+                    >
+                        Sugerido: {suggestionVal}{unit}
+                    </span>
+                </div>
+                <input
+                    className="form-input"
+                    type="number"
+                    inputMode="decimal"
+                    step="0.1"
+                    name={name}
+                    value={customMetas[name] || ''}
+                    onChange={handleMetaChange}
+                    placeholder={suggestionVal}
+                />
+                <small className="meta-hint">Regra: {hintText}</small>
             </div>
-            <input 
-                className="form-input" 
-                type="number" 
-                step="0.1"
-                name={name} 
-                value={customMetas[name] || ''} 
-                onChange={handleMetaChange} 
-                placeholder={suggestionVal}
-            />
-        </div>
-    );
+        );
+    };
 
     return (
         <BaseModal onClose={onClose} className="ritmo-scope">
             <div className="modal-content" onClick={e => e.stopPropagation()} style={{maxWidth: '900px', width: '95%'}}>
                 <div className="modal-header-flex">
                     <h2 className="modal-title">Perfil Biológico & Metas</h2>
-                    <button className="close-btn-styled" onClick={onClose}>&times;</button>
+                    <button type="button" className="close-btn-styled" aria-label="Fechar" onClick={onClose}>&times;</button>
                 </div>
                 <form onSubmit={handleSubmit}>
                     <div className="modal-body">
@@ -167,16 +176,16 @@ export function BioModal({ onClose, onSuccess, initialData }) {
                             <div className="bio-data-column">
                                 <div className="bio-section-title">Dados Corporais</div>
                                 <div className="form-grid two-cols">
-                                    <div className="form-group"><label>Peso (kg)</label><input className="form-input" type="number" step="0.1" name="peso" required value={formData.peso} onChange={handleFormChange} /></div>
-                                    <div className="form-group"><label>Altura (cm)</label><input className="form-input" type="number" name="altura" required value={formData.altura} onChange={handleFormChange} /></div>
+                                    <div className="form-group"><label>Peso (kg)</label><input className="form-input" type="number" inputMode="decimal" step="0.1" name="peso" required value={formData.peso} onChange={handleFormChange} /></div>
+                                    <div className="form-group"><label>Altura (cm)</label><input className="form-input" type="number" inputMode="decimal" name="altura" required value={formData.altura} onChange={handleFormChange} /></div>
                                 </div>
                                 <div className="form-grid two-cols">
-                                    <div className="form-group"><label>Idade</label><input className="form-input" type="number" name="idade" required value={formData.idade} onChange={handleFormChange} /></div>
+                                    <div className="form-group"><label>Idade</label><input className="form-input" type="number" inputMode="numeric" name="idade" required value={formData.idade} onChange={handleFormChange} /></div>
                                     <div className="form-group"><CustomSelect className="form-input" label="Gênero" name="genero" value={formData.genero} options={genderOptions} onChange={handleFormChange} /></div>
                                 </div>
                                 <div className="form-grid"><div className="form-group"><CustomSelect className="form-input" label="Nível de Atividade" name="nivel_atividade" value={formData.nivel_atividade} options={activityOptions} onChange={handleFormChange} /></div></div>
                                 <div className="form-grid"><div className="form-group"><CustomSelect className="form-input" label="Objetivo Atual" name="objetivo" value={formData.objetivo} options={objectiveOptions} onChange={handleFormChange} /></div></div>
-                                <div className="form-grid"><div className="form-group"><label>BF% (Estimado/Opcional)</label><input className="form-input" type="number" step="0.1" name="bf_estimado" value={formData.bf_estimado} onChange={handleFormChange} /></div></div>
+                                <div className="form-grid"><div className="form-group"><label>BF% (Estimado/Opcional)</label><input className="form-input" type="number" inputMode="decimal" step="0.1" name="bf_estimado" value={formData.bf_estimado} onChange={handleFormChange} /></div></div>
                             </div>
 
                             {/* COLUNA 2: METAS (DARK CARD) */}

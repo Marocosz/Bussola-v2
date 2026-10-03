@@ -1828,3 +1828,96 @@
         row-gap: var(--sp-1);
     }
 }
+
+/* ============================================= */
+/* 14. BIO MODAL: REGRA DO "SUGERIDO" SEM HOVER  */
+/* ============================================= */
+/* Com mouse a regra fica no tooltip (inalterado); no toque ou ≤768 vira texto visível. */
+.ritmo-scope .meta-hint {
+    display: none;
+}
+
+@media (hover: none), (max-width: 768px) {
+    .ritmo-scope .meta-hint {
+        display: block;
+        font-size: 0.75rem;
+        line-height: 1.4;
+        color: var(--cor-texto-secundario);
+    }
+
+    .ritmo-scope .suggestion-badge::after,
+    .ritmo-scope .suggestion-badge::before {
+        display: none;
+    }
+
+    .ritmo-scope .suggestion-badge {
+        cursor: pointer;
+    }
+}
+
+@media (max-width: 768px) {
+    .ritmo-scope .bio-modal-grid {
+        gap: var(--sp-5);
+    }
+
+    .ritmo-scope .bio-section-title {
+        margin-bottom: var(--sp-3);
+        gap: var(--sp-2);
+        flex-wrap: wrap;
+    }
+
+    .ritmo-scope .btn-use-suggested {
+        min-height: var(--tap-min);
+        padding: 0 var(--sp-3);
+        font-size: 0.8125rem;
+    }
+
+    .ritmo-scope .bio-data-column .form-grid {
+        gap: var(--sp-3);
+        margin-bottom: var(--sp-3);
+    }
+
+    .ritmo-scope .bio-metas-card {
+        padding: var(--sp-4);
+    }
+
+    .ritmo-scope .calc-explanation {
+        margin-bottom: var(--sp-4);
+        padding: var(--sp-2) var(--sp-3);
+    }
+
+    /* Metas em coluna única: 12px entre cada campo, sem somar gap + margem */
+    .ritmo-scope .bio-metas-card .form-grid {
+        gap: 0;
+        margin-bottom: 0;
+    }
+
+    .ritmo-scope .meta-input-group {
+        margin-bottom: var(--sp-3);
+    }
+
+    .ritmo-scope .bio-metas-card .form-grid:last-child .meta-input-group:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Rótulo à esquerda, "Sugerido" (44px, tocável) à direita, regra abaixo do campo */
+    .ritmo-scope .meta-label-row,
+    .ritmo-scope .meta-label-row.row-calorias {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--sp-2);
+        margin-bottom: 0;
+    }
+
+    .ritmo-scope .suggestion-badge {
+        min-height: var(--tap-min);
+        display: inline-flex;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    .ritmo-scope .row-calorias .suggestion-badge {
+        padding: 0 var(--sp-3);
+    }
+}
