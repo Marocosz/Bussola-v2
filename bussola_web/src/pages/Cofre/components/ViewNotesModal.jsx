@@ -9,7 +9,7 @@ export function ViewNotesModal({ notas, titulo, onClose }) {
             <div className="modal-content" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <h3>Notas: {titulo}</h3>
-                    <span className="close-btn" onClick={onClose}>&times;</span>
+                    <button type="button" className="close-btn" onClick={onClose} aria-label="Fechar">&times;</button>
                 </div>
                 <div className="modal-body">
                     <div className="notes-full-view">
@@ -17,7 +17,7 @@ export function ViewNotesModal({ notas, titulo, onClose }) {
                     </div>
                 </div>
                 <div className="modal-footer">
-                    <button className="btn-secondary" onClick={onClose}>Fechar</button>
+                    <button type="button" className="btn-secondary" onClick={onClose}>Fechar</button>
                 </div>
             </div>
         </BaseModal>

@@ -22,22 +22,24 @@ export function CofreLista({ segredos, onVer, onEditar, onNotas, onExcluir }) {
 
     return (
         <div className="cofre-m">
-            <label className="cofre-m-busca">
-                <i className="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-                <input
-                    type="search"
-                    className="form-input"
-                    placeholder="Buscar por título ou serviço"
-                    aria-label="Buscar segredos"
-                    value={busca}
-                    onChange={(e) => setBusca(e.target.value)}
-                    autoComplete="off"
-                    autoCapitalize="off"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    enterKeyHint="search"
-                />
-            </label>
+            {segredos.length > 0 && (
+                <label className="cofre-m-busca">
+                    <i className="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                    <input
+                        type="search"
+                        className="form-input"
+                        placeholder="Buscar por título ou serviço"
+                        aria-label="Buscar segredos"
+                        value={busca}
+                        onChange={(e) => setBusca(e.target.value)}
+                        autoComplete="off"
+                        autoCapitalize="off"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        enterKeyHint="search"
+                    />
+                </label>
+            )}
 
             {segredos.length === 0 ? (
                 <div className="cofre-m-vazio">

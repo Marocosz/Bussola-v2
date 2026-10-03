@@ -410,6 +410,11 @@
         display: none;
     }
 
+    /* A frase da validade quebra inteira para a linha de baixo, nunca no meio da data */
+    .cofre-m-validade {
+        white-space: nowrap;
+    }
+
     .cofre-m-validade.is-perto {
         color: var(--cor-laranja-aviso);
         font-weight: 600;
@@ -469,5 +474,68 @@
         font-size: 2rem;
         opacity: 0.4;
         color: var(--cor-texto-principal);
+    }
+}
+
+/* ============================================= */
+/* 8. MODAIS DA PÁGINA EM SHEET (≤768)           */
+/* ============================================= */
+@media (max-width: 768px) {
+    .cofre-scope .modal-overlay.is-sheet .modal-header {
+        padding: var(--sp-3) var(--sp-4);
+        gap: var(--sp-3);
+    }
+
+    .cofre-scope .modal-overlay.is-sheet .modal-header h3 {
+        margin: 0;
+        min-width: 0;
+        font-size: 1.05rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .cofre-scope .modal-overlay.is-sheet .modal-body {
+        padding: var(--sp-4);
+        gap: var(--sp-4);
+    }
+
+    /* Campos empilhados: título e serviço um embaixo do outro */
+    .cofre-scope .modal-overlay.is-sheet .form-row {
+        flex-direction: column;
+        gap: var(--sp-4);
+    }
+
+    .cofre-scope .modal-overlay.is-sheet .secret-input-wrapper {
+        align-items: center;
+        gap: var(--sp-2) !important;
+    }
+
+    .cofre-scope .modal-overlay.is-sheet .locked-input-wrapper {
+        min-height: 52px;
+        height: auto;
+        gap: var(--sp-2);
+        padding: var(--sp-1) var(--sp-1) var(--sp-1) var(--sp-3);
+    }
+
+    .cofre-scope .modal-overlay.is-sheet .locked-input-wrapper .btn-secondary {
+        min-height: var(--tap-min);
+        flex-shrink: 0;
+    }
+
+    .cofre-scope .modal-overlay.is-sheet .modal-footer {
+        padding-left: var(--sp-4);
+        padding-right: var(--sp-4);
+        gap: var(--sp-2);
+    }
+
+    .cofre-scope .modal-overlay.is-sheet .modal-footer > button {
+        flex: 1;
+        min-height: 48px;
+    }
+
+    /* Notas: só o corpo do sheet rola (sem rolagem dentro da rolagem) */
+    .cofre-scope .notes-full-view {
+        max-height: none;
     }
 }

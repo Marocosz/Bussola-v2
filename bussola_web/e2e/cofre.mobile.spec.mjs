@@ -232,3 +232,116 @@ test.describe('lista compacta', () => {
     await expect(page.locator('.modal-overlay.is-sheet .secret-display-box')).toBeVisible();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 3 — formulário e notas em sheet
+// ---------------------------------------------------------------------------
+test.describe('formulário em sheet', () => {
+  test('Fab abre o form: campos empilhados, atributos de teclado e sem autofocus', async ({ page }) => {
+    await gotoApp(page, '/cofre');
+    await page.locator('.app-fab').click();
+    const sheet = page.locator('.modal-overlay.is-sheet');
+    await expect(sheet.locator('h3')).toHaveText('Guardar Novo Segredo');
+    await animacoesAcabaram(page);
+    await expect(page.locator('#segredo-titulo')).not.toBeFocused();
+    const valor = page.locator('#segredo-valor');
+    await expect(valor).toHaveAttribute('autocomplete', 'new-password');
+    await expect(valor).toHaveAttribute('autocapitalize', 'off');
+    await expect(valor).toHaveAttribute('autocorrect', 'off');
+    await expect(valor).toHaveAttribute('spellcheck', 'false');
+    await expect(page.locator('#segredo-servico')).toHaveAttribute('autocapitalize', 'off');
+    await expect(page.locator('#segredo-dias')).toHaveAttribute('inputmode', 'numeric');
+    const t = await page.locator('#segredo-titulo').boundingBox();
+    const s = await page.locator('#segredo-servico').boundingBox();
+    expect(Math.round(s.x)).toBe(Math.round(t.x));
+    expect(s.y).toBeGreaterThan(t.y + t.height);
+    expect(Math.round(s.width)).toBe(Math.round(t.width));
+  });
+
+  test('fechar é um <button> de 44px com rótulo "Fechar"', async ({ page }) => {
+    await gotoApp(page, '/cofre');
+    await page.locator('.app-fab').click();
+    const fechar = page.locator('.modal-overlay.is-sheet').getByRole('button', { name: 'Fechar' });
+    expect(await fechar.evaluate((e) => e.tagName)).toBe('BUTTON');
+    await animacoesAcabaram(page);
+    await expect.poll(async () => { const b = await fechar.boundingBox(); return Math.min(b.width, b.height); }).toBeGreaterThanOrEqual(44);
+    await fechar.click();
+    await expect(page.locator('.modal-overlay.is-sheet')).toHaveCount(0);
+  });
+
+  test('alvos ≥ 44px no form novo e no de edição (senha travada)', async ({ page }) => {
+    await gotoApp(page, '/cofre');
+    await page.locator('.app-fab').click();
+    await animacoesAcabaram(page);
+    expect(await smallTargets(page, '.modal-overlay.is-sheet')).toEqual([]);
+    await page.locator('.modal-overlay.is-sheet').getByRole('button', { name: 'Fechar' }).click();
+    await page.getByRole('button', { name: 'Mais ações de E2E Banco Zeta' }).click();
+    await page.locator('.action-sheet').getByRole('button', { name: 'Editar' }).click();
+    await expect(page.locator('.locked-input-wrapper')).toBeVisible();
+    await animacoesAcabaram(page);
+    expect(await smallTargets(page, '.modal-overlay.is-sheet')).toEqual([]);
+  });
+
+  test('teclado virtual: Salvar fica acima do teclado', async ({ page }) => {
+    await gotoApp(page, '/cofre');
+    await page.evaluate(() => {
+      document.documentElement.style.setProperty('--vvh', '420px');
+      document.documentElement.style.setProperty('--kb-inset', '424px');
+    });
+    await page.locator('.app-fab').click();
+    const salvar = page.locator('.modal-overlay.is-sheet').getByRole('button', { name: 'Salvar' });
+    await expect(salvar).toBeVisible();
+    await expect.poll(async () => { const b = await salvar.boundingBox(); return b.y + b.height; }).toBeLessThanOrEqual(420);
+  });
+
+  test('criar pelo Fab e editar pelo ⋯', async ({ page }) => {
+    await gotoApp(page, '/cofre');
+    await page.locator('.app-fab').click();
+    await page.locator('#segredo-titulo').fill('E2E Criado no celular');
+    await page.locator('#segredo-servico').fill('E2E Teste');
+    await page.locator('#segredo-valor').fill('E2E-123');
+    await page.locator('#segredo-dias').fill('10');
+    await page.locator('.modal-overlay.is-sheet').getByRole('button', { name: 'Salvar' }).click();
+    const novo = linha(page, 'E2E Criado no celular');
+    await expect(novo).toHaveCount(1);
+    await expect(novo.locator('.cofre-m-validade')).toHaveText('Expira em 10 dias');
+
+    await page.getByRole('button', { name: 'Mais ações de E2E Criado no celular' }).click();
+    await page.locator('.action-sheet').getByRole('button', { name: 'Editar' }).click();
+    await expect(page.locator('#segredo-titulo')).toHaveValue('E2E Criado no celular');
+    await page.locator('#segredo-titulo').fill('E2E Criado editado');
+    await page.locator('.modal-overlay.is-sheet').getByRole('button', { name: 'Salvar' }).click();
+    await expect(linha(page, 'E2E Criado editado')).toHaveCount(1);
+    await expect(linha(page, 'E2E Criado no celular')).toHaveCount(0);
+  });
+
+  test('notas: fechar de 44px e texto sem rolagem interna dupla', async ({ page }) => {
+    await gotoApp(page, '/cofre');
+    await page.getByRole('button', { name: 'Mais ações de E2E Banco Zeta' }).click();
+    await page.locator('.action-sheet').getByRole('button', { name: 'Ver notas' }).click();
+    const sheet = page.locator('.modal-overlay.is-sheet');
+    await expect(sheet.locator('.notes-full-view')).toBeVisible();
+    await animacoesAcabaram(page);
+    expect(await sheet.locator('.notes-full-view').evaluate((e) => getComputedStyle(e).maxHeight)).toBe('none');
+    expect(await smallTargets(page, '.modal-overlay.is-sheet')).toEqual([]);
+    await sheet.getByRole('button', { name: 'Fechar' }).first().click();
+    await expect(sheet).toHaveCount(0);
+  });
+});
+
+// Itens da revisão da Task 2
+test.describe('lista: ajustes da revisão', () => {
+  test('validade não quebra no meio da frase', async ({ page }) => {
+    await gotoApp(page, '/cofre');
+    const v = linha(page, 'E2E Expirado').locator('.cofre-m-validade');
+    await expect(v).toHaveText('Expirou em 30/09/2026');
+    expect(await v.evaluate((e) => getComputedStyle(e).whiteSpace)).toBe('nowrap');
+  });
+
+  test('cofre vazio: sem caixa de busca', async ({ page }) => {
+    await page.route('**/api/v1/cofre/', (route) => (route.request().method() === 'GET' ? route.fulfill({ json: [] }) : route.continue()));
+    await gotoApp(page, '/cofre');
+    await expect(page.locator('.cofre-m-vazio')).toBeVisible();
+    await expect(page.locator('.cofre-m-busca')).toHaveCount(0);
+  });
+});

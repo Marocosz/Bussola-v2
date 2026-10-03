@@ -1,13 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { createSegredo, updateSegredo } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 import { useConfirm } from '../../../context/ConfirmDialogContext'; // Importar Confirm
 import { BaseModal } from '../../../components/BaseModal';
+import { useMediaQuery } from '../../../hooks/useIsMobile';
+
+// Campos que o teclado do celular não deve corrigir nem capitalizar.
+const SEM_CORRECAO = { autoCapitalize: 'off', autoCorrect: 'off', spellCheck: false };
 
 export function SegredoModal({ active, closeModal, onUpdate, editingData }) {
     const { addToast } = useToast();
     const confirm = useConfirm(); // Hook de segurança
-    
+    // No toque o autofocus abriria o teclado sozinho e cobriria metade do sheet.
+    const isTouch = useMediaQuery('(pointer: coarse)');
+
     const [titulo, setTitulo] = useState('');
     const [servico, setServico] = useState('');
     const [valor, setValor] = useState('');
@@ -20,26 +26,21 @@ export function SegredoModal({ active, closeModal, onUpdate, editingData }) {
     // Se for criar (editingData null), é editável (true). Se for editar, começa travado (false).
     const [isPasswordEditable, setIsPasswordEditable] = useState(false);
 
-    useEffect(() => {
-        if (active) {
-            if (editingData) {
-                setTitulo(editingData.titulo);
-                setServico(editingData.servico || '');
-                setNotas(editingData.notas || '');
-                setValor(''); 
-                setDiasExpirar('');
-                setIsPasswordEditable(false); // Trava a senha na edição
-            } else {
-                setTitulo('');
-                setServico('');
-                setValor('');
-                setDiasExpirar('');
-                setNotas('');
-                setIsPasswordEditable(true); // Destrava na criação
-            }
+    // Reinicia o formulário ao abrir (ou ao trocar o item em edição): ajuste no render, sem efeito.
+    const chave = active ? (editingData ? `editar-${editingData.id}` : 'novo') : null;
+    const [chaveAnterior, setChaveAnterior] = useState(null);
+    if (chave !== chaveAnterior) {
+        setChaveAnterior(chave);
+        if (chave) {
+            setTitulo(editingData ? editingData.titulo : '');
+            setServico(editingData?.servico || '');
+            setNotas(editingData?.notas || '');
+            setValor('');
+            setDiasExpirar('');
+            setIsPasswordEditable(!editingData); // Trava a senha na edição, destrava na criação
             setShowPassword(false);
         }
-    }, [active, editingData]);
+    }
 
     if (!active) return null;
 
@@ -67,12 +68,10 @@ export function SegredoModal({ active, closeModal, onUpdate, editingData }) {
             data_expiracao = date.toISOString().split('T')[0];
         }
 
-        const payload = { titulo, servico, notas, data_expiracao };
-        
-        // Só envia o valor se estiver editável e preenchido
-        if (isPasswordEditable && valor) {
-            payload.valor = valor;
-        }
+        // Só envia o valor se estiver editável e preenchido. O schema de update exige a chave
+        // `valor` (Optional sem default = obrigatório), então sem troca vai explicitamente null
+        // (o serviço ignora null) — antes, editar sem mexer na senha dava 422.
+        const payload = { titulo, servico, notas, data_expiracao, valor: isPasswordEditable && valor ? valor : null };
 
         try {
             if (editingData) {
@@ -95,23 +94,23 @@ export function SegredoModal({ active, closeModal, onUpdate, editingData }) {
             <div className="modal-content" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <h3>{editingData ? 'Editar Segredo' : 'Guardar Novo Segredo'}</h3>
-                    <span className="close-btn" onClick={closeModal}>&times;</span>
+                    <button type="button" className="close-btn" onClick={closeModal} aria-label="Fechar">&times;</button>
                 </div>
                 <form onSubmit={handleSubmit}>
                     <div className="modal-body">
                         <div className="form-row">
                             <div className="form-group">
-                                <label>Título</label>
-                                <input className="form-input" value={titulo} onChange={e => setTitulo(e.target.value)} required autoFocus />
+                                <label htmlFor="segredo-titulo">Título</label>
+                                <input id="segredo-titulo" className="form-input" value={titulo} onChange={e => setTitulo(e.target.value)} required autoFocus={!isTouch} autoComplete="off" />
                             </div>
                             <div className="form-group">
-                                <label>Serviço (Opcional)</label>
-                                <input className="form-input" value={servico} onChange={e => setServico(e.target.value)} />
+                                <label htmlFor="segredo-servico">Serviço (Opcional)</label>
+                                <input id="segredo-servico" className="form-input" value={servico} onChange={e => setServico(e.target.value)} autoComplete="off" {...SEM_CORRECAO} />
                             </div>
                         </div>
 
                         <div className="form-group">
-                            <label>Valor da Chave / Senha</label>
+                            <label htmlFor="segredo-valor">Valor da Chave / Senha</label>
                             
                             {!isPasswordEditable ? (
                                 // Estado Travado (Edição)
@@ -127,15 +126,18 @@ export function SegredoModal({ active, closeModal, onUpdate, editingData }) {
                             ) : (
                                 // Estado Editável (Criação ou Destravado)
                                 <div className="secret-input-wrapper" style={{display:'flex', gap:'10px'}}>
-                                    <input 
-                                        type={showPassword ? "text" : "password"} 
+                                    <input
+                                        id="segredo-valor"
+                                        type={showPassword ? "text" : "password"}
                                         className="form-input" 
                                         value={valor} 
                                         onChange={e => setValor(e.target.value)} 
                                         placeholder={editingData ? "Digite a nova senha..." : "Cole a chave aqui..."}
                                         required={!editingData} // Obrigatório apenas na criação
+                                        autoComplete="new-password"
+                                        {...SEM_CORRECAO}
                                     />
-                                    <button type="button" className="btn-action-icon" onClick={() => setShowPassword(!showPassword)} title={showPassword ? "Ocultar" : "Mostrar"}>
+                                    <button type="button" className="btn-action-icon" onClick={() => setShowPassword(!showPassword)} title={showPassword ? "Ocultar" : "Mostrar"} aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}>
                                         <i className={`fa-solid ${showPassword ? 'fa-eye' : 'fa-eye-slash'}`}></i>
                                     </button>
                                 </div>
@@ -144,14 +146,14 @@ export function SegredoModal({ active, closeModal, onUpdate, editingData }) {
 
                         <div className="form-row">
                             <div className="form-group">
-                                <label>Expira em (dias) - Opcional</label>
-                                <input type="number" className="form-input" placeholder="Ex: 30" value={diasExpirar} onChange={e => setDiasExpirar(e.target.value)} min="0" />
+                                <label htmlFor="segredo-dias">Expira em (dias) - Opcional</label>
+                                <input id="segredo-dias" type="number" inputMode="numeric" pattern="[0-9]*" className="form-input" placeholder="Ex: 30" value={diasExpirar} onChange={e => setDiasExpirar(e.target.value)} min="0" />
                             </div>
                         </div>
 
                         <div className="form-group">
-                            <label>Notas (Opcional)</label>
-                            <textarea className="form-input" rows="2" value={notas} onChange={e => setNotas(e.target.value)}></textarea>
+                            <label htmlFor="segredo-notas">Notas (Opcional)</label>
+                            <textarea id="segredo-notas" className="form-input" rows="2" value={notas} onChange={e => setNotas(e.target.value)}></textarea>
                         </div>
                     </div>
                     <div className="modal-footer">
