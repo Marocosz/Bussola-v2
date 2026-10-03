@@ -412,3 +412,104 @@ test.describe('builder de treino', () => {
     await expect(card).toHaveCount(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 5 — builder de dieta
+// ---------------------------------------------------------------------------
+test.describe('builder de dieta', () => {
+  const abrirNovaDieta = async (page) => {
+    await gotoApp(page, '/ritmo');
+    await abrirAba(page, 'Plano de Dieta');
+    await page.getByRole('button', { name: 'Nova dieta' }).click();
+    const sheet = page.locator('.modal-overlay.is-sheet-full');
+    await expect(sheet).toBeVisible();
+    return sheet;
+  };
+
+  for (const w of [360, 430]) {
+    test(`sheet cheio em ${w}px: alimento em bloco (nome / Qtd+Un / Kcal P C G), sem overflow, alvos de 44px`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: 800 });
+      const sheet = await abrirNovaDieta(page);
+      await sheet.getByRole('button', { name: '+ Add Alimento' }).click();
+      const row = sheet.locator('.rb-food-row').first();
+      const r = await row.boundingBox();
+      const [nome, qtd, un, kcal, p, c, g, rm] = await Promise.all(
+        ['.rb-f-nome', '.rb-f-qtd', '.rb-f-un', '.rb-f-kcal', '.rb-f-p', '.rb-f-c', '.rb-f-g', '.rb-remove'].map((s) => row.locator(s).boundingBox()));
+      expect(Math.abs(nome.width - r.width)).toBeLessThan(2);
+      expect(qtd.y).toBeGreaterThanOrEqual(nome.y + nome.height - 1);
+      expect(Math.abs(un.y - qtd.y)).toBeLessThan(2);
+      expect(kcal.y).toBeGreaterThanOrEqual(qtd.y + qtd.height - 1);
+      for (const b of [p, c, g]) expect(Math.abs(b.y - kcal.y)).toBeLessThan(2);
+      expect(rm.width).toBeGreaterThanOrEqual(44);
+      expect(rm.height).toBeGreaterThanOrEqual(44);
+      expect(Math.abs((rm.y + rm.height) - (kcal.y + kcal.height))).toBeLessThan(2);
+      await expect(row.locator('.rb-f-qtd input')).toHaveAttribute('inputmode', 'decimal');
+      for (const f of ['.rb-f-kcal', '.rb-f-p', '.rb-f-c', '.rb-f-g']) {
+        await expect(row.locator(`${f} input`)).toHaveAttribute('inputmode', 'numeric');
+        expect((await row.locator(`${f} input`).boundingBox()).width).toBeGreaterThanOrEqual(48);
+      }
+      expect(await overflowOffenders(page)).toEqual([]);
+      expect(await smallTargets(page, '.modal-overlay.is-sheet-full')).toEqual([]);
+      expect(await textosPequenos(page, '.modal-overlay.is-sheet-full')).toEqual([]);
+    });
+  }
+
+  test('builder de dieta: Salvar visível com o teclado aberto', async ({ page }) => {
+    await gotoApp(page, '/ritmo');
+    await abrirAba(page, 'Plano de Dieta');
+    await teclado(page);
+    await page.getByRole('button', { name: 'Nova dieta' }).click();
+    const sheet = page.locator('.modal-overlay.is-sheet-full');
+    for (let i = 0; i < 3; i += 1) await sheet.getByRole('button', { name: '+ Add Alimento' }).click();
+    const salvar = sheet.getByRole('button', { name: 'Salvar Dieta' });
+    await expect(salvar).toBeVisible();
+    await expect.poll(async () => { const b = await salvar.boundingBox(); return b.y + b.height; }).toBeLessThanOrEqual(420);
+  });
+
+  test('Nova dieta pelo Fab: busca abaixo do nome, item travado, macros recalculados, salva e exclui', async ({ page }) => {
+    await page.route('**/ritmo/local/foods**', (r) => r.fulfill({ json: FOODS }));
+    await page.setViewportSize({ width: 360, height: 780 });
+    const sheet = await abrirNovaDieta(page);
+    await expect(sheet.locator('h2')).toHaveText('Configurar Dieta');
+    await sheet.locator('input[placeholder="Ex: Cutting 2025"]').fill('E2E Dieta');
+    await sheet.getByRole('button', { name: '+ Add Alimento' }).click();
+    const row = sheet.locator('.rb-food-row').first();
+    const nomeInput = row.locator('.rb-f-nome input');
+    await nomeInput.fill('arroz');
+
+    const dropdown = row.locator('.search-results-dropdown');
+    await expect(dropdown).toContainText('Arroz, tipo 1, cozido');
+    const nb = await nomeInput.boundingBox();
+    const db = await dropdown.boundingBox();
+    expect(Math.abs(db.y - (nb.y + nb.height))).toBeLessThan(2); // logo abaixo do campo de nome
+    expect(Math.abs(db.width - nb.width)).toBeLessThan(2);       // na largura dele
+    expect(await textosPequenos(page, '.search-results-dropdown')).toEqual([]);
+
+    await dropdown.getByText('Arroz, tipo 1, cozido').click();
+    await expect(dropdown).toHaveCount(0);
+    await expect(nomeInput).toHaveValue('Arroz, tipo 1, cozido');
+    const kcal = row.locator('.rb-f-kcal input');
+    await expect(kcal).toHaveValue('128');
+    await expect(kcal).toHaveJSProperty('readOnly', true);
+    await expect(row.locator('.rb-f-un input')).toHaveValue('g');
+    await row.locator('.rb-f-qtd input').fill('150');
+    await expect(kcal).toHaveValue('192');
+    await expect(row.locator('.rb-f-p input')).toHaveValue('4');
+    await expect(row.locator('.rb-f-c input')).toHaveValue('42');
+    expect(await overflowOffenders(page)).toEqual([]);
+
+    await sheet.getByRole('button', { name: 'Salvar Dieta' }).click();
+    await expect(page.getByText('Plano salvo.')).toBeVisible();
+    const card = page.locator('.plan-mini-card', { hasText: 'E2E Dieta' });
+    await expect(card).toHaveClass(/active/);
+    const refeicao = page.locator('.refeicao-card-pro', { hasText: 'Arroz, tipo 1, cozido' });
+    await expect(refeicao.locator('.ref-total-badge')).toHaveText('192 kcal');
+
+    const original = page.locator('.plan-mini-card', { hasText: 'Bulking Limpo' });
+    await original.getByRole('button', { name: 'Ativar' }).click();
+    await expect(original).toHaveClass(/active/);
+    await card.getByRole('button', { name: 'Excluir' }).click();
+    await page.getByRole('button', { name: 'Sim, Excluir' }).click();
+    await expect(card).toHaveCount(0);
+  });
+});

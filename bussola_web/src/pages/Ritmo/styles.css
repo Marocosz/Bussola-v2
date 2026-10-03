@@ -1714,6 +1714,7 @@
     }
 
     .ritmo-scope .rb-day-head {
+        margin-bottom: var(--sp-3) !important; /* o inline do desktop vence sem !important */
         align-items: center;
         gap: var(--sp-2);
     }
@@ -1791,5 +1792,39 @@
 
     .ritmo-scope .rb-add-day {
         min-height: var(--tap-min);
+    }
+
+    /* Alimento: nome / Qtd + Un / Kcal P C G + remover */
+    .ritmo-scope .rb-food-row {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) var(--tap-min);
+        grid-template-areas:
+            "nome nome nome nome nome"
+            "qtd qtd un un un"
+            "kcal p c g rm";
+    }
+
+    .ritmo-scope .rb-f-qtd { grid-area: qtd; }
+    .ritmo-scope .rb-f-un { grid-area: un; }
+    .ritmo-scope .rb-f-kcal { grid-area: kcal; }
+    .ritmo-scope .rb-f-p { grid-area: p; }
+    .ritmo-scope .rb-f-c { grid-area: c; }
+    .ritmo-scope .rb-f-g { grid-area: g; }
+
+    /* A busca abre logo abaixo do campo de nome (no desktop ancora na linha) */
+    .ritmo-scope .rb-food-row .rb-f-nome {
+        position: relative;
+    }
+
+    /* Resultados da busca: estilos inline no desktop; aqui só texto >= 12px e toque.
+       !important porque o inline é mantido para não mexer no desktop. */
+    .ritmo-scope .rb-food-row .search-item-hover {
+        padding: var(--sp-3) !important;
+        font-size: 0.875rem !important;
+    }
+
+    .ritmo-scope .rb-food-row .search-item-hover > div + div {
+        font-size: 0.75rem !important;
+        flex-wrap: wrap;
+        row-gap: var(--sp-1);
     }
 }

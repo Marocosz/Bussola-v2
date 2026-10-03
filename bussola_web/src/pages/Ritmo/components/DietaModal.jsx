@@ -116,36 +116,38 @@ export function DietaModal({ onClose, onSuccess, initialData }) {
     };
 
     return (
-        <BaseModal onClose={onClose} className="ritmo-scope">
+        <BaseModal onClose={onClose} className="ritmo-scope" sheet="full">
             <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '900px', width: '95%' }}>
                 <div className="modal-header">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                        <h2 style={{ margin: 0, fontSize: '1.2rem' }}>{initialData ? `Editar: ${initialData.nome}` : 'Configurar Dieta'}</h2>
-                        <button className="close-btn" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--cor-texto-secundario)', cursor: 'pointer', fontSize: '1.5rem' }}>&times;</button>
+                    <div className="rb-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                        <h2 className="rb-title" style={{ margin: 0, fontSize: '1.2rem' }}>{initialData ? `Editar: ${initialData.nome}` : 'Configurar Dieta'}</h2>
+                        <button type="button" className="close-btn" aria-label="Fechar" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--cor-texto-secundario)', cursor: 'pointer', fontSize: '1.5rem' }}>&times;</button>
                     </div>
                 </div>
                 <form onSubmit={handleSubmit}>
                     <div className="modal-body">
-                        <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                        <div className="form-group rb-name-group">
                             <label>Nome da Dieta</label>
                             <input className="form-input" type="text" value={nomeDieta} onChange={e => setNomeDieta(e.target.value)} placeholder="Ex: Cutting 2025" required />
                         </div>
                         <div className="refeicoes-container">
                             {refeicoes.map((ref, rIndex) => (
-                                <div key={rIndex} className="day-block" style={{ marginBottom: '1.5rem', background: 'var(--cor-card-secundario)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--cor-borda)' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '15px', marginBottom: '1.2rem' }}>
-                                        <input className="form-input" style={{ fontWeight: 'bold', color: 'var(--cor-azul-primario)', background: 'transparent', border: 'none', fontSize: '1.1rem', flex: 1, padding: 0 }} type="text" value={ref.nome} onChange={(e) => handleRefeicaoChange(rIndex, 'nome', e.target.value)} placeholder="Nome da Refeição" />
+                                <div key={rIndex} className="day-block">
+                                    <div className="rb-day-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '15px', marginBottom: '1.2rem' }}>
+                                        <input className="form-input rb-day-name" style={{ fontWeight: 'bold', color: 'var(--cor-azul-primario)', background: 'transparent', border: 'none', fontSize: '1.1rem', flex: 1, padding: 0 }} type="text" value={ref.nome} onChange={(e) => handleRefeicaoChange(rIndex, 'nome', e.target.value)} placeholder="Nome da Refeição" />
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                            {refeicoes.length > 1 && (<button type="button" onClick={() => removeRefeicao(rIndex)} style={{ background: 'none', border: 'none', color: 'var(--cor-vermelho-delete)', cursor: 'pointer', fontSize: '1.1rem' }}><i className="fa-solid fa-trash-can"></i></button>)}
+                                            {refeicoes.length > 1 && (<button type="button" className="rb-icon-btn" aria-label="Remover refeição" onClick={() => removeRefeicao(rIndex)} style={{ background: 'none', border: 'none', color: 'var(--cor-vermelho-delete)', cursor: 'pointer', fontSize: '1.1rem' }}><i className="fa-solid fa-trash-can"></i></button>)}
                                         </div>
                                     </div>
                                     {ref.alimentos.map((ali, aIndex) => {
                                         const isLocked = ali.isTacoItem;
+                                        const lockStyle = { opacity: isLocked ? 0.7 : 1 };
                                         return (
-                                            <div key={aIndex} style={{ display: 'grid', gridTemplateColumns: '2fr 0.8fr 0.6fr 0.7fr 0.7fr 0.7fr 0.7fr 30px', gap: '8px', alignItems: 'end', marginBottom: '8px', position: 'relative' }}>
-                                                <div className="form-group">
-                                                    <label style={{ fontSize: '0.6rem' }}>Alimento</label>
-                                                    <input className="form-input" style={{ height: '35px', fontSize: '0.85rem' }} type="text" value={ali.nome} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'nome', e.target.value)} required autoComplete="off" />
+                                            // Desktop: 8 colunas. Celular: nome / Qtd+Un / Kcal P C G.
+                                            <div key={aIndex} className="rb-food-row">
+                                                <div className="form-group rb-f-nome">
+                                                    <label className="rb-label">Alimento</label>
+                                                    <input className="form-input" type="text" value={ali.nome} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'nome', e.target.value)} required autoComplete="off" />
                                                     {activeSearch?.rIndex === rIndex && activeSearch?.aIndex === aIndex && (searchQuery.length >= 2) && (
                                                         <div className="search-results-dropdown" style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'var(--cor-card-principal)', border: '1px solid var(--cor-borda)', zIndex: 10, borderRadius: '8px', maxHeight: '200px', overflowY: 'auto', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}>
                                                             <div onClick={() => handleSelectCustom(rIndex, aIndex)} className="search-item-hover custom-option" style={{ padding: '10px 12px', cursor: 'pointer', borderBottom: '2px solid var(--cor-borda)', fontSize: '0.8rem', background: 'rgba(74, 109, 255, 0.05)' }}>
@@ -166,24 +168,24 @@ export function DietaModal({ onClose, onSuccess, initialData }) {
                                                         </div>
                                                     )}
                                                 </div>
-                                                <div className="form-group"><label style={{ fontSize: '0.6rem' }}>Qtd</label><input className="form-input" style={{ height: '35px', fontSize: '0.85rem' }} type="number" value={ali.quantidade} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'quantidade', e.target.value)} /></div>
-                                                <div className="form-group"><label style={{ fontSize: '0.6rem' }}>Un</label><div style={{ minWidth: 0 }}>{isLocked ? (<input className="form-input" style={{ height: '35px', fontSize: '0.85rem', opacity: 0.7 }} value="g" readOnly />) : (<CustomSelect name="unidade" value={ali.unidade} options={unitOptions} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'unidade', e.target.value)} placeholder="un" />)}</div></div>
-                                                <div className="form-group"><label style={{ fontSize: '0.6rem' }}>Kcal</label><input className="form-input" style={{ height: '35px', fontSize: '0.85rem', opacity: isLocked ? 0.7 : 1 }} type="number" value={arredondar(ali.calorias)} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'calorias', e.target.value)} readOnly={isLocked}/></div>
-                                                <div className="form-group"><label style={{ fontSize: '0.6rem' }}>P</label><input className="form-input" style={{ height: '35px', fontSize: '0.85rem', opacity: isLocked ? 0.7 : 1 }} type="number" value={arredondar(ali.proteina)} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'proteina', e.target.value)} readOnly={isLocked}/></div>
-                                                <div className="form-group"><label style={{ fontSize: '0.6rem' }}>C</label><input className="form-input" style={{ height: '35px', fontSize: '0.85rem', opacity: isLocked ? 0.7 : 1 }} type="number" value={arredondar(ali.carbo)} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'carbo', e.target.value)} readOnly={isLocked}/></div>
-                                                <div className="form-group"><label style={{ fontSize: '0.6rem' }}>G</label><input className="form-input" style={{ height: '35px', fontSize: '0.85rem', opacity: isLocked ? 0.7 : 1 }} type="number" value={arredondar(ali.gordura)} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'gordura', e.target.value)} readOnly={isLocked}/></div>
-                                                <button type="button" onClick={() => removeAlimento(rIndex, aIndex)} style={{ background: 'none', border: 'none', color: 'var(--cor-texto-secundario)', cursor: 'pointer', paddingBottom: '8px' }}><i className="fa-solid fa-xmark"></i></button>
+                                                <div className="form-group rb-f-qtd"><label className="rb-label">Qtd</label><input className="form-input" type="number" inputMode="decimal" value={ali.quantidade} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'quantidade', e.target.value)} /></div>
+                                                <div className="form-group rb-f-un"><label className="rb-label">Un</label><div style={{ minWidth: 0 }}>{isLocked ? (<input className="form-input" style={{ opacity: 0.7 }} value="g" readOnly />) : (<CustomSelect name="unidade" value={ali.unidade} options={unitOptions} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'unidade', e.target.value)} placeholder="un" />)}</div></div>
+                                                <div className="form-group rb-f-kcal"><label className="rb-label">Kcal</label><input className="form-input" style={lockStyle} type="number" inputMode="numeric" value={arredondar(ali.calorias)} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'calorias', e.target.value)} readOnly={isLocked}/></div>
+                                                <div className="form-group rb-f-p"><label className="rb-label">P</label><input className="form-input" style={lockStyle} type="number" inputMode="numeric" value={arredondar(ali.proteina)} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'proteina', e.target.value)} readOnly={isLocked}/></div>
+                                                <div className="form-group rb-f-c"><label className="rb-label">C</label><input className="form-input" style={lockStyle} type="number" inputMode="numeric" value={arredondar(ali.carbo)} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'carbo', e.target.value)} readOnly={isLocked}/></div>
+                                                <div className="form-group rb-f-g"><label className="rb-label">G</label><input className="form-input" style={lockStyle} type="number" inputMode="numeric" value={arredondar(ali.gordura)} onChange={(e) => handleAlimentoChange(rIndex, aIndex, 'gordura', e.target.value)} readOnly={isLocked}/></div>
+                                                <button type="button" className="rb-remove" aria-label="Remover alimento" onClick={() => removeAlimento(rIndex, aIndex)}><i className="fa-solid fa-xmark"></i></button>
                                             </div>
                                         );
                                     })}
-                                    <button type="button" onClick={() => addAlimento(rIndex)} style={{ marginTop: '10px', fontSize: '0.7rem', background: 'transparent', border: '1px dashed var(--cor-borda)', color: 'var(--cor-texto-secundario)', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer' }}>+ Add Alimento</button>
+                                    <button type="button" className="rb-add-btn is-food" onClick={() => addAlimento(rIndex)}>+ Add Alimento</button>
                                 </div>
                             ))}
                         </div>
-                        <button type="button" className="btn-secondary" onClick={addRefeicao} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid var(--cor-borda)', background: 'var(--cor-card-secundario)', cursor: 'pointer', color: 'var(--cor-texto-principal)' }}><i className="fa-solid fa-utensils"></i> Add Refeição</button>
+                        <button type="button" className="btn-secondary rb-add-day" onClick={addRefeicao} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid var(--cor-borda)', background: 'var(--cor-card-secundario)', cursor: 'pointer', color: 'var(--cor-texto-principal)' }}><i className="fa-solid fa-utensils"></i> Add Refeição</button>
                     </div>
                     <div className="modal-footer">
-                        <button type="button" onClick={onClose} style={{ background: 'transparent', border: '1px solid var(--cor-borda)', color: 'var(--cor-texto-secundario)', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}>Cancelar</button>
+                        <button type="button" className="rb-cancel" onClick={onClose} style={{ background: 'transparent', border: '1px solid var(--cor-borda)', color: 'var(--cor-texto-secundario)', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}>Cancelar</button>
                         <button type="submit" className="btn-primary" disabled={loading}>{loading ? 'Salvando...' : 'Salvar Dieta'}</button>
                     </div>
                 </form>
