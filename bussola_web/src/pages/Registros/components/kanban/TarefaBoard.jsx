@@ -64,6 +64,32 @@ function soltarCard(estado, activeId, overId) {
 
 const mesmaColuna = (a, b) => a.length === b.length && a.every((t, i) => t.id === b[i].id && t.status === b[i].status);
 
+// Colunas fechadas: o servidor as ordena por data_conclusao (mais recentes no topo), então quem
+// entra vai para o topo e reordenar dentro delas não é gravado.
+const FECHADAS = ['concluido', 'cancelado'];
+
+// Celular: o quadro (carrossel de colunas) não rola sozinho para o lado durante o arraste; a coluna
+// continua rolando na vertical.
+const AUTO_SCROLL_CELULAR = { canScroll: (el) => !el.classList?.contains('kb-board') };
+
+const colunasDoBoard = (data) => ({
+    a_fazer: data.a_fazer, em_andamento: data.em_andamento,
+    bloqueado: data.bloqueado, concluido: data.concluido, cancelado: data.cancelado,
+});
+
+// Lista de ids a gravar na coluna `to`, montada a partir do estado do SERVIDOR (o quadro local pode
+// estar velho: outro aparelho pode ter mudado o status de cards que ele ainda mostra nessa coluna).
+// Entram só as tarefas que o servidor tem nesse status, mais o card movido; a ordem otimista vale
+// para os cards que as duas listas compartilham, e os que só o servidor conhece vão para o fim.
+function idsParaGravar(servidor, otimista, to, movidoId) {
+    const doServidor = servidor[to].map((t) => t.id).filter((id) => id !== movidoId);
+    if (FECHADAS.includes(to)) return [movidoId, ...doServidor];
+    const noServidor = new Set(doServidor);
+    const ordem = otimista[to].map((t) => t.id).filter((id) => id === movidoId || noServidor.has(id));
+    const jaListados = new Set(ordem);
+    return [...ordem, ...doServidor.filter((id) => !jaListados.has(id))];
+}
+
 export function TarefaBoard({ novaRef }) {
     const { addToast } = useToast();
     const confirm = useConfirm();
@@ -92,29 +118,47 @@ export function TarefaBoard({ novaRef }) {
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
     );
 
-    const carregar = useCallback(async () => {
+    // Estado do quadro antes do arraste: volta para ele se o arraste for cancelado ou a API falhar.
+    // Enquanto há arraste, recarregar do servidor não substitui o quadro (quebraria o arraste).
+    const antesDoArrasteRef = useRef(null);
+
+    // Fila única de leituras e gravações do quadro: uma recarga nunca chega antes de uma gravação
+    // em andamento terminar, e cada gravação lê o servidor já com as anteriores aplicadas.
+    const filaRef = useRef(Promise.resolve());
+    const enfileirar = useCallback((tarefa) => {
+        const run = filaRef.current.then(tarefa);
+        filaRef.current = run.catch(() => {});
+        return run;
+    }, []);
+
+    const carregar = useCallback(() => enfileirar(async () => {
         try {
             const data = await getTarefasBoard();
-            setColunas({
-                a_fazer: data.a_fazer, em_andamento: data.em_andamento,
-                bloqueado: data.bloqueado, concluido: data.concluido, cancelado: data.cancelado,
-            });
+            if (!antesDoArrasteRef.current) setColunas(colunasDoBoard(data));
         } catch (e) {
             logger.error('Erro ao carregar board', { error: String(e) });
             addToast({ type: 'error', title: 'Erro', description: 'Falha ao carregar tarefas.' });
         } finally {
             setLoading(false);
         }
-    }, [addToast]);
+    }), [addToast, enfileirar]);
 
     useEffect(() => { carregar(); }, [carregar]);
+
+    // Voltar para a página (outra aba/app, tela desbloqueada) recarrega: o quadro pode ter mudado em outro aparelho.
+    useEffect(() => {
+        const aoVoltar = () => { if (document.visibilityState === 'visible') carregar(); };
+        window.addEventListener('focus', aoVoltar);
+        document.addEventListener('visibilitychange', aoVoltar);
+        return () => {
+            window.removeEventListener('focus', aoVoltar);
+            document.removeEventListener('visibilitychange', aoVoltar);
+        };
+    }, [carregar]);
 
     // Espelho do estado atual, para o caminho de erro de salvarColuna comparar com o que ele produziu.
     const colunasRef = useRef(colunas);
     useEffect(() => { colunasRef.current = colunas; }, [colunas]);
-
-    // Estado do quadro antes do arraste: volta para ele se o arraste for cancelado ou a API falhar.
-    const antesDoArrasteRef = useRef(null);
 
     const onDragStart = ({ active }) => {
         antesDoArrasteRef.current = colunas;
@@ -123,28 +167,37 @@ export function TarefaBoard({ novaRef }) {
         setActiveTarefa(t || null);
     };
 
+    // No celular (toque) o arraste só reordena dentro da coluna visível; trocar de coluna é pelo "Mover para…".
     const onDragOver = ({ active, over }) => {
         if (!over) return;
+        if (isMobile) return;
         setColunas(prev => moverEntreColunas(prev, active.id, over.id));
     };
 
     // Otimista: aplica `novo` já e grava a coluna `to` (ordem + status). Se a API falhar, volta para `anterior`.
     // Caminho único de gravação do board: soltar do arraste e "Mover para…" do celular.
-    const salvarColuna = useCallback(async (anterior, novo, to) => {
+    // A lista gravada vem do estado atual do SERVIDOR (ver idsParaGravar), não do quadro local, que pode
+    // estar velho; depois de gravar, o quadro é recarregado do servidor.
+    const salvarColuna = useCallback((anterior, novo, to, movidoId) => {
         setColunas(novo);
-        try {
-            await reordenarTarefas(keyToStatus(to), novo[to].map(t => t.id));
-            return true;
-        } catch (e) {
-            logger.error('Erro ao reordenar', { error: String(e) });
-            // Só desfaz se o quadro ainda é o que este salvamento produziu; se outra mudança
-            // já o alterou, reverter apagaria essa mudança: recarrega do servidor.
-            if (colunasRef.current === novo) setColunas(cur => (cur === novo ? anterior : cur));
-            else carregar();
-            addToast({ type: 'error', title: 'Erro', description: 'Não consegui salvar a mudança.' });
-            return false;
-        }
-    }, [addToast, carregar]);
+        return enfileirar(async () => {
+            try {
+                const servidor = await getTarefasBoard();
+                await reordenarTarefas(keyToStatus(to), idsParaGravar(servidor, novo, to, movidoId));
+                const atual = await getTarefasBoard();
+                if (!antesDoArrasteRef.current) setColunas(colunasDoBoard(atual));
+                return true;
+            } catch (e) {
+                logger.error('Erro ao reordenar', { error: String(e) });
+                // Só desfaz se o quadro ainda é o que este salvamento produziu; se outra mudança
+                // já o alterou, reverter apagaria essa mudança: recarrega do servidor.
+                if (colunasRef.current === novo) setColunas(cur => (cur === novo ? anterior : cur));
+                else carregar();
+                addToast({ type: 'error', title: 'Erro', description: 'Não consegui salvar a mudança.' });
+                return false;
+            }
+        });
+    }, [addToast, carregar, enfileirar]);
 
     // O novo estado é calculado aqui, a partir do `colunas` atual, e não dentro de um updater do
     // setColunas: updaters rodam depois, então os ids lidos logo em seguida ainda seriam nulos
@@ -155,12 +208,22 @@ export function TarefaBoard({ novaRef }) {
         antesDoArrasteRef.current = null;
         if (!over) { setColunas(anterior); return; }
 
-        const novo = soltarCard(colunas, active.id, over.id);
+        const from = containerDoId(active.id, anterior);
+        // Celular: soltar em outra coluna não vale (só reordena dentro da coluna de origem).
+        if (isMobile && containerDoId(over.id, anterior) !== from) { setColunas(anterior); return; }
+
+        let novo = soltarCard(colunas, active.id, over.id);
         const to = novo && containerDoId(active.id, novo);
         if (!to) { setColunas(anterior); return; }
+        if (FECHADAS.includes(to)) {
+            // Reordenar dentro de Concluído/Cancelado não é gravado (o servidor ordena por conclusão).
+            if (from === to) { setColunas(anterior); return; }
+            const item = novo[to].find((t) => t.id === active.id);
+            novo = { ...novo, [to]: [item, ...novo[to].filter((t) => t.id !== active.id)] };
+        }
         if (mesmaColuna(anterior[to], novo[to])) { setColunas(novo); return; } // soltou onde estava
 
-        salvarColuna(anterior, novo, to);
+        salvarColuna(anterior, novo, to, active.id);
     };
 
     const onDragCancel = () => {
@@ -238,30 +301,42 @@ export function TarefaBoard({ novaRef }) {
     }, []);
 
     // Altura do quadro no celular: do topo dele até acima da barra inferior; cada coluna rola por dentro.
+    // Também re-sincroniza o chip ativo com a coluna realmente visível (o quadro pode ter sido remontado
+    // ou mudado de largura, ex.: rotação). O chip é atualizado num frame à parte, nunca no corpo do efeito.
     useEffect(() => {
         const el = boardRef.current;
         if (!isMobile || !el) return undefined;
         const medir = () => {
             el.style.setProperty('--kb-top', `${Math.round(el.getBoundingClientRect().top + window.scrollY)}px`);
         };
+        const sincronizarChip = () => {
+            if (rolandoChipRef.current || !el.clientWidth) return;
+            const idx = Math.round(el.scrollLeft / el.clientWidth);
+            setColAtiva((prev) => (prev === idx ? prev : idx));
+        };
+        const aoRedimensionar = () => { medir(); sincronizarChip(); };
         medir();
-        window.addEventListener('resize', medir);
-        return () => window.removeEventListener('resize', medir);
+        const raf = requestAnimationFrame(sincronizarChip);
+        window.addEventListener('resize', aoRedimensionar);
+        return () => {
+            cancelAnimationFrame(raf);
+            window.removeEventListener('resize', aoRedimensionar);
+        };
     }, [isMobile, loading]);
 
-    // "Mover para…": vai para o fim da coluna de destino (mesmo padrão do soltar numa coluna)
+    // "Mover para…": vai para o fim da coluna de destino (topo, em Concluído/Cancelado)
     // e grava pelo mesmo caminho do arraste (salvarColuna → PATCH /tarefas/reordenar).
     const moverPara = useCallback(async (tarefa, statusDestino) => {
         const from = containerDoId(tarefa.id, colunas);
         const to = statusToKey(statusDestino);
         if (!from || from === to) return;
-        const item = colunas[from].find((t) => t.id === tarefa.id);
+        const item = { ...colunas[from].find((t) => t.id === tarefa.id), status: statusDestino };
         const novo = {
             ...colunas,
             [from]: colunas[from].filter((t) => t.id !== tarefa.id),
-            [to]: [...colunas[to], { ...item, status: statusDestino }],
+            [to]: FECHADAS.includes(to) ? [item, ...colunas[to]] : [...colunas[to], item],
         };
-        if (await salvarColuna(colunas, novo, to)) {
+        if (await salvarColuna(colunas, novo, to, tarefa.id)) {
             const destino = COLUNAS.find((c) => c.key === to).label;
             addToast({ type: 'success', title: 'Tarefa movida', description: `Agora em ${destino}.` });
         }
@@ -309,6 +384,7 @@ export function TarefaBoard({ novaRef }) {
             ) : (
                 <DndContext
                     sensors={sensors} collisionDetection={detectarColisao}
+                    autoScroll={isMobile ? AUTO_SCROLL_CELULAR : undefined}
                     onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd} onDragCancel={onDragCancel}
                 >
                     {/* data-offscreen-ok: as colunas fora da tela fazem parte de um carrossel rolável */}
