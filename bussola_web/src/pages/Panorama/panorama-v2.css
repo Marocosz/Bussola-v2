@@ -35,7 +35,7 @@ body.light-theme .panorama-scope {
 .pv2-inner { position: relative; max-width: 1240px; margin: 0 auto; }
 
 .pv2-btn { cursor: pointer; font-family: inherit; }
-.pv2-btn:hover { opacity: .85; }
+@media (hover: hover) and (pointer: fine) { .pv2-btn:hover { opacity: .85; } }
 
 /* Attention (primeiro bloco — sem borda no topo) */
 .pv2-section-top { padding-top: 4px; margin-top: 4px; }
@@ -56,12 +56,12 @@ body.light-theme .panorama-scope {
   background: transparent; color: var(--muted2); font-size: 12px; line-height: 1; cursor: pointer;
   border-radius: 8px; opacity: 0.6; display: flex; align-items: center; justify-content: center;
   transition: opacity .15s, background .15s, color .15s; }
-.pv2-alert-dismiss:hover { opacity: 1; color: var(--text); background: color-mix(in srgb, var(--muted2) 22%, transparent); }
+@media (hover: hover) and (pointer: fine) { .pv2-alert-dismiss:hover { opacity: 1; color: var(--text); background: color-mix(in srgb, var(--muted2) 22%, transparent); } }
 
 /* Carrossel de atenção */
 .pv2-attn-nav { display: flex; align-items: center; gap: 10px; margin-left: auto; }
 .pv2-attn-arrow { width: 27px; height: 27px; border-radius: 50%; border: 1px solid var(--border); background: var(--card); color: var(--muted); display: flex; align-items: center; justify-content: center; font-size: 11px; }
-.pv2-attn-arrow:hover { color: var(--text); border-color: var(--blue); }
+@media (hover: hover) and (pointer: fine) { .pv2-attn-arrow:hover { color: var(--text); border-color: var(--blue); } }
 .pv2-attn-dots { display: flex; align-items: center; gap: 6px; }
 .pv2-attn-dot-btn { width: 7px; height: 7px; border-radius: 50%; border: none; background: var(--border); cursor: pointer; padding: 0; transition: background .2s, width .2s; }
 .pv2-attn-dot-btn.active { background: var(--blue); width: 18px; border-radius: 4px; }
@@ -237,4 +237,43 @@ body.light-theme .pcard {
   /* Explicação do KPI tocado (no lugar do tooltip, que não existe no toque). */
   .pv2-kpi-explain { display: flex; align-items: flex-start; gap: var(--sp-2); margin: var(--sp-2) 0 0; padding: var(--sp-3); border-radius: 12px; background: var(--card2); border: 1px solid var(--border); font-size: 13px; line-height: 1.45; color: var(--muted); }
   .pv2-kpi-explain i { color: var(--blue); margin-top: 2px; }
+}
+
+/* Celular — Atenção agora: carrossel de 1 card por vez. A faixa avança sobre o gutter
+   (margem −16 / padding 16) para as sombras do card não serem cortadas pelo scroll;
+   o scroll-padding alinha o card ao conteúdo. */
+@media (max-width: 768px) {
+  .pv2-section-top { margin-top: var(--sp-5); padding-top: 0; }
+  .pv2-attn-head { gap: var(--sp-2); margin-bottom: 0; }
+  .pv2-attn-row.is-carousel {
+    flex-wrap: nowrap;
+    gap: var(--sp-3);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--sp-4);
+    margin: 0 calc(var(--sp-4) * -1);
+    padding: var(--sp-3) var(--sp-4) var(--sp-5);
+    scrollbar-width: none;
+    animation: none;
+  }
+  .pv2-attn-row.is-carousel::-webkit-scrollbar { display: none; }
+  .pv2-attn-row.is-carousel > .pv2-alert { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; padding: var(--sp-4); gap: var(--sp-3); }
+  .pv2-alert-sev { font-size: 11px; }
+  .pv2-attn-pips { display: flex; justify-content: center; align-items: center; gap: var(--sp-2); margin-top: calc(var(--sp-3) * -1); }
+  .pv2-attn-pip { width: 7px; height: 7px; border-radius: 50%; background: var(--border); transition: width .2s, background .2s; }
+  .pv2-attn-pip.active { width: 18px; border-radius: 4px; background: var(--blue); }
+}
+
+/* Toque (celular e tablet): alvos de 44px. Os pontos da paginação (tablet) ganham a área
+   de toque e desenham o ponto de 7px / 18px num ::before, igual ao visual atual. */
+@media (pointer: coarse) {
+  .pv2-alert-dismiss { width: var(--tap-min); height: var(--tap-min); font-size: 14px; }
+  .pv2-alert-cta { min-height: var(--tap-min); padding: 0 var(--sp-4); font-size: 14px; }
+  .pv2-attn-arrow { width: var(--tap-min); height: var(--tap-min); font-size: 14px; }
+  .pv2-attn-dots { gap: 0; }
+  button.pv2-attn-dot-btn,
+  button.pv2-attn-dot-btn.active { position: relative; width: var(--tap-min); height: var(--tap-min); border-radius: 50%; background: transparent; }
+  button.pv2-attn-dot-btn::before { content: ''; position: absolute; top: 50%; left: 50%; width: 7px; height: 7px; border-radius: 50%; background: var(--border); transform: translate(-50%, -50%); transition: width .2s, background .2s; }
+  button.pv2-attn-dot-btn.active::before { width: 18px; border-radius: 4px; background: var(--blue); }
 }

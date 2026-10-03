@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, overflowOffenders } from './helpers.mjs';
+import { gotoApp, overflowOffenders, smallTargets } from './helpers.mjs';
 import { usarFixture } from './panorama-fixture.mjs';
 
 for (const w of [769, 900, 1024]) {
@@ -37,4 +37,13 @@ test('tablet: grade de 6 colunas; Evolução e Pagamento inteiros, o resto em me
   expect(box.donut.y).toBe(box.orcamento.y);
   expect(box.ritmo.y).toBe(box.produtividade.y);
   expect(box.agenda.y).toBe(box.cofre.y);
+});
+
+test('tablet: setas, pontos, dispensar e olho com 44px (toque)', async ({ page }) => {
+  await usarFixture(page, { insights: 5 });
+  await gotoApp(page, '/panorama');
+  await expect(page.locator('.pv2-attn-arrow')).toHaveCount(2); // tablet mantém a paginação do desktop
+  expect(await smallTargets(page, '.panorama-scope')).toEqual([]);
+  await page.getByRole('button', { name: 'Página 2' }).click();
+  await expect(page.locator('.pv2-alert-empty')).toHaveCount(3);
 });

@@ -323,6 +323,7 @@ export function Panorama() {
   const [privacy, setPrivacy] = useState(() => localStorage.getItem('panorama_privacy') === 'true');
   const [attnPage, setAttnPage] = useState(0);
   const [dismissed, setDismissed] = useState(loadDismissed);
+  const [attnIdx, setAttnIdx] = useState(0); // card visível do carrossel (celular)
   const isMobile = useIsMobile();
   const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const [kpiAberto, setKpiAberto] = useState(null);
@@ -493,6 +494,32 @@ export function Panorama() {
           </div>
         )))}
       </div>
+    </div>
+  );
+
+  // Celular: carrossel com 1 card por vez, só alertas reais (sem "Sem aviso aqui").
+  // O indicador acompanha o scroll; o passo é a distância entre dois cards (largura + gap).
+  const onAttnScroll = (e) => {
+    const el = e.currentTarget;
+    const step = el.children.length > 1 ? el.children[1].offsetLeft - el.children[0].offsetLeft : el.clientWidth;
+    setAttnIdx(Math.round(el.scrollLeft / (step || 1)));
+  };
+  const attnAtivo = Math.min(attnIdx, Math.max(0, insights.length - 1));
+  const atencaoMobile = insights.length > 0 && (
+    <div className="pv2-section-top">
+      <div className="pv2-attn-head">
+        <span className="pv2-attn-dot" />
+        <span className="pv2-attn-title">Atenção agora</span>
+        <span className="pv2-attn-count">{`${insights.length} ${insights.length === 1 ? 'alerta' : 'alertas'}`}</span>
+      </div>
+      <div className="pv2-attn-row is-carousel" data-offscreen-ok="" role="region" aria-label="Alertas" tabIndex={0} onScroll={onAttnScroll}>
+        {insights.map((it) => renderAlert(it))}
+      </div>
+      {insights.length > 1 && (
+        <div className="pv2-attn-pips" aria-hidden="true">
+          {insights.map((it, i) => <span key={it.id} className={`pv2-attn-pip ${i === attnAtivo ? 'active' : ''}`} />)}
+        </div>
+      )}
     </div>
   );
 
@@ -728,7 +755,7 @@ export function Panorama() {
     ),
   };
 
-  const topo = { atencao, hero, kpis: kpiBand };
+  const topo = { atencao: isMobile ? atencaoMobile : atencao, hero, kpis: kpiBand };
 
   return (
     <div className="container main-container panorama-scope">

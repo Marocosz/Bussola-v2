@@ -195,3 +195,70 @@ for (const w of [360, 390, 430, 768]) {
     });
   }
 }
+
+// ---------------------------------------------------------------------------
+// Task 4 — Atenção agora
+// ---------------------------------------------------------------------------
+test.describe('Atenção agora (carrossel)', () => {
+  const pipAtivo = (page) => page.locator('.pv2-attn-pip').evaluateAll((els) => els.findIndex((e) => e.classList.contains('active')));
+
+  test('só alertas reais, 1 por vez, com snap e indicador', async ({ page }) => {
+    await usarFixture(page, { insights: 3 });
+    await gotoApp(page, '/panorama');
+    const row = page.locator('.pv2-attn-row.is-carousel');
+    await expect(row).toBeVisible();
+    await expect(row.locator('.pv2-alert')).toHaveCount(3);
+    await expect(page.locator('.pv2-alert-empty')).toHaveCount(0);
+    await expect(page.locator('.pv2-attn-arrow')).toHaveCount(0);
+    await expect(page.locator('.pv2-attn-count')).toHaveText('3 alertas');
+    expect(await row.evaluate((e) => getComputedStyle(e).scrollSnapType)).toContain('x mandatory');
+
+    const grid = await caixa(page, '.pv2-grid'); // largura do conteúdo (gutter de 16)
+    const cards = await row.locator('.pv2-alert').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return { x: r.x, w: r.width }; }));
+    expect(Math.abs(cards[0].x - grid.x)).toBeLessThanOrEqual(1);
+    expect(Math.abs(cards[0].w - grid.width)).toBeLessThanOrEqual(1);
+    expect(cards[1].x).toBeGreaterThan(grid.x + grid.width); // o 2º fica fora (no máximo uma "espiada" no gutter)
+
+    await expect(page.locator('.pv2-attn-pip')).toHaveCount(3);
+    expect(await pipAtivo(page)).toBe(0);
+    await row.evaluate((e) => e.scrollTo({ left: e.children[1].offsetLeft - e.children[0].offsetLeft }));
+    await expect.poll(() => pipAtivo(page)).toBe(1);
+    expect(await overflowOffenders(page)).toEqual([]);
+  });
+
+  test('dispensar com alvo de 44px remove o card e atualiza a contagem', async ({ page }) => {
+    await usarFixture(page, { insights: 3 });
+    await gotoApp(page, '/panorama');
+    const primeiro = page.locator('.pv2-attn-row .pv2-alert').first();
+    await expect(primeiro).toContainText('Orçamento estourado: Lazer');
+    const x = primeiro.getByRole('button', { name: 'Dispensar por 24h' });
+    const b = await x.boundingBox();
+    expect(Math.round(b.width)).toBeGreaterThanOrEqual(44);
+    expect(Math.round(b.height)).toBeGreaterThanOrEqual(44);
+    await x.click();
+    await expect(page.locator('.pv2-attn-row .pv2-alert')).toHaveCount(2);
+    await expect(page.locator('.pv2-attn-row')).not.toContainText('Orçamento estourado: Lazer');
+    await expect(page.locator('.pv2-attn-count')).toHaveText('2 alertas');
+    expect(await page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('panorama_dismissed') || '{}')))).toEqual(['e2e-orc']);
+    expect(await smallTargets(page, '.pv2-section-top')).toEqual([]);
+  });
+
+  test('um alerta: sem indicador; nenhum alerta: a seção some', async ({ page }) => {
+    await usarFixture(page, { insights: 1 });
+    await gotoApp(page, '/panorama');
+    await expect(page.locator('.pv2-attn-row .pv2-alert')).toHaveCount(1);
+    await expect(page.locator('.pv2-attn-pips')).toHaveCount(0);
+    await expect(page.locator('.pv2-attn-count')).toHaveText('1 alerta');
+    await page.locator('.pv2-alert').getByRole('button', { name: 'Dispensar por 24h' }).click();
+    await expect(page.locator('.pv2-section-top')).toHaveCount(0);
+  });
+
+  test('"Ver →" com 44px leva para a página do alerta', async ({ page }) => {
+    await usarFixture(page, { insights: 1 });
+    await gotoApp(page, '/panorama');
+    const ver = page.locator('.pv2-alert-cta');
+    expect(Math.round((await ver.boundingBox()).height)).toBeGreaterThanOrEqual(44);
+    await ver.click();
+    await expect(page).toHaveURL(/\/financas$/);
+  });
+});
