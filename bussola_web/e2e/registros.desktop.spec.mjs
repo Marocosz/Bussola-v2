@@ -15,6 +15,25 @@ async function abrirAlgumAcordeao(page) {
   await page.waitForTimeout(400);
 }
 
+// Condição de "pronto" determinística para capturas fullPage: fontes carregadas, página no topo
+// (a captura posiciona sidebar/Fab fixos pelo scroll corrente) e geometria estável em amostras
+// consecutivas (sidebar, conteúdo, quadro e altura do documento).
+async function layoutEstavel(page) {
+  await page.evaluate(() => document.fonts.ready);
+  const amostra = () => page.evaluate(() => new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(() => {
+    const r = (s) => { const e = document.querySelector(s); if (!e) return null; const b = e.getBoundingClientRect(); return [b.x, b.y, b.width, b.height]; };
+    res(JSON.stringify({ y: window.scrollY, h: document.documentElement.scrollHeight, sb: r('.sidebar'), c: r('.app-content'), kb: r('.kb-board') }));
+  }))));
+  await page.evaluate(() => window.scrollTo(0, 0));
+  let anterior = '';
+  await expect.poll(async () => {
+    const atual = await amostra();
+    const estavel = atual === anterior && JSON.parse(atual).y === 0;
+    anterior = atual;
+    return estavel;
+  }, { timeout: 10_000, intervals: [100] }).toBe(true);
+}
+
 // Telas e modais que este plano toca. Base gerada ANTES de qualquer mudança de código.
 const TELAS = [
   ['registros-tarefas', async (p) => { await aba(p, 'Tarefas'); await p.locator('.kb-board').waitFor(); }, { fullPage: true }],
@@ -60,6 +79,7 @@ for (const [nome, abrir, opts] of TELAS) {
     await gotoApp(page, '/registros');
     await abrir(page);
     await page.waitForTimeout(400);
+    await layoutEstavel(page);
     const { mask = [], ...resto } = opts;
     await expect(page).toHaveScreenshot(`${nome}.png`, { ...resto, mask: mask.map((s) => page.locator(s)) });
   });

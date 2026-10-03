@@ -597,3 +597,51 @@ test.describe('Jornada', () => {
     expect(Math.min(...t.badges)).toBeGreaterThanOrEqual(11);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 7 — capturas para a conferência visual (só com REG_SHOTS=1)
+// ---------------------------------------------------------------------------
+test.describe('capturas para conferência visual', () => {
+  test.skip(!process.env.REG_SHOTS, 'rode com REG_SHOTS=1');
+  for (const w of [360, 390, 430]) {
+    test(`capturas ${w}px`, async ({ page }) => {
+      const dir = 'test-results/registros-visual';
+      await page.setViewportSize({ width: w, height: 844 });
+      await gotoApp(page, '/registros');
+      await page.screenshot({ path: `${dir}/caderno-${w}.png`, fullPage: true });
+      await page.locator('.reg-m-chips').getByRole('button', { name: 'Grupos', exact: true }).click();
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: `${dir}/grupos-${w}.png` });
+      await page.keyboard.press('Escape');
+      await page.locator('.app-fab').click();
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: `${dir}/editor-${w}.png` });
+      // teclado simulado: a viewport visual encolhe e o inset sobe
+      await page.evaluate(() => {
+        document.documentElement.style.setProperty('--vvh', '480px');
+        document.documentElement.style.setProperty('--kb-inset', '364px');
+      });
+      await page.waitForTimeout(300);
+      await page.screenshot({ path: `${dir}/editor-teclado-${w}.png` });
+      await page.evaluate(() => {
+        document.documentElement.style.removeProperty('--vvh');
+        document.documentElement.style.removeProperty('--kb-inset');
+      });
+      await page.keyboard.press('Escape');
+      await abrirAba(page, 'Tarefas');
+      await page.locator('.kb-board').waitFor();
+      await page.screenshot({ path: `${dir}/tarefas-${w}.png` });
+      await page.locator('.kb-card').first().click();
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: `${dir}/tarefa-detalhe-${w}.png` });
+      await page.keyboard.press('Escape');
+      await abrirAba(page, 'Jornada');
+      await page.locator('.jk-kanban').waitFor();
+      await page.waitForTimeout(500);
+      await page.screenshot({ path: `${dir}/jornada-${w}.png`, fullPage: true });
+      await page.locator('.app-fab').click();
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: `${dir}/habito-${w}.png` });
+    });
+  }
+});

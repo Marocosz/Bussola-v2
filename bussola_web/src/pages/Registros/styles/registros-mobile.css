@@ -1033,3 +1033,87 @@
         gap: var(--sp-1);
     }
 }
+
+/* --- Tablet (769–1024): mantém o layout do desktop, sem vazar --- */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .registros-scope .registros-wrapper {
+        max-width: 100%;
+    }
+
+    .registros-scope .column-header-flex {
+        height: auto;
+        min-height: 60px;
+        flex-wrap: wrap;
+        gap: var(--sp-3);
+        padding: var(--sp-3) var(--sp-4);
+    }
+
+    .registros-scope .header-actions-group {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        min-width: 0;
+    }
+
+    .registros-scope .header-search-wrapper,
+    .registros-scope .custom-dropdown-wrapper {
+        margin-right: 0;
+    }
+
+    .registros-scope .header-search-input {
+        width: 160px;
+    }
+
+    .registros-scope .dropdown-trigger-btn {
+        min-width: 0;
+    }
+
+    /* O gatilho fica à direita: o menu abre para a esquerda e nunca passa da tela */
+    .registros-scope .custom-dropdown-menu {
+        left: auto;
+        right: 0;
+        width: min(280px, calc(100vw - 2 * var(--sp-4)));
+    }
+
+    .registros-scope .notes-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .registros-scope .jk-header-date-msg {
+        display: none;
+    }
+}
+
+/* --- Ponteiro grosso (tablet e notebooks de toque): controles de 44px --- */
+@media (pointer: coarse) {
+    .registros-scope .tab-btn-pill,
+    .registros-scope .small-btn,
+    .registros-scope .dropdown-trigger-btn,
+    .registros-scope .kb-toolbar-select,
+    .registros-scope .kb-toolbar-search input,
+    .registros-scope .kb-column-addfoot {
+        min-height: var(--tap-min);
+    }
+
+    .registros-scope .small-btn,
+    .registros-scope .dropdown-trigger-btn,
+    .registros-scope .header-search-input {
+        height: var(--tap-min) !important;
+    }
+
+    .registros-scope .close-btn,
+    .registros-scope .footer-pin-btn,
+    .registros-scope .kb-column-add,
+    .registros-scope .kb-icon-btn,
+    .registros-scope .kb-mini {
+        min-width: var(--tap-min);
+        min-height: var(--tap-min);
+    }
+
+    .registros-scope .footer-pin-btn,
+    .registros-scope .kb-column-add,
+    .registros-scope .kb-icon-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
