@@ -437,6 +437,7 @@
         padding: var(--sp-2);
         overflow-x: auto;
         scroll-snap-type: x proximity;
+        scroll-padding-inline: var(--sp-2);
         scrollbar-width: none;
     }
 
@@ -468,4 +469,36 @@
 
     .estudos-vazio { margin: var(--sp-5) 0; padding: var(--sp-5) var(--sp-4); }
     .estudos-vazio .btn-primary { min-height: 48px; }
+
+    /* ---- leitura ---- */
+    .estudo-breadcrumb { display: none; } /* a topbar mostra o tema e o Voltar */
+    .estudo-cabecalho { margin-bottom: var(--sp-5); }
+    .estudo-etiquetas { gap: var(--sp-2); margin-bottom: var(--sp-3); }
+    .estudo-chip-info { font-size: 0.75rem; }
+    .estudo-cabecalho h1 { font-size: clamp(1.375rem, 6vw, 1.75rem); margin-bottom: var(--sp-2); }
+    .estudo-subtitulo { font-size: 1rem; margin-bottom: var(--sp-4); }
+
+    /* Estudado + lixeira / Pedir ao Claude / destino */
+    .estudo-acoes {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) var(--tap-min);
+        gap: var(--sp-2);
+    }
+
+    .estudo-acoes > .estudo-btn-estudado { grid-row: 1; grid-column: 1; justify-content: center; }
+    .estudo-acoes > .estudo-btn-excluir { grid-row: 1; grid-column: 2; width: var(--tap-min); padding: 0; }
+    .estudo-acoes > .pedir-claude { grid-row: 2; grid-column: 1 / -1; display: block; }
+    .estudo-acoes .pedir-claude-gatilho { width: 100%; justify-content: center; }
+    .estudo-acoes > .estudo-destino { grid-row: 3; grid-column: 1 / -1; display: flex; margin-left: 0; }
+    .estudo-destino button { flex: 1; font-size: 0.875rem; }
+
+    .estudo-bloco { scroll-margin-top: calc(var(--topbar-h) + var(--safe-top) + var(--sp-4)); }
+    .estudo-fontes { margin-top: var(--sp-6); padding-top: var(--sp-4); }
+    .estudo-fontes ol { font-size: 0.875rem; gap: var(--sp-2); }
+    .estudo-fontes li { overflow-wrap: anywhere; }
+    .estudo-fonte-dominio { font-size: 0.75rem; }
+
+    /* ---- Pedir ao Claude em sheet ---- */
+    .pedir-claude-sheet .pedir-claude-alvo { padding: 0; margin: 0 0 var(--sp-2); }
+    .pedir-claude-sheet .pedir-claude-pergunta { padding: 0; }
 }

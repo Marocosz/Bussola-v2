@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp, overflowOffenders, overflowOffendersOutsideScrollers, smallTargets, animacoesAcabaram } from './helpers.mjs';
-import { mockEstudos, MATERIAIS } from './fixtures/estudos.mjs';
+import { mockEstudos, stubClipboard, MATERIAIS } from './fixtures/estudos.mjs';
+
+// Citações [n] e a âncora # da seção são inline no texto: ficam fora da regra de 44px.
+// (os botões de citação não têm classe: identificados pelo nome "[n]").
+const semInline = (lista) => lista.filter((s) => !/"\[\d+\]"|bloco-secao-ancora/.test(s));
 
 const tituloTopbar = (page) => page.locator('.m-topbar-title');
 const voltar = (page) => page.getByRole('button', { name: 'Voltar' });
@@ -186,5 +190,162 @@ test.describe('biblioteca', () => {
     await card.hover();
     await animacoesAcabaram(page);
     await expect.poll(() => card.evaluate((e) => getComputedStyle(e).transform)).toBe('none');
+  });
+
+  test('faixa de temas: scroll-padding-inline mantém o respiro no snap', async ({ page }) => {
+    await mockEstudos(page);
+    await gotoApp(page, '/estudos');
+    await expect.poll(() => page.locator('.estudos-temas').evaluate((e) => getComputedStyle(e).scrollPaddingInlineStart)).toBe('8px');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Task 4 — leitura
+// ---------------------------------------------------------------------------
+test.describe('leitura', () => {
+  for (const w of [360, 390, 430, 768, 769]) {
+    test(`sem overflow fora dos blocos roláveis em ${w}px`, async ({ page }) => {
+      await mockEstudos(page);
+      await page.setViewportSize({ width: w, height: 844 });
+      await gotoApp(page, '/estudos/9101');
+      await page.locator('.bloco-quiz').waitFor();
+      expect(await overflowOffendersOutsideScrollers(page), `${w}px`).toEqual([]);
+    });
+  }
+
+  test('comparação e código rolam dentro do bloco (o bloco cabe na tela)', async ({ page }) => {
+    await mockEstudos(page);
+    await page.setViewportSize({ width: 360, height: 800 });
+    await gotoApp(page, '/estudos/9101');
+    for (const sel of ['.bloco-comparacao', '.bloco-codigo-corpo pre']) {
+      const el = page.locator(sel).first();
+      await el.waitFor();
+      const b = await el.boundingBox();
+      expect(b.x, sel).toBeGreaterThanOrEqual(16);
+      expect(b.x + b.width, sel).toBeLessThanOrEqual(360 - 16 + 1);
+      expect(await el.evaluate((e) => getComputedStyle(e).overflowX), sel).toBe('auto');
+    }
+    // o tema do highlight.js faz o próprio <code class="hljs"> rolar; o que importa é que algo role dentro do bloco
+    expect(await page.locator('.bloco-codigo-corpo pre').evaluate((e) => [e, e.querySelector('code')].some((x) => x.scrollWidth > x.clientWidth))).toBe(true);
+  });
+
+  test('cabeçalho: sem breadcrumb, título visível, texto do material com 16px', async ({ page }) => {
+    await mockEstudos(page);
+    await gotoApp(page, '/estudos/9101');
+    await expect(page.locator('.estudo-breadcrumb')).toBeHidden();
+    await expect(page.locator('.estudo-cabecalho h1')).toBeVisible();
+    expect(await page.locator('.estudo-coluna').evaluate((e) => parseFloat(getComputedStyle(e).fontSize))).toBe(16);
+  });
+
+  test('alvos ≥ 44px no cabeçalho e nos blocos (exceto citações inline)', async ({ page }) => {
+    await mockEstudos(page);
+    await gotoApp(page, '/estudos/9101');
+    await page.locator('.bloco-quiz').waitFor();
+    await animacoesAcabaram(page);
+    await expect.poll(() => smallTargets(page, '.estudo-cabecalho')).toEqual([]);
+    await expect.poll(async () => semInline(await smallTargets(page, '.estudo-coluna'))).toEqual([]);
+  });
+
+  test('ações: Estudado + lixeira na 1ª linha, Pedir ao Claude e destino em largura total', async ({ page }) => {
+    await mockEstudos(page);
+    await gotoApp(page, '/estudos/9101');
+    await page.locator('.estudo-btn-estudado').waitFor();
+    await animacoesAcabaram(page);
+    await expect.poll(async () => {
+      const estudado = await page.locator('.estudo-btn-estudado').boundingBox();
+      const lixeira = await page.locator('.estudo-btn-excluir').boundingBox();
+      const pedir = await page.locator('.estudo-acoes .pedir-claude-gatilho').boundingBox();
+      const destino = await page.locator('.estudo-destino').boundingBox();
+      return [
+        Math.round(lixeira.y) - Math.round(estudado.y),
+        Math.round(lixeira.x + lixeira.width),
+        Math.round(lixeira.x - (estudado.x + estudado.width)),
+        Math.round(pedir.width),
+        Math.round(destino.width),
+        Math.round(pedir.y - (estudado.y + estudado.height)),
+      ];
+    }).toEqual([0, 390 - 16, 8, 390 - 32, 390 - 32, 8]);
+  });
+
+  test('marcar como estudado e responder o quiz', async ({ page }) => {
+    await mockEstudos(page);
+    await gotoApp(page, '/estudos/9101');
+    await page.locator('.estudo-btn-estudado').click();
+    await expect(page.locator('.estudo-btn-estudado')).toHaveText(/Estudado/);
+    await page.locator('.bloco-quiz-opcao', { hasText: 'B-tree' }).click();
+    await expect(page.locator('.bloco-quiz-feedback strong')).toHaveText('Correto!');
+  });
+
+  test('Pedir ao Claude (material) abre um sheet e copia o comando', async ({ page }) => {
+    await stubClipboard(page);
+    await mockEstudos(page);
+    await gotoApp(page, '/estudos/9101');
+    await page.locator('.estudo-acoes .pedir-claude-gatilho').click();
+    const sheet = page.locator('.modal-overlay.is-sheet .pedir-claude-sheet');
+    await expect(sheet).toBeVisible();
+    await expect(page.locator('.pedir-claude-menu')).toHaveCount(0);
+    await expect(sheet.locator('.pedir-claude-alvo')).toHaveText('Material inteiro');
+    await animacoesAcabaram(page);
+    await expect.poll(() => smallTargets(page, '.modal-overlay.is-sheet')).toEqual([]);
+    await sheet.getByRole('button', { name: 'Aprofundar' }).click();
+    await expect(sheet).toHaveCount(0);
+    expect(await page.evaluate(() => window.__clip)).toEqual(['/estudos aprofundar material:9101']);
+    await expect(page.locator('.toast-notification', { hasText: 'Comando copiado' })).toBeVisible();
+  });
+
+  test('Pedir ao Claude do bloco copia o comando do bloco; destino claude.ai muda a frase', async ({ page }) => {
+    await stubClipboard(page);
+    await mockEstudos(page);
+    await gotoApp(page, '/estudos/9101');
+    await page.getByRole('button', { name: 'Pedir ao Claude sobre o bloco b3' }).click();
+    const sheet = page.locator('.pedir-claude-sheet');
+    await expect(sheet.locator('.pedir-claude-alvo')).toHaveText('Bloco b3');
+    await sheet.getByRole('button', { name: 'Simplificar' }).click();
+    await page.locator('.estudo-destino').getByRole('button', { name: 'claude.ai' }).click();
+    await page.locator('.estudo-acoes .pedir-claude-gatilho').click();
+    await page.locator('.pedir-claude-sheet').getByRole('button', { name: 'Criar exercícios' }).click();
+    expect(await page.evaluate(() => window.__clip)).toEqual([
+      '/estudos simplificar material:9101 bloco:b3',
+      'Use a skill estudos para criar exercícios sobre o material 9101 no Bússola.',
+    ]);
+  });
+
+  test('Tirar dúvida: sem autofocus e "Copiar comando" acima do teclado', async ({ page }) => {
+    await stubClipboard(page);
+    await mockEstudos(page);
+    await gotoApp(page, '/estudos/9101');
+    await page.evaluate(() => {
+      document.documentElement.style.setProperty('--vvh', '420px');
+      document.documentElement.style.setProperty('--kb-inset', '424px');
+    });
+    await page.locator('.estudo-acoes .pedir-claude-gatilho').click();
+    await page.locator('.pedir-claude-sheet').getByRole('button', { name: 'Tirar dúvida' }).click();
+    const campo = page.getByRole('textbox', { name: 'Sua dúvida' });
+    await expect(campo).toBeVisible();
+    await expect(campo).not.toBeFocused();
+    const copiar = page.locator('.modal-overlay.is-sheet').getByRole('button', { name: 'Copiar comando' });
+    await expect(copiar).toBeDisabled();
+    await campo.fill('por que "B-tree"?');
+    await expect.poll(async () => { const b = await copiar.boundingBox(); return b.y + b.height; }).toBeLessThanOrEqual(420);
+    await copiar.click();
+    expect(await page.evaluate(() => window.__clip)).toEqual([`/estudos duvida material:9101 "por que 'B-tree'?"`]);
+  });
+
+  test('copiar código: botão de 44px copia o código do bloco', async ({ page }) => {
+    await stubClipboard(page);
+    await mockEstudos(page);
+    await gotoApp(page, '/estudos/9101');
+    const copiar = page.locator('.bloco-codigo-copiar');
+    await expect.poll(async () => (await copiar.boundingBox()).height).toBeGreaterThanOrEqual(44);
+    await copiar.click();
+    expect((await page.evaluate(() => window.__clip))[0]).toContain('CREATE INDEX idx_usuario_email_criado_em');
+  });
+
+  test('excluir pede confirmação e volta para a biblioteca', async ({ page }) => {
+    await mockEstudos(page);
+    await gotoApp(page, '/estudos/9101');
+    await page.locator('.estudo-btn-excluir').click();
+    await page.getByRole('button', { name: 'Sim, excluir' }).click();
+    await expect(page).toHaveURL(/\/estudos$/);
   });
 });

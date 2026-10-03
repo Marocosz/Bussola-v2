@@ -53,7 +53,7 @@
     font-weight: 600;
     cursor: pointer;
 }
-.estudo-citacao button:hover { text-decoration: underline; }
+@media (hover: hover) and (pointer: fine) { .estudo-citacao button:hover { text-decoration: underline; } }
 .estudo-citacao-orfa { color: var(--cor-texto-secundario); opacity: 0.6; font-size: 0.72rem; vertical-align: super; }
 
 /* ---- seção / texto ---- */
@@ -69,7 +69,7 @@
     scroll-margin-top: 80px;
 }
 .bloco-secao-ancora { color: var(--cor-texto-secundario); opacity: 0; text-decoration: none; font-size: 0.9em; transition: opacity 0.15s; }
-.bloco-secao:hover .bloco-secao-ancora { opacity: 0.7; }
+@media (hover: hover) and (pointer: fine) { .bloco-secao:hover .bloco-secao-ancora { opacity: 0.7; } }
 .bloco-texto p { margin: 0 0 0.8rem; }
 .bloco-texto p:last-child { margin-bottom: 0; }
 
@@ -156,7 +156,7 @@
     cursor: pointer;
     font-size: 0.75rem;
 }
-.bloco-codigo-copiar:hover { color: var(--cor-texto-principal); background: var(--cor-fundo-hover); }
+@media (hover: hover) and (pointer: fine) { .bloco-codigo-copiar:hover { color: var(--cor-texto-principal); background: var(--cor-fundo-hover); } }
 .bloco-codigo-corpo pre { margin: 0; overflow-x: auto; font-size: 0.86rem; line-height: 1.55; }
 .bloco-codigo-corpo pre code { display: block; padding: 0.9rem 1rem; }
 
@@ -253,7 +253,7 @@
     cursor: pointer;
     transition: border-color 0.15s, background 0.15s;
 }
-.bloco-quiz-opcao:hover:not(:disabled) { border-color: var(--cor-azul-primario); background: var(--cor-fundo-hover); }
+@media (hover: hover) and (pointer: fine) { .bloco-quiz-opcao:hover:not(:disabled) { border-color: var(--cor-azul-primario); background: var(--cor-fundo-hover); } }
 .bloco-quiz-opcao:disabled { cursor: default; color: var(--cor-texto-principal); }
 .bloco-quiz-letra {
     flex: 0 0 1.6rem;
@@ -277,7 +277,7 @@
 .bloco-acoes-linha { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
 .btn-pequeno { padding: 0.35rem 0.8rem; font-size: 0.82rem; display: inline-flex; gap: 0.4rem; align-items: center; }
 .btn-acertei { background: var(--cor-verde-sucesso); }
-.btn-errei:hover { background: var(--cor-vermelho-delete); }
+@media (hover: hover) and (pointer: fine) { .btn-errei:hover { background: var(--cor-vermelho-delete); } }
 .bloco-questao-marcado { font-size: 0.85rem; font-weight: 600; }
 .bloco-questao-marcado.acerto { color: var(--cor-verde-sucesso); }
 .bloco-questao-marcado.erro { color: var(--cor-vermelho-delete); }
@@ -293,4 +293,45 @@
 @media (max-width: 640px) {
     .bloco-decisao-regra { grid-template-columns: 1fr; }
     .bloco-decisao-regra > i { transform: rotate(90deg); justify-self: start; }
+}
+
+/* ---- toque (celular e tablet): alvos de 44px ---- */
+@media (pointer: coarse) {
+    .bloco-codigo-copiar {
+        min-height: var(--tap-min);
+        padding: 0 var(--sp-3);
+        display: inline-flex;
+        align-items: center;
+        gap: var(--sp-1);
+    }
+
+    .btn-pequeno { min-height: var(--tap-min); }
+    .bloco-quiz-opcao { min-height: 48px; align-items: center; }
+}
+
+/* ---- tablet e celular (≤1024): identificadores longos quebram ---- */
+@media (max-width: 1024px) {
+    .estudo-coluna { overflow-wrap: anywhere; }
+    .bloco-comparacao { overflow-wrap: normal; }
+}
+
+/* ---- celular (≤768) ---- */
+@media (max-width: 768px) {
+    /* Identificadores/URLs longos quebram em vez de estourar; a tabela rola dentro do bloco */
+    .estudo-coluna { font-size: 1rem; gap: var(--sp-4); overflow-wrap: anywhere; }
+    .bloco-comparacao { overflow-wrap: normal; }
+
+    .bloco-secao { font-size: 1.2rem; margin: var(--sp-5) 0 0; }
+    .bloco-conceito,
+    .bloco-quiz,
+    .bloco-questao { padding: var(--sp-4); }
+    .bloco-definicao,
+    .bloco-analogia,
+    .bloco-alerta { padding: var(--sp-3) var(--sp-4); }
+    .bloco-codigo-corpo pre code { padding: var(--sp-3); }
+    .bloco-comparacao table { font-size: 0.875rem; }
+    .bloco-comparacao th,
+    .bloco-comparacao td { padding: var(--sp-2) var(--sp-3); }
+    .bloco-quiz-opcoes { gap: var(--sp-2); }
+    .bloco-acoes-linha .btn-pequeno { flex: 1 1 auto; justify-content: center; }
 }
