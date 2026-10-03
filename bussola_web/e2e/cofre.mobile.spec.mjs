@@ -329,6 +329,32 @@ test.describe('formulário em sheet', () => {
   });
 });
 
+test.describe('edição preserva a validade', () => {
+  test('editar só o nome mantém data_expiracao e mostra a validade atual', async ({ page, request }) => {
+    await apiJson(request, 'POST', '/cofre/', { titulo: 'E2E Validade', servico: 'E2E', valor: 'E2E-v', data_expiracao: '2026-12-25' });
+    await gotoApp(page, '/cofre');
+    await page.getByRole('button', { name: 'Mais ações de E2E Validade' }).click();
+    await page.locator('.action-sheet').getByRole('button', { name: 'Editar' }).click();
+    await expect(page.locator('#segredo-dias')).toHaveValue('');
+    await expect(page.locator('.modal-overlay.is-sheet')).toContainText('Expira em 25/12/2026 — deixe em branco para manter');
+    await page.locator('#segredo-titulo').fill('E2E Validade editada');
+    await page.locator('.modal-overlay.is-sheet').getByRole('button', { name: 'Salvar' }).click();
+    await expect(linha(page, 'E2E Validade editada')).toHaveCount(1);
+    const lista = await apiJson(request, 'GET', '/cofre/');
+    expect(lista.find((s) => s.titulo === 'E2E Validade editada').data_expiracao).toBe('2026-12-25');
+  });
+
+  test('item sem validade: nenhum texto auxiliar', async ({ page }) => {
+    await gotoApp(page, '/cofre');
+    await page.getByRole('button', { name: 'Mais ações de E2E Expirado' }).click();
+    await page.locator('.action-sheet').getByRole('button', { name: 'Editar' }).click();
+    await expect(page.locator('.segredo-dias-ajuda')).toHaveCount(1); // expirado ainda tem data
+    await page.locator('.modal-overlay.is-sheet').getByRole('button', { name: 'Fechar' }).click();
+    await page.locator('.app-fab').click();
+    await expect(page.locator('.segredo-dias-ajuda')).toHaveCount(0);
+  });
+});
+
 // Itens da revisão da Task 2
 test.describe('lista: ajustes da revisão', () => {
   test('validade não quebra no meio da frase', async ({ page }) => {

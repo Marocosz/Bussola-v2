@@ -288,6 +288,14 @@
     height: 40px;
 }
 
+/* Texto auxiliar do campo de validade na edição */
+.cofre-scope .segredo-dias-ajuda {
+    display: block;
+    margin-top: 0.4rem;
+    font-size: 0.8rem;
+    color: var(--cor-texto-secundario);
+}
+
 /* Modal de Notas Completas */
 .cofre-scope .notes-full-view {
     white-space: pre-wrap;

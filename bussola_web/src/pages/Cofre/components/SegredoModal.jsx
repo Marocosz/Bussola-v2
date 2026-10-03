@@ -4,6 +4,7 @@ import { useToast } from '../../../context/ToastContext';
 import { useConfirm } from '../../../context/ConfirmDialogContext'; // Importar Confirm
 import { BaseModal } from '../../../components/BaseModal';
 import { useMediaQuery } from '../../../hooks/useIsMobile';
+import { formatarData } from '../cofreLista';
 
 // Campos que o teclado do celular não deve corrigir nem capitalizar.
 const SEM_CORRECAO = { autoCapitalize: 'off', autoCorrect: 'off', spellCheck: false };
@@ -71,7 +72,9 @@ export function SegredoModal({ active, closeModal, onUpdate, editingData }) {
         // Só envia o valor se estiver editável e preenchido. O schema de update exige a chave
         // `valor` (Optional sem default = obrigatório), então sem troca vai explicitamente null
         // (o serviço ignora null) — antes, editar sem mexer na senha dava 422.
-        const payload = { titulo, servico, notas, data_expiracao, valor: isPasswordEditable && valor ? valor : null };
+        const payload = { titulo, servico, notas, valor: isPasswordEditable && valor ? valor : null };
+        // Na edição, campo vazio mantém a validade atual (o backend limpa se a chave vier null).
+        if (!editingData || data_expiracao) payload.data_expiracao = data_expiracao;
 
         try {
             if (editingData) {
@@ -148,6 +151,9 @@ export function SegredoModal({ active, closeModal, onUpdate, editingData }) {
                             <div className="form-group">
                                 <label htmlFor="segredo-dias">Expira em (dias) - Opcional</label>
                                 <input id="segredo-dias" type="number" inputMode="numeric" pattern="[0-9]*" className="form-input" placeholder="Ex: 30" value={diasExpirar} onChange={e => setDiasExpirar(e.target.value)} min="0" />
+                                {editingData?.data_expiracao && (
+                                    <small className="segredo-dias-ajuda">Expira em {formatarData(editingData.data_expiracao)} — deixe em branco para manter</small>
+                                )}
                             </div>
                         </div>
 
