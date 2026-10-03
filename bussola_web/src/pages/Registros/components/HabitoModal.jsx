@@ -3,6 +3,7 @@ import { createHabito, updateHabito } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 import { BaseModal } from '../../../components/BaseModal';
 import { TimePicker } from '../../../components/Pickers';
+import { useIsMobile } from '../../../hooks/useIsMobile';
 import '../styles.css';
 import { logger } from '../../../utils/logger';
 
@@ -36,6 +37,7 @@ export function HabitoModal({ active, closeModal, onUpdate, editingData }) {
     const [form, setForm] = useState(ESTADO_INICIAL);
     const [loading, setLoading] = useState(false);
     const { addToast } = useToast();
+    const isMobile = useIsMobile();
 
     const isEditing = !!editingData;
 
@@ -135,7 +137,7 @@ export function HabitoModal({ active, closeModal, onUpdate, editingData }) {
                                 onChange={e => setForm(p => ({ ...p, titulo: e.target.value }))}
                                 required
                                 maxLength={200}
-                                autoFocus
+                                autoFocus={!isMobile}
                             />
                         </div>
 
@@ -176,9 +178,9 @@ export function HabitoModal({ active, closeModal, onUpdate, editingData }) {
 
                         {/* Frequência */}
                         <div className="form-group">
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <div className="habito-freq-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                 <label className="form-label" style={{ margin: 0 }}>Frequência</label>
-                                <div style={{ display: 'flex', gap: '6px' }}>
+                                <div className="habito-freq-presets" style={{ display: 'flex', gap: '6px' }}>
                                     {[
                                         { id: 'todos', label: 'Todo dia' },
                                         { id: 'uteis', label: 'Dias úteis' },

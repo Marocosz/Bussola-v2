@@ -838,3 +838,198 @@
         font-size: 0.875rem;
     }
 }
+
+/* --- Jornada --- */
+@media (max-width: 768px) {
+    .registros-scope .reg-m-jornada {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-2);
+    }
+
+    .registros-scope .reg-m-jornada-linha {
+        margin: 0;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--cor-texto-principal);
+    }
+
+    .registros-scope .reg-m-jornada-barra {
+        height: 8px;
+        border-radius: 999px;
+        background: var(--cor-borda);
+        overflow: hidden;
+    }
+
+    .registros-scope .reg-m-jornada-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: var(--cor-azul-primario);
+        transition: width 0.4s ease;
+    }
+
+    .registros-scope .jk-wrapper {
+        gap: var(--sp-4);
+        padding-bottom: 0;
+    }
+
+    .registros-scope .jk-col-header {
+        padding: var(--sp-3) var(--sp-4);
+    }
+
+    .registros-scope .jk-connector {
+        height: var(--sp-6);
+    }
+
+    .registros-scope .jk-habit-row {
+        padding: 0 var(--sp-2);
+    }
+
+    .registros-scope .jk-habit-info {
+        gap: var(--sp-1);
+        padding: var(--sp-3) 0 var(--sp-3) var(--sp-3);
+    }
+
+    .registros-scope .jk-habit-header {
+        gap: var(--sp-2);
+    }
+
+    .registros-scope .jk-time {
+        font-size: 0.8125rem;
+    }
+
+    .registros-scope .jk-badge-pausado,
+    .registros-scope .jk-badge-atrasado,
+    .registros-scope .jk-streak {
+        font-size: 0.6875rem;
+    }
+
+    /* Sem tooltip no toque: título e descrição quebram linha em vez de cortar */
+    .registros-scope .jk-titulo {
+        font-size: 0.9375rem;
+        white-space: normal;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    .registros-scope .jk-meta {
+        flex-wrap: wrap;
+        row-gap: var(--sp-1);
+        font-size: 0.75rem;
+    }
+
+    .registros-scope .jk-meta i {
+        font-size: 0.6875rem;
+    }
+
+    .registros-scope .jk-descricao-inline {
+        flex-basis: 100%;
+        white-space: normal;
+    }
+
+    .registros-scope .jk-habit-more {
+        width: var(--tap-min);
+        height: var(--tap-min);
+        flex-shrink: 0;
+        margin: calc(-1 * var(--sp-2)) calc(-1 * var(--sp-2)) calc(-1 * var(--sp-2)) 0;
+        display: grid;
+        place-items: center;
+        border: none;
+        border-radius: 12px;
+        background: transparent;
+        color: var(--cor-texto-secundario);
+        font-size: 1rem;
+        cursor: pointer;
+    }
+
+    /* HabitoModal */
+    .registros-scope .habito-freq-head {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: var(--sp-2);
+    }
+
+    .registros-scope .habito-freq-presets {
+        flex-wrap: wrap;
+        gap: var(--sp-2) !important;
+    }
+
+    .registros-scope .habito-freq-preset {
+        flex: 1 1 auto;
+        min-height: var(--tap-min);
+        padding: 0 var(--sp-3);
+        font-size: 0.8125rem;
+    }
+
+    /* Exceção documentada (ruling): gap de 2px para os 7 botões terem >= 44px de alvo */
+    .registros-scope .habito-dias-selector {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 2px;
+    }
+
+    .registros-scope .habito-dia-btn {
+        width: auto;
+        height: var(--tap-min);
+        border-radius: 12px;
+        font-size: 0.875rem;
+    }
+
+    .registros-scope .habito-cor-btn,
+    .registros-scope .habito-cor-custom-wrapper {
+        width: var(--tap-min);
+        height: var(--tap-min);
+    }
+
+    /* Borda tracejada num pseudo-elemento para o input invisível ocupar os 44px inteiros */
+    .registros-scope .habito-cor-custom-wrapper {
+        border: 0;
+    }
+
+    .registros-scope .habito-cor-custom-wrapper::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border: 2px dashed currentColor;
+        border-radius: 50%;
+        pointer-events: none;
+    }
+
+    .registros-scope .form-row-2col {
+        gap: var(--sp-3);
+    }
+
+    /* Lista de hábitos: cabeçalho, filtro e rodapé fixos; só a lista rola */
+    .registros-scope.modal-overlay.is-sheet > .hl-modal-content {
+        overflow: hidden !important;
+    }
+
+    .registros-scope .hl-list-container {
+        min-height: 0;
+        padding: var(--sp-3) 0 var(--sp-1);
+    }
+
+    .registros-scope .hl-day-filter {
+        gap: var(--sp-2);
+        padding: var(--sp-3) var(--sp-4) 0;
+    }
+
+    .registros-scope .hl-day-btn {
+        min-height: var(--tap-min);
+        padding: 0 var(--sp-3);
+        font-size: 0.8125rem;
+    }
+
+    .registros-scope .hl-day-count {
+        font-size: 0.6875rem;
+    }
+
+    .registros-scope .hl-descricao {
+        font-size: 0.75rem;
+    }
+
+    .registros-scope .hl-cell-actions {
+        gap: var(--sp-1);
+    }
+}

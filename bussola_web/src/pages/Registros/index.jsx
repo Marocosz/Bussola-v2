@@ -18,6 +18,8 @@ import { Segmented } from '../../components/mobile/Segmented';
 import { Fab } from '../../components/mobile/Fab';
 import { CadernoToolbar } from './mobile/CadernoToolbar';
 import { GruposSheet } from './mobile/GruposSheet';
+import { JornadaResumo } from './mobile/JornadaResumo';
+import { TopbarActions } from '../../components/mobile/MobileChrome';
 import './styles.css';
 import './styles/registros-mobile.css';
 import { logger } from '../../utils/logger';
@@ -385,6 +387,10 @@ export function Registros() {
                     />
                 )}
 
+                {isMobile && activeTab === 'jornada' && !loading && (data?.habitos?.length ?? 0) > 0 && (
+                    <JornadaResumo habitos={data.habitos} />
+                )}
+
                 {/* CONTEÚDO: CADERNO */}
                 {activeTab === 'caderno' && (
                     <div className="column-scroll-content">
@@ -522,6 +528,13 @@ export function Registros() {
             {isMobile && activeTab === 'caderno' && <Fab label="Nova nota" onClick={handleNewNota} />}
             {isMobile && activeTab === 'tarefas' && <Fab label="Nova tarefa" onClick={() => novaTarefaRef.current?.()} />}
             {isMobile && activeTab === 'jornada' && <Fab label="Novo hábito" onClick={handleNewHabito} />}
+            {isMobile && activeTab === 'jornada' && (
+                <TopbarActions>
+                    <button type="button" aria-label="Lista de hábitos" onClick={() => setHabitoListaModalOpen(true)}>
+                        <i className="fa-solid fa-list-ul"></i>
+                    </button>
+                </TopbarActions>
+            )}
             {isMobile && (
                 <GruposSheet
                     open={gruposSheetOpen}

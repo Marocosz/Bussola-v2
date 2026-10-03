@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp, overflowOffenders, smallTargets, apiJson } from './helpers.mjs';
-import { comApi, limparRegistrosE2E, criarNota, grupoPorNome, notaPorTitulo, criarTarefa, tarefaPorTitulo } from './registros-data.mjs';
+import { comApi, limparRegistrosE2E, criarNota, grupoPorNome, notaPorTitulo, criarTarefa, tarefaPorTitulo, criarHabito, habitoPorTitulo } from './registros-data.mjs';
 
 // ---------------------------------------------------------------------------
 // Infra do arquivo
@@ -61,7 +61,7 @@ test.describe('lógica pura', () => {
 // Task 2 — casca e Caderno
 // ---------------------------------------------------------------------------
 // Abas já adaptadas ao celular (as próximas tasks acrescentam as outras).
-const ABAS_VERIFICADAS = ['Caderno', 'Tarefas'];
+const ABAS_VERIFICADAS = ['Caderno', 'Tarefas', 'Jornada'];
 
 test.describe('casca e Caderno', () => {
   test('topbar "Registros", abas segmentadas de largura total e um Fab por aba', async ({ page }) => {
@@ -486,5 +486,113 @@ test.describe('detalhe da tarefa', () => {
     await page.locator('.app-fab').click();
     const criar = page.locator('.modal-overlay.is-sheet-full').getByRole('button', { name: 'Criar', exact: true });
     await expect.poll(async () => { const b = await criar.boundingBox(); return b && Math.round(b.y + b.height); }).toBeLessThanOrEqual(420);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Task 6 — Jornada
+// ---------------------------------------------------------------------------
+async function abrirJornada(page) {
+  await gotoApp(page, '/registros');
+  await abrirAba(page, 'Jornada');
+  await page.locator('.jk-kanban').waitFor();
+}
+
+test.describe('Jornada', () => {
+  test('linha "data · X de Y hábitos" com barra de progresso bate com a API', async ({ page, request }) => {
+    const habitos = await apiJson(request, 'GET', '/registros/habitos');
+    const hoje = habitos.filter((h) => h.status === 'ativo' && h.frequencia.includes('sex'));
+    const feitos = hoje.filter((h) => h.registro_hoje?.concluido).length;
+    await abrirJornada(page);
+    await expect(page.locator('.reg-m-jornada-linha')).toHaveText(`Sexta-feira, 2 de out · ${feitos} de ${hoje.length} ${hoje.length === 1 ? 'hábito' : 'hábitos'}`);
+    const barra = page.getByRole('progressbar', { name: 'Hábitos de hoje' });
+    await expect(barra).toHaveAttribute('aria-valuenow', String(feitos));
+    await expect(barra).toHaveAttribute('aria-valuemax', String(hoje.length));
+  });
+
+  test('check-in: círculo ≥ 44px alterna o registro do dia', async ({ page, request }) => {
+    await criarHabito(request, { titulo: 'E2E check-in', horario: '10:00' });
+    await abrirJornada(page);
+    const circulo = page.locator('.jk-habit-row', { hasText: 'E2E check-in' }).locator('.jk-circle');
+    const b = await circulo.boundingBox();
+    expect(Math.min(b.width, b.height)).toBeGreaterThanOrEqual(44);
+    const checkin = (r) => r.url().includes('/checkin') && r.request().method() === 'PATCH';
+    const [r1] = await Promise.all([page.waitForResponse(checkin), circulo.click()]);
+    const v1 = (await r1.json()).concluido;
+    const [r2] = await Promise.all([page.waitForResponse(checkin), circulo.click()]);
+    expect((await r2.json()).concluido).toBe(!v1);
+  });
+
+  test('hábito: ⋯ visível com Editar / Pausar / Excluir', async ({ page, request }) => {
+    await criarHabito(request, { titulo: 'E2E hábito menu', horario: '09:00' });
+    await abrirJornada(page);
+    const linha = page.locator('.jk-habit-row', { hasText: 'E2E hábito menu' });
+    await expect(linha.locator('.jk-habit-actions')).toHaveCount(0);
+    await linha.getByRole('button', { name: 'Ações de E2E hábito menu' }).click();
+    const acoes = page.locator('.action-sheet');
+    await expect(acoes.locator('.action-sheet-item')).toHaveText(['Editar', 'Pausar', 'Excluir', 'Cancelar']);
+    await acoes.getByRole('button', { name: 'Pausar' }).click();
+    await expect(linha.locator('.jk-badge-pausado')).toBeVisible();
+    await linha.getByRole('button', { name: /^Ações de/ }).click();
+    await expect(page.locator('.action-sheet').getByRole('button', { name: 'Retomar' })).toBeVisible();
+    await page.locator('.action-sheet').getByRole('button', { name: 'Editar' }).click();
+    await expect(page.locator('.modal-overlay.is-sheet').getByRole('heading', { name: 'Editar Hábito' })).toBeVisible();
+    await page.locator('.modal-overlay.is-sheet').getByRole('button', { name: 'Cancelar' }).click();
+    await linha.getByRole('button', { name: /^Ações de/ }).click();
+    await page.locator('.action-sheet').getByRole('button', { name: 'Excluir' }).click();
+    await page.locator('.confirm-modal').getByRole('button', { name: 'Sim, excluir' }).click();
+    await expect.poll(() => habitoPorTitulo(request, 'E2E hábito menu')).toBeNull();
+  });
+
+  test('"Lista" vai para a topbar só na Jornada e abre a lista em sheet', async ({ page }) => {
+    await gotoApp(page, '/registros');
+    const slot = page.locator('.m-topbar-slot');
+    await expect(slot.getByRole('button', { name: 'Lista de hábitos' })).toHaveCount(0);
+    await abrirAba(page, 'Jornada');
+    await slot.getByRole('button', { name: 'Lista de hábitos' }).click();
+    const ov = page.locator('.modal-overlay.is-sheet');
+    await expect(ov.getByRole('heading', { name: 'Todos os Hábitos' })).toBeVisible();
+    await expect(ov.getByRole('button', { name: 'Fechar' })).toBeInViewport();
+    expect(await smallTargets(page, '.modal-overlay.is-sheet')).toEqual([]);
+    await ov.getByRole('button', { name: 'Fechar' }).click();
+    await abrirAba(page, 'Caderno');
+    await expect(slot.getByRole('button', { name: 'Lista de hábitos' })).toHaveCount(0);
+  });
+
+  test('Novo hábito: sheet rola, rodapé fixo e Criar alcançável com teclado', async ({ page }) => {
+    await abrirJornada(page);
+    await teclado(page);
+    await page.locator('.app-fab').click();
+    const ov = page.locator('.modal-overlay.is-sheet');
+    const criar = ov.getByRole('button', { name: 'Criar Hábito' });
+    await expect.poll(async () => { const b = await criar.boundingBox(); return b && Math.round(b.y + b.height); }).toBeLessThanOrEqual(420);
+    expect(await focoEmCampo(page)).toBe(false);
+    const corpo = ov.locator('.modal-body');
+    expect(await corpo.evaluate((e) => e.scrollHeight > e.clientHeight)).toBe(true);
+    await corpo.evaluate((e) => e.scrollTo(0, e.scrollHeight));
+    await expect(ov.locator('.habito-cores-wrapper')).toBeInViewport();
+    expect(await smallTargets(page, '.modal-overlay.is-sheet')).toEqual([]);
+  });
+
+  test('criar hábito pelo form do celular (Dias úteis)', async ({ page, request }) => {
+    await abrirJornada(page);
+    await page.locator('.app-fab').click();
+    const ov = page.locator('.modal-overlay.is-sheet');
+    await ov.getByPlaceholder('Ex: Meditação matinal').fill('E2E hábito celular');
+    await ov.getByRole('button', { name: 'Dias úteis' }).click();
+    await ov.getByRole('button', { name: 'Criar Hábito' }).click();
+    await expect.poll(async () => (await habitoPorTitulo(request, 'E2E hábito celular'))?.frequencia.join(',')).toBe('seg,ter,qua,qui,sex');
+    await expect(page.locator('.jk-habit-row', { hasText: 'E2E hábito celular' })).toBeVisible();
+  });
+
+  test('Jornada: conteúdo ≥ 14px, secundário ≥ 12px, badges ≥ 11px', async ({ page }) => {
+    await abrirJornada(page);
+    const t = await page.evaluate(() => {
+      const fs = (sel) => [...document.querySelectorAll(sel)].map((e) => parseFloat(getComputedStyle(e).fontSize));
+      return { principal: [...fs('.jk-titulo'), ...fs('.reg-m-jornada-linha')], secundario: [...fs('.jk-meta'), ...fs('.jk-time')], badges: [...fs('.jk-streak'), ...fs('.jk-badge-atrasado'), ...fs('.jk-col-label')] };
+    });
+    expect(Math.min(...t.principal)).toBeGreaterThanOrEqual(14);
+    expect(Math.min(...t.secundario)).toBeGreaterThanOrEqual(12);
+    expect(Math.min(...t.badges)).toBeGreaterThanOrEqual(11);
   });
 });

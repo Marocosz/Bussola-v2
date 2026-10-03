@@ -1,4 +1,6 @@
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
+import { useIsMobile } from '../../../hooks/useIsMobile';
+import { ActionSheet } from '../../../components/mobile/ActionSheet';
 import { toggleCheckinHabito, toggleStatusHabito, deleteHabito } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 import { useConfirm } from '../../../context/ConfirmDialogContext';
@@ -69,6 +71,8 @@ function calcularPrograssoPeriodo(habitos, periodo) {
 // ─── HabitoCard ──────────────────────────────────────────────────────────────
 
 function HabitoCard({ habito, isLast, onCheckin, onEdit, onTogglePause, onDelete }) {
+    const isMobile = useIsMobile();
+    const [menuAberto, setMenuAberto] = useState(false);
     const hoje = getTodayKey();
     const ocorreHoje = habito.frequencia.includes(hoje);
     const concluido = habito.registro_hoje?.concluido;
@@ -87,6 +91,7 @@ function HabitoCard({ habito, isLast, onCheckin, onEdit, onTogglePause, onDelete
     const clickable = !pausado && ocorreHoje;
 
     return (
+        <>
         <div className="jk-habit-row">
             {/* Track (linha + círculo) */}
             <div className="jk-track">
@@ -131,7 +136,17 @@ function HabitoCard({ habito, isLast, onCheckin, onEdit, onTogglePause, onDelete
                         {atrasado && !pausado && <span className="jk-badge-atrasado">atrasado</span>}
                     </div>
 
-                    {/* Ações no hover */}
+                    {/* Ações: no hover (desktop) ou no "⋯" (celular) */}
+                    {isMobile ? (
+                        <button
+                            type="button"
+                            className="jk-habit-more"
+                            aria-label={`Ações de ${habito.titulo}`}
+                            onClick={() => setMenuAberto(true)}
+                        >
+                            <i className="fa-solid fa-ellipsis"></i>
+                        </button>
+                    ) : (
                     <div className="jk-habit-actions">
                         <button
                             className="btn-action-icon btn-edit"
@@ -155,6 +170,7 @@ function HabitoCard({ habito, isLast, onCheckin, onEdit, onTogglePause, onDelete
                             <i className="fa-solid fa-trash-can"></i>
                         </button>
                     </div>
+                    )}
                 </div>
 
                 <p className="jk-titulo" title={habito.titulo}>{habito.titulo}</p>
@@ -165,6 +181,21 @@ function HabitoCard({ habito, isLast, onCheckin, onEdit, onTogglePause, onDelete
                 </div>
             </div>
         </div>
+        {isMobile && (
+            <ActionSheet
+                open={menuAberto}
+                onClose={() => setMenuAberto(false)}
+                title={habito.titulo}
+                subtitle={` · ${habito.duracao_min}min`}
+                icon="fa-solid fa-route"
+                actions={[
+                    { key: 'editar', icon: 'fa-solid fa-pen-to-square', label: 'Editar', onClick: () => onEdit(habito) },
+                    { key: 'pausar', icon: `fa-solid ${pausado ? 'fa-play' : 'fa-pause'}`, label: pausado ? 'Retomar' : 'Pausar', onClick: () => onTogglePause(habito) },
+                    { key: 'excluir', icon: 'fa-solid fa-trash-can', label: 'Excluir', variant: 'danger', onClick: () => onDelete(habito) },
+                ]}
+            />
+        )}
+        </>
     );
 }
 
