@@ -186,7 +186,7 @@ function HabitoCard({ habito, isLast, onCheckin, onEdit, onTogglePause, onDelete
                 open={menuAberto}
                 onClose={() => setMenuAberto(false)}
                 title={habito.titulo}
-                subtitle={` · ${habito.duracao_min}min`}
+                subtitle={habito.horario ? `${habito.horario} · ${habito.duracao_min}min` : `${habito.duracao_min}min`}
                 icon="fa-solid fa-route"
                 actions={[
                     { key: 'editar', icon: 'fa-solid fa-pen-to-square', label: 'Editar', onClick: () => onEdit(habito) },

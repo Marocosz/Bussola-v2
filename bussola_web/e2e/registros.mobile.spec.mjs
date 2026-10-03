@@ -531,6 +531,7 @@ test.describe('Jornada', () => {
     await linha.getByRole('button', { name: 'Ações de E2E hábito menu' }).click();
     const acoes = page.locator('.action-sheet');
     await expect(acoes.locator('.action-sheet-item')).toHaveText(['Editar', 'Pausar', 'Excluir', 'Cancelar']);
+    await expect(acoes).toContainText(/09:00 · \d+min/);
     await acoes.getByRole('button', { name: 'Pausar' }).click();
     await expect(linha.locator('.jk-badge-pausado')).toBeVisible();
     await linha.getByRole('button', { name: /^Ações de/ }).click();
