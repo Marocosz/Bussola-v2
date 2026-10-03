@@ -135,3 +135,17 @@
     from { opacity: 0; transform: scale(0.98) translateY(15px); }
     to { opacity: 1; transform: scale(1) translateY(0); }
 }
+/* ============================ */
+/* CELULAR: formulário no Sheet */
+/* ============================ */
+.admin-sheet-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
+    padding-top: var(--sp-2);
+}
+
+.admin-sheet-form .admin-form-input {
+    min-height: 48px;
+    background: var(--cor-fundo);
+}

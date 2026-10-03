@@ -1,7 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { adminCreateUser } from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { BaseModal } from './BaseModal';
+import { Sheet } from './mobile/Sheet';
 import './AdminUserModal.css';
 import { logger } from '../utils/logger';
 
@@ -13,6 +15,7 @@ export function AdminUserModal({ isOpen, onClose }) {
     
     const { addToast } = useToast();
     const mouseDownTarget = useRef(null);
+    const isMobile = useIsMobile();
 
     // 1. OBRIGATÓRIO: Se fechado, retorna null (para sumir da tela)
     if (!isOpen) return null;
@@ -47,6 +50,77 @@ export function AdminUserModal({ isOpen, onClose }) {
         }
     };
 
+    const campos = (
+        <>
+            <div className="admin-form-group">
+                <label>Nome Completo</label>
+                <input 
+                    type="text" 
+                    className="admin-form-input"
+                    value={fullName}
+                    onChange={e => setFullName(e.target.value)}
+                    required
+                    placeholder="Ex: João Silva"
+                />
+            </div>
+
+            <div className="admin-form-group">
+                <label>E-mail de Acesso</label>
+                <input 
+                    type="email" 
+                    className="admin-form-input"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    required
+                    placeholder="usuario@email.com"
+                    autoCapitalize="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                />
+            </div>
+
+            <div className="admin-form-group">
+                <label>Senha Inicial</label>
+                <input 
+                    type="password" 
+                    className="admin-form-input"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    placeholder="******"
+                    autoComplete="new-password"
+                />
+            </div>
+        </>
+    );
+
+    // Celular: um sheet só (o wrapper fixo próprio somava um segundo fundo ao do BaseModal).
+    if (isMobile) {
+        return (
+            <Sheet
+                open
+                onClose={onClose}
+                title="Novo Usuário (Admin)"
+                className="admin-user-sheet"
+                footer={(
+                    <>
+                        <button type="button" onClick={onClose} className="btn-secondary">
+                            Cancelar
+                        </button>
+                        <button type="submit" form="admin-user-form" disabled={loading} className="btn-primary">
+                            {loading ? 'Criando...' : 'Criar Usuário'}
+                        </button>
+                    </>
+                )}
+            >
+                <form id="admin-user-form" onSubmit={handleSubmit} className="admin-sheet-form">
+                    {campos}
+                </form>
+            </Sheet>
+        );
+    }
+
     return (
         <BaseModal 
             isOpen={isOpen} 
@@ -72,42 +146,7 @@ export function AdminUserModal({ isOpen, onClose }) {
                     <form onSubmit={handleSubmit} className="admin-modal-form">
                         
                         <div className="admin-modal-body">
-                            <div className="admin-form-group">
-                                <label>Nome Completo</label>
-                                <input 
-                                    type="text" 
-                                    className="admin-form-input"
-                                    value={fullName}
-                                    onChange={e => setFullName(e.target.value)}
-                                    required
-                                    placeholder="Ex: João Silva"
-                                />
-                            </div>
-
-                            <div className="admin-form-group">
-                                <label>E-mail de Acesso</label>
-                                <input 
-                                    type="email" 
-                                    className="admin-form-input"
-                                    value={email}
-                                    onChange={e => setEmail(e.target.value)}
-                                    required
-                                    placeholder="usuario@email.com"
-                                />
-                            </div>
-
-                            <div className="admin-form-group">
-                                <label>Senha Inicial</label>
-                                <input 
-                                    type="password" 
-                                    className="admin-form-input"
-                                    value={password}
-                                    onChange={e => setPassword(e.target.value)}
-                                    required
-                                    minLength={6}
-                                    placeholder="******"
-                                />
-                            </div>
+                            {campos}
                         </div>
                         
                         <div className="admin-modal-footer">
