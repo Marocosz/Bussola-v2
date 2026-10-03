@@ -5,6 +5,7 @@ import { useConfirm } from '../../context/ConfirmDialogContext';
 import { logger } from '../../utils/logger';
 import { AiAssistant } from '../../components/AiAssistant';
 import { useIsMobile } from '../../hooks/useIsMobile';
+import { Fab } from '../../components/mobile/Fab';
 
 import {
     getBioData,
@@ -404,14 +405,20 @@ export function Ritmo() {
                 </div>
 
                 <div className="column-header-flex plans-header-container">
-                    <div className="tab-selector-wrapper">
+                    <div className="tab-selector-wrapper" role="tablist" aria-label="Planos">
                         <button
+                            type="button"
+                            role="tab"
+                            aria-selected={activeTab === 'treino'}
                             className={`tab-btn-pill ${activeTab === 'treino' ? 'active' : ''}`}
                             onClick={() => setActiveTab('treino')}
                         >
                             Plano de Treino
                         </button>
                         <button
+                            type="button"
+                            role="tab"
+                            aria-selected={activeTab === 'nutricao'}
                             className={`tab-btn-pill ${activeTab === 'nutricao' ? 'active' : ''}`}
                             onClick={() => setActiveTab('nutricao')}
                         >
@@ -419,20 +426,23 @@ export function Ritmo() {
                         </button>
                     </div>
 
-                    <div className="header-actions-group">
-                        <button className="btn-primary" onClick={() => activeTab === 'treino' ? setShowTreinoModal(true) : setShowDietaModal(true)}>
-                            <i className="fa-solid fa-plus"></i>
-                            <span>{activeTab === 'treino' ? 'Novo Treino' : 'Nova Dieta'}</span>
-                        </button>
-                    </div>
+                    {/* No celular a criação vai para o Fab */}
+                    {!isMobile && (
+                        <div className="header-actions-group">
+                            <button className="btn-primary" onClick={() => activeTab === 'treino' ? setShowTreinoModal(true) : setShowDietaModal(true)}>
+                                <i className="fa-solid fa-plus"></i>
+                                <span>{activeTab === 'treino' ? 'Novo Treino' : 'Nova Dieta'}</span>
+                            </button>
+                        </div>
+                    )}
                 </div>
 
-                <main className="ritmo-content-area" style={{ opacity: refreshing ? 0.6 : 1, transition: 'opacity 0.2s ease' }}>
+                <section className="ritmo-content-area" style={{ opacity: refreshing ? 0.6 : 1, transition: 'opacity 0.2s ease' }}>
                     {activeTab === 'treino' && (
                         <div className="tab-content fade-in">
                             <div className="diet-selection-section">
                                 <h3 className="section-subtitle">Minha Biblioteca de Treinos</h3>
-                                <div className="plans-horizontal-selector">
+                                <div className="plans-horizontal-selector" data-offscreen-ok>
                                     {treinos.map(t => (
                                         <div key={t.id} className={`plan-mini-card ${t.ativo ? 'active' : ''}`}>
                                             <div className="plan-info">
@@ -441,10 +451,10 @@ export function Ritmo() {
                                             </div>
                                             <div className="plan-actions">
                                                 {!t.ativo && (
-                                                    <button title="Ativar" onClick={() => handleAtivarTreino(t.id)}><i className="fa-solid fa-play"></i></button>
+                                                    <button type="button" title="Ativar" aria-label="Ativar" onClick={() => handleAtivarTreino(t.id)}><i className="fa-solid fa-play"></i></button>
                                                 )}
-                                                <button title="Editar" onClick={() => handleEditarTreino(t)}><i className="fa-solid fa-pen-to-square"></i></button>
-                                                <button title="Excluir" onClick={() => handleExcluirTreino(t.id)} className="btn-del"><i className="fa-solid fa-trash"></i></button>
+                                                <button type="button" title="Editar" aria-label="Editar" onClick={() => handleEditarTreino(t)}><i className="fa-solid fa-pen-to-square"></i></button>
+                                                <button type="button" title="Excluir" aria-label="Excluir" onClick={() => handleExcluirTreino(t.id)} className="btn-del"><i className="fa-solid fa-trash"></i></button>
                                             </div>
                                         </div>
                                     ))}
@@ -479,7 +489,7 @@ export function Ritmo() {
                                                             <tr key={ex.id}>
                                                                 <td className="alim-name-td">
                                                                     {ex.nome_exercicio}
-                                                                    <div className="alim-sub" style={{ fontSize: '0.65rem' }}>{ex.grupo_muscular}</div>
+                                                                    <div className="alim-sub alim-grupo">{ex.grupo_muscular}</div>
                                                                 </td>
                                                                 <td className="text-center weight-700">{ex.series}</td>
                                                                 <td className="text-center alim-sub">{ex.repeticoes_min}-{ex.repeticoes_max}</td>
@@ -504,7 +514,7 @@ export function Ritmo() {
                         <div className="tab-content fade-in">
                             <div className="diet-selection-section">
                                 <h3 className="section-subtitle">Meus Planos de Dieta</h3>
-                                <div className="plans-horizontal-selector">
+                                <div className="plans-horizontal-selector" data-offscreen-ok>
                                     {dietas.map(dieta => (
                                         <div key={dieta.id} className={`plan-mini-card ${dieta.ativo ? 'active' : ''}`}>
                                             <div className="plan-info">
@@ -513,10 +523,10 @@ export function Ritmo() {
                                             </div>
                                             <div className="plan-actions">
                                                 {!dieta.ativo && (
-                                                    <button title="Ativar" onClick={() => handleAtivarDieta(dieta.id)}><i className="fa-solid fa-play"></i></button>
+                                                    <button type="button" title="Ativar" aria-label="Ativar" onClick={() => handleAtivarDieta(dieta.id)}><i className="fa-solid fa-play"></i></button>
                                                 )}
-                                                <button title="Editar" onClick={() => handleEditarDieta(dieta)}><i className="fa-solid fa-pen-to-square"></i></button>
-                                                <button title="Excluir" onClick={() => handleExcluirDieta(dieta.id)} className="btn-del"><i className="fa-solid fa-trash"></i></button>
+                                                <button type="button" title="Editar" aria-label="Editar" onClick={() => handleEditarDieta(dieta)}><i className="fa-solid fa-pen-to-square"></i></button>
+                                                <button type="button" title="Excluir" aria-label="Excluir" onClick={() => handleExcluirDieta(dieta.id)} className="btn-del"><i className="fa-solid fa-trash"></i></button>
                                             </div>
                                         </div>
                                     ))}
@@ -585,7 +595,7 @@ export function Ritmo() {
                             )}
                         </div>
                     )}
-                </main>
+                </section>
             </div>
 
             {showBioModal && (
@@ -607,6 +617,12 @@ export function Ritmo() {
                     onClose={handleCloseDietaModal}
                     onSuccess={() => loadData(false)}
                     initialData={dietaParaEditar}
+                />
+            )}
+            {isMobile && (
+                <Fab
+                    label={activeTab === 'treino' ? 'Novo treino' : 'Nova dieta'}
+                    onClick={() => (activeTab === 'treino' ? setShowTreinoModal(true) : setShowDietaModal(true))}
                 />
             )}
             <AiAssistant context="ritmo" />

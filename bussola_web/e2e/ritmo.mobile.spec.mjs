@@ -181,3 +181,143 @@ test.describe('visão bio', () => {
     await expect(sheet.locator('.modal-title')).toHaveText('Perfil Biológico & Metas');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 3 — abas, biblioteca, cards, Fab
+// ---------------------------------------------------------------------------
+test.describe('abas, biblioteca e cards', () => {
+  for (const w of [360, 390, 430, 768]) {
+    test(`sem overflow horizontal em ${w}px nas duas abas`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: 844 });
+      await gotoApp(page, '/ritmo');
+      for (const aba of ['Plano de Treino', 'Plano de Dieta']) {
+        await abrirAba(page, aba);
+        await expect(page.locator('.refeicao-card-pro').first()).toBeVisible();
+        expect(await overflowOffenders(page), `${aba} @ ${w}px`).toEqual([]);
+      }
+    });
+  }
+
+  test('alvos de toque ≥ 44px e textos legíveis nas duas abas', async ({ page }) => {
+    await gotoApp(page, '/ritmo');
+    for (const aba of ['Plano de Treino', 'Plano de Dieta']) {
+      await abrirAba(page, aba);
+      await expect(page.locator('.refeicao-card-pro').first()).toBeVisible();
+      expect(await smallTargets(page, '.ritmo-scope'), aba).toEqual([]);
+      expect(await textosPequenos(page, '.ritmo-scope'), aba).toEqual([]);
+    }
+  });
+
+  test('abas: as pílulas atuais em largura total, 44px, texto inteiro em 360px', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await gotoApp(page, '/ritmo');
+    const abas = page.getByRole('tab');
+    await expect(abas).toHaveText(['Plano de Treino', 'Plano de Dieta']);
+    await expect(abas.first()).toHaveAttribute('aria-selected', 'true');
+    await expect(abas.first()).toHaveClass(/tab-btn-pill/);
+    for (const t of await abas.all()) {
+      expect((await t.boundingBox()).height).toBeGreaterThanOrEqual(44);
+    }
+    expect(await cortados(page, '.tab-btn-pill')).toEqual([]);
+    await abrirAba(page, 'Plano de Dieta');
+    await expect(abas.nth(1)).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('.section-subtitle')).toHaveText('Meus Planos de Dieta');
+    await expect(page.locator('.ritmo-scope main')).toHaveCount(0);
+    await expect(page.locator('section.ritmo-content-area')).toHaveCount(1);
+  });
+
+  test('Fab: "Novo treino" na aba Treino e "Nova dieta" na aba Dieta (um por vez, sem botão no cabeçalho)', async ({ page }) => {
+    await gotoApp(page, '/ritmo');
+    await expect(page.locator('.ritmo-scope .header-actions-group')).toHaveCount(0);
+    await expect(page.locator('.app-fab')).toHaveCount(1);
+    await page.getByRole('button', { name: 'Novo treino' }).click();
+    const sheet = page.locator('.modal-overlay.is-sheet');
+    await expect(sheet.locator('h2')).toHaveText('Configurar Treino');
+    await page.waitForTimeout(400);
+    await sheet.getByRole('button', { name: 'Cancelar' }).click();
+    await abrirAba(page, 'Plano de Dieta');
+    await expect(page.locator('.app-fab')).toHaveCount(1);
+    await page.getByRole('button', { name: 'Nova dieta' }).click();
+    await expect(sheet.locator('h2')).toHaveText('Configurar Dieta');
+  });
+
+  test('biblioteca: faixa com scroll-snap; ativar, excluir e estado vazio pelas ações de 44px', async ({ page, request }) => {
+    await apiJson(request, 'POST', '/ritmo/treinos', {
+      nome: 'E2E Treino biblioteca',
+      ativo: false,
+      dias: [{ nome: 'E2E Dia', ordem: 0, exercicios: [{ nome_exercicio: 'E2E Supino', grupo_muscular: 'Peito', series: 3, repeticoes_min: 8, repeticoes_max: 12 }] }],
+    });
+    await page.setViewportSize({ width: 360, height: 800 });
+    await gotoApp(page, '/ritmo');
+    const faixa = page.locator('.plans-horizontal-selector');
+    expect(await faixa.evaluate((e) => getComputedStyle(e).scrollSnapType)).toContain('x');
+    expect(await faixa.locator('.plan-mini-card').first().evaluate((e) => getComputedStyle(e).scrollSnapAlign)).toContain('start');
+    await expect(faixa).toHaveAttribute('data-offscreen-ok', /.*/); // React serializa o booleano como "true"
+    expect(await smallTargets(page, '.plans-horizontal-selector')).toEqual([]);
+
+    const original = page.locator('.plan-mini-card', { hasText: 'Hipertrofia ABC 2025' });
+    const e2e = page.locator('.plan-mini-card', { hasText: 'E2E Treino biblioteca' });
+    await e2e.getByRole('button', { name: 'Ativar' }).click();
+    await expect(e2e).toHaveClass(/active/);
+    await expect(page.locator('.refeicao-card-pro', { hasText: 'E2E Dia' })).toBeVisible();
+
+    await e2e.getByRole('button', { name: 'Excluir' }).click();
+    await page.getByRole('button', { name: 'Sim, Excluir' }).click();
+    await expect(e2e).toHaveCount(0);
+
+    // Sem plano ativo: estado vazio compacto
+    const vazio = page.locator('.empty-state');
+    await expect(vazio).toBeVisible();
+    expect(await vazio.evaluate((e) => parseFloat(getComputedStyle(e).paddingLeft))).toBeLessThanOrEqual(16);
+    await page.waitForTimeout(600); // o toast de sucesso ainda desliza para dentro da tela
+    expect(await overflowOffenders(page)).toEqual([]);
+
+    await original.getByRole('button', { name: 'Ativar' }).click();
+    await expect(original).toHaveClass(/active/);
+  });
+
+  test('cards: mesmas tabelas, cabem em 360px e a pílula de macros quebra centralizada', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await gotoApp(page, '/ritmo');
+    const treino = page.locator('.refeicao-card-pro').first();
+    await expect(treino.locator('thead th')).toHaveText(['Exercício', 'Sets', 'Rep.']);
+    const grupoFs = await treino.locator('.alim-grupo').first().evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
+    expect(grupoFs).toBeGreaterThanOrEqual(12);
+
+    await abrirAba(page, 'Plano de Dieta');
+    const refeicao = page.locator('.refeicao-card-pro', { hasText: 'Almoço' });
+    await expect(refeicao.locator('thead th')).toHaveText(['Item', 'Qtd', 'P', 'C', 'G', 'Kcal']);
+    const sobra = await page.locator('.alimentos-table-wrapper').evaluateAll((els) => els.map((e) => e.scrollWidth - e.clientWidth));
+    for (const s of sobra) expect(s).toBeLessThanOrEqual(0);
+    expect((await refeicao.locator('td.alim-name-td').first().boundingBox()).width).toBeGreaterThan(90);
+    for (const fs of await refeicao.locator('td').evaluateAll((els) => els.map((e) => parseFloat(getComputedStyle(e).fontSize)))) {
+      expect(fs).toBeGreaterThanOrEqual(12);
+    }
+
+    const pilula = refeicao.locator('.macro-summary-pill');
+    expect(await pilula.evaluate((e) => getComputedStyle(e).flexWrap)).toBe('wrap');
+    const pb = await pilula.boundingBox();
+    const fb = await refeicao.locator('.refeicao-pro-footer').boundingBox();
+    expect(Math.abs((pb.x + pb.width / 2) - (fb.x + fb.width / 2))).toBeLessThan(2);
+    expect(pb.x + pb.width).toBeLessThanOrEqual(fb.x + fb.width + 0.5);
+  });
+
+  test('volume em 360px: linhas de 7 a 12 sets não vazam da trilha e a escala é 14px', async ({ page }) => {
+    await page.route('**/ritmo/bio/latest', async (route) => {
+      const res = await route.fetch();
+      const json = await res.json();
+      json.volume_semanal = { ...json.volume_semanal, Peito: 12, Costas: 9 };
+      await route.fulfill({ response: res, json });
+    });
+    await page.setViewportSize({ width: 360, height: 800 });
+    await gotoApp(page, '/ritmo');
+    const sobras = await page.locator('.vol-blocks-track').evaluateAll((els) => els.map((t) => {
+      const filhos = [...t.children].reduce((s, c) => s + c.getBoundingClientRect().width, 0);
+      return Math.round(filhos - t.getBoundingClientRect().width);
+    }));
+    for (const s of sobras) expect(s).toBeLessThanOrEqual(1);
+    for (const fs of await page.locator('.vol-bar-label, .vol-bar-count').evaluateAll((els) => els.map((e) => parseFloat(getComputedStyle(e).fontSize)))) {
+      expect(fs).toBe(14);
+    }
+  });
+});
