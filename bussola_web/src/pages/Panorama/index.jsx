@@ -344,12 +344,20 @@ export function Panorama() {
   const [attnPage, setAttnPage] = useState(0);
   const [dismissed, setDismissed] = useState(loadDismissed);
   const [attnIdx, setAttnIdx] = useState(0); // card visível do carrossel (celular)
-  const [evoSel, setEvoSel] = useState(null);   // mês selecionado na Evolução (toque)
+  const [evoSelM, setEvoSelM] = useState(null);   // mês (rótulo) selecionado na Evolução (toque); por mês, não por índice: 6 ↔ 12 meses
   const [weekSel, setWeekSel] = useState(null); // dia selecionado na Média por dia (celular)
   const isMobile = useIsMobile();
   const semHover = useMediaQuery('(hover: none) and (max-width: 1024px)'); // tablet/celular de toque: sem tooltip
   const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const [kpiAberto, setKpiAberto] = useState(null);
+  // Toque (celular, tablet de toque, celular deitado): sem tooltip, então KPI/Evolução/Média por dia ganham leitura em texto.
+  const evTouch = isMobile || semHover;
+  // Estado que não pode vazar entre breakpoints, zerado durante o render (sem setState em efeito):
+  // KPI aberto vale só enquanto há toque; o indicador do carrossel volta a 0 quando o carrossel remonta.
+  const [prevTouch, setPrevTouch] = useState(evTouch);
+  const [prevMobile, setPrevMobile] = useState(isMobile);
+  if (prevTouch !== evTouch) { setPrevTouch(evTouch); setKpiAberto(null); }
+  if (prevMobile !== isMobile) { setPrevMobile(isMobile); setAttnIdx(0); }
 
   const dismissInsight = (id) => {
     const next = { ...dismissed, [id]: Date.now() + DISMISS_MS };
@@ -416,6 +424,8 @@ export function Panorama() {
   // Nível do Caixa no início do período (antes do balanço do período) → "marca" de receita/despesa.
   const startLevel = Math.max(0, caixa - (bal || 0));
   const neg = disp < 0;
+  // Mesma regra do cubo (Reservoir): só há faixa se o nível mudou de forma relevante.
+  const periodoCubo = Math.abs(total / cap - startLevel / cap) > 0.006 ? { up: total >= startLevel, delta: Math.abs(total - startLevel) } : null;
   const denom = Math.max(Math.abs(disp) + guardado, total, 1);
 
   const fc = data.forecast;
@@ -445,10 +455,11 @@ export function Panorama() {
   const weekAvg = week.length ? Math.round(week.reduce((s, w) => s + w.v, 0) / week.length) : 0;
 
   // Toque: celular = últimos 6 meses; tablet sem hover (≤1024) mantém 12 meses, ambos com leitura por toque.
-  const evTouch = isMobile || semHover;
   const evBase = ev.length ? ev : [{ m: '—', rec: 0, desp: 0, caixa: 0 }];
   const evShown = isMobile ? evBase.slice(-6) : evBase;
-  const evIdx = evoSel != null && evoSel < evShown.length ? evoSel : evShown.length - 1;
+  const evFound = evoSelM != null ? evShown.findIndex((e) => e.m === evoSelM) : -1;
+  const evIdx = evFound >= 0 ? evFound : evShown.length - 1; // mês fora da janela: cai no atual
+  const setEvoSel = (i) => setEvoSelM(evShown[i].m);
   const weekMax = week.reduce((best, w, i) => (w.v > week[best].v ? i : best), 0);
   const weekIdx = weekSel != null && weekSel < week.length ? weekSel : weekMax;
 
@@ -483,7 +494,7 @@ export function Panorama() {
         <div className="pv2-alert-top">
           <div className="pv2-alert-chip" style={{ background: s.bg, color: s.c }}><i className={insightIcon(it)}></i></div>
           <div className="pv2-alert-sev" style={{ color: s.c }}>{s.label}</div>
-          <button className="pv2-alert-dismiss" title="Dispensar por 24h" onClick={(e) => { e.stopPropagation(); dismissInsight(it.id); }}>
+          <button className="pv2-alert-dismiss" title="Dispensar por 24h" aria-label="Dispensar por 24h" onClick={(e) => { e.stopPropagation(); dismissInsight(it.id); }}>
             <i className="fa-solid fa-xmark"></i>
           </button>
         </div>
@@ -547,7 +558,7 @@ export function Panorama() {
         {insights.map((it) => renderAlert(it))}
       </div>
       {insights.length > 1 && (
-        <div className="pv2-attn-pips" aria-hidden="true">
+        <div className="pv2-attn-pips" role="img" aria-label={`Alerta ${attnAtivo + 1} de ${insights.length}`}>
           {insights.map((it, i) => <span key={it.id} className={`pv2-attn-pip ${i === attnAtivo ? 'active' : ''}`} />)}
         </div>
       )}
@@ -563,7 +574,7 @@ export function Panorama() {
           <div className="pv2-hero-label">Caixa · patrimônio<span className="pv2-hero-label-extra"> acumulado</span></div>
           <div className="pv2-hero-controls">
             <DateRangeFilter initialPreset="mes" onChange={setRange} />
-            <button className={`btn-privacy-toggle ${privacy ? 'active' : ''}`} onClick={togglePrivacy} title={privacy ? 'Mostrar valores' : 'Ocultar valores'}>
+            <button className={`btn-privacy-toggle ${privacy ? 'active' : ''}`} onClick={togglePrivacy} title={privacy ? 'Mostrar valores' : 'Ocultar valores'} aria-label={privacy ? 'Mostrar valores' : 'Ocultar valores'} aria-pressed={privacy}>
               <i className={`fa-solid ${privacy ? 'fa-eye-slash' : 'fa-eye'}`}></i>
             </button>
           </div>
@@ -589,14 +600,23 @@ export function Panorama() {
           <div className="pv2-hero-neg"><span />Descoberto de {fmt(Math.abs(disp))} — cubra o disponível ou libere um cofrinho.</div>
         )}
         <div className="pv2-hero-note">Guardar é transferência neutra — sai do disponível, vira guardado, o total não muda.</div>
+        {/* Toque: o tooltip da faixa do cubo não existe; a mesma frase fica visível. */}
+        {evTouch && periodoCubo && (
+          <div className="pv2-hero-note pv2-hero-period">
+            <i className={`fa-solid ${periodoCubo.up ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down'}`} aria-hidden="true" style={{ color: periodoCubo.up ? 'var(--green)' : 'var(--red)' }}></i>{' '}
+            {periodoCubo.up
+              ? <>Faixa verde no cubo: <b data-money="">+{fmt(periodoCubo.delta)}</b> neste período, o Caixa subiu.</>
+              : <>Faixa tracejada no cubo: <b data-money="">−{fmt(periodoCubo.delta)}</b> neste período, o Caixa caiu.</>}
+          </div>
+        )}
       </div>
     </div>
   );
 
   // ---------- Faixa de KPIs ----------
   // Celular/toque: tooltip não aparece, então tocar no KPI mostra a explicação em texto (padrão do KpiStrip de Provisões).
-  const tapKpi = (key) => (isMobile ? {
-    role: 'button', tabIndex: 0, 'aria-expanded': kpiAberto === key,
+  const tapKpi = (key) => (evTouch ? {
+    role: 'button', tabIndex: 0, 'aria-expanded': kpiAberto === key, 'aria-controls': 'pv2-kpi-explain',
     onClick: () => setKpiAberto(kpiAberto === key ? null : key),
     onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setKpiAberto(kpiAberto === key ? null : key); } },
   } : {});
@@ -633,8 +653,8 @@ export function Panorama() {
         {/* Celular: 2×2 Receita · Despesa / Balanço · Poupança e a Projeção numa linha inteira. */}
         {isMobile ? [...kpiCells, poupanca, projecao] : [...kpiCells, projecao, poupanca]}
       </div>
-      {isMobile && kpiAberto && tipsKpi[kpiAberto] && (
-        <p className="pv2-kpi-explain" role="status">
+      {evTouch && kpiAberto && tipsKpi[kpiAberto] && (
+        <p className="pv2-kpi-explain" id="pv2-kpi-explain" role="status">
           <i className="fa-solid fa-circle-info" aria-hidden="true"></i>
           <span>{tipsKpi[kpiAberto]}</span>
         </p>
@@ -697,7 +717,7 @@ export function Panorama() {
                 <div key={b.nome} data-tooltip={budgetTip}>
                   <div className="pv2-budget-head">
                     <span className="n">{b.nome} {over && <span className="pv2-badge-over">{Math.round(b.pct)}%</span>}</span>
-                    <span className="amt"><span data-money="">{fmt(b.gasto)}</span>{b.limite > 0 ? <> / <span data-money="">{fmt(b.limite)}</span></> : ''}</span>
+                    <span className="amt"><span data-money="">{fmt(b.gasto)}</span>{b.limite > 0 ? <> / <span data-money="">{fmt(b.limite)}</span></> : ''}{evTouch && b.limite > 0 && !over && b.pct != null && <> · {Math.round(b.pct)}%</>}</span>
                   </div>
                   {b.limite > 0 && (
                     <div className="pv2-bar9"><div style={{ width: `${Math.min(100, b.pct || 0)}%`, height: '100%', borderRadius: 5, background: over ? 'var(--red)' : near ? 'var(--orange)' : 'var(--blue)' }} /></div>

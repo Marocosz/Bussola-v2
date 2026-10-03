@@ -185,6 +185,18 @@ body.light-theme .pcard {
   .pv2-grid > .span-12 { grid-column: span 3; }
   .pv2-grid > .is-wide-tablet { grid-column: 1 / -1; }
   .pv2-eq { height: auto; min-height: 340px; }
+
+  /* Sem linhas órfãs (só layout): KPIs em 3 + 2 ocupando a largura toda (grade de 6: 2+2+2 / 3+3)
+     e Atenção em 2 × 2 (3 alertas + "Sem aviso aqui", em vez de uma linha inteira só com o aviso). */
+  .pv2-kpiband { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .pv2-kpiband > .pv2-kpi,
+  .pv2-kpiband > .pv2-kpi-extra { grid-column: span 2; min-width: 0; }
+  .pv2-kpiband > :nth-child(n+4) { grid-column: span 3; border-top: 1px solid var(--line); }
+  .pv2-kpiband > :nth-child(4):last-child { grid-column: 1 / -1; }
+  .pv2-kpiband > :nth-child(1),
+  .pv2-kpiband > :nth-child(4) { border-left: none; }
+  .pv2-attn-row:not(.is-carousel) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pv2-attn-row:not(.is-carousel) > .pv2-alert { min-width: 0; }
 }
 
 /* Celular — grade: 1 coluna, 12px entre cards, 24px entre seções, 16px dentro do card. */
@@ -215,20 +227,18 @@ body.light-theme .pcard {
   .pv2-hero-bars { order: 3; flex-direction: column; gap: var(--sp-3); max-width: none; }
   .pv2-hero-bar { min-width: 0; }
   .pv2-hero-bar-head .lbl { font-size: 14px; }
-  .pv2-hero-neg { order: 4; align-self: center; margin-top: var(--sp-3); }
+  .pv2-hero-neg { order: 4; align-self: center; margin-top: var(--sp-3); font-size: 14px; }
   .pv2-hero-note { order: 5; text-align: center; margin: var(--sp-3) auto 0; }
+  .pv2-hero-period { margin-top: var(--sp-2); }
   .pv2-hero-controls { order: 6; justify-content: center; gap: var(--sp-2); margin-top: var(--sp-4); }
 
   /* KPIs: grade 2×2 com divisórias finas; Projeção (5º item) numa linha inteira. */
   .pv2-kpiband { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pv2-kpiband > .pv2-kpi,
-  .pv2-kpiband > .pv2-kpi-extra { min-width: 0; padding: var(--sp-3); border-left: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-  .pv2-kpiband > :nth-child(odd) { padding-left: 0; }
-  .pv2-kpiband > :nth-child(even) { padding-right: 0; border-left: 1px solid var(--line); }
+  .pv2-kpiband > .pv2-kpi-extra { min-width: 0; padding: var(--sp-3); border-left: none; }
+  .pv2-kpiband > :nth-child(odd) { padding-left: 0; }  .pv2-kpiband > :nth-child(even) { padding-right: 0; border-left: 1px solid var(--line); }
   .pv2-kpiband > :nth-child(-n+2) { border-bottom: 1px solid var(--line); }
   .pv2-kpiband > .pv2-kpi-proj { grid-column: 1 / -1; padding-right: 0; border-top: 1px solid var(--line); }
-  .pv2-kpiband > [aria-expanded="true"] .pv2-kpi-label { color: var(--blue); }
-  .pv2-kpiband > [role="button"]:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; border-radius: 8px; }
   .pv2-kpi-value,
   .pv2-kpi-big { font-size: clamp(18px, 5.6vw, 24px); line-height: 1.2; margin: 0; }
   /* Célula em 3 linhas fixas (rótulo · valor · extra): rótulo e valor de cada linha da grade
@@ -237,9 +247,16 @@ body.light-theme .pcard {
   .pv2-kpiband > .pv2-kpi-extra:not(.pv2-kpi-proj) { display: grid; grid-template-rows: auto auto auto; align-content: start; row-gap: var(--sp-2); }
   .pv2-kpiband > .pv2-kpi-extra:not(.pv2-kpi-proj) .pv2-track { align-self: start; }
   .pv2-proj-chip { font-size: 12px; }
+}
 
-  /* Explicação do KPI tocado (no lugar do tooltip, que não existe no toque). */
-  .pv2-kpi-explain { display: flex; align-items: flex-start; gap: var(--sp-2); margin: var(--sp-2) 0 0; padding: var(--sp-3); border-radius: 12px; background: var(--card2); border: 1px solid var(--border); font-size: 13px; line-height: 1.45; color: var(--muted); }
+/* KPI por toque (celular, tablet de toque e celular deitado — a mesma condição `evTouch` do JS).
+   Nunca vale em ≥1025 nem com mouse: lá o tooltip explica. Explicação no lugar do tooltip. */
+@media (max-width: 768px), (hover: none) and (max-width: 1024px) {
+  .pv2-kpiband > .pv2-kpi,
+  .pv2-kpiband > .pv2-kpi-extra { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .pv2-kpiband > [aria-expanded="true"] .pv2-kpi-label { color: var(--blue); }
+  .pv2-kpiband > [role="button"]:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; border-radius: 8px; }
+  .pv2-kpi-explain { display: flex; align-items: flex-start; gap: var(--sp-2); margin: var(--sp-2) 0 0; padding: var(--sp-3); border-radius: 12px; background: var(--card2); border: 1px solid var(--border); font-size: 14px; line-height: 1.45; color: var(--muted); }
   .pv2-kpi-explain i { color: var(--blue); margin-top: 2px; }
 }
 

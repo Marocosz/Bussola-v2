@@ -394,3 +394,95 @@ test.describe('widgets', () => {
     expect(await smallTargets(page, '.panorama-scope')).toEqual([]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Fix final — estado que não vaza entre breakpoints, a11y e alternativas ao tooltip
+// ---------------------------------------------------------------------------
+test.describe('fix final', () => {
+  test('KPI aberto: segue aberto no celular deitado (844) e fecha ao passar por ≥1025', async ({ page }) => {
+    await usarFixture(page);
+    await gotoApp(page, '/panorama');
+    const receita = page.locator('.pv2-kpiband .pv2-kpi').first();
+    await receita.click();
+    await expect(page.locator('.pv2-kpi-explain')).toBeVisible();
+    await page.setViewportSize({ width: 844, height: 390 }); // tablet de toque: explicação continua
+    await expect(page.locator('.pv2-kpi-explain')).toContainText('Receitas efetivadas no período');
+    await expect(page.locator('.pv2-kpiband .pv2-kpi').first()).toHaveAttribute('aria-expanded', 'true');
+    await page.setViewportSize({ width: 1100, height: 800 }); // sem toque por KPI
+    await expect(page.locator('.pv2-kpi-explain')).toHaveCount(0);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.locator('.pv2-kpi-explain')).toHaveCount(0);
+    await expect(page.locator('.pv2-kpiband .pv2-kpi').first()).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  test('Evolução: o mês escolhido continua o mesmo ao ir de 6 para 12 meses (844) e de volta', async ({ page }) => {
+    await usarFixture(page);
+    await gotoApp(page, '/panorama');
+    const card = page.locator('[data-widget="evolucao"]');
+    await card.getByRole('button', { name: 'jul/26' }).click();
+    await page.setViewportSize({ width: 844, height: 390 });
+    await expect(card.locator('.pv2-evo-month')).toHaveCount(12);
+    await expect(card.getByRole('button', { name: 'jul/26' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(card.locator('.pv2-readout')).toHaveText(/^jul\/26/);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(card.locator('.pv2-evo-month')).toHaveCount(6);
+    await expect(card.getByRole('button', { name: 'jul/26' })).toHaveAttribute('aria-pressed', 'true');
+    // mês que só existe nos 12 meses: ao voltar para 6, cai no mês atual
+    await page.setViewportSize({ width: 844, height: 390 });
+    await card.getByRole('button', { name: 'jan/26' }).click();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(card.locator('.pv2-evo-month').last()).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('carrossel: o indicador volta ao 1º card depois de remontar (passando por ≥769)', async ({ page }) => {
+    await usarFixture(page, { insights: 3 });
+    await gotoApp(page, '/panorama');
+    const pipAtivo = () => page.locator('.pv2-attn-pip').evaluateAll((els) => els.findIndex((e) => e.classList.contains('active')));
+    const row = page.locator('.pv2-attn-row.is-carousel');
+    await row.evaluate((e) => e.scrollTo({ left: e.children[1].offsetLeft - e.children[0].offsetLeft }));
+    await expect.poll(pipAtivo).toBe(1);
+    await page.setViewportSize({ width: 900, height: 1200 });
+    await expect(page.locator('.pv2-attn-pip')).toHaveCount(0);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.locator('.pv2-attn-row.is-carousel')).toBeVisible();
+    expect(await page.locator('.pv2-attn-row.is-carousel').evaluate((e) => e.scrollLeft)).toBe(0);
+    expect(await pipAtivo()).toBe(0);
+  });
+
+  test('a11y: olho e dispensar com aria-label; indicador do carrossel diz a posição', async ({ page }) => {
+    await usarFixture(page, { insights: 3 });
+    await gotoApp(page, '/panorama');
+    await expect(page.locator('.btn-privacy-toggle')).toHaveAttribute('aria-label', 'Ocultar valores');
+    await expect(page.locator('.btn-privacy-toggle')).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.locator('.pv2-alert-dismiss').first()).toHaveAttribute('aria-label', 'Dispensar por 24h');
+    await expect(page.locator('.pv2-attn-pips')).toHaveAttribute('aria-label', 'Alerta 1 de 3');
+    await page.locator('.pv2-kpiband .pv2-kpi').first().click();
+    await expect(page.locator('.pv2-kpiband .pv2-kpi').first()).toHaveAttribute('aria-controls', 'pv2-kpi-explain');
+  });
+
+  test('explicação do KPI e aviso de descoberto com 14px', async ({ page }) => {
+    await usarFixture(page, { caixa: 3000 });
+    await gotoApp(page, '/panorama');
+    await page.locator('.pv2-kpiband .pv2-kpi').first().click();
+    expect(parseFloat(await page.locator('.pv2-kpi-explain').evaluate((e) => getComputedStyle(e).fontSize))).toBeGreaterThanOrEqual(14);
+    expect(parseFloat(await page.locator('.pv2-hero-neg').evaluate((e) => getComputedStyle(e).fontSize))).toBeGreaterThanOrEqual(14);
+  });
+
+  test('o que o tooltip dizia tem alternativa visível: faixa do cubo e % do orçamento', async ({ page }) => {
+    await usarFixture(page);
+    await gotoApp(page, '/panorama');
+    await expect(page.locator('.pv2-hero-period')).toContainText('+R$');
+    await expect(page.locator('.pv2-hero-period')).toContainText('subiu');
+    await expect(page.locator('[data-widget="orcamento"]')).toContainText('93%');
+    await expect(page.locator('[data-widget="orcamento"]')).toContainText('35%');
+    expect(await textosPequenos(page)).toEqual([]);
+    expect(await overflowOffenders(page)).toEqual([]);
+  });
+
+  test('desktop (≥1025, ponteiro fino) não ganha legenda do cubo nem toque por KPI', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await usarFixture(page);
+    await gotoApp(page, '/panorama');
+    await expect(page.locator('.pv2-hero-period')).toHaveCount(0);
+  });
+});
