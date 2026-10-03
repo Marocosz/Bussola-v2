@@ -5,7 +5,7 @@ import { logger } from '../../utils/logger';
 import { useToast } from '../../context/ToastContext';
 import { DateRangeFilter } from '../../components/DateRangeFilter';
 import { computeRange } from '../../utils/dateRange';
-import { useIsMobile } from '../../hooks/useIsMobile';
+import { useIsMobile, useMediaQuery } from '../../hooks/useIsMobile';
 import './styles.css';
 import './panorama-v2.css';
 
@@ -44,7 +44,9 @@ function loadDismissed() {
 
 // ---------- Charts (SVG inline, na estética do design) ----------
 // Reservatório do herói — CUBO 3D ISOMÉTRICO de vidro (topo + 2 lados) com líquido.
-function Reservoir({ total, disp, guard, cap, startLevel = 0 }) {
+// animate=false (celular ou movimento reduzido): sem o balanço do líquido e sem as bolhas SMIL
+// (o CSS global de reduced-motion não alcança <animate>).
+function Reservoir({ total, disp, guard, cap, startLevel = 0, animate = true }) {
   const cx = 100, topY = 46, wx = 78, wy = 39, h = 138;
   const f = Math.max(0, Math.min(1, total / cap));
   const gf = Math.max(0, Math.min(1, guard / cap));
@@ -103,7 +105,7 @@ function Reservoir({ total, disp, guard, cap, startLevel = 0 }) {
       <polygon points={pp(top.F, top.R, Rb, Fb)} style={{ fill: 'var(--card2)', stroke: 'var(--border)', strokeWidth: 1.2 }} />
 
       {/* LÍQUIDO (balança suavemente) */}
-      <g style={{ animation: 'pv2-bob 4.5s ease-in-out infinite', transformBox: 'view-box', transformOrigin: 'center' }}>
+      <g style={animate ? { animation: 'pv2-bob 4.5s ease-in-out infinite', transformBox: 'view-box', transformOrigin: 'center' } : undefined}>
         {f > 0 && (
           <>
             <polygon points={pp(surf.L, surf.F, Fb, Lb)} style={{ fill: 'color-mix(in srgb, var(--blue) 84%, #000 16%)' }} />
@@ -142,7 +144,7 @@ function Reservoir({ total, disp, guard, cap, startLevel = 0 }) {
       )}
 
       {/* bolhas subindo (loop) dentro do líquido */}
-      {f > 0.04 && (
+      {animate && f > 0.04 && (
         <g clipPath="url(#cubeFront)">
           {bubbles.map((bb, i) => (
             <circle key={i} cx={bb.x} r={bb.r} fill="#fff" fillOpacity="0.55">
@@ -322,6 +324,8 @@ export function Panorama() {
   const [attnPage, setAttnPage] = useState(0);
   const [dismissed, setDismissed] = useState(loadDismissed);
   const isMobile = useIsMobile();
+  const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
+  const [kpiAberto, setKpiAberto] = useState(null);
 
   const dismissInsight = (id) => {
     const next = { ...dismissed, [id]: Date.now() + DISMISS_MS };
@@ -495,7 +499,7 @@ export function Panorama() {
   // ---------- Hero: Caixa ----------
   const hero = (
     <div className="pv2-hero">
-      <div className="pv2-hero-jar"><Reservoir total={total} disp={disp} guard={guardado} cap={cap} startLevel={startLevel} /></div>
+      <div className="pv2-hero-jar"><Reservoir total={total} disp={disp} guard={guardado} cap={cap} startLevel={startLevel} animate={!isMobile && !reduceMotion} /></div>
       <div className="pv2-hero-info">
         <div className="pv2-hero-top">
           <div className="pv2-hero-label">Caixa · patrimônio<span className="pv2-hero-label-extra"> acumulado</span></div>
@@ -532,15 +536,23 @@ export function Panorama() {
   );
 
   // ---------- Faixa de KPIs ----------
+  // Celular/toque: tooltip não aparece, então tocar no KPI mostra a explicação em texto (padrão do KpiStrip de Provisões).
+  const tapKpi = (key) => (isMobile ? {
+    role: 'button', tabIndex: 0, 'aria-expanded': kpiAberto === key,
+    onClick: () => setKpiAberto(kpiAberto === key ? null : key),
+    onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setKpiAberto(kpiAberto === key ? null : key); } },
+  } : {});
   const kpiCells = kpiList.map((k, i) => (
-    <div key={`kpi-${i}`} className="pv2-kpi" data-tooltip={k.tip}>
+    <div key={`kpi-${i}`} className="pv2-kpi" data-tooltip={k.tip} {...tapKpi(k.label)}>
       <div className="pv2-kpi-label">{k.label}</div>
       <div className="pv2-kpi-value" style={{ color: k.vc }}><span data-money="">{k.value}</span></div>
       <div className="pv2-kpi-delta" style={{ color: k.dc }}>{k.arrow} {k.delta} <span className="muted">vs anterior</span></div>
     </div>
   ));
+  const TIP_PROJ = "Projeção de fechamento do período: o realizado até agora mais as pendências conhecidas. 'Seguro' quando deve fechar positivo.";
+  const TIP_POUP = 'Taxa de poupança: percentual da receita do período que não foi gasto (quanto maior, mais você guardou).';
   const projecao = fc && (
-    <div key="projecao" className="pv2-kpi-extra pv2-kpi-proj" data-tooltip="Projeção de fechamento do período: o realizado até agora mais as pendências conhecidas. 'Seguro' quando deve fechar positivo.">
+    <div key="projecao" className="pv2-kpi-extra pv2-kpi-proj" data-tooltip={TIP_PROJ} {...tapKpi('Projeção')}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <span className="pv2-kpi-label">Projeção</span>
         <span className="pv2-proj-chip" style={{ color: seguro ? 'var(--green)' : 'var(--red)', background: seguro ? 'rgba(39,174,96,.15)' : 'rgba(231,76,60,.15)' }}>{seguro ? 'seguro' : 'alerta'}</span>
@@ -550,16 +562,26 @@ export function Panorama() {
     </div>
   );
   const poupanca = (
-    <div key="poupanca" className="pv2-kpi-extra" data-tooltip="Taxa de poupança: percentual da receita do período que não foi gasto (quanto maior, mais você guardou).">
+    <div key="poupanca" className="pv2-kpi-extra" data-tooltip={TIP_POUP} {...tapKpi('Poupança')}>
       <div className="pv2-kpi-label">Poupança</div>
       <div className="pv2-kpi-big">{savingsPct}<span style={{ fontSize: '.55em' }}>%</span></div>
       <div className="pv2-track"><div style={{ width: `${Math.min(100, savingsPct)}%`, height: '100%', background: 'var(--green)', borderRadius: 4 }} /></div>
     </div>
   );
+  const tipsKpi = { ...Object.fromEntries(kpiList.map((k) => [k.label, k.tip])), Projeção: TIP_PROJ, Poupança: TIP_POUP };
   const kpiBand = (
-    <div className="pv2-kpiband">
-      {[...kpiCells, projecao, poupanca]}
-    </div>
+    <>
+      <div className="pv2-kpiband">
+        {/* Celular: 2×2 Receita · Despesa / Balanço · Poupança e a Projeção numa linha inteira. */}
+        {isMobile ? [...kpiCells, poupanca, projecao] : [...kpiCells, projecao, poupanca]}
+      </div>
+      {isMobile && kpiAberto && tipsKpi[kpiAberto] && (
+        <p className="pv2-kpi-explain" role="status">
+          <i className="fa-solid fa-circle-info" aria-hidden="true"></i>
+          <span>{tipsKpi[kpiAberto]}</span>
+        </p>
+      )}
+    </>
   );
 
   // ---------- Widgets do grid (design atual; só a ordem/largura muda por tela) ----------

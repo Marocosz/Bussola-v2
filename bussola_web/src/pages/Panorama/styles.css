@@ -20,10 +20,26 @@
     transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
 }
 
-.btn-privacy-toggle:hover, .btn-privacy-toggle.active {
+.btn-privacy-toggle.active {
     background-color: var(--cor-fundo-hover);
     color: var(--cor-azul-primario);
     border-color: var(--cor-azul-primario);
+}
+
+/* Hover só com mouse: no toque o :hover "gruda" e o olho parecia ativo depois de desligar. */
+@media (hover: hover) and (pointer: fine) {
+    .btn-privacy-toggle:hover {
+        background-color: var(--cor-fundo-hover);
+        color: var(--cor-azul-primario);
+        border-color: var(--cor-azul-primario);
+    }
+}
+
+@media (pointer: coarse) {
+    .btn-privacy-toggle {
+        width: var(--tap-min);
+        height: var(--tap-min);
+    }
 }
 
 .chart-subtitle {

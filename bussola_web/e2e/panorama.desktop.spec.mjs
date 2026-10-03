@@ -45,3 +45,11 @@ test('desktop panorama: nada do layout mobile aparece', async ({ page }) => {
   await expect(page.locator('.pv2-hero-label')).toHaveText('Caixa · patrimônio acumulado');
   expect(await page.locator('.pv2-hero-jar svg animate').count()).toBeGreaterThan(0);
 });
+
+test('desktop panorama: movimento reduzido tira as bolhas SMIL do cubo', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await usarFixture(page);
+  await gotoApp(page, '/panorama');
+  await expect(page.locator('.pv2-hero-jar svg')).toBeVisible();
+  await expect(page.locator('.pv2-hero-jar svg animate')).toHaveCount(0);
+});
