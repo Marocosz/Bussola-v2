@@ -167,12 +167,14 @@ main.container {
     transition: transform 0.3s ease;
 }
 
-.cta-link:hover {
-    letter-spacing: 0.5px;
-}
+@media (hover: hover) and (pointer: fine) {
+    .cta-link:hover {
+        letter-spacing: 0.5px;
+    }
 
-.cta-link:hover i {
-    transform: translateX(5px);
+    .cta-link:hover i {
+        transform: translateX(5px);
+    }
 }
 
 .feature-image-showcase img {
@@ -183,8 +185,10 @@ main.container {
     transition: transform 0.4s ease;
 }
 
-.feature-image-showcase:hover img {
-    transform: scale(1.03);
+@media (hover: hover) and (pointer: fine) {
+    .feature-image-showcase:hover img {
+        transform: scale(1.03);
+    }
 }
 
 /* ============================================= */
@@ -274,11 +278,13 @@ main.container {
     text-decoration: none;
 }
 
-.news-card:hover {
-    transform: translateY(-5px);
-    border-color: var(--cor-azul-primario);
-    background: var(--cor-fundo-hover);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+@media (hover: hover) and (pointer: fine) {
+    .news-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--cor-azul-primario);
+        background: var(--cor-fundo-hover);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
 }
 
 .news-topic-badge {
@@ -437,8 +443,10 @@ main.container {
     transition: transform 0.3s ease;
 }
 
-.feature-content-stack.align-right .cta-link:hover i {
-    transform: translateX(-5px);
+@media (hover: hover) and (pointer: fine) {
+    .feature-content-stack.align-right .cta-link:hover i {
+        transform: translateX(-5px);
+    }
 }
 
 .light-theme .datetime-widget .time-display {
@@ -459,4 +467,132 @@ main.container {
     height: auto;
     object-fit: contain;
     border-radius: 12px;
+}
+
+/* ============================================= */
+/* Celular (≤768): empilhado, h1 fluido, textos  */
+/* à esquerda e 16px de gutter                    */
+/* ============================================= */
+@media (max-width: 768px) {
+    .hero-container {
+        padding: var(--sp-6) var(--sp-4) var(--sp-5);
+    }
+
+    .hero-content {
+        text-align: left;
+        gap: var(--sp-5);
+    }
+
+    .hero-text h1 {
+        font-size: clamp(2.25rem, 10vw, 3rem);
+        letter-spacing: -0.5px;
+        margin-bottom: var(--sp-4);
+    }
+
+    .hero-text .subtitle {
+        font-size: 1rem;
+        max-width: none;
+        margin: 0;
+    }
+
+    .hero-info {
+        max-width: none;
+        min-width: 0;
+        margin: 0;
+    }
+
+    .datetime-widget {
+        margin-bottom: var(--sp-4);
+    }
+
+    .datetime-widget .time-display {
+        font-size: 3rem;
+    }
+
+    .features-presentation-area {
+        padding: var(--sp-6) var(--sp-4);
+    }
+
+    .feature-row {
+        gap: var(--sp-5);
+        margin-bottom: var(--sp-6);
+    }
+
+    .feature-image-showcase {
+        padding: 0;
+    }
+
+    .feature-content-stack {
+        gap: var(--sp-5);
+    }
+
+    .feature-item h3.gradient-title {
+        font-size: 1.5rem;
+    }
+
+    /* A coluna "direita" do desktop também lê da esquerda no celular */
+    .feature-content-stack.align-right {
+        text-align: left;
+    }
+
+    .feature-content-stack.align-right .feature-item h3 {
+        flex-direction: row;
+    }
+
+    .feature-content-stack.align-right .feature-item p {
+        border-right: none;
+        border-left: 3px solid var(--cor-azul-primario);
+        padding-right: 0;
+        padding-left: var(--sp-4);
+    }
+
+    .feature-content-stack.align-right .cta-link {
+        align-self: flex-start;
+    }
+
+    .cta-link {
+        display: inline-flex;
+        align-items: center;
+        min-height: var(--tap-min);
+    }
+
+    .panorama-highlight-section {
+        padding: var(--sp-6) var(--sp-4);
+        text-align: left;
+    }
+
+    .panorama-content p {
+        font-size: 1rem;
+    }
+
+    .panorama-content .btn-primary.large-button {
+        width: 100%;
+        min-height: 48px;
+    }
+
+    .sponsor-section {
+        margin: var(--sp-5) var(--sp-4) 0 !important;
+        padding: var(--sp-5) var(--sp-4) !important;
+    }
+
+    .news-footer-section {
+        padding: var(--sp-6) var(--sp-4);
+    }
+
+    .section-header {
+        margin-bottom: var(--sp-5);
+    }
+
+    .section-header h2 {
+        font-size: 1.5rem;
+        justify-content: flex-start;
+    }
+
+    .news-grid {
+        gap: var(--sp-3);
+    }
+
+    .news-card {
+        min-height: 0;
+    }
 }

@@ -314,3 +314,78 @@
     height: auto;
     margin-top: 1rem; /* Espaçamento da imagem */
 }
+
+/* =================================================================== */
+/* === CELULAR (≤768): formulário primeiro, sem ilustração e sem
+/* === parágrafo, 16px de gutter e página rolável (teclado aberto)
+/* =================================================================== */
+@media (max-width: 768px) {
+    .auth-page {
+        align-items: flex-start;
+        overflow: visible;
+        min-height: 100dvh;
+    }
+
+    .auth-container {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--sp-5);
+        padding: calc(var(--safe-top) + var(--sp-4)) var(--sp-4) var(--sp-6);
+    }
+
+    .auth-card {
+        order: -1;
+        max-width: none;
+        padding: var(--sp-5) var(--sp-4);
+        border-radius: 16px;
+    }
+
+    .auth-card-header {
+        gap: var(--sp-3);
+        margin-bottom: var(--sp-5);
+    }
+
+    .auth-logo-card {
+        width: 56px;
+    }
+
+    .auth-card h2 {
+        font-size: 1.35rem;
+    }
+
+    .auth-card .form-group {
+        margin-bottom: var(--sp-4);
+    }
+
+    .auth-card .btn-primary,
+    .auth-card .submit-button {
+        min-height: 48px;
+    }
+
+    .auth-card .forgot-password-link a,
+    .auth-card .auth-actions a {
+        display: inline-flex;
+        align-items: center;
+        min-height: var(--tap-min);
+    }
+
+    /* Ilustração e parágrafo somem; o título da intro fica, pequeno, abaixo do card */
+    .auth-page .auth-intro p,
+    .auth-page .auth-intro .auth-intro-image {
+        display: none;
+    }
+
+    .auth-intro {
+        text-align: center;
+    }
+
+    .auth-intro-header {
+        justify-content: center;
+        margin-bottom: 0;
+    }
+
+    .auth-intro h1 {
+        font-size: clamp(1.5rem, 7vw, 2rem);
+    }
+}

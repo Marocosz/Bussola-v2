@@ -81,3 +81,54 @@ test.describe('auth logado', () => {
     expect(await smallTargets(page, '.autorizar-card')).toEqual([]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 3 — Login e Registro
+// ---------------------------------------------------------------------------
+test.describe('login e registro no celular', () => {
+  test.use({ storageState: DESLOGADO });
+
+  for (const [nome, rota] of [['login', '/login'], ['register', '/register']]) {
+    test(`${nome}: card primeiro, sem ilustração nem parágrafo, gutter de 16px`, async ({ page }) => {
+      await abrir(page, rota, '.auth-card');
+      const card = await page.locator('.auth-card').boundingBox();
+      const h1 = await page.locator('.auth-intro h1').boundingBox();
+      expect(card.y).toBeLessThan(h1.y);
+      expect(Math.round(card.x)).toBe(16);
+      expect(Math.round(card.width)).toBe(390 - 32);
+      await expect(page.locator('.auth-intro p')).toBeHidden();
+      for (const img of await page.locator('.auth-intro-image').all()) await expect(img).toBeHidden();
+      const fonte = await page.locator('.auth-intro h1').evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
+      expect(fonte).toBeGreaterThanOrEqual(24);
+      expect(fonte).toBeLessThanOrEqual(32);
+      expect(await smallTargets(page, '.auth-card')).toEqual([]);
+    });
+  }
+
+  test('inputs de Login, Registro e Esqueci computam 16px (sem zoom do iOS)', async ({ page }) => {
+    for (const [nome, rota, card] of [['login', '/login', '.auth-card'], ['register', '/register', '.auth-card'], ['forgot', '/forgot-password', '.auth-simple-card']]) {
+      await abrir(page, rota, card);
+      const fontes = await page.locator(`${card} input:not([type="hidden"]):not([type="checkbox"])`).evaluateAll((els) => els.map((e) => getComputedStyle(e).fontSize));
+      expect(fontes.length, nome).toBeGreaterThan(0);
+      for (const f of fontes) expect(f, nome).toBe('16px');
+    }
+  });
+
+  test('viewport baixa (teclado): a página rola até o Entrar', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 420 });
+    await abrir(page, '/login', '.auth-card');
+    expect(await page.locator('.auth-page').evaluate((e) => getComputedStyle(e).overflowY)).toBe('visible');
+    const entrar = page.getByRole('button', { name: 'Entrar', exact: true });
+    await entrar.scrollIntoViewIfNeeded();
+    await expect(entrar).toBeInViewport();
+  });
+
+  test('login de verdade pelo celular leva ao Início', async ({ page }) => {
+    await abrir(page, '/login', '.auth-card');
+    await page.getByLabel('E-mail').fill('demo@bussola.dev');
+    await page.getByLabel('Senha').fill('Demo12345!');
+    await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+    await expect(page).toHaveURL(/\/home$/);
+    await expect(page.locator('.m-topbar-title')).toHaveText('Início');
+  });
+});
