@@ -26,6 +26,45 @@ export async function gotoApp(page, path) {
   await page.waitForLoadState('networkidle');
 }
 
+// A API da agenda usa o relógio real do servidor (is_today do calendário e Pendente→Perdido),
+// mas o navegador roda com FIXED_NOW. Reescreve a resposta do GET /agenda/ para o relógio fixo.
+// Chamar ANTES de gotoApp. Só mexe em GET; o resto segue para a API.
+const HOJE_FIXO = '2026-10-02';
+const AGORA_FIXO = '2026-10-02T12:00:00'; // data_hora da API é hora local, sem fuso
+const MESES_PT = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+export async function congelarAgenda(page) {
+  await page.route(/\/api\/v1\/agenda\/?(\?.*)?$/, async (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    const r = await route.fetch();
+    const json = await r.json();
+
+    // Data de cada célula: o divisor traz mês/ano; padding antes do dia 1 é do mês anterior, depois é do seguinte.
+    let ano = null;
+    let mes = null; // 0-11
+    let viuMes = false;
+    const pad = (n) => String(n).padStart(2, '0');
+    for (const d of json.calendar_days || []) {
+      if (d.type === 'month_divider') { ano = d.year; mes = MESES_PT.indexOf(d.month_name); viuMes = false; continue; }
+      if (d.type !== 'day' || ano === null) continue;
+      let y = ano;
+      let m = mes;
+      if (d.is_padding) m += viuMes ? 1 : -1; else viuMes = true;
+      if (m < 0) { m = 11; y -= 1; } else if (m > 11) { m = 0; y += 1; }
+      d.is_today = !d.is_padding && `${y}-${pad(m + 1)}-${pad(Number(d.day_number))}` === HOJE_FIXO;
+    }
+
+    for (const lista of Object.values(json.compromissos_por_mes || {})) {
+      for (const c of lista) {
+        if (c.status === 'Pendente' || c.status === 'Perdido') {
+          c.status = String(c.data_hora) < AGORA_FIXO ? 'Perdido' : 'Pendente';
+        }
+      }
+    }
+    await route.fulfill({ response: r, json });
+  });
+}
+
 // Elementos visíveis que ultrapassam a largura da viewport (só o mais externo de cada ramo).
 export async function overflowOffenders(page) {
   return page.evaluate(() => {

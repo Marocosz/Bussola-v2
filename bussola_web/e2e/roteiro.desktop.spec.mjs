@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers.mjs';
+import { gotoApp, congelarAgenda } from './helpers.mjs';
 
 // Estados do Roteiro que este plano toca. Base gerada ANTES de mexer no CSS/JSX.
 const ESTADOS = [
@@ -24,6 +24,7 @@ const ESTADOS = [
 
 for (const [nome, preparar] of ESTADOS) {
   test(`desktop roteiro: ${nome} inalterado`, async ({ page }) => {
+    await congelarAgenda(page);
     await gotoApp(page, '/agenda');
     await preparar(page);
     await page.waitForTimeout(400);

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers.mjs';
+import { gotoApp, congelarAgenda } from './helpers.mjs';
 
 const ROUTES = [
   ['home', '/home'], ['panorama', '/panorama'], ['financas', '/financas'],
@@ -17,6 +17,7 @@ for (const [name, path] of ROUTES) {
   test(`desktop ${name} inalterado`, async ({ page }) => {
     // Feed de noticias vem de fonte externa (muda a cada execucao): fixa a resposta.
     if (name === 'home') await page.route(/\/home\/news(\?.*)?$/, (route) => route.fulfill({ json: NEWS }));
+    if (name === 'agenda') await congelarAgenda(page);
     await gotoApp(page, path);
     await expect(page).toHaveScreenshot(`${name}.png`, { fullPage: true });
   });
@@ -36,6 +37,7 @@ const MODALS = [
 
 for (const [name, path, open] of MODALS) {
   test(`desktop ${name} inalterado`, async ({ page }) => {
+    if (name === 'modal-compromisso') await congelarAgenda(page);
     await gotoApp(page, path);
     await open(page);
     await page.waitForTimeout(400);
