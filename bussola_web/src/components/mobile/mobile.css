@@ -219,6 +219,25 @@
     white-space: nowrap;
 }
 
+.m-topbar-lead {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    flex: 1;
+    min-width: 0;
+}
+
+.m-topbar-btn.m-topbar-back {
+    flex-shrink: 0;
+    margin-left: calc(-1 * var(--sp-2));
+    background: transparent;
+}
+
+/* Sub-rota: título um pouco menor, ao lado do Voltar */
+.m-topbar-back + .m-topbar-title {
+    font-size: 1.15rem;
+}
+
 .m-topbar-actions,
 .m-topbar-slot {
     display: flex;

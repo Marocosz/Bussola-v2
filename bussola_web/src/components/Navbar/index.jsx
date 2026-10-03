@@ -4,7 +4,7 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { useSystem } from '../../context/SystemContext';
 import { useIsMobile, useIsTablet } from '../../hooks/useIsMobile';
-import { useMobileChrome } from '../mobile/MobileChrome';
+import { useMobileChrome, useTopbarOverride } from '../mobile/MobileChrome';
 import { AdminUserModal } from '../AdminUserModal';
 import { UserDrawer } from '../UserDrawer';
 import { NAV_ITEMS, findNavItem } from './navItems';
@@ -43,6 +43,7 @@ export function Navbar() {
     const isTablet = useIsTablet();
     const navigate = useNavigate();
     const { setSlotEl } = useMobileChrome();
+    const topbar = useTopbarOverride();
     const [moreOpen, setMoreOpen] = useState(false);
     const [aiOpen, setAiOpen] = useState(false);
     const [prevPath, setPrevPath] = useState(pathname);
@@ -53,6 +54,12 @@ export function Navbar() {
     }
     const current = findNavItem(pathname);
     const sairMobile = () => { logout(); navigate('/login'); };
+    // Voltar da sub-rota: idx do react-router > 0 garante que a entrada anterior é do app
+    // (idx 0 = primeira entrada, ex.: link direto); nesse caso troca a entrada pelo destino.
+    const voltarTopbar = () => {
+        if ((window.history.state?.idx ?? 0) > 0) navigate(-1);
+        else navigate(topbar.backTo, { replace: true });
+    };
 
     // Lógica de Tema (Mantida)
     useEffect(() => {
@@ -92,7 +99,8 @@ export function Navbar() {
             {isMobile ? (
                 <>
                     <MobileTopbar
-                        title={current?.rotulo ?? 'Bússola'}
+                        title={topbar?.title ?? current?.rotulo ?? 'Bússola'}
+                        onBack={topbar ? voltarTopbar : undefined}
                         aiContext={current?.aiContext}
                         user={user}
                         onOpenAccount={() => setIsAccountOpen(true)}

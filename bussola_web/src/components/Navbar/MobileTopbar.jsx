@@ -1,8 +1,15 @@
-/** Topbar fina do celular: título do módulo, ações da página, IA e conta. */
-export function MobileTopbar({ title, aiContext, user, onOpenAccount, slotRef, onOpenAi }) {
+/** Topbar fina do celular: título do módulo (ou da sub-rota, com Voltar), ações da página, IA e conta. */
+export function MobileTopbar({ title, onBack, aiContext, user, onOpenAccount, slotRef, onOpenAi }) {
     return (
         <header className="m-topbar">
-            <h1 className="m-topbar-title">{title}</h1>
+            <div className="m-topbar-lead">
+                {onBack && (
+                    <button type="button" className="m-topbar-btn m-topbar-back" aria-label="Voltar" onClick={onBack}>
+                        <i className="fa-solid fa-arrow-left"></i>
+                    </button>
+                )}
+                <h1 className="m-topbar-title">{title}</h1>
+            </div>
             <div className="m-topbar-actions">
                 <div className="m-topbar-slot" ref={slotRef} />
                 {aiContext && (

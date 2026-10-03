@@ -6,6 +6,7 @@ import { useConfirm } from '../../context/ConfirmDialogContext';
 import { BlocoRenderer } from './blocos/BlocoRenderer';
 import { EstudoContexto } from './blocos/contexto';
 import { PedirAoClaude } from './PedirAoClaude';
+import { TopbarTitle } from '../../components/mobile/MobileChrome';
 import { DESTINOS, lerDestino, salvarDestino } from './comandos';
 import { NIVEIS, tipoDe } from './constantes';
 import './styles.css';
@@ -101,6 +102,7 @@ export function LeituraEstudo() {
     if (carregando) {
         return (
             <div className="container main-container estudos-scope">
+                <TopbarTitle title="Estudos" backTo="/estudos" />
                 <div className="estudos-carregando">
                     <i className="fa-solid fa-circle-notch fa-spin"></i>
                     <p>Abrindo material...</p>
@@ -112,6 +114,7 @@ export function LeituraEstudo() {
     if (!material) {
         return (
             <div className="container main-container estudos-scope">
+                <TopbarTitle title="Estudos" backTo="/estudos" />
                 <div className="estudos-vazio">
                     <i className="fa-solid fa-book-open"></i>
                     <h2>{estado.erro === 'nao-encontrado' ? 'Material não encontrado' : 'Não foi possível abrir o material'}</h2>
@@ -126,6 +129,10 @@ export function LeituraEstudo() {
 
     return (
         <div className="container main-container estudos-scope" style={{ '--estudo-cor': material.tema_cor || 'var(--cor-azul-primario)' }}>
+            <TopbarTitle
+                title={material.tema_nome || 'Estudos'}
+                backTo={material.tema_id ? `/estudos?tema=${material.tema_id}` : '/estudos'}
+            />
             <div className="estudo-leitura">
                 <nav className="estudo-breadcrumb" aria-label="Caminho">
                     <Link to="/estudos"><i className="fa-solid fa-graduation-cap"></i> Estudos</Link>

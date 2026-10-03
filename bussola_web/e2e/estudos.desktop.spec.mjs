@@ -59,9 +59,22 @@ test('desktop estudos: tema ativo continua destacado sob o mouse', async ({ page
   await mockEstudos(page);
   await gotoApp(page, '/estudos?tema=901');
   const ativo = page.locator('.estudos-tema.ativo');
-  const antes = await ativo.evaluate((e) => getComputedStyle(e).backgroundColor);
+  const outro = page.locator('.estudos-tema:not(.ativo)').first();
+  const fundo = (loc) => loc.evaluate((e) => getComputedStyle(e).backgroundColor);
+  await page.mouse.move(0, 0);
+  await ativo.waitFor();
+  const ativoParado = await fundo(ativo);
+  // Prova de que o teste enxerga o hover: um tema comum muda de cor sob o mouse.
+  const outroParado = await fundo(outro);
+  await outro.hover();
+  await expect.poll(() => fundo(outro)).not.toBe(outroParado);
+  const hoverComum = await fundo(outro);
+  expect(hoverComum).not.toBe(ativoParado);
+  // O ativo não troca a cor de destaque pela de hover e mantém o peso.
   await ativo.hover();
-  await expect(ativo).toHaveCSS('background-color', antes);
+  await expect(ativo).toHaveCSS('background-color', ativoParado);
+  expect(await fundo(ativo)).not.toBe(hoverComum);
+  await expect(ativo).toHaveCSS('font-weight', '600');
 });
 
 test('desktop estudos: sem topbar mobile nem botão Voltar', async ({ page }) => {

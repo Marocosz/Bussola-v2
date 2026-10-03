@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { baixarKitEstudos, getKitEstudosInstrucoes, getKitEstudosVersao } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { copiarTexto } from './comandos';
+import { TopbarTitle } from '../../components/mobile/MobileChrome';
 import './styles.css';
 
 const COMANDO_MCP = 'claude mcp add --transport http bussola https://bussola.marocos.dev/mcp --header "Authorization: Bearer <token>"';
@@ -53,13 +54,14 @@ export function KitEstudos() {
 
     return (
         <div className="container main-container estudos-scope">
+            <TopbarTitle title="Kit do Claude" backTo="/estudos" />
             <div className="page-header">
                 <div className="page-header-main">
                     <h1><i className="fa-solid fa-wand-magic-sparkles"></i> Kit do Claude</h1>
                 </div>
                 <div className="page-header-kpis">
                     <span className="ph-kpi"><i className="fa-solid fa-tag"></i> versão {info.versao ?? '…'}</span>
-                    <Link to="/estudos" className="ph-kpi ph-kpi-btn"><i className="fa-solid fa-arrow-left"></i> Biblioteca</Link>
+                    <Link to="/estudos" className="ph-kpi ph-kpi-btn estudos-kit-voltar"><i className="fa-solid fa-arrow-left"></i> Biblioteca</Link>
                 </div>
             </div>
 
