@@ -207,3 +207,91 @@ test.describe('casca e Caderno', () => {
     await expect.poll(async () => { const b = await salvar.boundingBox(); return b && Math.round(b.y + b.height); }).toBeLessThanOrEqual(420);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 3 — editor de nota e visualização
+// ---------------------------------------------------------------------------
+test.describe('editor e visualização de nota', () => {
+  test('Fab → tela cheia com ✕ · fixar · preview · Salvar, sem dica de atalhos e sem foco automático', async ({ page }) => {
+    await gotoApp(page, '/registros');
+    await page.locator('.app-fab').click();
+    const ov = page.locator('.modal-overlay.is-sheet-full');
+    await expect(ov).toBeVisible();
+    const top = ov.locator('.nota-m-topbar');
+    for (const nome of ['Fechar', 'Fixar no topo', 'Pré-visualizar', 'Salvar']) {
+      await expect(top.getByRole('button', { name: nome, exact: true })).toBeVisible();
+    }
+    await expect(ov.getByText('Ctrl+B negrito', { exact: false })).toBeHidden();
+    await expect(ov.locator('.modal-footer-custom')).toBeHidden();
+    expect(await focoEmCampo(page)).toBe(false);
+    // barra de formatação: uma linha só, rolável, botões de 40px
+    const btns = ov.locator('.md-toolbar .md-toolbar-btn');
+    const tops = await btns.evaluateAll((bs) => [...new Set(bs.map((b) => Math.round(b.getBoundingClientRect().top)))]);
+    expect(tops).toHaveLength(1);
+    const alturas = await btns.evaluateAll((bs) => [...new Set(bs.map((b) => Math.round(b.getBoundingClientRect().height)))]);
+    expect(alturas).toEqual([40]);
+    expect(await ov.locator('.md-toolbar').evaluate((e) => e.scrollWidth > e.clientWidth)).toBe(true);
+    // 40px é exceção aprovada só para a barra de formatação
+    expect((await smallTargets(page, '.modal-overlay.is-sheet-full')).filter((s) => !s.includes('md-toolbar-btn'))).toEqual([]);
+    await page.setViewportSize({ width: 360, height: 800 });
+    expect(await overflowOffenders(page)).toEqual([]);
+  });
+
+  test('editor com teclado (--vvh 420): barra de formatação acima do teclado e Salvar visível', async ({ page }) => {
+    await gotoApp(page, '/registros');
+    await teclado(page);
+    await page.locator('.app-fab').click();
+    const tb = page.locator('.nota-editor .md-toolbar');
+    await expect.poll(async () => { const b = await tb.boundingBox(); return b && Math.round(b.y + b.height); }).toBeLessThanOrEqual(421);
+    const salvar = await page.locator('.nota-m-topbar').getByRole('button', { name: 'Salvar', exact: true }).boundingBox();
+    expect(salvar.y).toBeGreaterThanOrEqual(0);
+    expect((await page.locator('.nota-editor .md-textarea').boundingBox()).height).toBeGreaterThanOrEqual(88);
+  });
+
+  test('grupo em chip abre sheet; formatar, fixar e salvar a nota', async ({ page, request }) => {
+    await gotoApp(page, '/registros');
+    await page.locator('.app-fab').click();
+    const ov = page.locator('.modal-overlay.is-sheet-full');
+    await ov.getByRole('textbox', { name: 'Título', exact: true }).fill('E2E nota editor');
+    await ov.locator('.nota-m-grupo').click();
+    const picker = page.locator('.reg-sheet');
+    await expect(picker.getByRole('option', { name: 'Sem Grupo' })).toBeVisible();
+    await picker.getByRole('option', { name: 'Estudos' }).click();
+    await expect(picker).toHaveCount(0);
+    await expect(ov.locator('.nota-m-grupo')).toContainText('Estudos');
+    const ta = ov.locator('.md-textarea');
+    await ta.fill('texto');
+    await ta.evaluate((e) => e.setSelectionRange(5, 5));
+    await ov.getByRole('button', { name: 'Negrito' }).click();
+    await expect(ta).toHaveValue('texto****');
+    await ov.getByRole('button', { name: 'Fixar no topo' }).click();
+    await expect(ov.getByRole('button', { name: 'Fixar no topo' })).toHaveAttribute('aria-pressed', 'true');
+    await ov.getByRole('button', { name: 'Pré-visualizar' }).click();
+    await expect(ov.locator('.md-preview-inner')).toBeVisible();
+    await expect(ov.locator('.md-toolbar')).toHaveCount(0);
+    await ov.getByRole('button', { name: 'Pré-visualizar' }).click();
+    await ov.locator('.nota-m-topbar').getByRole('button', { name: 'Salvar', exact: true }).click();
+    await expect(ov).toHaveCount(0);
+    const nota = await notaPorTitulo(request, 'E2E nota editor');
+    expect(nota).toMatchObject({ conteudo: 'texto****', fixado: true, grupo: { nome: 'Estudos' } });
+  });
+
+  test('ver nota: tela cheia; ⋯ com copiar/PDF e cópia confirmada por toast', async ({ page, context, request }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await criarNota(request, { titulo: 'E2E ver nota', conteudo: '# Olá\n\ntexto da nota', fixado: true });
+    await gotoApp(page, '/registros');
+    await page.locator('.accordion-wrapper.open .anotacao-card', { hasText: 'E2E ver nota' }).first().click();
+    const ov = page.locator('.modal-overlay.is-sheet-full');
+    await expect(ov.locator('.view-modal')).toBeVisible();
+    await expect(ov.getByRole('button', { name: 'Fechar' }).first()).toBeVisible();
+    expect(await smallTargets(page, '.modal-overlay.is-sheet-full')).toEqual([]);
+    await ov.getByRole('button', { name: 'Mais ações' }).click();
+    const acoes = page.locator('.action-sheet');
+    await expect(acoes.locator('.action-sheet-item')).toHaveText(['Copiar Markdown', 'Copiar texto', 'Baixar PDF', 'Cancelar']);
+    await acoes.getByRole('button', { name: 'Copiar texto' }).click();
+    await expect(page.locator('.toast-container')).toContainText('Copiado');
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('Olá');
+    await ov.locator('.modal-footer').getByRole('button', { name: /Editar Nota/ }).click();
+    await expect(page.locator('.nota-editor')).toBeVisible();
+  });
+});

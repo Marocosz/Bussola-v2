@@ -394,3 +394,154 @@
         transform: none;
     }
 }
+
+/* --- Editor de nota (sheet cheio) e visualização --- */
+@media (max-width: 768px) {
+    .registros-scope .nota-m-topbar {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-2);
+        padding: var(--sp-2);
+        border-bottom: 1px solid var(--cor-borda);
+        background: var(--cor-card-secundario);
+        flex-shrink: 0;
+    }
+
+    .registros-scope .nota-m-icon {
+        width: var(--tap-min);
+        height: var(--tap-min);
+        flex-shrink: 0;
+        display: grid;
+        place-items: center;
+        border: none;
+        border-radius: 12px;
+        background: transparent;
+        color: var(--cor-texto-secundario);
+        font-size: 1.05rem;
+        cursor: pointer;
+    }
+
+    .registros-scope .nota-m-icon.is-on {
+        color: var(--cor-azul-primario);
+        background: rgba(var(--cor-tema-rgb), 0.14);
+    }
+
+    .registros-scope .nota-m-titulo {
+        flex: 1;
+        min-width: 0;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .registros-scope .nota-m-salvar {
+        min-height: var(--tap-min);
+        padding: 0 var(--sp-4);
+        border-radius: 12px;
+        flex-shrink: 0;
+    }
+
+    /* Corpo: campos em cima e o editor ocupando o resto até o rodapé do sheet */
+    .registros-scope .nota-editor > .modal-body {
+        gap: var(--sp-3);
+        padding-bottom: 0;
+    }
+
+    .registros-scope .nota-editor > .modal-footer-custom,
+    .registros-scope .nota-editor .editor-container > label,
+    .registros-scope .nota-editor .md-editor-tabs,
+    .registros-scope .nota-editor .md-status-bar {
+        display: none;
+    }
+
+    .registros-scope .nota-m-campos {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-2);
+        flex-shrink: 0;
+    }
+
+    .registros-scope .nota-m-titulo-input {
+        font-weight: 600;
+        padding-right: var(--sp-3);
+    }
+
+    .registros-scope .nota-m-grupo {
+        align-self: flex-start;
+        max-width: 100%;
+    }
+
+    .registros-scope .nota-m-grupo > span:not(.reg-chip-dot) {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .registros-scope .nota-editor .editor-container {
+        flex: 1 1 auto;
+        min-height: 0;
+        margin: 0 calc(-1 * var(--sp-4));
+        width: calc(100% + 2 * var(--sp-4));
+        max-width: none;
+    }
+
+    .registros-scope .nota-editor .md-editor-wrapper,
+    .registros-scope .nota-editor .md-editor-wrapper:focus-within {
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .registros-scope .nota-editor .md-textarea,
+    .registros-scope .nota-editor .md-preview-inner {
+        min-height: 0;
+        padding: var(--sp-3) var(--sp-4);
+    }
+
+    /* Barra de formatação: uma linha rolável, no rodapé do sheet (logo acima do teclado) */
+    .registros-scope .nota-editor .md-toolbar {
+        order: 2;
+        flex-wrap: nowrap;
+        flex-shrink: 0;
+        overflow-x: auto;
+        gap: var(--sp-1);
+        padding: var(--sp-1) var(--sp-2);
+        border-top: 1px solid var(--cor-borda);
+        border-bottom: none;
+        scrollbar-width: none;
+        overscroll-behavior-x: contain;
+    }
+
+    .registros-scope .nota-editor .md-toolbar-btn {
+        flex-shrink: 0;
+        min-width: 40px;
+        height: 40px;
+        font-size: 1rem;
+        border-radius: 10px;
+    }
+
+    .registros-scope .nota-editor .md-toolbar-sep {
+        flex-shrink: 0;
+    }
+
+    /* Visualização */
+    .registros-scope .view-header-top-row {
+        gap: var(--sp-3);
+        margin-bottom: var(--sp-3);
+    }
+
+    .registros-scope .view-m-acoes {
+        display: flex;
+        gap: var(--sp-2);
+        flex-shrink: 0;
+    }
+
+    .registros-scope .view-title {
+        font-size: 1.35rem;
+    }
+
+    .registros-scope .view-modal .modal-body {
+        padding: var(--sp-4);
+    }
+}

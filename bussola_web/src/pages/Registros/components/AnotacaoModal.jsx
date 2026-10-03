@@ -4,6 +4,8 @@ import { createAnotacao, updateAnotacao } from '../../../services/api';
 import { logger } from '../../../utils/logger';
 import { BaseModal } from '../../../components/BaseModal';
 import { MarkdownViewer } from './MarkdownViewer';
+import { useIsMobile } from '../../../hooks/useIsMobile';
+import { GrupoPickerSheet } from '../mobile/GrupoPickerSheet';
 import '../styles.css';
 import '../styles/markdown.css';
 
@@ -57,6 +59,8 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
     const [fixado, setFixado]       = useState(false);
     const [loading, setLoading]     = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [grupoSheetOpen, setGrupoSheetOpen] = useState(false);
+    const isMobile = useIsMobile();
 
     // Editor state
     const [editorMode, setEditorMode]   = useState('edit'); // 'edit' | 'preview'
@@ -227,12 +231,42 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
     if (!active) return null;
 
     return (
-        <BaseModal onClose={closeModal} className="registros-scope">
+        <>
+        <BaseModal onClose={closeModal} className="registros-scope" sheet="full">
             <div
-                className={`modal-content large-modal${isFullscreen ? ' md-modal-fullscreen' : ''}`}
+                className={`modal-content large-modal nota-editor${isFullscreen ? ' md-modal-fullscreen' : ''}`}
                 onClick={e => e.stopPropagation()}
             >
                 {/* ── Header ─────────────────────────────────── */}
+                {isMobile ? (
+                    <div className="nota-m-topbar">
+                        <button type="button" className="nota-m-icon" onClick={closeModal} aria-label="Fechar">
+                            <i className="fa-solid fa-xmark"></i>
+                        </button>
+                        <span className="nota-m-titulo">{editingData ? 'Editar nota' : 'Nova nota'}</span>
+                        <button
+                            type="button"
+                            className={`nota-m-icon ${fixado ? 'is-on' : ''}`}
+                            onClick={() => setFixado(f => !f)}
+                            aria-pressed={fixado}
+                            aria-label="Fixar no topo"
+                        >
+                            <i className="fa-solid fa-thumbtack"></i>
+                        </button>
+                        <button
+                            type="button"
+                            className={`nota-m-icon ${editorMode === 'preview' ? 'is-on' : ''}`}
+                            onClick={() => setEditorMode(m => (m === 'preview' ? 'edit' : 'preview'))}
+                            aria-pressed={editorMode === 'preview'}
+                            aria-label="Pré-visualizar"
+                        >
+                            <i className={`fa-solid ${editorMode === 'preview' ? 'fa-pen' : 'fa-eye'}`}></i>
+                        </button>
+                        <button type="button" className="btn-primary nota-m-salvar" onClick={handleSave} disabled={loading}>
+                            {loading ? 'Salvando...' : 'Salvar'}
+                        </button>
+                    </div>
+                ) : (
                 <div className="modal-header">
                     <h2>{editingData ? 'Editar Anotação' : 'Nova Anotação'}</h2>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -247,10 +281,34 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
                         <span className="close-btn" onClick={closeModal}>&times;</span>
                     </div>
                 </div>
+                )}
 
                 {/* ── Body ───────────────────────────────────── */}
                 <div className="modal-body">
                     {/* Título + Grupo */}
+                    {isMobile ? (
+                        <div className="nota-m-campos">
+                            <input
+                                type="text"
+                                className="form-input nota-m-titulo-input"
+                                placeholder="Título"
+                                aria-label="Título"
+                                value={titulo}
+                                onChange={e => setTitulo(e.target.value)}
+                            />
+                            <button
+                                type="button"
+                                className="reg-chip nota-m-grupo"
+                                onClick={() => setGrupoSheetOpen(true)}
+                                aria-haspopup="dialog"
+                                aria-label={`Grupo: ${selectedLabel}`}
+                            >
+                                {selectedColor && <span className="reg-chip-dot" style={{ backgroundColor: selectedColor }}></span>}
+                                <span>{selectedLabel}</span>
+                                <i className="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    ) : (
                     <div className="form-row">
                         <div className="form-group" style={{ flex: 2 }}>
                             <label>Título</label>
@@ -298,6 +356,7 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
                             )}
                         </div>
                     </div>
+                    )}
 
                     {/* ── Editor Markdown ──────────────────── */}
                     <div className="form-group editor-container" style={{ marginBottom: '0.5rem' }}>
@@ -329,7 +388,7 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
 
                             {/* Toolbar de formatação (só no modo edição) */}
                             {editorMode === 'edit' && (
-                                <div className="md-toolbar">
+                                <div className="md-toolbar" data-offscreen-ok>
                                     {TOOLBAR_ACTIONS.map((action, i) =>
                                         action === null
                                             ? <span key={i} className="md-toolbar-sep" />
@@ -338,6 +397,7 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
                                                     key={i}
                                                     className="md-toolbar-btn"
                                                     title={action.title}
+                                                    aria-label={isMobile ? action.title.replace(/ \(Ctrl\+[A-Z]\)$/, '') : undefined}
                                                     style={action.style || {}}
                                                     onMouseDown={e => { e.preventDefault(); applyFormat(action); }}
                                                 >
@@ -409,5 +469,15 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
                 </div>
             </div>
         </BaseModal>
+        {isMobile && (
+            <GrupoPickerSheet
+                open={grupoSheetOpen}
+                onClose={() => setGrupoSheetOpen(false)}
+                grupos={gruposDisponiveis}
+                value={grupoId}
+                onChange={setGrupoId}
+            />
+        )}
+        </>
     );
 }

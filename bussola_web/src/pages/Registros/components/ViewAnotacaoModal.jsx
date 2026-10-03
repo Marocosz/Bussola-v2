@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { BaseModal } from '../../../components/BaseModal';
+import { ActionSheet } from '../../../components/mobile/ActionSheet';
+import { useIsMobile } from '../../../hooks/useIsMobile';
 import { MarkdownViewer } from './MarkdownViewer';
 import { exportAnotacaoPdf } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
@@ -25,7 +27,9 @@ const markdownToPlainText = (md) =>
 export function ViewAnotacaoModal({ active, closeModal, nota, onEdit }) {
     const [copyState, setCopyState] = useState(null); // null | 'md' | 'text'
     const [pdfLoading, setPdfLoading] = useState(false);
+    const [menuAberto, setMenuAberto] = useState(false);
     const { addToast } = useToast();
+    const isMobile = useIsMobile();
 
     if (!active || !nota) return null;
 
@@ -49,8 +53,11 @@ export function ViewAnotacaoModal({ active, closeModal, nota, onEdit }) {
             await navigator.clipboard.writeText(text);
             setCopyState(type);
             setTimeout(() => setCopyState(null), 2000);
+            // No celular o feedback vem por toast (o ActionSheet já fechou).
+            if (isMobile) addToast({ type: 'success', title: 'Copiado', description: type === 'md' ? 'Markdown copiado.' : 'Texto copiado.' });
         } catch (e) {
             logger.error("Erro ao copiar", { error: String(e) });
+            if (isMobile) addToast({ type: 'error', title: 'Erro', description: 'Não foi possível copiar.' });
         }
     };
 
@@ -81,7 +88,8 @@ export function ViewAnotacaoModal({ active, closeModal, nota, onEdit }) {
     };
 
     return (
-        <BaseModal onClose={closeModal} className="registros-scope">
+        <>
+        <BaseModal onClose={closeModal} className="registros-scope" sheet="full">
             <div className="modal-content view-modal" onClick={e => e.stopPropagation()}>
 
                 {/* ── Header ──────────────────────────────────────── */}
@@ -104,7 +112,18 @@ export function ViewAnotacaoModal({ active, closeModal, nota, onEdit }) {
                                 </span>
                             )}
                         </div>
-                        <span className="close-btn" onClick={closeModal} title="Fechar">&times;</span>
+                        {isMobile ? (
+                            <div className="view-m-acoes">
+                                <button type="button" className="reg-icon-btn" aria-label="Mais ações" onClick={() => setMenuAberto(true)}>
+                                    <i className="fa-solid fa-ellipsis"></i>
+                                </button>
+                                <button type="button" className="reg-icon-btn" aria-label="Fechar" onClick={closeModal}>
+                                    <i className="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        ) : (
+                            <span className="close-btn" onClick={closeModal} title="Fechar">&times;</span>
+                        )}
                     </div>
                     <div className="view-header-main">
                         <div className="view-title-row">
@@ -115,7 +134,8 @@ export function ViewAnotacaoModal({ active, closeModal, nota, onEdit }) {
                             <span className="view-date">
                                 <i className="fa-regular fa-clock"></i> {dataFormatada}
                             </span>
-                            {/* Botões de cópia */}
+                            {/* Botões de cópia (no celular ficam no "⋯") */}
+                            {!isMobile && (
                             <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
                                 {!conteudoIsHtml && (
                                     <button
@@ -162,6 +182,7 @@ export function ViewAnotacaoModal({ active, closeModal, nota, onEdit }) {
                                     }
                                 </button>
                             </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -190,5 +211,19 @@ export function ViewAnotacaoModal({ active, closeModal, nota, onEdit }) {
                 </div>
             </div>
         </BaseModal>
+        {isMobile && (
+            <ActionSheet
+                open={menuAberto}
+                onClose={() => setMenuAberto(false)}
+                title={nota.titulo}
+                icon="fa-solid fa-note-sticky"
+                actions={[
+                    ...(!conteudoIsHtml ? [{ key: 'md', icon: 'fa-brands fa-markdown', label: 'Copiar Markdown', onClick: () => handleCopy('md') }] : []),
+                    { key: 'texto', icon: 'fa-regular fa-copy', label: 'Copiar texto', onClick: () => handleCopy('text') },
+                    { key: 'pdf', icon: 'fa-solid fa-download', label: pdfLoading ? 'Gerando PDF...' : 'Baixar PDF', onClick: handleDownloadPdf },
+                ]}
+            />
+        )}
+        </>
     );
 }
