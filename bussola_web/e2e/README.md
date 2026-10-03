@@ -10,4 +10,5 @@ Requer o venv do `bussola_api` (sobe a API com um banco demo descartável em `bu
 - `*.desktop.spec.mjs` = 1280×900 · `*.mobile.spec.mjs` = 390×844 (touch) · `*.tablet.spec.mjs` = 900×1200 (touch)
 - Relógio fixo em 2026-10-02 12:00 (helpers.mjs) para as datas ficarem estáveis.
 - Para recriar os dados demo: pare a API e apague `bussola_api/data/e2e_demo.db` (e regenere a base visual).
+- O Vite do teste sobe com `VITE_GOOGLE_CLIENT_ID` falso (`playwright.config.mjs` → `webServer.env`). Com `reuseExistingServer`, um `npm run dev` já aberto **sem** essa variável é reaproveitado: feche-o antes de rodar a suíte. As specs de Login/Auth também bloqueiam `accounts.google.com` (`e2e/fixtures/auth.mjs` → `semGoogle`).
 - `/__ui` é uma bancada DEV-only dos primitivos mobile (não vai para o build de produção).

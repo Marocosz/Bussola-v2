@@ -12,6 +12,31 @@ import loginImageLight from '../../assets/images/loginimage1.svg';
 import loginImageDark from '../../assets/images/loginimage1-dark.svg';
 import logoBussola from '../../assets/images/bussola.svg';
 
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+// Botão "Entrar com Google" isolado: o hook do Google só roda quando o botão existe.
+// Sem client id, o initTokenClient do GSI lança assim que o script carrega e o
+// ErrorBoundary troca a tela inteira por "Algo deu errado." (mesmo em SELF_HOSTED,
+// onde o botão nem aparece).
+function GoogleLoginButton({ disabled, onToken, onCancelado }) {
+    const entrar = useGoogleLogin({
+        onSuccess: (tokenResponse) => onToken(tokenResponse.access_token),
+        onError: onCancelado,
+    });
+    return (
+        <button
+            type="button"
+            className="btn-secondary"
+            style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '8px' }}
+            onClick={() => entrar()}
+            disabled={disabled}
+        >
+            <i className="fa-brands fa-google"></i>
+            Entrar com Google
+        </button>
+    );
+}
+
 export function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -31,30 +56,25 @@ export function Login() {
     const nextUrl = searchParams.get('next') || '/home';
 
     // --- LÓGICA DO LOGIN GOOGLE ---
-    const handleGoogleClick = useGoogleLogin({
-        onSuccess: async (tokenResponse) => {
-            setLoading(true);
-            try {
-                // Chama a função do Contexto que chama a API
-                const result = await loginGoogle(tokenResponse.access_token);
+    const entrarComGoogle = async (accessToken) => {
+        setLoading(true);
+        try {
+            // Chama a função do Contexto que chama a API
+            const result = await loginGoogle(accessToken);
 
-                if (result.success) {
-                    addToast({ type: 'success', title: 'Login com Google', description: 'Bem-vindo de volta!' });
-                    navigate(nextUrl, { replace: true });
-                } else {
-                    addToast({ type: 'error', title: 'Falha', description: 'Não foi possível autenticar com o Google.' });
-                }
-            } catch (error) {
-                logger.error("Erro inesperado", { error: String(error) });
-                addToast({ type: 'error', title: 'Erro', description: 'Erro na comunicação com o Google.' });
-            } finally {
-                setLoading(false);
+            if (result.success) {
+                addToast({ type: 'success', title: 'Login com Google', description: 'Bem-vindo de volta!' });
+                navigate(nextUrl, { replace: true });
+            } else {
+                addToast({ type: 'error', title: 'Falha', description: 'Não foi possível autenticar com o Google.' });
             }
-        },
-        onError: () => {
-            addToast({ type: 'error', title: 'Erro', description: 'O login com Google foi cancelado.' });
+        } catch (error) {
+            logger.error("Erro inesperado", { error: String(error) });
+            addToast({ type: 'error', title: 'Erro', description: 'Erro na comunicação com o Google.' });
+        } finally {
+            setLoading(false);
         }
-    });
+    };
 
     // --- LÓGICA DO LOGIN LOCAL ---
     const handleSubmit = async (e) => {
@@ -150,17 +170,12 @@ export function Login() {
                         <div className="auth-actions" style={{ marginTop: '1.5rem', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             
                             {/* BOTÃO GOOGLE (Habilitado se for SaaS ou Configurado) */}
-                            {isSaaS && (
-                                <button
-                                    type="button"
-                                    className="btn-secondary"
-                                    style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '8px' }}
-                                    onClick={() => handleGoogleClick()}
+                            {isSaaS && GOOGLE_CLIENT_ID && (
+                                <GoogleLoginButton
                                     disabled={loading}
-                                >
-                                    <i className="fa-brands fa-google"></i>
-                                    Entrar com Google
-                                </button>
+                                    onToken={entrarComGoogle}
+                                    onCancelado={() => addToast({ type: 'error', title: 'Erro', description: 'O login com Google foi cancelado.' })}
+                                />
                             )}
 
                             {/* LINK CADASTRO */}
