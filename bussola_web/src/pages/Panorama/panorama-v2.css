@@ -231,7 +231,12 @@ body.light-theme .pcard {
   .pv2-kpiband > [aria-expanded="true"] .pv2-kpi-label { color: var(--blue); }
   .pv2-kpiband > [role="button"]:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; border-radius: 8px; }
   .pv2-kpi-value,
-  .pv2-kpi-big { font-size: clamp(18px, 5.6vw, 24px); margin: var(--sp-2) 0; }
+  .pv2-kpi-big { font-size: clamp(18px, 5.6vw, 24px); line-height: 1.2; margin: 0; }
+  /* Célula em 3 linhas fixas (rótulo · valor · extra): rótulo e valor de cada linha da grade
+     caem no mesmo y mesmo quando uma célula não tem a linha de variação. */
+  .pv2-kpiband > .pv2-kpi,
+  .pv2-kpiband > .pv2-kpi-extra:not(.pv2-kpi-proj) { display: grid; grid-template-rows: auto auto auto; align-content: start; row-gap: var(--sp-2); }
+  .pv2-kpiband > .pv2-kpi-extra:not(.pv2-kpi-proj) .pv2-track { align-self: start; }
   .pv2-proj-chip { font-size: 12px; }
 
   /* Explicação do KPI tocado (no lugar do tooltip, que não existe no toque). */

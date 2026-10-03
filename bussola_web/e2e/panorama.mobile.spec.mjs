@@ -112,6 +112,14 @@ test.describe('hero e KPIs', () => {
     // valores do 2×2 no mesmo tamanho (Poupança não fica maior que os outros)
     const sizes = await band.locator('.pv2-kpi-value, .pv2-kpi-big').evaluateAll((els) => els.map((e) => getComputedStyle(e).fontSize));
     expect(new Set(sizes).size).toBe(1);
+    // rótulo e valor de cada linha no mesmo y (Poupança não fica acima do Balanço): mede o texto desenhado
+    const tops = await band.evaluate((e) => {
+      const topo = (el) => { const r = document.createRange(); r.selectNodeContents(el); return r.getBoundingClientRect().top; };
+      return [...e.children].slice(0, 4).map((c) => ({ l: topo(c.querySelector('.pv2-kpi-label')), v: topo(c.querySelector('.pv2-kpi-value, .pv2-kpi-big')) }));
+    });
+    expect(Math.abs(tops[0].v - tops[1].v)).toBeLessThanOrEqual(1);
+    expect(Math.abs(tops[2].v - tops[3].v)).toBeLessThanOrEqual(1);
+    expect(Math.abs(tops[2].l - tops[3].l)).toBeLessThanOrEqual(1);
   });
 
   test('tocar num KPI mostra a explicação em texto (aria-expanded); tocar de novo esconde', async ({ page }) => {
