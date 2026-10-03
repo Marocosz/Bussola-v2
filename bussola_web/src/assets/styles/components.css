@@ -29,6 +29,7 @@
     display: flex;
     flex-direction: column;
     max-height: 90vh;
+    max-height: 90dvh; /* barra do navegador no tablet; no desktop é igual a 90vh */
     animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 

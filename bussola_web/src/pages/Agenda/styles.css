@@ -597,7 +597,7 @@
 .agenda-scope .tooltip {
     display: none;
     opacity: 0;
-    position: absolute;
+    position: fixed;
     z-index: 2500;
     background-color: var(--cor-card-principal);
     border: 1px solid var(--cor-borda);
@@ -783,5 +783,83 @@
     .agenda-column:last-child .column-header-flex,
     .agenda-column:first-child .column-header-flex {
         border-radius: 12px;
+    }
+}
+
+/* ============================================= */
+/* 11. TABLET (769–1024) E TOQUE                 */
+/* ============================================= */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    /* spec §6: grid de cards com 1 coluna dentro da coluna da lista */
+    .agenda-scope .compromissos-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .agenda-scope .compromissos-grid>.compromisso-card-modern:last-child:nth-child(odd) {
+        grid-column: auto;
+    }
+
+    /* Colunas e grade do calendário não crescem pelo conteúdo (evita estourar a janela) */
+    .agenda-scope .layout-grid-custom.agenda-layout {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .agenda-scope .dias-grid {
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+
+    /* Cabeçalho da lista quebra linha: "Compromissos" em cima, busca + ordenar + Adicionar embaixo */
+    .agenda-scope .agenda-layout .column-header-flex.header-left-aligned {
+        flex-wrap: wrap;
+        gap: var(--sp-2);
+    }
+
+    .agenda-scope .header-left-aligned .header-actions-group {
+        flex: 1 1 100%;
+        min-width: 0;
+        gap: var(--sp-2);
+    }
+
+    .agenda-scope .header-left-aligned .header-search-wrapper {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .agenda-scope .header-left-aligned .header-search-input,
+    .agenda-scope .header-left-aligned .header-search-input:focus {
+        width: 100%;
+    }
+}
+
+/* Sem mouse: editar/excluir sempre visíveis (no celular já valia pelo @media 768). */
+@media (hover: none), (pointer: coarse) {
+    .agenda-scope .top-actions {
+        opacity: 1;
+    }
+}
+
+/* Toque: alvos de 44px nos controles da página (o .btn-action-icon já tem min 44 em tokens.css). */
+@media (pointer: coarse) {
+    .agenda-scope .btn-filter-sort,
+    :is(.agenda-scope, .roteiro-cal-sheet) .btn-nav-arrow {
+        width: var(--tap-min);
+        height: var(--tap-min);
+        flex-shrink: 0;
+    }
+
+    .agenda-scope .small-btn {
+        height: var(--tap-min);
+        min-height: var(--tap-min);
+    }
+
+    .agenda-scope .header-search-input {
+        height: var(--tap-min) !important;
+    }
+
+    .agenda-scope .btn-concluir-action,
+    .agenda-scope .btn-cancelar-action,
+    .agenda-scope .month-header {
+        min-height: var(--tap-min);
     }
 }

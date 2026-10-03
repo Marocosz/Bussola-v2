@@ -140,11 +140,13 @@ export function Agenda() {
     // [OPTIMIZATION] Handlers de Hover otimizados
     const handleDayHover = useCallback((e, compromissos) => {
         if (!compromissos || compromissos.length === 0) return;
+        // Tooltip só com mouse; coordenadas de viewport + `position: fixed` (certo com o body travado).
+        if (!window.matchMedia('(hover: hover)').matches) return;
         const rect = e.target.getBoundingClientRect();
         setTooltip({
             visible: true,
-            x: rect.right + window.scrollX - 280,
-            y: rect.bottom + window.scrollY + 5,
+            x: Math.max(8, rect.right - 280),
+            y: rect.bottom + 5,
             compromissos
         });
     }, []);

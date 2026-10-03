@@ -425,6 +425,7 @@ test.describe('novo compromisso e ações do card', () => {
     await gotoApp(page, '/agenda');
     await page.getByRole('button', { name: 'Novo compromisso' }).click();
     await expect(form(page).locator('h3')).toHaveText('Novo Compromisso');
+    await page.waitForTimeout(500); // deixa a animação do sheet terminar (medidas em subpixel)
     const t = await titulo(page).boundingBox();
     const dh = await form(page).locator('.pk-datetime-wrapper').boundingBox();
     expect(dh.y).toBeGreaterThanOrEqual(t.y + t.height);
@@ -517,4 +518,26 @@ test.describe('novo compromisso e ações do card', () => {
     await page.locator('.confirm-overlay').getByRole('button', { name: 'Excluir' }).click();
     await expect(card).toHaveCount(0);
   });
+});
+
+// ---------------------------------------------------------------------------
+// Conferência visual (só com ROTEIRO_SHOTS=1): lista, calendário e form em 360/390/430
+// ---------------------------------------------------------------------------
+test('capturas para conferência visual', async ({ page }) => {
+  test.skip(!process.env.ROTEIRO_SHOTS, 'só na conferência visual (ROTEIRO_SHOTS=1)');
+  await congelarAgenda(page);
+  for (const w of [360, 390, 430]) {
+    await page.setViewportSize({ width: w, height: 844 });
+    await gotoApp(page, '/agenda');
+    await page.screenshot({ path: `test-results/roteiro-${w}-lista.png` });
+    await page.screenshot({ path: `test-results/roteiro-${w}-lista-inteira.png`, fullPage: true });
+    await page.locator('.m-topbar-slot').getByRole('button', { name: 'Abrir calendário' }).click();
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: `test-results/roteiro-${w}-calendario.png` });
+    await page.locator('.roteiro-cal-sheet').getByRole('button', { name: 'Fechar' }).click();
+    await page.getByRole('button', { name: 'Novo compromisso' }).click();
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: `test-results/roteiro-${w}-form.png` });
+    await page.locator('.agenda-modal').getByRole('button', { name: 'Cancelar' }).click();
+  }
 });

@@ -268,8 +268,9 @@
     }
 }
 
-/* Celular pequeno: o dia da semana do cabeçalho do card desce para baixo da data. */
-@media (max-width: 480px) {
+/* Celular pequeno e tablet (card de ~300px na coluna da lista): o dia da semana do
+   cabeçalho do card desce para baixo da data. */
+@media (max-width: 480px), (min-width: 769px) and (max-width: 1024px) {
     .agenda-scope .compromisso-card-modern .date-highlight {
         flex-wrap: wrap;
         column-gap: var(--sp-3);

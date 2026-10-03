@@ -49,3 +49,23 @@ test('desktop roteiro: nada do layout mobile aparece', async ({ page }) => {
   await expect(page.locator('.app-fab')).toHaveCount(0);
   await expect(page.locator('.m-topbar')).toHaveCount(0);
 });
+
+test('desktop roteiro: tooltip acompanha o dia mesmo com o body travado (scrollLock)', async ({ page }) => {
+  await congelarAgenda(page);
+  await gotoApp(page, '/agenda');
+  await page.evaluate(() => window.scrollTo(0, 120));
+  // mesmo estado que o lockScroll deixa: body fixo deslocado pelo scroll
+  await page.evaluate(() => {
+    const y = window.scrollY;
+    Object.assign(document.body.style, { position: 'fixed', top: `-${y}px`, left: '0', right: '0', width: '100%' });
+  });
+  const dia = page.locator('.dias-grid .dia-card.has-compromissos').first();
+  await dia.hover();
+  const tip = page.locator('.tooltip.visible');
+  await expect(tip).toBeVisible();
+  const d = await dia.boundingBox();
+  const t = await tip.boundingBox();
+  expect(t.y).toBeGreaterThanOrEqual(d.y);
+  expect(t.y).toBeLessThanOrEqual(d.y + d.height + 6);
+  expect(t.x).toBeGreaterThanOrEqual(0);
+});
