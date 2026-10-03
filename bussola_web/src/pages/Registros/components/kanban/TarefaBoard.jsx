@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     DndContext, DragOverlay, PointerSensor, TouchSensor, KeyboardSensor,
     useSensor, useSensors, pointerWithin, rectIntersection,
@@ -22,6 +22,42 @@ const detectarColisao = (args) => {
     const porPonteiro = pointerWithin(args);
     return porPonteiro.length > 0 ? porPonteiro : rectIntersection(args);
 };
+
+const containerDoId = (id, estado) => {
+    if (COL_KEYS.includes(id)) return id;
+    return COL_KEYS.find(k => estado[k].some(t => t.id === id));
+};
+
+// Leva o card `activeId` para a coluna de `overId` (na posição do card sob o ponteiro ou no fim).
+// Devolve o mesmo estado se já estiver na mesma coluna.
+function moverEntreColunas(estado, activeId, overId) {
+    const from = containerDoId(activeId, estado);
+    const to = containerDoId(overId, estado);
+    if (!from || !to || from === to) return estado;
+
+    const item = estado[from].find(t => t.id === activeId);
+    if (!item) return estado;
+
+    const destino = [...estado[to]];
+    const overIndex = destino.findIndex(t => t.id === overId);
+    destino.splice(overIndex >= 0 ? overIndex : destino.length, 0, { ...item, status: keyToStatus(to) });
+    return { ...estado, [from]: estado[from].filter(t => t.id !== activeId), [to]: destino };
+}
+
+// Estado final do soltar: troca de coluna (caso o último onDragOver ainda não tenha sido aplicado)
+// e reordenação dentro da coluna de destino.
+function soltarCard(estado, activeId, overId) {
+    const movido = moverEntreColunas(estado, activeId, overId);
+    const to = containerDoId(activeId, movido);
+    if (!to) return null;
+    const lista = movido[to];
+    const oldIndex = lista.findIndex(t => t.id === activeId);
+    const newIndex = lista.findIndex(t => t.id === overId);
+    if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return movido;
+    return { ...movido, [to]: arrayMove(lista, oldIndex, newIndex) };
+}
+
+const mesmaColuna = (a, b) => a.length === b.length && a.every((t, i) => t.id === b[i].id && t.status === b[i].status);
 
 export function TarefaBoard({ novaRef }) {
     const { addToast } = useToast();
@@ -58,12 +94,11 @@ export function TarefaBoard({ novaRef }) {
 
     useEffect(() => { carregar(); }, [carregar]);
 
-    const containerDoId = (id, estado) => {
-        if (COL_KEYS.includes(id)) return id;
-        return COL_KEYS.find(k => estado[k].some(t => t.id === id));
-    };
+    // Estado do quadro antes do arraste: volta para ele se o arraste for cancelado ou a API falhar.
+    const antesDoArrasteRef = useRef(null);
 
     const onDragStart = ({ active }) => {
+        antesDoArrasteRef.current = colunas;
         const k = containerDoId(active.id, colunas);
         const t = k && colunas[k].find(x => x.id === active.id);
         setActiveTarefa(t || null);
@@ -71,51 +106,44 @@ export function TarefaBoard({ novaRef }) {
 
     const onDragOver = ({ active, over }) => {
         if (!over) return;
-        setColunas(prev => {
-            const from = containerDoId(active.id, prev);
-            const to = containerDoId(over.id, prev);
-            if (!from || !to || from === to) return prev;
-
-            const item = prev[from].find(t => t.id === active.id);
-            if (!item) return prev;
-
-            const origem = prev[from].filter(t => t.id !== active.id);
-            const destino = [...prev[to]];
-            const overIndex = destino.findIndex(t => t.id === over.id);
-            const insertAt = overIndex >= 0 ? overIndex : destino.length;
-            destino.splice(insertAt, 0, { ...item, status: keyToStatus(to) });
-
-            return { ...prev, [from]: origem, [to]: destino };
-        });
+        setColunas(prev => moverEntreColunas(prev, active.id, over.id));
     };
 
+    // Otimista: aplica `novo` já e grava a coluna `to` (ordem + status). Se a API falhar, volta para `anterior`.
+    const salvarColuna = useCallback(async (anterior, novo, to) => {
+        setColunas(novo);
+        try {
+            await reordenarTarefas(keyToStatus(to), novo[to].map(t => t.id));
+            return true;
+        } catch (e) {
+            logger.error('Erro ao reordenar', { error: String(e) });
+            setColunas(anterior);
+            addToast({ type: 'error', title: 'Erro', description: 'Não consegui salvar a mudança.' });
+            return false;
+        }
+    }, [addToast]);
+
+    // O novo estado é calculado aqui, a partir do `colunas` atual, e não dentro de um updater do
+    // setColunas: updaters rodam depois, então os ids lidos logo em seguida ainda seriam nulos
+    // e o PATCH /tarefas/reordenar nunca era enviado (o arraste não era salvo).
     const onDragEnd = ({ active, over }) => {
         setActiveTarefa(null);
-        if (!over) return;
+        const anterior = antesDoArrasteRef.current || colunas;
+        antesDoArrasteRef.current = null;
+        if (!over) { setColunas(anterior); return; }
 
-        const to = containerDoId(over.id, colunas);
-        if (!to) return;
+        const novo = soltarCard(colunas, active.id, over.id);
+        const to = novo && containerDoId(active.id, novo);
+        if (!to) { setColunas(anterior); return; }
+        if (mesmaColuna(anterior[to], novo[to])) { setColunas(novo); return; } // soltou onde estava
 
-        let idsDestino = null;
-        setColunas(prev => {
-            const lista = [...prev[to]];
-            const oldIndex = lista.findIndex(t => t.id === active.id);
-            const newIndex = lista.findIndex(t => t.id === over.id);
-            let final = lista;
-            if (oldIndex >= 0 && newIndex >= 0 && oldIndex !== newIndex) {
-                final = arrayMove(lista, oldIndex, newIndex);
-            }
-            idsDestino = final.map(t => t.id);
-            return { ...prev, [to]: final };
-        });
+        salvarColuna(anterior, novo, to);
+    };
 
-        if (idsDestino) {
-            reordenarTarefas(keyToStatus(to), idsDestino).catch((e) => {
-                logger.error('Erro ao reordenar', { error: String(e) });
-                addToast({ type: 'error', title: 'Erro', description: 'Não consegui salvar a mudança.' });
-                carregar(); // rollback: recarrega o estado do servidor
-            });
-        }
+    const onDragCancel = () => {
+        setActiveTarefa(null);
+        if (antesDoArrasteRef.current) setColunas(antesDoArrasteRef.current);
+        antesDoArrasteRef.current = null;
     };
 
     const quickAdd = useCallback(async (statusDestino, titulo) => {
@@ -167,7 +195,7 @@ export function TarefaBoard({ novaRef }) {
             ) : (
                 <DndContext
                     sensors={sensors} collisionDetection={detectarColisao}
-                    onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd}
+                    onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd} onDragCancel={onDragCancel}
                 >
                     <div className="kb-board">
                         {COLUNAS.map(col => (

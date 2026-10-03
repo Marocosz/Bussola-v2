@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp } from './helpers.mjs';
-import { comApi, limparRegistrosE2E, criarTarefa } from './registros-data.mjs';
+import { comApi, limparRegistrosE2E, criarTarefa, tarefaPorTitulo } from './registros-data.mjs';
 
 test.beforeAll(async ({ playwright }) => comApi(playwright, limparRegistrosE2E));
 test.afterAll(async ({ playwright }) => comApi(playwright, limparRegistrosE2E));
@@ -97,10 +97,10 @@ test('desktop: arrastar um card com o mouse muda a coluna', async ({ page, reque
     await page.mouse.move(a.x + a.width / 2 + 20, a.y + a.height / 2, { steps: 5 });
     await page.mouse.move(b.x + b.width / 2, b.y + 30, { steps: 15 });
     await page.mouse.up();
-    // Só a UI: hoje o PATCH /tarefas/reordenar NÃO é disparado (bug pré-existente em
-    // TarefaBoard.onDragEnd: `idsDestino` é lido antes do updater do setColunas rodar).
     const colBloqueado = page.locator('.kb-column', { has: page.locator('.kb-column-label', { hasText: 'Bloqueado' }) });
     await expect(colBloqueado.locator('.kb-card', { hasText: 'E2E arrastar' })).toHaveCount(1);
+    // E persiste (PATCH /tarefas/reordenar): o status gravado é o da coluna de destino.
+    await expect.poll(async () => (await tarefaPorTitulo(request, 'E2E arrastar'))?.status).toBe('Bloqueado');
   } finally {
     await limparRegistrosE2E(request);
   }
