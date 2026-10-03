@@ -564,3 +564,33 @@ test.describe('perfil', () => {
     await expect.poll(async () => { const b = await confirmar.boundingBox(); return b.y + b.height; }).toBeLessThanOrEqual(420);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 7: capturas (abrir os PNGs e conferir espaçamento contra o mockup)
+// ---------------------------------------------------------------------------
+const animacoesAcabaram = (page) => page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => null))));
+
+test('capturas para a conferência visual (360/390/430)', async ({ page }, testInfo) => {
+  for (const w of [360, 390, 430]) {
+    await page.setViewportSize({ width: w, height: 844 });
+    await gotoApp(page, '/ritmo');
+    await page.screenshot({ path: testInfo.outputPath(`ritmo-${w}-treino.png`), fullPage: true });
+    await abrirAba(page, 'Plano de Dieta');
+    await page.screenshot({ path: testInfo.outputPath(`ritmo-${w}-dieta.png`), fullPage: true });
+    await page.getByRole('button', { name: 'Nova dieta' }).click();
+    await page.getByRole('button', { name: '+ Add Alimento' }).click();
+    await animacoesAcabaram(page);
+    await page.screenshot({ path: testInfo.outputPath(`ritmo-${w}-builder-dieta.png`) });
+    await page.locator('.modal-overlay.is-sheet-full').getByRole('button', { name: 'Cancelar' }).click();
+    await abrirAba(page, 'Plano de Treino');
+    await page.getByRole('button', { name: 'Novo treino' }).click();
+    await page.getByRole('button', { name: '+ Add Exercício' }).click();
+    await animacoesAcabaram(page);
+    await page.screenshot({ path: testInfo.outputPath(`ritmo-${w}-builder-treino.png`) });
+    await page.locator('.modal-overlay.is-sheet-full').getByRole('button', { name: 'Cancelar' }).click();
+    await page.getByRole('button', { name: 'Ajustar Perfil' }).click();
+    await animacoesAcabaram(page);
+    await page.screenshot({ path: testInfo.outputPath(`ritmo-${w}-perfil.png`) });
+    await page.locator('.modal-overlay.is-sheet').getByRole('button', { name: 'Cancelar' }).click();
+  }
+});

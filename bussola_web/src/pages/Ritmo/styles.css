@@ -1853,6 +1853,13 @@
     .ritmo-scope .suggestion-badge {
         cursor: pointer;
     }
+
+    .ritmo-scope .suggestion-badge:focus-visible {
+        outline: 2px solid var(--cor-azul-primario);
+        outline-offset: 2px;
+        border-radius: 6px;
+        opacity: 1;
+    }
 }
 
 @media (max-width: 768px) {
@@ -1915,6 +1922,84 @@
         display: inline-flex;
         align-items: center;
         flex-shrink: 0;
+    }
+
+    .ritmo-scope .row-calorias .suggestion-badge {
+        padding: 0 var(--sp-3);
+    }
+}
+
+/* ============================================= */
+/* 15. TABLET (769–1024) E TOQUE ≥769            */
+/* ============================================= */
+@media (min-width: 769px) and (max-width: 1024px) {
+    /* 7 chips + Ajustar Perfil em 4×2 (o chip mantém o visual) */
+    .ritmo-scope .bio-stat-strip {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .ritmo-scope .bio-stat-chip:nth-child(4n) {
+        border-right: none;
+    }
+
+    .ritmo-scope .bio-stat-chip:nth-child(-n + 4) {
+        border-bottom: 1px solid var(--cor-borda);
+    }
+
+    .ritmo-scope .chip-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .ritmo-scope .btn-adjust-profile-chip {
+        justify-content: center;
+    }
+}
+
+@media (pointer: coarse) and (min-width: 769px) {
+    .ritmo-scope .tab-btn-pill,
+    .ritmo-scope .header-actions-group .btn-primary,
+    .ritmo-scope .rb-add-btn,
+    .ritmo-scope .rb-add-btn.is-food,
+    .ritmo-scope .rb-add-day,
+    .ritmo-scope .btn-use-suggested,
+    .ritmo-scope .modal-footer > button {
+        min-height: var(--tap-min);
+    }
+
+    .ritmo-scope .plan-actions button {
+        width: var(--tap-min);
+        height: var(--tap-min);
+    }
+
+    /* Builders: mesmo grid do desktop, com a coluna do remover em 44px */
+    .ritmo-scope .rb-ex-row {
+        grid-template-columns: 1.5fr 1fr 0.6fr 0.6fr 0.6fr var(--tap-min);
+    }
+
+    .ritmo-scope .rb-food-row {
+        grid-template-columns: 2fr 0.8fr 0.6fr 0.7fr 0.7fr 0.7fr 0.7fr var(--tap-min);
+    }
+
+    .ritmo-scope .rb-remove,
+    .ritmo-scope .rb-food-row .rb-remove,
+    .ritmo-scope .rb-icon-btn,
+    .ritmo-scope .close-btn,
+    .ritmo-scope .close-btn-styled {
+        width: var(--tap-min);
+        height: var(--tap-min);
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .ritmo-scope .suggestion-badge {
+        min-height: var(--tap-min);
+        display: inline-flex;
+        align-items: center;
     }
 
     .ritmo-scope .row-calorias .suggestion-badge {
