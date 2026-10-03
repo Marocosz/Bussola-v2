@@ -773,3 +773,68 @@
         -webkit-touch-callout: none;
     }
 }
+
+/* --- Detalhe da tarefa e subtarefas --- */
+@media (max-width: 768px) {
+    .registros-scope .tarefa-m-head-acoes {
+        display: flex;
+        gap: var(--sp-2);
+        flex-shrink: 0;
+    }
+
+    .registros-scope .kb-subtree {
+        gap: var(--sp-2);
+    }
+
+    .registros-scope .kb-tree-addroot,
+    .registros-scope .kb-tree-add {
+        gap: var(--sp-2);
+    }
+
+    .registros-scope .kb-tree-addroot .form-input,
+    .registros-scope .kb-tree-add .form-input {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .registros-scope .kb-tree-row {
+        min-height: var(--tap-min);
+        padding: 0;
+        gap: var(--sp-1);
+    }
+
+    .registros-scope .kb-tree-check {
+        width: var(--tap-min);
+        height: var(--tap-min);
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+    }
+
+    .registros-scope .kb-tree-title {
+        min-width: 0;
+        font-size: 0.9375rem;
+        overflow-wrap: anywhere;
+    }
+
+    .registros-scope .kb-icon-btn {
+        width: var(--tap-min);
+        height: var(--tap-min);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+    }
+
+    /* Recuo limitado a 12px por nível (11px + 1px da linha guia) */
+    .registros-scope .kb-tree-children {
+        margin-left: 0;
+        padding-left: calc(var(--sp-3) - 1px);
+    }
+
+    .registros-scope .kb-tree-empty {
+        font-size: 0.875rem;
+    }
+}

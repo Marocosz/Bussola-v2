@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { createTarefa, updateTarefa, deleteTarefa } from '../../../../services/api';
 import { useToast } from '../../../../context/ToastContext';
 import { useConfirm } from '../../../../context/ConfirmDialogContext';
+import { useIsMobile } from '../../../../hooks/useIsMobile';
 import { BaseModal } from '../../../../components/BaseModal';
+import { ActionSheet } from '../../../../components/mobile/ActionSheet';
 import { DatePicker } from '../../../../components/Pickers';
 import { SubtaskTree } from './SubtaskTree';
 import { COLUNAS, PRIO_COLORS } from './columns';
@@ -12,6 +14,7 @@ const PRIOS = ['Baixa', 'Média', 'Alta', 'Crítica'];
 export function TarefaDetailPanel({ aberto, tarefa, onClose, onSaved }) {
     const { addToast } = useToast();
     const confirm = useConfirm();
+    const isMobile = useIsMobile();
     const editando = !!tarefa;
 
     const [titulo, setTitulo] = useState('');
@@ -21,6 +24,7 @@ export function TarefaDetailPanel({ aberto, tarefa, onClose, onSaved }) {
     const [prazo, setPrazo] = useState('');
     const [subtarefas, setSubtarefas] = useState([]);
     const [salvando, setSalvando] = useState(false);
+    const [menuAberto, setMenuAberto] = useState(false);
 
     // Chave "prev" pra resetar o form no render (evita setState em effect).
     const [prevId, setPrevId] = useState(null);
@@ -33,6 +37,7 @@ export function TarefaDetailPanel({ aberto, tarefa, onClose, onSaved }) {
         setStatus(tarefa?.status || 'Pendente');
         setPrazo(tarefa?.prazo ? tarefa.prazo.split('T')[0] : '');
         setSubtarefas(tarefa?.subtarefas ? JSON.parse(JSON.stringify(tarefa.subtarefas)) : []);
+        setMenuAberto(false);
     }
     useEffect(() => { if (!aberto) setPrevId(null); }, [aberto]);
 
@@ -72,39 +77,95 @@ export function TarefaDetailPanel({ aberto, tarefa, onClose, onSaved }) {
     if (!aberto) return null;
 
     return (
-        <BaseModal onClose={onClose} className="registros-scope">
+        <>
+        <BaseModal onClose={onClose} className="registros-scope" sheet="full">
             <div
                 className="modal-content large-modal"
                 onClick={e => e.stopPropagation()}
-                style={{ maxWidth: '620px', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
+                style={{ maxWidth: '620px', maxHeight: '90dvh', display: 'flex', flexDirection: 'column' }}
             >
                 <div className="modal-header">
                     <h2>{editando ? 'Editar Tarefa' : 'Nova Tarefa'}</h2>
-                    <span className="close-btn" onClick={onClose}>&times;</span>
+                    {isMobile ? (
+                        <div className="tarefa-m-head-acoes">
+                            {editando && (
+                                <button type="button" className="reg-icon-btn" aria-label="Mais ações" onClick={() => setMenuAberto(true)}>
+                                    <i className="fa-solid fa-ellipsis"></i>
+                                </button>
+                            )}
+                            <button type="button" className="reg-icon-btn" aria-label="Fechar" onClick={onClose}>
+                                <i className="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    ) : (
+                        <span className="close-btn" onClick={onClose}>&times;</span>
+                    )}
                 </div>
 
                 <div className="modal-body">
                     <div className="form-group">
                         <label>O que precisa ser feito?</label>
-                        <input className="form-input" value={titulo} autoFocus
+                        {/* Sem foco automático no celular: o teclado não abre sobre o painel. */}
+                        <input className="form-input" value={titulo} autoFocus={!isMobile}
                             onChange={e => setTitulo(e.target.value)} placeholder="Título..." />
                     </div>
 
-                    <div className="form-row">
-                        <div className="form-group" style={{ flex: 1 }}>
-                            <label>Status</label>
-                            <select className="form-input" value={status} onChange={e => setStatus(e.target.value)}>
-                                {COLUNAS.map(c => <option key={c.key} value={c.status}>{c.label}</option>)}
-                            </select>
+                    {isMobile ? (
+                        <>
+                            <div className="form-group">
+                                <span className="reg-campo-label" id="tarefa-status-label">Status</span>
+                                <div className="reg-chip-grid" role="radiogroup" aria-labelledby="tarefa-status-label">
+                                    {COLUNAS.map(c => (
+                                        <button
+                                            key={c.key}
+                                            type="button"
+                                            role="radio"
+                                            aria-checked={status === c.status}
+                                            className={`reg-chip ${status === c.status ? 'active' : ''}`}
+                                            onClick={() => setStatus(c.status)}
+                                        >
+                                            <span className="reg-chip-dot" style={{ backgroundColor: c.accent }}></span>
+                                            <span>{c.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="form-group">
+                                <span className="reg-campo-label" id="tarefa-prio-label">Prioridade</span>
+                                <div className="reg-chip-grid" role="radiogroup" aria-labelledby="tarefa-prio-label">
+                                    {PRIOS.map(p => (
+                                        <button
+                                            key={p}
+                                            type="button"
+                                            role="radio"
+                                            aria-checked={prioridade === p}
+                                            className={`reg-chip ${prioridade === p ? 'active' : ''}`}
+                                            onClick={() => setPrioridade(p)}
+                                        >
+                                            <span className="reg-chip-dot" style={{ backgroundColor: PRIO_COLORS[p] }}></span>
+                                            <span>{p}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="form-row">
+                            <div className="form-group" style={{ flex: 1 }}>
+                                <label>Status</label>
+                                <select className="form-input" value={status} onChange={e => setStatus(e.target.value)}>
+                                    {COLUNAS.map(c => <option key={c.key} value={c.status}>{c.label}</option>)}
+                                </select>
+                            </div>
+                            <div className="form-group" style={{ flex: 1 }}>
+                                <label>Prioridade</label>
+                                <select className="form-input" value={prioridade} onChange={e => setPrioridade(e.target.value)}
+                                    style={{ borderLeft: `4px solid ${PRIO_COLORS[prioridade]}` }}>
+                                    {PRIOS.map(p => <option key={p} value={p}>{p}</option>)}
+                                </select>
+                            </div>
                         </div>
-                        <div className="form-group" style={{ flex: 1 }}>
-                            <label>Prioridade</label>
-                            <select className="form-input" value={prioridade} onChange={e => setPrioridade(e.target.value)}
-                                style={{ borderLeft: `4px solid ${PRIO_COLORS[prioridade]}` }}>
-                                {PRIOS.map(p => <option key={p} value={p}>{p}</option>)}
-                            </select>
-                        </div>
-                    </div>
+                    )}
 
                     <div className="form-group">
                         <DatePicker label="Prazo (opcional)" value={prazo} onChange={e => setPrazo(e.target.value)} />
@@ -123,17 +184,38 @@ export function TarefaDetailPanel({ aberto, tarefa, onClose, onSaved }) {
                 </div>
 
                 <div className="modal-footer" style={{ justifyContent: 'space-between' }}>
-                    {editando
-                        ? <button className="btn-secondary" onClick={excluir} style={{ color: 'var(--cor-vermelho-delete)' }}><i className="fa-solid fa-trash-can"></i> Excluir</button>
-                        : <span />}
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                        <button className="btn-secondary" onClick={onClose}>Cancelar</button>
-                        <button className="btn-primary" onClick={salvar} disabled={salvando}>
-                            {salvando ? 'Salvando...' : (editando ? 'Salvar' : 'Criar')}
-                        </button>
-                    </div>
+                    {isMobile ? (
+                        <>
+                            <button className="btn-secondary" onClick={onClose}>Cancelar</button>
+                            <button className="btn-primary" onClick={salvar} disabled={salvando}>
+                                {salvando ? 'Salvando...' : (editando ? 'Salvar' : 'Criar')}
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            {editando
+                                ? <button className="btn-secondary" onClick={excluir} style={{ color: 'var(--cor-vermelho-delete)' }}><i className="fa-solid fa-trash-can"></i> Excluir</button>
+                                : <span />}
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <button className="btn-secondary" onClick={onClose}>Cancelar</button>
+                                <button className="btn-primary" onClick={salvar} disabled={salvando}>
+                                    {salvando ? 'Salvando...' : (editando ? 'Salvar' : 'Criar')}
+                                </button>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         </BaseModal>
+        {isMobile && editando && (
+            <ActionSheet
+                open={menuAberto}
+                onClose={() => setMenuAberto(false)}
+                title={tarefa.titulo}
+                icon="fa-solid fa-list-check"
+                actions={[{ key: 'excluir', icon: 'fa-solid fa-trash-can', label: 'Excluir tarefa', variant: 'danger', onClick: excluir }]}
+            />
+        )}
+        </>
     );
 }

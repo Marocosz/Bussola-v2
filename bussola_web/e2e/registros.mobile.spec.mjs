@@ -425,3 +425,66 @@ test.describe('Tarefas', () => {
     expect(await card.evaluate((e) => getComputedStyle(e).touchAction)).toBe('manipulation');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 5 — detalhe da tarefa
+// ---------------------------------------------------------------------------
+test.describe('detalhe da tarefa', () => {
+  test('tela cheia sem foco automático; status e prioridade em chips; Excluir no ⋯', async ({ page, request }) => {
+    await criarTarefa(request, { titulo: 'E2E detalhe', status: 'Em andamento', prioridade: 'Alta' });
+    await abrirTarefas(page);
+    await irParaColuna(page, 1);
+    await page.locator('.kb-card', { hasText: 'E2E detalhe' }).click();
+    const ov = page.locator('.modal-overlay.is-sheet-full');
+    await expect(ov.getByRole('heading', { name: 'Editar Tarefa' })).toBeVisible();
+    expect(await focoEmCampo(page)).toBe(false);
+    await expect(ov.getByRole('radio', { name: 'Em Andamento' })).toHaveAttribute('aria-checked', 'true');
+    await expect(ov.getByRole('radio', { name: 'Alta' })).toHaveAttribute('aria-checked', 'true');
+    await expect(ov.locator('.modal-footer').getByRole('button', { name: /Excluir/ })).toHaveCount(0);
+    expect(await smallTargets(page, '.modal-overlay.is-sheet-full')).toEqual([]);
+    await ov.getByRole('radio', { name: 'Bloqueado' }).click();
+    await ov.getByRole('radio', { name: 'Crítica' }).click();
+    await ov.getByRole('button', { name: 'Salvar', exact: true }).click();
+    await expect.poll(async () => { const t = await tarefaPorTitulo(request, 'E2E detalhe'); return t && `${t.status}|${t.prioridade}`; }).toBe('Bloqueado|Crítica');
+
+    await irParaColuna(page, 2);
+    await page.locator('.kb-card', { hasText: 'E2E detalhe' }).click();
+    await page.locator('.modal-overlay.is-sheet-full').getByRole('button', { name: 'Mais ações' }).click();
+    await page.locator('.action-sheet').getByRole('button', { name: 'Excluir tarefa' }).click();
+    await page.locator('.confirm-modal').getByRole('button', { name: 'Excluir' }).click();
+    await expect.poll(() => tarefaPorTitulo(request, 'E2E detalhe')).toBeNull();
+  });
+
+  test('subtarefas: linhas de 44px e recuo de 12px por nível', async ({ page }) => {
+    await abrirTarefas(page);
+    await page.locator('.app-fab').click();
+    const ov = page.locator('.modal-overlay.is-sheet-full');
+    await expect(ov.getByRole('heading', { name: 'Nova Tarefa' })).toBeVisible();
+    await expect(ov.getByRole('button', { name: 'Mais ações' })).toHaveCount(0);
+    const raiz = ov.getByPlaceholder('Adicionar etapa principal...');
+    await raiz.fill('Etapa 1');
+    await raiz.press('Enter');
+    await ov.getByRole('button', { name: 'Sub-etapa' }).click();
+    const filha = ov.getByPlaceholder('Nome da sub-etapa...');
+    await filha.fill('Etapa 1.1');
+    await filha.press('Enter');
+    const linhas = ov.locator('.kb-tree-row');
+    await expect(linhas).toHaveCount(2);
+    for (const l of await linhas.all()) expect((await l.boundingBox()).height).toBeGreaterThanOrEqual(44);
+    const pai = await linhas.nth(0).boundingBox();
+    const sub = await linhas.nth(1).boundingBox();
+    expect(sub.x - pai.x).toBeGreaterThan(0);
+    expect(sub.x - pai.x).toBeLessThanOrEqual(12.5);
+    expect(await smallTargets(page, '.modal-overlay.is-sheet-full')).toEqual([]);
+    await ov.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(ov).toHaveCount(0);
+  });
+
+  test('detalhe com teclado (--vvh 420): Criar visível', async ({ page }) => {
+    await abrirTarefas(page);
+    await teclado(page);
+    await page.locator('.app-fab').click();
+    const criar = page.locator('.modal-overlay.is-sheet-full').getByRole('button', { name: 'Criar', exact: true });
+    await expect.poll(async () => { const b = await criar.boundingBox(); return b && Math.round(b.y + b.height); }).toBeLessThanOrEqual(420);
+  });
+});
