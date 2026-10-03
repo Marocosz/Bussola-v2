@@ -371,3 +371,46 @@ test.describe('leitura', () => {
     await expect(page).toHaveURL(/\/estudos$/);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 5 — kit
+// ---------------------------------------------------------------------------
+test.describe('kit', () => {
+  for (const w of [360, 390, 430, 768]) {
+    test(`sem overflow horizontal em ${w}px`, async ({ page }) => {
+      await mockEstudos(page);
+      await page.setViewportSize({ width: w, height: 844 });
+      await gotoApp(page, '/estudos/kit');
+      await page.locator('.kit-card').first().waitFor();
+      expect(await overflowOffenders(page), `${w}px`).toEqual([]);
+    });
+  }
+
+  test('cards em 1 coluna, botões em largura total, alvos ≥ 44px, sem o link "Biblioteca"', async ({ page }) => {
+    await mockEstudos(page);
+    await gotoApp(page, '/estudos/kit');
+    const cards = await Promise.all((await page.locator('.kit-card').all()).map((c) => c.boundingBox()));
+    expect(cards).toHaveLength(2);
+    expect(Math.round(cards[0].x)).toBe(16);
+    expect(Math.round(cards[1].x)).toBe(16);
+    expect(Math.round(cards[1].y - (cards[0].y + cards[0].height))).toBe(12);
+    for (const b of await page.locator('.kit-baixar').all()) {
+      const box = await b.boundingBox();
+      expect(box.height).toBeGreaterThanOrEqual(48);
+      expect(Math.round(box.width)).toBe(390 - 32 - 32 - 2); // gutter, padding do card e as bordas de 1px
+    }
+    await expect(page.locator('.estudos-kit-voltar')).toBeHidden();
+    expect(await smallTargets(page, '.estudos-scope')).toEqual([]);
+  });
+
+  test('copiar o comando do MCP e baixar o kit', async ({ page }) => {
+    await stubClipboard(page);
+    await mockEstudos(page);
+    await gotoApp(page, '/estudos/kit');
+    await page.locator('.kit-comando button').click();
+    expect((await page.evaluate(() => window.__clip))[0]).toContain('claude mcp add --transport http bussola');
+    const download = page.waitForEvent('download');
+    await page.getByRole('button', { name: /Baixar kit para Claude Code/ }).click();
+    expect((await download).suggestedFilename()).toBe('bussola-estudos-claude-code.zip');
+  });
+});
