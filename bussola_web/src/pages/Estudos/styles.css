@@ -409,6 +409,7 @@
     .pedir-claude-gatilho-bloco { width: var(--tap-min); height: var(--tap-min); }
     .kit-comando button { min-width: var(--tap-min); min-height: var(--tap-min); }
     .kit-baixar { min-height: var(--tap-min); }
+    .pedir-claude-menu > button { min-height: var(--tap-min); }
 }
 
 /* =========================================================
@@ -501,4 +502,5 @@
     /* ---- Pedir ao Claude em sheet ---- */
     .pedir-claude-sheet .pedir-claude-alvo { padding: 0; margin: 0 0 var(--sp-2); }
     .pedir-claude-sheet .pedir-claude-pergunta { padding: 0; }
+    .pedir-claude-sheet .app-sheet-footer button { white-space: nowrap; padding-left: var(--sp-2); padding-right: var(--sp-2); }
 }

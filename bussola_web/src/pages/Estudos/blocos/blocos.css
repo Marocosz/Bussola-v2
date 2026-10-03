@@ -311,15 +311,14 @@
 
 /* ---- tablet e celular (≤1024): identificadores longos quebram ---- */
 @media (max-width: 1024px) {
-    .estudo-coluna { overflow-wrap: anywhere; }
+    .estudo-coluna { overflow-wrap: break-word; }
     .bloco-comparacao { overflow-wrap: normal; }
 }
 
 /* ---- celular (≤768) ---- */
 @media (max-width: 768px) {
     /* Identificadores/URLs longos quebram em vez de estourar; a tabela rola dentro do bloco */
-    .estudo-coluna { font-size: 1rem; gap: var(--sp-4); overflow-wrap: anywhere; }
-    .bloco-comparacao { overflow-wrap: normal; }
+    .estudo-coluna { font-size: 1rem; gap: var(--sp-4); }
 
     .bloco-secao { font-size: 1.2rem; margin: var(--sp-5) 0 0; }
     .bloco-conceito,

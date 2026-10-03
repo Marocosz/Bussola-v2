@@ -341,6 +341,28 @@ test.describe('leitura', () => {
     expect((await page.evaluate(() => window.__clip))[0]).toContain('CREATE INDEX idx_usuario_email_criado_em');
   });
 
+  test('769 toque: itens do popover "Pedir ao Claude" com ≥ 44px', async ({ page }) => {
+    await mockEstudos(page);
+    await page.setViewportSize({ width: 769, height: 900 });
+    await gotoApp(page, '/estudos/9101');
+    await page.locator('.estudo-acoes .pedir-claude-gatilho').click();
+    await expect(page.locator('.pedir-claude-menu')).toBeVisible();
+    await animacoesAcabaram(page);
+    await expect.poll(() => smallTargets(page, '.pedir-claude-menu')).toEqual([]);
+  });
+
+  test('360: "Copiar comando" do rodapé do sheet fica em uma linha', async ({ page }) => {
+    await mockEstudos(page);
+    await page.setViewportSize({ width: 360, height: 800 });
+    await gotoApp(page, '/estudos/9101');
+    await page.locator('.estudo-acoes .pedir-claude-gatilho').click();
+    await page.locator('.pedir-claude-sheet').getByRole('button', { name: 'Tirar dúvida' }).click();
+    const copiar = page.locator('.modal-overlay.is-sheet').getByRole('button', { name: 'Copiar comando' });
+    await expect(copiar).toBeVisible();
+    await animacoesAcabaram(page);
+    await expect.poll(async () => (await copiar.boundingBox()).height).toBeLessThanOrEqual(56);
+  });
+
   test('excluir pede confirmação e volta para a biblioteca', async ({ page }) => {
     await mockEstudos(page);
     await gotoApp(page, '/estudos/9101');
