@@ -270,3 +270,122 @@ test.describe('Atenção agora (carrossel)', () => {
     await expect(page).toHaveURL(/\/financas$/);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 5 — widgets
+// ---------------------------------------------------------------------------
+// Textos visíveis abaixo do mínimo (12px; 11px se caixa alta). SVG: tamanho renderizado.
+async function textosPequenos(page) {
+  return page.evaluate(() => {
+    const out = [];
+    for (const el of document.querySelectorAll('.pv2-root *')) {
+      const r = el.getBoundingClientRect();
+      if (!r.width || !r.height) continue;
+      const cs = getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+      const svg = el.closest('svg');
+      if (svg) {
+        if (el.tagName.toLowerCase() !== 'text') continue;
+        const px = parseFloat(cs.fontSize) * (svg.getBoundingClientRect().width / svg.viewBox.baseVal.width);
+        if (px < 11.95) out.push(`svg text "${el.textContent.trim()}" ${px.toFixed(1)}px`);
+        continue;
+      }
+      const temTexto = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
+      if (!temTexto) continue;
+      const px = parseFloat(cs.fontSize);
+      const min = cs.textTransform === 'uppercase' ? 11 : 12;
+      if (px < min - 0.01) out.push(`${el.tagName.toLowerCase()}.${[...el.classList].join('.')} "${el.textContent.trim().slice(0, 24)}" ${px}px`);
+    }
+    return out;
+  });
+}
+
+test.describe('widgets', () => {
+  test('Gastos por categoria: legenda visível com nome, valor e %', async ({ page }) => {
+    await usarFixture(page);
+    await gotoApp(page, '/panorama');
+    const legenda = page.locator('[data-widget="donut"] .pv2-donut-legend');
+    await expect(legenda).toBeVisible();
+    const linhas = legenda.locator('.pv2-donut-legend-row');
+    await expect(linhas).toHaveCount(4);
+    await expect(linhas.nth(0)).toHaveText(/Moradia\s*R\$\s2\.400\s*57%/);
+    await expect(linhas.nth(3)).toHaveText(/Transporte\s*R\$\s210\s*5%/);
+    const nome = await legenda.locator('.pv2-donut-legend-name').first().evaluate((e) => getComputedStyle(e).fontSize);
+    expect(parseFloat(nome)).toBeGreaterThanOrEqual(14);
+  });
+
+  test('Evolução: 6 meses, botões de 44px e leitura fixa (botão e coluna dão o mesmo mês)', async ({ page }) => {
+    await usarFixture(page);
+    await gotoApp(page, '/panorama');
+    const card = page.locator('[data-widget="evolucao"]');
+    await expect(card.locator('.pv2-card-title')).toHaveText('Evolução · últimos 6 meses');
+    await expect(card.locator('svg text')).toHaveCount(0);
+    const meses = card.locator('.pv2-evo-month');
+    expect(await meses.allTextContents()).toEqual(['mai/26', 'jun/26', 'jul/26', 'ago/26', 'set/26', 'out/26']);
+    await expect(meses.last()).toHaveAttribute('aria-pressed', 'true');
+    const leitura = card.locator('.pv2-readout');
+    await expect(leitura).toHaveText(/out\/26.*Receita\s*R\$\s8\.400.*Despesa\s*R\$\s5\.120.*Caixa\s*R\$\s18\.500/);
+    await card.getByRole('button', { name: 'jun/26' }).click();
+    await expect(leitura).toHaveText(/jun\/26.*Receita\s*R\$\s8\.100.*Despesa\s*R\$\s5\.200.*Caixa\s*R\$\s15\.725/);
+    // tocar na coluna de jul/26 (3ª de 6) dá o mesmo que o botão
+    const svg = await card.locator('svg').boundingBox();
+    await page.mouse.click(svg.x + svg.width * (2.5 / 6), svg.y + svg.height * 0.5);
+    await expect(leitura).toHaveText(/jul\/26.*Receita\s*R\$\s7\.900/);
+    await expect(card.getByRole('button', { name: 'jul/26' })).toHaveAttribute('aria-pressed', 'true');
+    // botões alinhados às colunas: 1/6 da largura do gráfico cada, com 44px de altura
+    const b = await meses.first().boundingBox();
+    expect(Math.abs(b.width - svg.width / 6)).toBeLessThanOrEqual(1);
+    expect(b.height).toBeGreaterThanOrEqual(44);
+  });
+
+  test('Média por dia: começa no dia de maior média e anda com ‹ ›', async ({ page }) => {
+    await usarFixture(page);
+    await gotoApp(page, '/panorama');
+    const card = page.locator('[data-widget="media"]');
+    const leitura = card.locator('.pv2-week-readout');
+    await expect(leitura).toHaveText(/Qua\s*·\s*média\s*R\$\s80/);
+    await card.getByRole('button', { name: 'Próximo dia' }).click();
+    await expect(leitura).toHaveText(/Qui\s*·\s*média\s*R\$\s40/);
+    await card.getByRole('button', { name: 'Dia anterior' }).click();
+    await card.getByRole('button', { name: 'Dia anterior' }).click();
+    await expect(leitura).toHaveText(/Ter\s*·\s*média\s*R\$\s30/);
+  });
+
+  test('Cofrinhos: os 3 jarros numa linha só em 360px', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await usarFixture(page);
+    await gotoApp(page, '/panorama');
+    const goals = await page.locator('.pv2-goal').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return { y: Math.round(r.y), right: r.right }; }));
+    expect(goals).toHaveLength(3);
+    expect(new Set(goals.map((g) => g.y)).size).toBe(1);
+    const card = await caixa(page, '[data-widget="cofrinhos"]');
+    for (const g of goals) expect(g.right).toBeLessThanOrEqual(card.x + card.width);
+  });
+
+  test('privacidade borra a legenda e as leituras', async ({ page }) => {
+    await usarFixture(page);
+    await gotoApp(page, '/panorama');
+    await page.locator('.btn-privacy-toggle').click();
+    for (const sel of ['.pv2-donut-legend-val', '[data-widget="evolucao"] .pv2-readout [data-money]', '.pv2-week-readout [data-money]']) {
+      await expect.poll(() => page.locator(sel).first().evaluate((e) => getComputedStyle(e).filter)).toContain('blur');
+    }
+  });
+
+  for (const w of [360, 390]) {
+    test(`tipografia mínima em ${w}px (12px; 11px em caixa alta) e conteúdo principal com 14px`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: 844 });
+      await usarFixture(page, { insights: 3 });
+      await gotoApp(page, '/panorama');
+      expect(await textosPequenos(page)).toEqual([]);
+      for (const sel of ['.pv2-budget-head', '.pv2-paybar-label', '.pv2-prio', '.pv2-ritmo-row', '.pv2-hero-bar-head .lbl', '.pv2-goal-name', '.pv2-readout']) {
+        expect(parseFloat(await page.locator(sel).first().evaluate((e) => getComputedStyle(e).fontSize)), sel).toBeGreaterThanOrEqual(14);
+      }
+    });
+  }
+
+  test('todos os controles da página com 44px', async ({ page }) => {
+    await usarFixture(page, { insights: 3 });
+    await gotoApp(page, '/panorama');
+    expect(await smallTargets(page, '.panorama-scope')).toEqual([]);
+  });
+});

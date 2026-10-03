@@ -189,19 +189,33 @@ function Donut({ cats }) {
   if (!cats.length) return <div className="pv2-empty-note"><i className="fa-solid fa-chart-pie"></i><span>Sem gastos no período.</span></div>;
   const { R, C, tot, segs } = donutSegments(cats);
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', paddingTop: 4 }}>
-      <svg viewBox="0 0 160 160" width="230" style={{ maxWidth: '100%' }}>
+    <>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', paddingTop: 4 }}>
+        <svg viewBox="0 0 160 160" width="230" style={{ maxWidth: '100%' }}>
+          {segs.map((c, i) => (
+            <circle key={i} cx="80" cy="80" r={R} data-tooltip={`${c.n}: ${fmt(c.v)}`} style={{ fill: 'none', stroke: c.color, strokeWidth: 22, strokeDasharray: `${c.len} ${C - c.len}`, strokeDashoffset: -c.off, transform: 'rotate(-90deg)', transformOrigin: '80px 80px', cursor: 'pointer' }} />
+          ))}
+          <text x="80" y="75" textAnchor="middle" style={{ fill: 'var(--muted2)', fontSize: 11 }}>total</text>
+          <text x="80" y="94" textAnchor="middle" data-money="" style={{ fill: 'var(--text)', fontSize: 17, fontWeight: 800 }}>{fmt(tot)}</text>
+        </svg>
+      </div>
+      {/* Legenda visível: no toque não há tooltip. Escondida no desktop (≥1025), onde o hover mostra o valor. */}
+      <div className="pv2-donut-legend">
         {segs.map((c, i) => (
-          <circle key={i} cx="80" cy="80" r={R} data-tooltip={`${c.n}: ${fmt(c.v)}`} style={{ fill: 'none', stroke: c.color, strokeWidth: 22, strokeDasharray: `${c.len} ${C - c.len}`, strokeDashoffset: -c.off, transform: 'rotate(-90deg)', transformOrigin: '80px 80px', cursor: 'pointer' }} />
+          <div key={i} className="pv2-donut-legend-row">
+            <span className="pv2-donut-legend-sw" style={{ background: c.color }} />
+            <span className="pv2-donut-legend-name">{c.n}</span>
+            <span className="pv2-donut-legend-val" data-money="">{fmt(c.v)}</span>
+            <span className="pv2-donut-legend-pct">{Math.round(c.v / tot * 100)}%</span>
+          </div>
         ))}
-        <text x="80" y="75" textAnchor="middle" style={{ fill: 'var(--muted2)', fontSize: 11 }}>total</text>
-        <text x="80" y="94" textAnchor="middle" data-money="" style={{ fill: 'var(--text)', fontSize: 17, fontWeight: 800 }}>{fmt(tot)}</text>
-      </svg>
-    </div>
+      </div>
+    </>
   );
 }
 
-function Weekday({ days }) {
+// compact (celular): rótulos maiores; o dia `sel` fica em destaque; tocar na coluna chama onSel(i).
+function Weekday({ days, compact = false, sel = -1, onSel }) {
   const max = Math.max(...days.map(d => d.v), 1);
   const bw = 26, gap = (260 - bw * 7) / 8, base = 96;
   return (
@@ -211,9 +225,9 @@ function Weekday({ days }) {
         return (
           <g key={i}>
             <rect x={x} y={base - bh} width={bw} height={bh} rx="5" style={{ fill: wk ? 'var(--orange)' : 'var(--blue)', fillOpacity: wk ? 0.9 : 0.75 }} />
-            <text x={x + bw / 2} y="112" textAnchor="middle" style={{ fill: 'var(--muted2)', fontSize: 10.5 }}>{d.d}</text>
-            {/* alvo de hover da coluna inteira → média do dia */}
-            <rect x={x} y="0" width={bw} height={base} data-tooltip={`${d.d}: ${fmt(d.v)}`} style={{ fill: 'transparent', pointerEvents: 'all', cursor: 'help' }} />
+            <text x={x + bw / 2} y="112" textAnchor="middle" style={{ fill: i === sel ? 'var(--text)' : 'var(--muted2)', fontSize: compact ? 12 : 10.5, fontWeight: i === sel ? 700 : undefined }}>{d.d}</text>
+            {/* alvo de hover da coluna inteira → média do dia (no celular, toque seleciona) */}
+            <rect x={x} y="0" width={bw} height={base} data-tooltip={`${d.d}: ${fmt(d.v)}`} onClick={onSel ? () => onSel(i) : undefined} style={{ fill: 'transparent', pointerEvents: 'all', cursor: onSel ? 'pointer' : 'help' }} />
           </g>
         );
       })}
@@ -240,8 +254,12 @@ function PayBars({ items }) {
   );
 }
 
-function Evolution({ ev }) {
-  const X0 = 42, X1 = 624, W = X1 - X0, Y0 = 18, Y1 = 178, Hh = Y1 - Y0;
+// compact (toque): viewBox mais estreito (escala ~1, traço legível), colunas de borda a borda
+// para alinhar com os botões de mês em HTML (que substituem os rótulos SVG), coluna `sel`
+// destacada; tocar numa coluna chama onSel(i). Sem compact: desenho do desktop, intocado.
+function Evolution({ ev, compact = false, sel = -1, onSel }) {
+  const VBW = compact ? 320 : 640, VBH = compact ? 166 : 210;
+  const X0 = compact ? 0 : 42, X1 = compact ? 320 : 624, W = X1 - X0, Y0 = compact ? 10 : 18, Y1 = compact ? 156 : 178, Hh = Y1 - Y0;
   const maxBar = Math.max(...ev.map(e => Math.max(e.rec, e.desp)), 1);
   const gw = W / ev.length, bw = Math.min(11, gw * 0.32);
   const grid = [0, 0.5, 1].map((g, i) => <line key={'g' + i} x1={X0} y1={Y1 - g * Hh} x2={X1} y2={Y1 - g * Hh} style={{ stroke: 'var(--line)', strokeWidth: 1 }} />);
@@ -250,11 +268,12 @@ function Evolution({ ev }) {
     const cx = X0 + gw * i + gw / 2; const rh = e.rec / maxBar * Hh, dh = e.desp / maxBar * Hh;
     return (
       <g key={i}>
+        {compact && i === sel && <rect className="pv2-evo-sel" x={X0 + gw * i + 2} y={Y0 - 6} width={gw - 4} height={Hh + 6} rx="8" />}
         <rect x={cx - bw - 1} y={Y1 - rh} width={bw} height={rh} rx="3" style={{ fill: 'var(--green)', fillOpacity: 0.85 }} />
         <rect x={cx + 1} y={Y1 - dh} width={bw} height={dh} rx="3" style={{ fill: 'var(--red)', fillOpacity: 0.8 }} />
-        <text x={cx} y="196" textAnchor="middle" style={{ fill: 'var(--muted2)', fontSize: 10 }}>{e.m}</text>
-        {/* alvo de hover da coluna inteira → valores do mês */}
-        <rect x={cx - gw / 2} y={Y0} width={gw} height={Hh} data-tooltip={tipFor(e)} style={{ fill: 'transparent', pointerEvents: 'all', cursor: 'help' }} />
+        {!compact && <text x={cx} y="196" textAnchor="middle" style={{ fill: 'var(--muted2)', fontSize: 10 }}>{e.m}</text>}
+        {/* alvo de hover da coluna inteira → valores do mês (no toque, seleciona) */}
+        <rect x={cx - gw / 2} y={Y0} width={gw} height={Hh} data-tooltip={tipFor(e)} onClick={onSel ? () => onSel(i) : undefined} style={{ fill: 'transparent', pointerEvents: 'all', cursor: onSel ? 'pointer' : 'help' }} />
       </g>
     );
   });
@@ -265,7 +284,7 @@ function Evolution({ ev }) {
     <circle key={'d' + i} cx={X0 + gw * i + gw / 2} cy={cyf(e.caixa)} r="3.2" data-tooltip={`${e.m} · Caixa ${fmt(e.caixa)}`} style={{ fill: 'var(--blue)', cursor: 'help' }} />
   ));
   return (
-    <svg viewBox="0 0 640 210" width="100%">
+    <svg viewBox={`0 0 ${VBW} ${VBH}`} width="100%">
       {grid}{bars}
       <polyline points={pts} style={{ fill: 'none', stroke: 'var(--blue)', strokeWidth: 2.4, strokeLinejoin: 'round', strokeLinecap: 'round' }} />
       {dots}
@@ -324,7 +343,10 @@ export function Panorama() {
   const [attnPage, setAttnPage] = useState(0);
   const [dismissed, setDismissed] = useState(loadDismissed);
   const [attnIdx, setAttnIdx] = useState(0); // card visível do carrossel (celular)
+  const [evoSel, setEvoSel] = useState(null);   // mês selecionado na Evolução (toque)
+  const [weekSel, setWeekSel] = useState(null); // dia selecionado na Média por dia (celular)
   const isMobile = useIsMobile();
+  const semHover = useMediaQuery('(hover: none) and (max-width: 1024px)'); // tablet/celular de toque: sem tooltip
   const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const [kpiAberto, setKpiAberto] = useState(null);
 
@@ -420,6 +442,14 @@ export function Panorama() {
 
   const week = (data.gasto_semanal?.labels || []).map((d, i) => ({ d, v: data.gasto_semanal.data[i] || 0 }));
   const weekAvg = week.length ? Math.round(week.reduce((s, w) => s + w.v, 0) / week.length) : 0;
+
+  // Toque: celular = últimos 6 meses; tablet sem hover (≤1024) mantém 12 meses, ambos com leitura por toque.
+  const evTouch = isMobile || semHover;
+  const evBase = ev.length ? ev : [{ m: '—', rec: 0, desp: 0, caixa: 0 }];
+  const evShown = isMobile ? evBase.slice(-6) : evBase;
+  const evIdx = evoSel != null && evoSel < evShown.length ? evoSel : evShown.length - 1;
+  const weekMax = week.reduce((best, w, i) => (w.v > week[best].v ? i : best), 0);
+  const weekIdx = weekSel != null && weekSel < week.length ? weekSel : weekMax;
 
   const budget = data.orcamento || [];
 
@@ -616,14 +646,31 @@ export function Panorama() {
     evolucao: (
       <div className="pcard span-8 is-wide-tablet" data-widget="evolucao">
         <div className="pv2-card-head">
-          <span className="pv2-card-title">Evolução · últimos 12 meses</span>
+          <span className="pv2-card-title">{isMobile ? 'Evolução · últimos 6 meses' : 'Evolução · últimos 12 meses'}</span>
           <div className="pv2-legend">
             <span className="pv2-legend-item"><span style={{ width: 9, height: 9, borderRadius: 2, background: 'var(--green)' }} />Receita</span>
             <span className="pv2-legend-item"><span style={{ width: 9, height: 9, borderRadius: 2, background: 'var(--red)' }} />Despesa</span>
             <span className="pv2-legend-item"><span style={{ width: 14, height: 3, borderRadius: 2, background: 'var(--blue)' }} />Caixa</span>
           </div>
         </div>
-        <Evolution ev={ev.length ? ev : [{ m: '—', rec: 0, desp: 0, caixa: 0 }]} />
+        {evTouch ? (
+          <>
+            <Evolution ev={evShown} compact sel={evIdx} onSel={setEvoSel} />
+            <div className="pv2-evo-months" style={{ gridTemplateColumns: `repeat(${evShown.length}, minmax(0, 1fr))` }}>
+              {evShown.map((e, i) => (
+                <button key={i} type="button" className={`pv2-evo-month ${i === evIdx ? 'active' : ''}`} aria-pressed={i === evIdx} onClick={() => setEvoSel(i)}>{e.m}</button>
+              ))}
+            </div>
+            <div className="pv2-readout" aria-live="polite">
+              <b>{evShown[evIdx].m}</b>
+              <span className="pv2-legend-item"><span style={{ width: 9, height: 9, borderRadius: 2, background: 'var(--green)' }} />Receita <b data-money="">{fmt(evShown[evIdx].rec)}</b></span>
+              <span className="pv2-legend-item"><span style={{ width: 9, height: 9, borderRadius: 2, background: 'var(--red)' }} />Despesa <b data-money="">{fmt(evShown[evIdx].desp)}</b></span>
+              <span className="pv2-legend-item"><span style={{ width: 14, height: 3, borderRadius: 2, background: 'var(--blue)' }} />Caixa <b data-money="">{fmt(evShown[evIdx].caixa)}</b></span>
+            </div>
+          </>
+        ) : (
+          <Evolution ev={evBase} />
+        )}
       </div>
     ),
     donut: (
@@ -682,7 +729,19 @@ export function Panorama() {
           <span className="pv2-card-title">Média por dia</span>
           <span style={{ fontSize: 12, color: 'var(--muted2)' }}>média <span data-money="">{fmt(weekAvg)}</span></span>
         </div>
-        {week.length ? <Weekday days={week} /> : <div className="pv2-empty-note"><span>Sem dados.</span></div>}
+        {week.length ? (
+          <>
+            <Weekday days={week} compact={isMobile} sel={isMobile ? weekIdx : -1} onSel={isMobile ? setWeekSel : undefined} />
+            {/* Celular: a média de cada dia (antes só no tooltip). ‹ › porque 7 colunas não dão 44px em 360. */}
+            {isMobile && (
+              <div className="pv2-readout pv2-week-readout" aria-live="polite">
+                <button type="button" className="pv2-readout-step" aria-label="Dia anterior" onClick={() => setWeekSel((weekIdx - 1 + week.length) % week.length)}><i className="fa-solid fa-chevron-left"></i></button>
+                <span className="pv2-readout-text"><b>{week[weekIdx].d}</b> · média <b data-money="">{fmt(week[weekIdx].v)}</b></span>
+                <button type="button" className="pv2-readout-step" aria-label="Próximo dia" onClick={() => setWeekSel((weekIdx + 1) % week.length)}><i className="fa-solid fa-chevron-right"></i></button>
+              </div>
+            )}
+          </>
+        ) : <div className="pv2-empty-note"><span>Sem dados.</span></div>}
       </div>
     ),
     ritmo: (

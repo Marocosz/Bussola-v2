@@ -144,7 +144,6 @@ body.light-theme .pcard {
 .pv2-paybar-track { height: 10px; border-radius: 5px; background: var(--track); overflow: hidden; }
 .pv2-paybar-fill { height: 100%; border-radius: 5px; transition: width .45s cubic-bezier(.4,0,.2,1); }
 .pv2-paybar-val { font-size: 13px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-@media (max-width: 600px) { .pv2-paybar { grid-template-columns: 90px 1fr auto; gap: 10px; } }
 
 /* Cofrinhos — jarro IDÊNTICO ao do modal (CofreScene), escalado menor e centralizado */
 .pv2-goals { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; align-items: flex-start; }
@@ -281,4 +280,48 @@ body.light-theme .pcard {
   button.pv2-attn-dot-btn.active { position: relative; width: var(--tap-min); height: var(--tap-min); border-radius: 50%; background: transparent; }
   button.pv2-attn-dot-btn::before { content: ''; position: absolute; top: 50%; left: 50%; width: 7px; height: 7px; border-radius: 50%; background: var(--border); transform: translate(-50%, -50%); transition: width .2s, background .2s; }
   button.pv2-attn-dot-btn.active::before { width: 18px; border-radius: 4px; background: var(--blue); }
+}
+
+/* Legenda do donut (toque não tem tooltip). Uma grade só, para valores e % alinharem. */
+.pv2-donut-legend { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: var(--sp-2) var(--sp-3); margin-top: var(--sp-4); font-size: 14px; }
+.pv2-donut-legend-row { display: contents; }
+.pv2-donut-legend-sw { width: 10px; height: 10px; border-radius: 3px; }
+.pv2-donut-legend-name { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pv2-donut-legend-val { font-weight: 700; color: var(--text); text-align: right; white-space: nowrap; }
+.pv2-donut-legend-pct { font-size: 12px; color: var(--muted2); text-align: right; min-width: 3ch; }
+@media (min-width: 1025px) { .pv2-donut-legend { display: none; } }
+
+/* Leituras por toque (só renderizadas em celular e tablet sem hover). */
+.pv2-readout { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); margin-top: var(--sp-3); font-size: 14px; color: var(--muted); }
+.pv2-readout b { color: var(--text); }
+.pv2-week-readout { flex-wrap: nowrap; justify-content: space-between; }
+.pv2-readout-text { text-align: center; }
+.pv2-readout-step { width: var(--tap-min); height: var(--tap-min); flex: none; border-radius: 50%; border: 1px solid var(--border); background: var(--card); color: var(--muted); display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; }
+.pv2-evo-months { display: grid; margin-top: var(--sp-1); }
+.pv2-evo-month { min-height: var(--tap-min); border: none; border-radius: 10px; background: transparent; color: var(--muted2); font: inherit; font-size: 12px; cursor: pointer; }
+.pv2-evo-month.active { background: var(--track); color: var(--text); font-weight: 700; }
+.pv2-evo-sel { fill: var(--track); }
+
+/* Tablet e celular: os 3 jarros numa linha só (antes 2 + 1 órfão). */
+@media (max-width: 1024px) {
+  .pv2-goals,
+  .pv2-eq .pv2-goals { flex-wrap: nowrap; gap: var(--sp-3); align-items: flex-start; } /* topo alinhado: textos de alturas diferentes não deslocam o jarro */
+  .pv2-goal { flex: 1 1 0; min-width: 0; }
+}
+
+/* Celular — tipografia dos widgets: principal ≥ 14px, secundário ≥ 12px. */
+@media (max-width: 768px) {
+  .pv2-legend { flex-wrap: wrap; gap: var(--sp-3); font-size: 12px; }
+  .pv2-budget-head { gap: var(--sp-2); font-size: 14px; }
+  .pv2-badge-over { font-size: 12px; }
+  .pv2-goal-name { font-size: 14px; }
+  .pv2-goal-eta { font-size: 12px; }
+  .pv2-paybar { grid-template-columns: 90px minmax(0, 1fr) auto; gap: var(--sp-2); }
+  .pv2-paybar-label,
+  .pv2-paybar-val { font-size: 14px; }
+  .pv2-prio,
+  .pv2-ritmo-row { font-size: 14px; }
+  .pv2-kpi-big > span { font-size: 12px !important; } /* o "%" da Poupança: .55em inline dava 11,1px */
+  .pv2-mini-stat .cap,
+  .pv2-cofre-cap { font-size: 12px; }
 }

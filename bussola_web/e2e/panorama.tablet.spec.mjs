@@ -47,3 +47,22 @@ test('tablet: setas, pontos, dispensar e olho com 44px (toque)', async ({ page }
   await page.getByRole('button', { name: 'Página 2' }).click();
   await expect(page.locator('.pv2-alert-empty')).toHaveCount(3);
 });
+
+test('tablet: legenda do donut visível e jarros numa linha só', async ({ page }) => {
+  await usarFixture(page);
+  await gotoApp(page, '/panorama');
+  await expect(page.locator('.pv2-donut-legend')).toBeVisible();
+  const ys = await page.locator('.pv2-goal').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().y)));
+  expect(new Set(ys).size).toBe(1);
+});
+
+test('tablet (sem hover): Evolução com botões de mês e leitura por toque', async ({ page }) => {
+  await usarFixture(page);
+  await gotoApp(page, '/panorama');
+  const card = page.locator('[data-widget="evolucao"]');
+  const meses = card.locator('.pv2-evo-month');
+  expect(await meses.count()).toBeGreaterThanOrEqual(6);
+  await meses.nth((await meses.count()) - 2).click();
+  await expect(card.locator('.pv2-readout')).toHaveText(/Receita.*Despesa.*Caixa/);
+  expect((await meses.first().boundingBox()).height).toBeGreaterThanOrEqual(44);
+});
