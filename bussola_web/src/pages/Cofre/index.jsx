@@ -155,14 +155,14 @@ export function Cofre() {
                                             <td>
                                                 <div className="action-buttons" style={{justifyContent: 'flex-end'}}>
                                                     {/* Botão Ver Senha (Eye) substitui Copiar */}
-                                                    <button className="btn-action-icon btn-view-secret" onClick={() => handleViewSecret(segredo)} title="Ver/Copiar Senha">
+                                                    <button className="btn-action-icon btn-view-secret" onClick={() => handleViewSecret(segredo)} title="Ver/Copiar Senha" aria-label={`Ver senha de ${segredo.titulo}`}>
                                                         <i className="fa-solid fa-eye"></i>
                                                     </button>
                                                     
-                                                    <button className="btn-action-icon btn-edit-segredo" onClick={() => handleEdit(segredo)} title="Editar">
+                                                    <button className="btn-action-icon btn-edit-segredo" onClick={() => handleEdit(segredo)} title="Editar" aria-label={`Editar ${segredo.titulo}`}>
                                                         <i className="fa-solid fa-pencil"></i>
                                                     </button>
-                                                    <button className="btn-action-icon btn-delete" onClick={() => handleDelete(segredo.id)} title="Excluir">
+                                                    <button className="btn-action-icon btn-delete" onClick={() => handleDelete(segredo.id)} title="Excluir" aria-label={`Excluir ${segredo.titulo}`}>
                                                         <i className="fa-solid fa-trash-can"></i>
                                                     </button>
                                                 </div>

@@ -4,7 +4,7 @@ import { useToast } from '../../../context/ToastContext';
 import { useConfirm } from '../../../context/ConfirmDialogContext'; // Importar Confirm
 import { BaseModal } from '../../../components/BaseModal';
 import { useMediaQuery } from '../../../hooks/useIsMobile';
-import { formatarData } from '../cofreLista';
+import { dataISOLocal, formatarData } from '../cofreLista';
 
 // Campos que o teclado do celular não deve corrigir nem capitalizar.
 const SEM_CORRECAO = { autoCapitalize: 'off', autoCorrect: 'off', spellCheck: false };
@@ -66,7 +66,7 @@ export function SegredoModal({ active, closeModal, onUpdate, editingData }) {
         if (diasExpirar && parseInt(diasExpirar) > 0) {
             const date = new Date();
             date.setDate(date.getDate() + parseInt(diasExpirar));
-            data_expiracao = date.toISOString().split('T')[0];
+            data_expiracao = dataISOLocal(date);
         }
 
         // Só envia o valor se estiver editável e preenchido. O schema de update exige a chave
@@ -113,7 +113,8 @@ export function SegredoModal({ active, closeModal, onUpdate, editingData }) {
                         </div>
 
                         <div className="form-group">
-                            <label htmlFor="segredo-valor">Valor da Chave / Senha</label>
+                            {/* Travado não há campo para o rótulo apontar. */}
+                            <label htmlFor={isPasswordEditable ? 'segredo-valor' : undefined}>Valor da Chave / Senha</label>
                             
                             {!isPasswordEditable ? (
                                 // Estado Travado (Edição)

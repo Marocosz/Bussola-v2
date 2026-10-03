@@ -55,6 +55,21 @@ test('desktop cofre: linha da tabela destaca no hover', async ({ page }) => {
   await expect.poll(bg).not.toBe('rgba(0, 0, 0, 0)');
 });
 
+// Mouse entre 1025 e 1279: Editar/Excluir não podem ficar cortados pelo cartão (overflow hidden).
+for (const w of [1025, 1100, 1179, 1279]) {
+  test(`desktop cofre ${w}px: ações da tabela dentro do cartão`, async ({ page }) => {
+    await page.setViewportSize({ width: w, height: 900 });
+    await gotoApp(page, '/cofre');
+    await expect(page.locator('.data-table tbody tr').first()).toBeVisible();
+    const m = await page.locator('.data-table').first().evaluate((t) => {
+      const c = t.parentElement.getBoundingClientRect();
+      const b = t.querySelector('tbody tr:first-child .btn-delete').getBoundingClientRect();
+      return { cartaoDireita: c.right, botaoDireita: b.right };
+    });
+    expect(m.botaoDireita).toBeLessThanOrEqual(m.cartaoDireita);
+  });
+}
+
 test('desktop cofre: nada do layout mobile aparece', async ({ page }) => {
   await gotoApp(page, '/cofre');
   await expect(page.locator('.data-table')).toBeVisible();

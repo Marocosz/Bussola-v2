@@ -26,6 +26,12 @@ function dataLocal(iso) {
     return new Date(ano, mes - 1, dia);
 }
 
+/** 'AAAA-MM-DD' do dia LOCAL de `data` (toISOString seria UTC: depois das 21h no Brasil já é amanhã). */
+export function dataISOLocal(data) {
+    const p = (n) => String(n).padStart(2, '0');
+    return `${data.getFullYear()}-${p(data.getMonth() + 1)}-${p(data.getDate())}`;
+}
+
 /** Data de expiração em pt-BR (dia gravado, sem deslocamento de fuso) ou 'Não expira'. */
 export function formatarData(iso) {
     return iso ? dataLocal(iso).toLocaleDateString('pt-BR') : 'Não expira';

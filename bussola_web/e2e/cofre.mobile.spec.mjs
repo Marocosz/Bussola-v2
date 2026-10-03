@@ -489,6 +489,58 @@ test.describe('ver segredo e área de transferência', () => {
     expect(await clip(page)).toEqual(['E2E-senha-123', '']);
   });
 
+  test('o timer que falhou (sem gesto) tenta de novo ao fechar', async ({ page }) => {
+    await stubClipboard(page);
+    await page.clock.install({ time: FIXED_NOW });
+    await page.goto('/cofre');
+    await page.waitForLoadState('networkidle');
+    await abrirSegredo(page, 'E2E Banco Zeta');
+    await page.getByRole('button', { name: 'Copiar', exact: true }).click();
+    await expect(page.getByRole('button', { name: /Copiado \(60s\)/ })).toBeVisible();
+    await page.evaluate(() => { window.__clipFalha = true; });
+    await page.clock.runFor(61_000);
+    await expect(toast(page, 'Não foi possível limpar')).toBeVisible();
+    // O fechar é um gesto: agora a escrita funciona e a senha sai da área de transferência.
+    await page.evaluate(() => { window.__clipFalha = false; });
+    await fechar(page).click();
+    await expect.poll(() => clip(page)).toEqual(['E2E-senha-123', '']);
+  });
+
+  test('o prazo de 60s é de relógio: não para com a página em segundo plano', async ({ page }) => {
+    await stubClipboard(page);
+    await page.clock.install({ time: FIXED_NOW });
+    await page.goto('/cofre');
+    await page.waitForLoadState('networkidle');
+    await abrirSegredo(page, 'E2E Banco Zeta');
+    await page.getByRole('button', { name: 'Copiar', exact: true }).click();
+    await expect(page.getByRole('button', { name: /Copiado \(60s\)/ })).toBeVisible();
+    // Navegador suspendeu os timers: o relógio andou 61s mas o intervalo disparou uma vez só.
+    await page.clock.fastForward(61_000);
+    await expect.poll(() => clip(page)).toEqual(['E2E-senha-123', '']);
+    await expect(toast(page, 'Área de transferência limpa')).toBeVisible();
+  });
+
+  test('voltar à página com o prazo vencido limpa na hora', async ({ page }) => {
+    await stubClipboard(page);
+    await page.clock.install({ time: FIXED_NOW });
+    await page.goto('/cofre');
+    await page.waitForLoadState('networkidle');
+    await abrirSegredo(page, 'E2E Banco Zeta');
+    await page.getByRole('button', { name: 'Copiar', exact: true }).click();
+    await expect(page.getByRole('button', { name: /Copiado \(60s\)/ })).toBeVisible();
+    // O relógio passou do prazo sem nenhum tick (timers congelados), e a aba volta a ficar visível.
+    await page.clock.setFixedTime(new Date(FIXED_NOW.getTime() + 90_000));
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await expect.poll(() => clip(page)).toEqual(['E2E-senha-123', '']);
+  });
+
+  test('valor oculto não é anunciado como 24 pontos', async ({ page }) => {
+    await stubClipboard(page);
+    await gotoApp(page, '/cofre');
+    await abrirSegredo(page, 'E2E Banco Zeta');
+    await expect(page.locator('.modal-overlay.is-sheet .text-masked')).toHaveAttribute('aria-label', 'Senha oculta');
+  });
+
   test('fechou com a escrita ainda pendente: limpa na hora, sem timer órfão', async ({ page }) => {
     await stubClipboard(page);
     await page.clock.install({ time: FIXED_NOW });

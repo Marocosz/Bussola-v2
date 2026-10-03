@@ -173,7 +173,6 @@
     transition: background-color 0.2s, color 0.2s, border-color 0.2s;
 }
 
-/* Botão Olho (Ver) */
 /* ============================================= */
 /* 6. MODAIS E INPUTS (NOVOS ESTILOS)            */
 /* ============================================= */
@@ -356,12 +355,33 @@
     }
 }
 
+/* Paisagem de tablet / notebook estreito (1025–1279, com a sidebar aberta): as 5 colunas e os 3
+   botões de ação não cabem com o respiro de desktop e o cartão (overflow hidden) corta Editar/Excluir.
+   Vale também para mouse; a partir de 1280 o layout do desktop segue intacto. */
+@media (min-width: 1025px) and (max-width: 1279px) {
+    .cofre-scope .data-table th,
+    .cofre-scope .data-table td {
+        padding: var(--sp-3) var(--sp-2);
+    }
+
+    .cofre-scope .column-notas {
+        max-width: 120px;
+    }
+}
+
 @media (pointer: coarse) {
     .cofre-scope .section-header-flex .btn-primary,
     .cofre-scope .modal-footer button,
     .cofre-scope .secret-actions button,
     .cofre-scope .locked-input-wrapper button {
         min-height: var(--tap-min);
+    }
+
+    /* "Alterar" de 44px não cabe nos 45px do campo travado: o campo cresce junto. */
+    .cofre-scope .locked-input-wrapper {
+        height: auto;
+        min-height: 52px;
+        padding: var(--sp-1) var(--sp-1) var(--sp-1) var(--sp-3);
     }
 }
 

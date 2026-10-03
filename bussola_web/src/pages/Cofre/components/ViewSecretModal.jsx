@@ -20,7 +20,7 @@ export function ViewSecretModal({ segredoId, onClose, titulo }) {
     const [isVisible, setIsVisible] = useState(false);
     const [timeLeft, setTimeLeft] = useState(null);
     // Cópia pendente de limpeza e o intervalo do contador (lidos também ao desmontar).
-    const sessao = useRef({ pendente: false, intervalo: null });
+    const sessao = useRef({ pendente: false, intervalo: null, prazo: 0 });
     // Falso depois de fechar/desmontar: uma escrita que termina tarde não pode iniciar o timer.
     const montado = useRef(true);
     useEffect(() => {
@@ -75,8 +75,24 @@ export function ViewSecretModal({ segredoId, onClose, titulo }) {
         s.pendente = false;
         setTimeLeft(null);
         const ok = await escreverClipboard('');
+        // Falhou (ex.: Safari fora de um gesto): continua pendente, e o fechar (gesto) tenta de novo.
+        if (!ok) s.pendente = true;
         addToast(ok ? TOAST_LIMPO : TOAST_NAO_LIMPOU);
     };
+    const limparRef = useRef(limparAgora);
+    useEffect(() => { limparRef.current = limparAgora; });
+
+    // Voltou à página (os timers podem ter ficado suspensos em segundo plano): se o prazo
+    // de relógio já passou, limpa agora em vez de esperar o próximo tick.
+    useEffect(() => {
+        const aoVoltar = () => {
+            const s = sessao.current;
+            if (document.visibilityState === 'hidden') return;
+            if (s.pendente && s.intervalo && Date.now() >= s.prazo) limparRef.current();
+        };
+        document.addEventListener('visibilitychange', aoVoltar);
+        return () => document.removeEventListener('visibilitychange', aoVoltar);
+    }, []);
 
     const handleCopy = async () => {
         if (!estado.valor) return;
@@ -94,10 +110,11 @@ export function ViewSecretModal({ segredoId, onClose, titulo }) {
         const s = sessao.current;
         s.pendente = true;
         clearInterval(s.intervalo);
-        let restante = SEGUNDOS_LIMPEZA;
-        setTimeLeft(restante);
+        // Prazo de relógio (não de ticks): não para quando o navegador suspende os timers.
+        s.prazo = Date.now() + SEGUNDOS_LIMPEZA * 1000;
+        setTimeLeft(SEGUNDOS_LIMPEZA);
         s.intervalo = setInterval(() => {
-            restante -= 1;
+            const restante = Math.ceil((s.prazo - Date.now()) / 1000);
             if (restante > 0) setTimeLeft(restante);
             else limparAgora();
         }, 1000);
@@ -125,7 +142,11 @@ export function ViewSecretModal({ segredoId, onClose, titulo }) {
                     ) : (
                         <div className="secret-display-box">
                             <div className="secret-field">
-                                <span className={isVisible ? 'text-visible' : 'text-masked'}>
+                                {/* Oculto: um rótulo no lugar dos 24 pontos; revelado, o valor nunca vai para aria. */}
+                                <span
+                                    className={isVisible ? 'text-visible' : 'text-masked'}
+                                    {...(isVisible ? {} : { role: 'img', 'aria-label': 'Senha oculta' })}
+                                >
                                     {isVisible ? estado.valor : '•'.repeat(24)}
                                 </span>
                             </div>
