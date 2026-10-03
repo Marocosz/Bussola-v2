@@ -6,6 +6,7 @@ import { ViewSecretModal } from './components/ViewSecretModal'; // Novo Import
 import { ViewNotesModal } from './components/ViewNotesModal';   // Novo Import
 import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmDialogContext';
+import { formatarData } from './cofreLista';
 import './styles.css';
 
 export function Cofre() {
@@ -73,7 +74,7 @@ export function Cofre() {
     const handleNew = () => { setEditingItem(null); setCreateModalOpen(true); };
     const handleEdit = (item) => { setEditingItem(item); setCreateModalOpen(true); };
 
-    const fmtDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR') : 'Não expira';
+    const fmtDate = formatarData;
 
     const LoadingState = () => (
         <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--cor-texto-secundario)' }}>
