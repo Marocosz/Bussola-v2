@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, apiJson, congelarAgenda } from './helpers.mjs';
+import { gotoApp, apiJson, congelarAgenda, overflowOffenders, smallTargets } from './helpers.mjs';
 
 // ---------------------------------------------------------------------------
 // Infra do arquivo
@@ -125,5 +125,191 @@ test.describe('lógica pura', () => {
       semNada: ['2026-10-02:'],
       semDados: 0,
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Task 3 — layout mobile
+// ---------------------------------------------------------------------------
+test.describe('layout mobile', () => {
+  // A API usa o relógio real; o navegador roda em FIXED_NOW (sex 02/10/2026).
+  test.beforeEach(async ({ page }) => {
+    await congelarAgenda(page);
+  });
+
+  test('topbar "Roteiro", sem page-header, sem 2 colunas e sem tooltip; Fab de novo compromisso', async ({ page }) => {
+    await gotoApp(page, '/agenda');
+    await expect(page.locator('.m-topbar-title')).toHaveText('Roteiro');
+    await expect(page.locator('.page-header')).toHaveCount(0);
+    await expect(page.locator('.agenda-layout')).toHaveCount(0);
+    await expect(page.locator('.agenda-scope .tooltip')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Novo compromisso' })).toBeVisible();
+    await expect(page.locator('.app-fab')).toHaveCount(1);
+  });
+
+  test('faixa da semana: domingo a sábado, hoje selecionado, ponto nos dias com compromisso', async ({ page }) => {
+    await gotoApp(page, '/agenda');
+    const dias = page.locator('.m-week-day');
+    await expect(dias).toHaveCount(7);
+    await expect(dias.locator('.dia-semana')).toHaveText(['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']);
+    await expect(dias.locator('.dia-numero')).toHaveText(['27', '28', '29', '30', '1', '2', '3']);
+    await expect(page.locator('.m-week-title')).toHaveText('27 set – 3 out');
+    const hoje = dias.nth(5);
+    await expect(hoje).toHaveAttribute('aria-pressed', 'true');
+    await expect(hoje).toHaveAttribute('aria-label', /^Sexta-feira, 2 de outubro, \d+ compromissos?$/);
+    await expect(hoje.locator('.dia-card')).toHaveClass(/today/);
+    await expect(hoje.locator('.dia-card')).toHaveClass(/is-selected/);
+    await expect(hoje.locator('.compromisso-indicator')).not.toHaveClass(/no-event/);
+  });
+
+  test('lista: dia selecionado primeiro, depois os próximos dias em ordem, cards em 1 coluna', async ({ page }) => {
+    await gotoApp(page, '/agenda');
+    await expect(page.locator('.m-day-head').first()).toHaveText('Hoje · Sex, 2 de outubro');
+    const hoje = page.locator('.m-day-group').first();
+    await expect(hoje.locator('.card-title')).toContainText([`${E2E} manhã`, `${E2E} noite`]);
+    const dias = await page.locator('.m-day-group').evaluateAll((els) => els.map((e) => e.dataset.day));
+    expect(dias[0]).toBe('2026-10-02');
+    for (let i = 1; i < dias.length; i += 1) expect(dias[i] > dias[i - 1]).toBe(true);
+    expect(dias).toContain('2026-10-06');
+    const caixas = await page.locator('.m-day-cards .compromisso-card-modern').evaluateAll((els) => els.slice(0, 6)
+      .map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.x), Math.round(r.width)]; }));
+    for (const c of caixas) expect(c).toEqual([16, 358]);
+  });
+
+  test('‹ › trocam a semana e levam a seleção junto (mesmo dia da semana)', async ({ page }) => {
+    await gotoApp(page, '/agenda');
+    await page.getByRole('button', { name: 'Próxima semana' }).click();
+    await expect(page.locator('.m-week-title')).toHaveText('4 – 10 out');
+    await expect(page.locator('.m-week-day[aria-pressed="true"] .dia-numero')).toHaveText('9');
+    await expect(page.locator('.m-day-head').first()).toHaveText('Sex, 9 de outubro');
+    await expect(page.locator('.m-week-day').nth(2).locator('.compromisso-indicator')).not.toHaveClass(/no-event/);
+    await page.getByRole('button', { name: 'Semana anterior' }).click();
+    await page.getByRole('button', { name: 'Semana anterior' }).click();
+    await expect(page.locator('.m-week-title')).toHaveText('20 – 26 set');
+  });
+
+  test('tocar num dia da faixa leva a lista para ele; hoje continua marcado', async ({ page }) => {
+    await gotoApp(page, '/agenda');
+    const dias = page.locator('.m-week-day');
+    await dias.nth(6).click();
+    await expect(dias.nth(6)).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.m-day-head').first()).toHaveText('Amanhã · Sáb, 3 de outubro');
+    await expect(dias.nth(5).locator('.dia-card')).toHaveClass(/today/);
+    await expect(dias.nth(5).locator('.dia-card')).not.toHaveClass(/is-selected/);
+  });
+
+  // Ruling 8: fora de hoje, o novo compromisso já vem com o dia selecionado.
+  test('Fab: hoje abre o form vazio; outro dia abre com a data dele e a próxima hora cheia', async ({ page }) => {
+    await gotoApp(page, '/agenda');
+    const fab = page.getByRole('button', { name: 'Novo compromisso' });
+    const campos = page.locator('.modal .pk-trigger-text');
+    await fab.click();
+    await expect(campos).toHaveText(['Data...', 'Hora...']);
+    await page.locator('.modal').getByRole('button', { name: 'Cancelar' }).click();
+    await page.locator('.m-week-day').nth(6).click();
+    await fab.click();
+    await expect(campos).toHaveText(['3 de out. de 2026', '13:00']);
+  });
+
+  test('busca (título ou local) mostra todos os dias que casam', async ({ page }) => {
+    await gotoApp(page, '/agenda');
+    const busca = page.getByRole('searchbox', { name: 'Buscar compromissos' });
+    const dias = () => page.locator('.m-day-group').evaluateAll((els) => els.map((e) => e.dataset.day));
+    await busca.fill('e2e roteiro');
+    await expect.poll(dias).toEqual(['2026-10-02', '2026-10-06', '2026-10-15']);
+    await busca.fill('Sala E2E');
+    await expect.poll(dias).toEqual(['2026-10-02', '2026-10-06', '2026-10-15']);
+    await busca.fill('zzz nada casa');
+    await expect(page.locator('.m-roteiro-list .empty-list-msg')).toHaveText('Nenhum compromisso encontrado.');
+  });
+
+  test('ordenar mostra os dias anteriores ao selecionado, do mais recente ao mais antigo', async ({ page }) => {
+    await gotoApp(page, '/agenda');
+    await page.getByRole('button', { name: 'Mostrar dias anteriores' }).click();
+    await expect(page.getByRole('button', { name: 'Mostrar próximos dias' })).toBeVisible();
+    await expect(page.locator('.m-day-head').first()).toHaveText('Hoje · Sex, 2 de outubro');
+    const dias = await page.locator('.m-day-group').evaluateAll((els) => els.map((e) => e.dataset.day));
+    for (let i = 2; i < dias.length; i += 1) expect(dias[i] < dias[i - 1]).toBe(true);
+    for (const d of dias.slice(1)) expect(d < '2026-10-02').toBe(true);
+  });
+
+  for (const w of [360, 390, 430, 768]) {
+    test(`sem overflow horizontal em ${w}px`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: 844 });
+      await gotoApp(page, '/agenda');
+      expect(await overflowOffenders(page), `@ ${w}px`).toEqual([]);
+    });
+  }
+
+  test('alvos de toque ≥ 44px em 360 e 390', async ({ page }) => {
+    for (const w of [360, 390]) {
+      await page.setViewportSize({ width: w, height: 844 });
+      await gotoApp(page, '/agenda');
+      expect(await smallTargets(page, '.agenda-scope'), `página @ ${w}`).toEqual([]);
+      expect(await smallTargets(page, '.m-topbar'), `topbar @ ${w}`).toEqual([]);
+    }
+  });
+
+  test('espaçamento: gutter 16, 12px livres entre cards, 24 entre dias, 8 dentro do card', async ({ page }) => {
+    await gotoApp(page, '/agenda');
+    const m = await page.evaluate(() => {
+      const r = (el) => el.getBoundingClientRect();
+      const grupos = [...document.querySelectorAll('.m-day-group')];
+      const cards = [...grupos[0].querySelectorAll('.compromisso-card-modern')];
+      const selo2 = r(cards[1].querySelector('.selo-badge'));
+      const card = cards[0];
+      return {
+        esquerda: ['.m-week-head', '.m-week .m-week-cell', '.m-roteiro-tools', '.m-day-head'].map((s) => Math.round(r(document.querySelector(s)).left)),
+        direita: Math.round(window.innerWidth - r(card).right),
+        // o anel do selo (box-shadow de 4px) faz parte do selo visível
+        entreCards: Math.round(selo2.top - 4 - r(cards[0]).bottom),
+        entreDias: Math.round(r(grupos[1]).top - r(grupos[0]).bottom),
+        faixaParaFerramentas: Math.round(r(document.querySelector('.m-roteiro-tools')).top - r(document.querySelector('.m-week')).bottom),
+        dataParaTitulo: Math.round(r(card.querySelector('.card-title')).top - r(card.querySelector('.card-header-row')).bottom),
+        celulas: [...document.querySelectorAll('.m-week .m-week-cell')].slice(0, 2).map((e) => Math.round(r(e).left)),
+      };
+    });
+    expect(m.esquerda).toEqual([16, 16, 16, 16]);
+    expect(m.direita).toBe(16);
+    expect(m.entreCards).toBe(12);
+    expect(m.entreDias).toBe(24);
+    expect(m.faixaParaFerramentas).toBe(16);
+    expect(m.dataParaTitulo).toBe(8);
+    expect(m.celulas[1] - m.celulas[0] - (await page.locator('.m-week .m-week-cell').first().evaluate((e) => Math.round(e.getBoundingClientRect().width)))).toBe(8);
+  });
+
+  test('≤480: dia da semana abaixo da data no cabeçalho do card; textos ≥ 14px', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await gotoApp(page, '/agenda');
+    const card = page.locator('.m-day-cards .compromisso-card-modern').first();
+    const data = await card.locator('.date-big').boundingBox();
+    const dia = await card.locator('.weekday-inline').boundingBox();
+    expect(dia.y).toBeGreaterThanOrEqual(data.y + data.height - 1);
+    await expect(card.locator('.weekday-sep')).toBeHidden();
+    const acoes = await card.locator('.top-actions').boundingBox();
+    expect(acoes.x + acoes.width).toBeLessThanOrEqual(360 - 16 - 16 + 1);
+    for (const sel of ['.card-title', '.info-text', '.weekday-inline', '.m-day-head', '.m-week-title']) {
+      const fs = await page.locator(sel).first().evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
+      expect(fs, sel).toBeGreaterThanOrEqual(14);
+    }
+  });
+
+  test('editar/excluir sempre visíveis com 44px', async ({ page }) => {
+    await gotoApp(page, '/agenda');
+    const card = page.locator('.compromisso-card-modern', { hasText: `${E2E} manhã` });
+    expect(await card.locator('.top-actions').evaluate((e) => getComputedStyle(e).opacity)).toBe('1');
+    for (const nome of ['Editar', 'Excluir']) {
+      const b = await card.getByRole('button', { name: nome }).boundingBox();
+      expect(Math.round(b.width), nome).toBe(44);
+      expect(Math.round(b.height), nome).toBe(44);
+    }
+  });
+
+  test('o Fab não cobre o fim da lista', async ({ page }) => {
+    await gotoApp(page, '/agenda');
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    const rodape = await page.locator('.m-day-cards .compromisso-card-modern').last().locator('.card-footer-row').boundingBox();
+    const fab = await page.locator('.app-fab').boundingBox();
+    expect(rodape.y + rodape.height).toBeLessThanOrEqual(fab.y + 1);
   });
 });

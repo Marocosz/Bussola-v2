@@ -64,16 +64,16 @@ export function CompromissoCard({ comp, onUpdate, onEdit }) {
                     <span className="date-big">{dia}</span>
                     <span className="time-group">
                         <span className="time-big">{hora}</span>
-                        <span className="weekday-inline">• {diaSemana}</span>
+                        <span className="weekday-inline"><span className="weekday-sep" aria-hidden="true">• </span>{diaSemana}</span>
                     </span>
                 </div>
                 
                 <div className="top-actions">
                     {/* Botões atualizados: Ícones novos e classes para hover específico */}
-                    <button className="btn-action-icon btn-edit-transacao" onClick={() => onEdit(comp)} title="Editar">
+                    <button className="btn-action-icon btn-edit-transacao" onClick={() => onEdit(comp)} title="Editar" aria-label="Editar">
                         <i className="fa-solid fa-pen-to-square"></i>
                     </button>
-                    <button className="btn-action-icon btn-delete-transacao" onClick={handleDelete} title="Excluir">
+                    <button className="btn-action-icon btn-delete-transacao" onClick={handleDelete} title="Excluir" aria-label="Excluir">
                         <i className="fa-solid fa-trash-can"></i>
                     </button>
                 </div>

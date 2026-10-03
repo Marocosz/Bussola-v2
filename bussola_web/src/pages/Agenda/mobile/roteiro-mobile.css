@@ -1,0 +1,291 @@
+/* =========================================================================
+   ROTEIRO NO CELULAR (≤768): faixa da semana, busca + ordenar e lista por dia
+   com o CompromissoCard atual. Escala (tokens.css): 8 dentro do card e entre
+   controles relacionados, 12 livres entre cards, 16 gutter e blocos, 24 entre
+   dias. Importado depois de ../styles.css (ver index.jsx).
+   ========================================================================= */
+
+@media (max-width: 768px) {
+    /* A .app-content já reserva a barra inferior; os 5rem do desktop sobrariam aqui. */
+    .agenda-scope.main-container {
+        padding-bottom: 0 !important;
+    }
+
+    .agenda-scope .m-roteiro {
+        /* o selo (top: -22px, medido de dentro da borda de 1px) sobe 21px acima
+           do card + anel de 4px = 25px visíveis acima da borda */
+        --selo-saliencia: 25px;
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-4);
+        padding-top: var(--sp-4);
+        padding-bottom: calc(56px + var(--sp-4)); /* o Fab (56px) não cobre o fim da lista */
+    }
+
+    /* --- Faixa da semana --- */
+    .agenda-scope .m-week {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-2);
+    }
+
+    .agenda-scope .m-week-head {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-2);
+    }
+
+    .agenda-scope .m-week-title {
+        flex: 1;
+        text-align: center;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--cor-texto-principal);
+    }
+
+    .agenda-scope .m-week .m-week-nav {
+        width: var(--tap-min);
+        height: var(--tap-min);
+        flex-shrink: 0;
+        border-radius: 12px;
+    }
+
+    /* Cada botão ocupa 1/7 da faixa (48px em 360); o card visual fica dentro com
+       4px de cada lado (8px entre cards). A faixa recua 4px para os cards
+       alinharem no gutter de 16px. */
+    .agenda-scope .m-week-strip {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        margin-inline: calc(-1 * var(--sp-1));
+        touch-action: pan-y;
+        user-select: none;
+    }
+
+    .agenda-scope .m-week-day {
+        display: flex;
+        min-width: 0;
+        padding: 0 var(--sp-1);
+        border: none;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .agenda-scope .m-week .dia-card.m-week-cell {
+        flex: 1;
+        min-width: 0;
+        height: 56px;
+        aspect-ratio: auto;
+        gap: var(--sp-1);
+        padding: var(--sp-1) 0;
+        border-radius: 12px;
+    }
+
+    .agenda-scope .m-week .dia-card.m-week-cell .dia-semana {
+        display: block;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+
+    .agenda-scope .m-week .dia-card.m-week-cell .dia-numero {
+        font-size: 1.05rem;
+        font-weight: 700;
+        line-height: 1.1;
+    }
+
+    .agenda-scope .m-week .dia-card.m-week-cell .compromisso-indicator {
+        width: var(--sp-2);
+        height: var(--sp-2);
+        margin-top: 0;
+    }
+
+    .agenda-scope .m-week .dia-card.m-week-cell.is-selected {
+        background-color: var(--cor-azul-primario);
+        border-color: var(--cor-azul-primario);
+    }
+
+    .agenda-scope .m-week .dia-card.m-week-cell.is-selected .dia-numero,
+    .agenda-scope .m-week .dia-card.m-week-cell.is-selected .dia-semana {
+        color: #fff;
+    }
+
+    .agenda-scope .m-week .dia-card.m-week-cell.is-selected .compromisso-indicator:not(.no-event) {
+        background-color: #fff;
+    }
+
+    .agenda-scope .m-week-day:focus-visible {
+        outline: none;
+    }
+
+    .agenda-scope .m-week-day:focus-visible .m-week-cell {
+        outline: 2px solid var(--cor-azul-primario);
+        outline-offset: 2px;
+    }
+
+    /* --- Busca + ordenar (uma linha) --- */
+    .agenda-scope .m-roteiro-tools {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-2);
+    }
+
+    .agenda-scope .m-roteiro-search {
+        position: relative;
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    .agenda-scope .m-roteiro-search i {
+        position: absolute;
+        left: var(--sp-3);
+        color: var(--cor-texto-secundario);
+        font-size: 0.9rem;
+        pointer-events: none;
+    }
+
+    .agenda-scope .m-roteiro-search input {
+        width: 100%;
+        height: var(--tap-min);
+        padding: 0 var(--sp-3) 0 calc(var(--sp-3) + var(--sp-5));
+        border: 1px solid var(--cor-borda);
+        border-radius: 12px;
+        background-color: var(--cor-fundo);
+        color: var(--cor-texto-principal);
+    }
+
+    .agenda-scope .m-roteiro-search input:focus {
+        outline: none;
+        border-color: var(--cor-azul-primario);
+    }
+
+    .agenda-scope .m-roteiro-tools .m-roteiro-sort {
+        width: var(--tap-min);
+        height: var(--tap-min);
+        flex-shrink: 0;
+        border-radius: 12px;
+    }
+
+    /* --- Lista por dia --- */
+    .agenda-scope .m-roteiro-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-5);
+    }
+
+    .agenda-scope .m-day-group {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-2);
+    }
+
+    .agenda-scope .m-day-head {
+        margin: 0;
+        font-size: 0.875rem;
+        font-weight: 700;
+        letter-spacing: 0;
+        text-transform: none;
+        color: var(--cor-texto-secundario);
+    }
+
+    .agenda-scope .m-day-rel {
+        color: var(--cor-azul-primario);
+    }
+
+    /* 12px livres entre o fim de um card e o selo do próximo: o selo sobe
+       --selo-saliencia acima do card, então o gap soma os dois. O padding-top
+       abre espaço para o selo do primeiro card. */
+    .agenda-scope .m-day-cards {
+        display: flex;
+        flex-direction: column;
+        gap: calc(var(--sp-3) + var(--selo-saliencia));
+        padding-top: var(--selo-saliencia);
+    }
+
+    .agenda-scope .m-roteiro .empty-list-msg {
+        margin: 0;
+        padding: var(--sp-5) var(--sp-4);
+        font-size: 0.875rem;
+    }
+
+    .agenda-scope .m-roteiro-loading {
+        margin: 0;
+        padding: var(--sp-6) 0;
+        text-align: center;
+        font-size: 0.875rem;
+        color: var(--cor-texto-secundario);
+    }
+
+    .agenda-scope .m-roteiro-loading i {
+        margin-right: var(--sp-2);
+        color: var(--cor-azul-primario);
+    }
+
+    /* --- Card (mesmo desenho; só espaçamento, quebra e alvos de toque) --- */
+    .agenda-scope .m-day-cards .compromisso-card-modern {
+        height: auto;
+        padding: var(--sp-6) var(--sp-4) var(--sp-4);
+        gap: var(--sp-2);
+    }
+
+    .agenda-scope .m-day-cards .card-header-row {
+        align-items: flex-start;
+        gap: var(--sp-2);
+    }
+
+    .agenda-scope .m-day-cards .top-actions {
+        flex-shrink: 0;
+    }
+
+    .agenda-scope .m-day-cards .card-infos-container {
+        gap: var(--sp-2);
+        margin-top: 0;
+    }
+
+    .agenda-scope .m-day-cards .card-footer-row {
+        padding-top: var(--sp-2);
+    }
+
+    .agenda-scope .m-day-cards .footer-actions {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: var(--sp-2);
+    }
+
+    .agenda-scope .compromisso-card-modern .btn-action-icon {
+        width: var(--tap-min) !important;
+        height: var(--tap-min) !important;
+        font-size: 0.95rem;
+    }
+
+    .agenda-scope .compromisso-card-modern .btn-concluir-action,
+    .agenda-scope .compromisso-card-modern .btn-cancelar-action {
+        min-height: var(--tap-min);
+    }
+}
+
+/* Celular pequeno: o dia da semana do cabeçalho do card desce para baixo da data. */
+@media (max-width: 480px) {
+    .agenda-scope .compromisso-card-modern .date-highlight {
+        flex-wrap: wrap;
+        column-gap: var(--sp-3);
+        row-gap: 0;
+        min-width: 0;
+    }
+
+    .agenda-scope .compromisso-card-modern .time-group {
+        display: contents;
+    }
+
+    .agenda-scope .compromisso-card-modern .weekday-inline {
+        flex-basis: 100%;
+    }
+
+    .agenda-scope .compromisso-card-modern .weekday-sep {
+        display: none;
+    }
+}

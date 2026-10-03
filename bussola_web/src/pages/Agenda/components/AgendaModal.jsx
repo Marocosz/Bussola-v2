@@ -4,7 +4,8 @@ import { useToast } from '../../../context/ToastContext';
 import { BaseModal } from '../../../components/BaseModal';
 import { DateTimePicker } from '../../../components/Pickers';
 
-export function AgendaModal({ active, closeModal, onUpdate, editingData }) {
+// initialDate (opcional, 'AAAA-MM-DDTHH:mm'): data/hora já preenchida num compromisso novo.
+export function AgendaModal({ active, closeModal, onUpdate, editingData, initialDate = '' }) {
     const { addToast } = useToast();
     
     const [titulo, setTitulo] = useState('');
@@ -25,13 +26,13 @@ export function AgendaModal({ active, closeModal, onUpdate, editingData }) {
                 setLembrete(editingData.lembrete);
             } else {
                 setTitulo('');
-                setDataHora('');
+                setDataHora(initialDate);
                 setLocal('');
                 setDescricao('');
                 setLembrete(false);
             }
         }
-    }, [active, editingData]);
+    }, [active, editingData, initialDate]);
 
     if (!active) return null;
 

@@ -240,11 +240,13 @@
     box-sizing: border-box;
 }
 
-.agenda-scope .compromisso-card-modern:hover {
-    transform: translateY(-3px);
-    border-color: color-mix(in srgb, var(--card-accent) 45%, var(--cor-borda));
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1),
-        0 0 0 3px color-mix(in srgb, var(--card-accent) 12%, transparent);
+@media (hover: hover) and (pointer: fine) {
+    .agenda-scope .compromisso-card-modern:hover {
+        transform: translateY(-3px);
+        border-color: color-mix(in srgb, var(--card-accent) 45%, var(--cor-borda));
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1),
+            0 0 0 3px color-mix(in srgb, var(--card-accent) 12%, transparent);
+    }
 }
 
 /* Selo flutuante herda a cor de status do card */
@@ -546,11 +548,13 @@
     background-color: rgba(74, 109, 255, 0.05);
 }
 
-:is(.agenda-scope, .roteiro-cal-sheet) .dia-card:not(.dia-padding):hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    border-color: var(--cor-azul-primario);
-    cursor: pointer;
+@media (hover: hover) and (pointer: fine) {
+    :is(.agenda-scope, .roteiro-cal-sheet) .dia-card:not(.dia-padding):hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        border-color: var(--cor-azul-primario);
+        cursor: pointer;
+    }
 }
 
 :is(.agenda-scope, .roteiro-cal-sheet) .dia-numero {

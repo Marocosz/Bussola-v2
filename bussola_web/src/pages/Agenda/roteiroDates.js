@@ -104,6 +104,14 @@ export function dayAriaLabel(key, count = 0) {
     return `${base}, ${count} ${count === 1 ? 'compromisso' : 'compromissos'}`;
 }
 
+/**
+ * Data/hora inicial do "Novo compromisso" aberto num dia que não é hoje:
+ * o dia escolhido na próxima hora cheia do relógio ('AAAA-MM-DDTHH:00', até 23:00).
+ */
+export function newCompromissoDateTime(key, now = new Date()) {
+    return `${key}T${pad(Math.min(now.getHours() + 1, 23))}:00`;
+}
+
 // Mesma regra da busca do desktop: título ou local, sem diferenciar maiúsculas.
 const casa = (c, termo) => String(c.titulo || '').toLowerCase().includes(termo)
     || String(c.local || '').toLowerCase().includes(termo);

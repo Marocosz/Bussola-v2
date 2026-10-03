@@ -4,7 +4,10 @@ import { CompromissoCard } from './components/CompromissoCard';
 import { AgendaModal } from './components/AgendaModal';
 import { useToast } from '../../context/ToastContext';
 import { AiAssistant } from '../../components/AiAssistant'; // [NOVO] Import da IA
+import { useIsMobile } from '../../hooks/useIsMobile';
 import './styles.css';
+import { RoteiroMobile } from './mobile/RoteiroMobile'; // depois do styles.css: o CSS mobile vence na cascata
+import { newCompromissoDateTime } from './roteiroDates';
 import { logger } from '../../utils/logger';
 
 // --- SUB-COMPONENTES MEMOIZADOS (PERFORMANCE FIX) ---
@@ -65,13 +68,15 @@ export function Agenda() {
     const [loading, setLoading] = useState(true);
     const [modalOpen, setModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
-    
+    const [novoDataHora, setNovoDataHora] = useState(''); // data inicial do "novo" (celular, dia ≠ hoje)
+
     const [viewDate, setViewDate] = useState(new Date());
     const [searchTerm, setSearchTerm] = useState('');
     const [sortOrder, setSortOrder] = useState('asc'); 
 
     const { addToast } = useToast();
-    
+    const isMobile = useIsMobile();
+
     const [tooltip, setTooltip] = useState({ visible: false, x: 0, y: 0, compromissos: [] });
 
     const [openMonths, setOpenMonths] = useState(() => {
@@ -121,7 +126,12 @@ export function Agenda() {
         setOpenMonths(prev => ({ ...prev, [key]: !prev[key] }));
     }, []);
 
-    const handleNew = () => { setEditingItem(null); setModalOpen(true); };
+    // `dia` ('AAAA-MM-DD') só vem do celular, quando o dia selecionado não é hoje.
+    const handleNew = (dia = null) => {
+        setEditingItem(null);
+        setNovoDataHora(dia ? newCompromissoDateTime(dia) : '');
+        setModalOpen(true);
+    };
     const handleEdit = useCallback((item) => { setEditingItem(item); setModalOpen(true); }, []);
     
     // Função para passar para o CompromissoCard (que deve chamar fetchData)
@@ -195,6 +205,33 @@ export function Agenda() {
         </div>
     );
 
+    // Celular (spec §5.3): faixa da semana + lista por dia; sem page-header, sem
+    // calendário lateral e sem o tooltip de hover. O título vem da topbar do shell.
+    if (isMobile) {
+        return (
+            <div className="container main-container agenda-scope">
+                <RoteiroMobile
+                    data={data}
+                    loading={loading}
+                    searchTerm={searchTerm}
+                    onSearch={setSearchTerm}
+                    sortOrder={sortOrder}
+                    onToggleSort={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                    onUpdate={handleUpdate}
+                    onEdit={handleEdit}
+                    onNew={handleNew}
+                />
+                <AgendaModal
+                    active={modalOpen}
+                    closeModal={() => setModalOpen(false)}
+                    onUpdate={() => fetchData(true)}
+                    editingData={editingItem}
+                    initialDate={novoDataHora}
+                />
+            </div>
+        );
+    }
+
     return (
         <div className="container main-container agenda-scope">
             <div className="page-header">
@@ -235,7 +272,7 @@ export function Agenda() {
                                 <i className={`fa-solid fa-arrow-${sortOrder === 'desc' ? 'up-wide-short' : 'down-wide-short'}`}></i>
                             </button>
 
-                            <button className="btn-primary small-btn" onClick={handleNew}>
+                            <button className="btn-primary small-btn" onClick={() => handleNew()}>
                                 <i className="fa-solid fa-plus"></i> Adicionar
                             </button>
                         </div>

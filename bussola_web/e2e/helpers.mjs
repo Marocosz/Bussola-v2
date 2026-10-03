@@ -51,7 +51,8 @@ export async function congelarAgenda(page) {
       let m = mes;
       if (d.is_padding) m += viuMes ? 1 : -1; else viuMes = true;
       if (m < 0) { m = 11; y -= 1; } else if (m > 11) { m = 0; y += 1; }
-      d.is_today = !d.is_padding && `${y}-${pad(m + 1)}-${pad(Number(d.day_number))}` === HOJE_FIXO;
+      // Como o backend: qualquer célula com a data de hoje, inclusive padding.
+      d.is_today = `${y}-${pad(m + 1)}-${pad(Number(d.day_number))}` === HOJE_FIXO;
     }
 
     for (const lista of Object.values(json.compromissos_por_mes || {})) {
