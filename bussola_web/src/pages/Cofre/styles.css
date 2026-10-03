@@ -296,6 +296,22 @@
     color: var(--cor-texto-secundario);
 }
 
+/* Corpo do "Visualizar" (antes inline) */
+.cofre-scope .view-secret-body {
+    text-align: center;
+    padding: 2rem 1.5rem;
+}
+
+.cofre-scope .view-secret-loading {
+    color: var(--cor-texto-secundario);
+}
+
+.cofre-scope .view-secret-aviso {
+    margin-top: 1.5rem;
+    font-size: 0.8rem;
+    color: var(--cor-texto-secundario);
+}
+
 /* Modal de Notas Completas */
 .cofre-scope .notes-full-view {
     white-space: pre-wrap;
@@ -545,5 +561,35 @@
     /* Notas: só o corpo do sheet rola (sem rolagem dentro da rolagem) */
     .cofre-scope .notes-full-view {
         max-height: none;
+    }
+
+    /* Visualizar segredo: valor grande e monoespaçado, ações de 48px */
+    .cofre-scope .modal-overlay.is-sheet .view-secret-body {
+        padding: var(--sp-5) var(--sp-4);
+    }
+
+    .cofre-scope .secret-display-box {
+        padding: var(--sp-4);
+        gap: var(--sp-4);
+        margin-bottom: 0;
+    }
+
+    .cofre-scope .secret-field {
+        font-size: 1.25rem;
+        min-height: 72px;
+        padding: var(--sp-4);
+        user-select: all;
+    }
+
+    .cofre-scope .secret-actions {
+        gap: var(--sp-2);
+    }
+
+    .cofre-scope .secret-actions button {
+        height: 48px;
+    }
+
+    .cofre-scope .view-secret-aviso {
+        margin-top: var(--sp-4);
     }
 }

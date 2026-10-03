@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, apiJson, overflowOffenders, smallTargets, animacoesAcabaram } from './helpers.mjs';
+import { gotoApp, FIXED_NOW, apiJson, overflowOffenders, smallTargets, animacoesAcabaram } from './helpers.mjs';
 
 // ---------------------------------------------------------------------------
 // Infra do arquivo
@@ -344,14 +344,19 @@ test.describe('edição preserva a validade', () => {
     expect(lista.find((s) => s.titulo === 'E2E Validade editada').data_expiracao).toBe('2026-12-25');
   });
 
-  test('item sem validade: nenhum texto auxiliar', async ({ page }) => {
+  test('item sem validade: nenhum texto auxiliar', async ({ page, request }) => {
+    const criado = await apiJson(request, 'POST', '/cofre/', { titulo: 'E2E Sem validade', servico: 'E2E', valor: 'E2E-sv' });
     await gotoApp(page, '/cofre');
+    await page.getByRole('button', { name: 'Mais ações de E2E Sem validade' }).click();
+    await page.locator('.action-sheet').getByRole('button', { name: 'Editar' }).click();
+    await expect(page.locator('#segredo-titulo')).toHaveValue('E2E Sem validade');
+    await expect(page.locator('.segredo-dias-ajuda')).toHaveCount(0);
+    // Contraste: o expirado ainda tem data, então mostra o texto auxiliar.
+    await page.locator('.modal-overlay.is-sheet').getByRole('button', { name: 'Fechar' }).click();
     await page.getByRole('button', { name: 'Mais ações de E2E Expirado' }).click();
     await page.locator('.action-sheet').getByRole('button', { name: 'Editar' }).click();
-    await expect(page.locator('.segredo-dias-ajuda')).toHaveCount(1); // expirado ainda tem data
-    await page.locator('.modal-overlay.is-sheet').getByRole('button', { name: 'Fechar' }).click();
-    await page.locator('.app-fab').click();
-    await expect(page.locator('.segredo-dias-ajuda')).toHaveCount(0);
+    await expect(page.locator('.segredo-dias-ajuda')).toHaveCount(1);
+    await apiJson(request, 'DELETE', `/cofre/${criado.id}`);
   });
 });
 
@@ -369,5 +374,124 @@ test.describe('lista: ajustes da revisão', () => {
     await gotoApp(page, '/cofre');
     await expect(page.locator('.cofre-m-vazio')).toBeVisible();
     await expect(page.locator('.cofre-m-busca')).toHaveCount(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Task 4 — ver segredo e área de transferência
+// ---------------------------------------------------------------------------
+async function abrirSegredo(page, titulo) {
+  await page.getByRole('button', { name: `Ver senha de ${titulo}` }).click();
+  await page.getByRole('button', { name: 'Visualizar', exact: true }).click();
+  await expect(page.locator('.modal-overlay.is-sheet .secret-display-box')).toBeVisible();
+}
+const toast = (page, texto) => page.locator('.toast-notification', { hasText: texto });
+const clip = (page) => page.evaluate(() => window.__clip);
+const fechar = (page) => page.locator('.modal-overlay.is-sheet').getByRole('button', { name: 'Fechar' });
+
+test.describe('ver segredo e área de transferência', () => {
+  test('valor monoespaçado grande; Revelar e Copiar com 48px', async ({ page }) => {
+    await stubClipboard(page);
+    await gotoApp(page, '/cofre');
+    await abrirSegredo(page, 'E2E Banco Zeta');
+    await animacoesAcabaram(page);
+    const campo = page.locator('.modal-overlay.is-sheet .secret-field');
+    expect(await campo.evaluate((e) => getComputedStyle(e).fontFamily)).toMatch(/monospace|Courier/i);
+    expect(await campo.evaluate((e) => parseFloat(getComputedStyle(e).fontSize))).toBeGreaterThanOrEqual(20);
+    const revelar = page.getByRole('button', { name: 'Revelar' });
+    const copiar = page.getByRole('button', { name: 'Copiar', exact: true });
+    expect((await revelar.boundingBox()).height).toBeGreaterThanOrEqual(48);
+    expect((await copiar.boundingBox()).height).toBeGreaterThanOrEqual(48);
+    await revelar.click();
+    await expect(campo).toHaveText('E2E-senha-123');
+    expect(await smallTargets(page, '.modal-overlay.is-sheet')).toEqual([]);
+  });
+
+  test('fechar pelo X limpa a área de transferência e avisa', async ({ page }) => {
+    await stubClipboard(page);
+    await gotoApp(page, '/cofre');
+    await abrirSegredo(page, 'E2E Banco Zeta');
+    await page.getByRole('button', { name: 'Copiar', exact: true }).click();
+    await expect(page.getByRole('button', { name: /Copiado \(60s\)/ })).toBeVisible();
+    await fechar(page).click();
+    await expect(page.locator('.modal-overlay.is-sheet')).toHaveCount(0);
+    await expect.poll(() => clip(page)).toEqual(['E2E-senha-123', '']);
+    await expect(toast(page, 'Área de transferência limpa')).toBeVisible();
+  });
+
+  test('ESC também limpa', async ({ page }) => {
+    await stubClipboard(page);
+    await gotoApp(page, '/cofre');
+    await abrirSegredo(page, 'E2E Banco Zeta');
+    await page.getByRole('button', { name: 'Copiar', exact: true }).click();
+    await page.keyboard.press('Escape');
+    await expect.poll(() => clip(page)).toEqual(['E2E-senha-123', '']);
+  });
+
+  test('fechar sem ter copiado não mexe na área de transferência', async ({ page }) => {
+    await stubClipboard(page);
+    await gotoApp(page, '/cofre');
+    await abrirSegredo(page, 'E2E Banco Zeta');
+    await fechar(page).click();
+    await expect(page.locator('.modal-overlay.is-sheet')).toHaveCount(0);
+    await animacoesAcabaram(page);
+    expect(await clip(page)).toEqual([]);
+    await expect(toast(page, 'Área de transferência limpa')).toHaveCount(0);
+  });
+
+  test('falha ao copiar: avisa e não inicia o timer', async ({ page }) => {
+    await stubClipboard(page);
+    await gotoApp(page, '/cofre');
+    await abrirSegredo(page, 'E2E Banco Zeta');
+    await page.evaluate(() => { window.__clipFalha = true; });
+    await page.getByRole('button', { name: 'Copiar', exact: true }).click();
+    await expect(toast(page, 'Não foi possível copiar')).toBeVisible();
+    await expect(page.getByRole('button', { name: /Copiado/ })).toHaveCount(0);
+  });
+
+  test('falha ao limpar: avisa sem dizer que limpou', async ({ page }) => {
+    await stubClipboard(page);
+    await gotoApp(page, '/cofre');
+    await abrirSegredo(page, 'E2E Banco Zeta');
+    await page.getByRole('button', { name: 'Copiar', exact: true }).click();
+    await page.evaluate(() => { window.__clipFalha = true; });
+    await fechar(page).click();
+    await expect(toast(page, 'Não foi possível limpar')).toBeVisible();
+    await expect(toast(page, 'Área de transferência limpa')).toHaveCount(0);
+  });
+
+  test('o timer de 60s limpa e avisa', async ({ page }) => {
+    await stubClipboard(page);
+    // Timers falsos (o gotoApp só fixa a data e deixa os timers reais).
+    await page.clock.install({ time: FIXED_NOW });
+    await page.goto('/cofre');
+    await page.waitForLoadState('networkidle');
+    await abrirSegredo(page, 'E2E Banco Zeta');
+    await page.getByRole('button', { name: 'Copiar', exact: true }).click();
+    await expect(page.getByRole('button', { name: /Copiado \(60s\)/ })).toBeVisible();
+    await page.clock.runFor(30_000);
+    await expect(page.getByRole('button', { name: /Copiado \(30s\)/ })).toBeVisible();
+    await page.clock.runFor(31_000);
+    await expect.poll(() => clip(page)).toEqual(['E2E-senha-123', '']);
+    await expect(toast(page, 'Área de transferência limpa')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Copiar', exact: true })).toBeVisible();
+    // Fechar depois do timer não limpa de novo
+    await fechar(page).click();
+    expect(await clip(page)).toEqual(['E2E-senha-123', '']);
+  });
+
+  test('página escondida oculta o valor revelado', async ({ page }) => {
+    await stubClipboard(page);
+    await gotoApp(page, '/cofre');
+    await abrirSegredo(page, 'E2E Banco Zeta');
+    const campo = page.locator('.modal-overlay.is-sheet .secret-field');
+    await page.getByRole('button', { name: 'Revelar' }).click();
+    await expect(campo).toHaveText('E2E-senha-123');
+    await page.evaluate(() => {
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await expect(campo).not.toHaveText('E2E-senha-123');
+    await expect(page.getByRole('button', { name: 'Revelar' })).toBeVisible();
   });
 });
