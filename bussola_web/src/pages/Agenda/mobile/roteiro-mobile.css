@@ -289,3 +289,77 @@
         display: none;
     }
 }
+
+/* =========================================================================
+   CALENDÁRIO DO MÊS (Sheet aberto pelo fa-calendar-days da topbar). O Sheet é
+   portal no body: as regras base das células valem via :is(.agenda-scope,
+   .roteiro-cal-sheet) em ../styles.css; aqui só o que é do sheet.
+   ========================================================================= */
+
+/* O .modal-body (components.css) tem gap de 1.2rem: a navegação e a grade ficam coladas pelo padding. */
+.modal-content.app-sheet.roteiro-cal-sheet > .app-sheet-body {
+    gap: 0;
+}
+
+.roteiro-cal-sheet .m-cal-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding-bottom: var(--sp-3);
+}
+
+.roteiro-cal-sheet .m-cal-nav .btn-nav-arrow {
+    width: var(--tap-min);
+    height: var(--tap-min);
+    flex-shrink: 0;
+    border-radius: 12px;
+}
+
+.roteiro-cal-sheet .m-cal-title {
+    flex: 1;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--cor-texto-principal);
+}
+
+/* Os nomes dos dias são a 1ª linha da própria grade (mesmo gap das células). */
+.roteiro-cal-sheet .m-cal-weekday {
+    padding-bottom: var(--sp-1);
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--cor-texto-secundario);
+}
+
+.roteiro-cal-sheet .dias-grid button.dia-card {
+    min-width: 0;
+    font: inherit;
+    color: var(--cor-texto-principal);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* A linha de nomes já diz o dia da semana. */
+.roteiro-cal-sheet .dias-grid .dia-card .dia-semana {
+    display: none;
+}
+
+.roteiro-cal-sheet .dias-grid .dia-card .dia-numero {
+    font-size: 1rem;
+}
+
+.roteiro-cal-sheet .dias-grid .dia-card.is-selected {
+    background-color: var(--cor-azul-primario);
+    border-color: var(--cor-azul-primario);
+}
+
+.roteiro-cal-sheet .dias-grid .dia-card.is-selected .dia-numero {
+    color: #fff;
+}
+
+.roteiro-cal-sheet .dias-grid .dia-card.is-selected .compromisso-indicator:not(.no-event) {
+    background-color: #fff;
+}

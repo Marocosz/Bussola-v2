@@ -313,3 +313,102 @@ test.describe('layout mobile', () => {
     expect(rodape.y + rodape.height).toBeLessThanOrEqual(fab.y + 1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 4 — calendário em sheet e swipe
+// ---------------------------------------------------------------------------
+test.describe('calendário e swipe', () => {
+  test.beforeEach(async ({ page }) => {
+    await congelarAgenda(page);
+  });
+
+  const abrirCalendario = (page) => page.locator('.m-topbar-slot').getByRole('button', { name: 'Abrir calendário' }).click();
+
+  test('ícone da topbar abre o mês do dia selecionado; tocar num dia leva a faixa e a lista', async ({ page }) => {
+    await gotoApp(page, '/agenda');
+    await page.evaluate(() => window.scrollTo(0, 600));
+    await abrirCalendario(page);
+    const sheet = page.locator('.roteiro-cal-sheet');
+    await expect(sheet).toBeVisible();
+    await expect(sheet.locator('h3')).toHaveText('Calendário');
+    await expect(sheet.locator('.m-cal-title')).toHaveText('Outubro de 2026');
+    await expect(sheet.locator('.m-cal-weekday')).toHaveText(['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']);
+    await expect(sheet.locator('.dias-grid .dia-card')).toHaveCount(35);
+    await expect(sheet.locator('.dias-grid .dia-card.dia-padding')).toHaveCount(4);
+    await expect(sheet.locator('.dia-card.today .dia-numero')).toHaveText('2');
+    await expect(sheet.locator('.dia-card.is-selected .dia-numero')).toHaveText('2');
+    const dia15 = sheet.getByRole('button', { name: /^Quinta-feira, 15 de outubro/ });
+    await expect(dia15).toHaveClass(/has-compromissos/);
+    await dia15.click();
+    await expect(sheet).toHaveCount(0);
+    await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBe(0);
+    await expect(page.locator('.m-week-title')).toHaveText('11 – 17 out');
+    await expect(page.locator('.m-week-day[aria-pressed="true"] .dia-numero')).toHaveText('15');
+    await expect(page.locator('.m-day-head').first()).toHaveText('Qui, 15 de outubro');
+    await expect(page.locator('.m-day-group').first().locator('.card-title')).toContainText([`${E2E} dia 15`]);
+  });
+
+  test('‹ › trocam o mês; reabrir mostra o mês do dia escolhido', async ({ page }) => {
+    await gotoApp(page, '/agenda');
+    await abrirCalendario(page);
+    const sheet = page.locator('.roteiro-cal-sheet');
+    await sheet.getByRole('button', { name: 'Próximo mês' }).click();
+    await expect(sheet.locator('.m-cal-title')).toHaveText('Novembro de 2026');
+    await expect(sheet.locator('.dias-grid .dia-card')).toHaveCount(35);
+    await expect(sheet.locator('.dias-grid .dia-card.dia-padding')).toHaveCount(5);
+    await sheet.getByRole('button', { name: /^Terça-feira, 10 de novembro/ }).click();
+    await expect(page.locator('.m-day-head').first()).toHaveText('Ter, 10 de novembro');
+    await abrirCalendario(page);
+    await expect(page.locator('.roteiro-cal-sheet .m-cal-title')).toHaveText('Novembro de 2026');
+    await page.locator('.roteiro-cal-sheet').getByRole('button', { name: 'Mês anterior' }).click();
+    await page.locator('.roteiro-cal-sheet').getByRole('button', { name: 'Mês anterior' }).click();
+    await expect(page.locator('.roteiro-cal-sheet .m-cal-title')).toHaveText('Setembro de 2026');
+    await page.locator('.roteiro-cal-sheet').getByRole('button', { name: 'Fechar' }).click();
+    await expect(page.locator('.roteiro-cal-sheet')).toHaveCount(0);
+    await expect(page.locator('.m-day-head').first()).toHaveText('Ter, 10 de novembro');
+  });
+
+  for (const w of [360, 390, 430, 768]) {
+    test(`calendário sem overflow e com alvos ≥ 44px em ${w}px`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: 844 });
+      await gotoApp(page, '/agenda');
+      await abrirCalendario(page);
+      await expect(page.locator('.roteiro-cal-sheet')).toBeVisible();
+      expect(await overflowOffenders(page), `@ ${w}px`).toEqual([]);
+      expect(await smallTargets(page, '.roteiro-cal-sheet'), `@ ${w}px`).toEqual([]);
+    });
+  }
+
+  test('swipe na faixa troca de semana e descarta o clique do gesto', async ({ page }) => {
+    await gotoApp(page, '/agenda');
+    const strip = page.locator('.m-week-strip');
+    const b = await strip.boundingBox();
+    const y = b.y + b.height / 2;
+    const gesto = async (de, para) => {
+      await strip.dispatchEvent('pointerdown', { clientX: de, clientY: y, pointerType: 'touch', isPrimary: true });
+      await strip.dispatchEvent('pointerup', { clientX: para, clientY: y + 4, pointerType: 'touch', isPrimary: true });
+    };
+    await gesto(b.x + b.width - 20, b.x + 20); // para a esquerda → próxima semana
+    await expect(page.locator('.m-week-title')).toHaveText('4 – 10 out');
+    // o clique que o navegador dispara ao fim do gesto não seleciona o dia sob o dedo
+    await page.locator('.m-week-day').nth(1).dispatchEvent('click');
+    await expect(page.locator('.m-week-day[aria-pressed="true"] .dia-numero')).toHaveText('9');
+    // um toque normal depois seleciona
+    await page.locator('.m-week-day').nth(1).click();
+    await expect(page.locator('.m-week-day[aria-pressed="true"] .dia-numero')).toHaveText('5');
+    await gesto(b.x + 20, b.x + b.width - 20); // para a direita → semana anterior
+    await expect(page.locator('.m-week-title')).toHaveText('27 set – 3 out');
+    await gesto(b.x + 100, b.x + 80); // curto demais: não troca
+    await expect(page.locator('.m-week-title')).toHaveText('27 set – 3 out');
+  });
+
+  test('passou da meia-noite: ao voltar à página, "Hoje" passa para o dia 3', async ({ page }) => {
+    await gotoApp(page, '/agenda');
+    await expect(page.locator('.m-day-head').first()).toHaveText('Hoje · Sex, 2 de outubro');
+    await page.clock.setFixedTime(new Date('2026-10-03T00:30:00-03:00'));
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await expect(page.locator('.m-day-head').first()).toHaveText('Hoje · Sáb, 3 de outubro');
+    await expect(page.locator('.m-week-day .dia-card.today .dia-numero')).toHaveText('3');
+    await expect(page.locator('.m-week-day[aria-pressed="true"] .dia-numero')).toHaveText('3');
+  });
+});
