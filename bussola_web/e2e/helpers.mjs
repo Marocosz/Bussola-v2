@@ -97,6 +97,8 @@ export async function smallTargets(page, rootSelector) {
         if (!r.width || !r.height) continue;
         const cs = getComputedStyle(el);
         if (cs.visibility === 'hidden' || cs.display === 'none') continue;
+        // campos só para validação nativa (aria-hidden, invisíveis, pointer-events: none) não são alvos de toque
+        if (el.getAttribute('aria-hidden') === 'true' && cs.pointerEvents === 'none') continue;
         if (r.width < 43.5 || r.height < 43.5) {
           const nome = (el.getAttribute('aria-label') || el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 24);
           out.push(`${el.tagName.toLowerCase()}.${[...el.classList].join('.')} "${nome}" ${Math.round(r.width)}×${Math.round(r.height)}`);

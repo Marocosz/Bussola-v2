@@ -412,3 +412,109 @@ test.describe('calendário e swipe', () => {
     await expect(page.locator('.m-week-day[aria-pressed="true"] .dia-numero')).toHaveText('3');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 5 — form em sheet e ações do card
+// ---------------------------------------------------------------------------
+test.describe('novo compromisso e ações do card', () => {
+  test.beforeEach(async ({ page }) => { await congelarAgenda(page); });
+  const form = (page) => page.locator('.modal-overlay.is-sheet.agenda-modal');
+  const titulo = (page) => form(page).locator('input[placeholder="Ex: Reunião de Equipe"]');
+
+  test('Fab abre o form em sheet: Título e Data/Hora empilhados, lembrete no corpo, rodapé 50/50', async ({ page }) => {
+    await gotoApp(page, '/agenda');
+    await page.getByRole('button', { name: 'Novo compromisso' }).click();
+    await expect(form(page).locator('h3')).toHaveText('Novo Compromisso');
+    const t = await titulo(page).boundingBox();
+    const dh = await form(page).locator('.pk-datetime-wrapper').boundingBox();
+    expect(dh.y).toBeGreaterThanOrEqual(t.y + t.height);
+    expect(Math.round(dh.width)).toBe(Math.round(t.width));
+    // 16 de padding do corpo, contados a partir da borda interna do .modal-content (que tem 1px de borda)
+    const recuo = await form(page).locator('.modal-content').evaluate((c) => c.clientLeft);
+    expect(Math.round(t.x)).toBe(16 + recuo);
+    await expect(form(page).locator('.modal-body .agenda-lembrete')).toBeVisible();
+    await expect(form(page).locator('.modal-footer .agenda-lembrete')).toHaveCount(0);
+    const cancelar = await form(page).getByRole('button', { name: 'Cancelar' }).boundingBox();
+    const salvar = await form(page).getByRole('button', { name: 'Salvar' }).boundingBox();
+    expect(Math.abs(cancelar.width - salvar.width)).toBeLessThanOrEqual(1);
+    expect(Math.round(cancelar.height)).toBeGreaterThanOrEqual(48);
+    expect(Math.round(salvar.y)).toBe(Math.round(cancelar.y));
+    expect(await smallTargets(page, '.agenda-modal')).toEqual([]);
+    expect(await overflowOffenders(page)).toEqual([]);
+    await form(page).getByRole('button', { name: 'Fechar' }).click();
+    await expect(form(page)).toHaveCount(0);
+  });
+
+  test('teclado aberto (--vvh): Salvar continua visível e o corpo rola até a descrição', async ({ page }) => {
+    await gotoApp(page, '/agenda');
+    await page.evaluate(() => {
+      document.documentElement.style.setProperty('--vvh', '420px');
+      document.documentElement.style.setProperty('--kb-inset', '424px');
+    });
+    await page.getByRole('button', { name: 'Novo compromisso' }).click();
+    const salvar = form(page).getByRole('button', { name: 'Salvar' });
+    await expect(salvar).toBeVisible();
+    await expect.poll(async () => { const b = await salvar.boundingBox(); return b.y + b.height; }).toBeLessThanOrEqual(420);
+    await form(page).locator('.modal-body').evaluate((b) => b.scrollTo(0, 99999));
+    const desc = await form(page).locator('textarea').boundingBox();
+    expect(desc.y + desc.height).toBeLessThanOrEqual(420);
+  });
+
+  test('criar pelo Fab: aparece na lista de hoje com hora e lembrete', async ({ page, request }) => {
+    await gotoApp(page, '/agenda');
+    await page.getByRole('button', { name: 'Novo compromisso' }).click();
+    await titulo(page).fill(`${E2E} criado no celular`);
+    await form(page).locator('.pk-trigger').first().click();
+    await page.locator('.pk-date-panel').getByRole('button', { name: 'Hoje' }).click();
+    await form(page).locator('.pk-trigger').nth(1).click();
+    const horas = page.locator('.pk-panel.pk-panel--sheet');
+    await horas.locator('.pk-time-col').first().locator('[data-v="21"]').click();
+    await horas.locator('.pk-time-col').nth(1).locator('[data-v="00"]').click();
+    await expect(horas).toHaveCount(0);
+    await form(page).getByText('Ativar Lembrete').click();
+    await form(page).getByRole('button', { name: 'Salvar' }).click();
+    await expect(form(page)).toHaveCount(0);
+    const card = page.locator('.m-day-group').first().locator('.compromisso-card-modern', { hasText: `${E2E} criado no celular` });
+    await expect(card).toBeVisible();
+    await expect(card.locator('.time-big')).toHaveText('21:00');
+    const dash = await apiJson(request, 'GET', '/agenda/');
+    const salvo = Object.values(dash.compromissos_por_mes).flat().find((c) => c.titulo === `${E2E} criado no celular`);
+    expect(salvo.lembrete).toBe(true);
+    expect(salvo.data_hora.startsWith('2026-10-02T21:00')).toBe(true);
+  });
+
+  test('editar pelo card: o form abre preenchido e salva', async ({ page }) => {
+    await gotoApp(page, '/agenda');
+    const card = page.locator('.compromisso-card-modern', { hasText: `${E2E} manhã` });
+    await card.getByRole('button', { name: 'Editar' }).click();
+    await expect(form(page).locator('h3')).toHaveText('Editar Compromisso');
+    await expect(titulo(page)).toHaveValue(`${E2E} manhã`);
+    await expect(form(page).locator('.pk-trigger').nth(1)).toContainText('08:15');
+    await titulo(page).fill(`${E2E} manhã editado`);
+    await form(page).getByRole('button', { name: 'Salvar' }).click();
+    await expect(form(page)).toHaveCount(0);
+    await expect(page.locator('.card-title', { hasText: `${E2E} manhã editado` })).toBeVisible();
+    // reabrir "Novo" depois de editar começa vazio (estado não vaza entre aberturas)
+    await page.getByRole('button', { name: 'Novo compromisso' }).click();
+    await expect(titulo(page)).toHaveValue('');
+  });
+
+  test('Concluir e Reabrir pelo card', async ({ page }) => {
+    await gotoApp(page, '/agenda');
+    const card = page.locator('.compromisso-card-modern', { hasText: `${E2E} noite` });
+    await card.getByRole('button', { name: /Concluir/ }).click();
+    await expect(card).toHaveClass(/realizado/);
+    await expect(card.getByRole('button', { name: /Reabrir/ })).toBeVisible();
+    await card.getByRole('button', { name: /Reabrir/ }).click();
+    await expect(card.getByRole('button', { name: /Concluir/ })).toBeVisible();
+  });
+
+  test('excluir pelo card (com confirmação)', async ({ page, request }) => {
+    await criar(request, `${E2E} para excluir`, '2026-10-02T22:00:00');
+    await gotoApp(page, '/agenda');
+    const card = page.locator('.compromisso-card-modern', { hasText: `${E2E} para excluir` });
+    await card.getByRole('button', { name: 'Excluir' }).click();
+    await page.locator('.confirm-overlay').getByRole('button', { name: 'Excluir' }).click();
+    await expect(card).toHaveCount(0);
+  });
+});

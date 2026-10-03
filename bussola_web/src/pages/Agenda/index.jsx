@@ -221,13 +221,16 @@ export function Agenda() {
                     onEdit={handleEdit}
                     onNew={handleNew}
                 />
-                <AgendaModal
-                    active={modalOpen}
-                    closeModal={() => setModalOpen(false)}
-                    onUpdate={() => fetchData(true)}
-                    editingData={editingItem}
-                    initialDate={novoDataHora}
-                />
+                {modalOpen && (
+                    <AgendaModal
+                        key={editingItem ? `editar-${editingItem.id}` : `novo-${novoDataHora}`}
+                        active
+                        closeModal={() => setModalOpen(false)}
+                        onUpdate={() => fetchData(true)}
+                        editingData={editingItem}
+                        initialDate={novoDataHora}
+                    />
+                )}
             </div>
         );
     }
@@ -337,12 +340,15 @@ export function Agenda() {
                 ))}
             </div>
 
-            <AgendaModal
-                active={modalOpen}
-                closeModal={() => setModalOpen(false)}
-                onUpdate={() => fetchData(true)}
-                editingData={editingItem}
-            />
+            {modalOpen && (
+                <AgendaModal
+                    key={editingItem ? `editar-${editingItem.id}` : 'novo'}
+                    active
+                    closeModal={() => setModalOpen(false)}
+                    onUpdate={() => fetchData(true)}
+                    editingData={editingItem}
+                />
+            )}
 
             {/* AI Assistant Integrado (Contexto Roteiro) */}
             <AiAssistant context="roteiro" />
