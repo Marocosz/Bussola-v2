@@ -1,16 +1,21 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-    DndContext, DragOverlay, PointerSensor, TouchSensor, KeyboardSensor,
+    DndContext, DragOverlay, MouseSensor, TouchSensor, KeyboardSensor,
     useSensor, useSensors, pointerWithin, rectIntersection,
 } from '@dnd-kit/core';
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { getTarefasBoard, reordenarTarefas, createTarefa } from '../../../../services/api';
+import { getTarefasBoard, reordenarTarefas, createTarefa, deleteTarefa } from '../../../../services/api';
 import { useToast } from '../../../../context/ToastContext';
+import { useConfirm } from '../../../../context/ConfirmDialogContext';
+import { useIsMobile } from '../../../../hooks/useIsMobile';
 import { logger } from '../../../../utils/logger';
-import { COLUNAS, COL_KEYS, keyToStatus } from './columns';
+import { COLUNAS, COL_KEYS, keyToStatus, statusToKey } from './columns';
 import { BoardColumn } from './BoardColumn';
 import { BoardCard } from './BoardCard';
 import { TarefaDetailPanel } from './TarefaDetailPanel';
+import { BoardMobileBar } from './BoardMobileBar';
+import { BoardFiltroSheet } from './BoardFiltroSheet';
+import { BoardCardActions } from './BoardCardActions';
 import '../../styles/kanban.css';
 
 const VAZIO = { a_fazer: [], em_andamento: [], bloqueado: [], concluido: [], cancelado: [] };
@@ -61,6 +66,8 @@ const mesmaColuna = (a, b) => a.length === b.length && a.every((t, i) => t.id ==
 
 export function TarefaBoard({ novaRef }) {
     const { addToast } = useToast();
+    const confirm = useConfirm();
+    const isMobile = useIsMobile();
     const [colunas, setColunas] = useState(VAZIO);
     const [loading, setLoading] = useState(true);
     const [activeTarefa, setActiveTarefa] = useState(null);
@@ -71,9 +78,17 @@ export function TarefaBoard({ novaRef }) {
     const [panelAberto, setPanelAberto] = useState(false);
     const [panelTarefa, setPanelTarefa] = useState(null);
 
+    // Celular: coluna visível, sheet de filtros e card com o "⋯" aberto.
+    const [colAtiva, setColAtiva] = useState(0);
+    const [filtroAberto, setFiltroAberto] = useState(false);
+    const [menuTarefa, setMenuTarefa] = useState(null);
+    const boardRef = useRef(null);
+
+    // Mouse: arrasta depois de 6px. Toque: só com toque longo (250ms parado, até 5px);
+    // antes disso o gesto é rolagem/swipe. (O PointerSensor também capturava o toque.)
     const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-        useSensor(TouchSensor, { activationConstraint: { delay: 160, tolerance: 8 } }),
+        useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+        useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
     );
 
@@ -110,6 +125,7 @@ export function TarefaBoard({ novaRef }) {
     };
 
     // Otimista: aplica `novo` já e grava a coluna `to` (ordem + status). Se a API falhar, volta para `anterior`.
+    // Caminho único de gravação do board: soltar do arraste e "Mover para…" do celular.
     const salvarColuna = useCallback(async (anterior, novo, to) => {
         setColunas(novo);
         try {
@@ -178,17 +194,86 @@ export function TarefaBoard({ novaRef }) {
         return true;
     }, [busca, filtroPrio]);
 
+    // --- Celular: uma coluna por vez. O chip leva à coluna; o swipe (scroll-snap) atualiza o chip. ---
+    const irParaColuna = useCallback((idx) => {
+        setColAtiva(idx);
+        const el = boardRef.current;
+        if (el) el.scrollTo({ left: idx * el.clientWidth, behavior: 'smooth' });
+    }, []);
+
+    const onBoardScroll = useCallback((e) => {
+        const el = e.currentTarget;
+        if (!el.clientWidth) return;
+        const idx = Math.round(el.scrollLeft / el.clientWidth);
+        setColAtiva((prev) => (prev === idx ? prev : idx));
+    }, []);
+
+    // Altura do quadro no celular: do topo dele até acima da barra inferior; cada coluna rola por dentro.
+    useEffect(() => {
+        const el = boardRef.current;
+        if (!isMobile || !el) return undefined;
+        const medir = () => {
+            el.style.setProperty('--kb-top', `${Math.round(el.getBoundingClientRect().top + window.scrollY)}px`);
+        };
+        medir();
+        window.addEventListener('resize', medir);
+        return () => window.removeEventListener('resize', medir);
+    }, [isMobile, loading]);
+
+    // "Mover para…": vai para o fim da coluna de destino (mesmo padrão do soltar numa coluna)
+    // e grava pelo mesmo caminho do arraste (salvarColuna → PATCH /tarefas/reordenar).
+    const moverPara = useCallback(async (tarefa, statusDestino) => {
+        const from = containerDoId(tarefa.id, colunas);
+        const to = statusToKey(statusDestino);
+        if (!from || from === to) return;
+        const item = colunas[from].find((t) => t.id === tarefa.id);
+        const novo = {
+            ...colunas,
+            [from]: colunas[from].filter((t) => t.id !== tarefa.id),
+            [to]: [...colunas[to], { ...item, status: statusDestino }],
+        };
+        if (await salvarColuna(colunas, novo, to)) {
+            const destino = COLUNAS.find((c) => c.key === to).label;
+            addToast({ type: 'success', title: 'Tarefa movida', description: `Agora em ${destino}.` });
+        }
+    }, [colunas, salvarColuna, addToast]);
+
+    const excluirTarefa = useCallback(async (tarefa) => {
+        const ok = await confirm({ title: 'Excluir tarefa?', description: 'Isso remove a tarefa e todas as sub-etapas.', confirmLabel: 'Excluir', variant: 'danger' });
+        if (!ok) return;
+        try {
+            await deleteTarefa(tarefa.id);
+            addToast({ type: 'success', title: 'Excluída', description: 'Tarefa removida.' });
+            carregar();
+        } catch {
+            addToast({ type: 'error', title: 'Erro', description: 'Falha ao excluir.' });
+        }
+    }, [confirm, addToast, carregar]);
+
+    const contagens = COLUNAS.map((c) => colunas[c.key].filter(cardVisivel).length);
+    const filtrosAtivos = (busca ? 1 : 0) + (filtroPrio !== 'Todas' ? 1 : 0);
+
     return (
         <div className="kb-board-scope">
-            <div className="kb-toolbar">
-                <div className="kb-toolbar-search">
-                    <i className="fa-solid fa-magnifying-glass"></i>
-                    <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar tarefa..." />
+            {isMobile ? (
+                <BoardMobileBar
+                    contagens={contagens}
+                    ativa={colAtiva}
+                    onSelect={irParaColuna}
+                    filtrosAtivos={filtrosAtivos}
+                    onFiltro={() => setFiltroAberto(true)}
+                />
+            ) : (
+                <div className="kb-toolbar">
+                    <div className="kb-toolbar-search">
+                        <i className="fa-solid fa-magnifying-glass"></i>
+                        <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar tarefa..." />
+                    </div>
+                    <select className="kb-toolbar-select" value={filtroPrio} onChange={e => setFiltroPrio(e.target.value)}>
+                        {PRIOS.map(p => <option key={p} value={p}>{p === 'Todas' ? 'Prioridade' : p}</option>)}
+                    </select>
                 </div>
-                <select className="kb-toolbar-select" value={filtroPrio} onChange={e => setFiltroPrio(e.target.value)}>
-                    {PRIOS.map(p => <option key={p} value={p}>{p === 'Todas' ? 'Prioridade' : p}</option>)}
-                </select>
-            </div>
+            )}
 
             {loading ? (
                 <div className="kb-loading"><i className="fa-solid fa-circle-notch fa-spin"></i> Carregando board...</div>
@@ -197,11 +282,13 @@ export function TarefaBoard({ novaRef }) {
                     sensors={sensors} collisionDetection={detectarColisao}
                     onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd} onDragCancel={onDragCancel}
                 >
-                    <div className="kb-board">
+                    {/* data-offscreen-ok: as colunas fora da tela fazem parte de um carrossel rolável */}
+                    <div className="kb-board" ref={boardRef} data-offscreen-ok onScroll={isMobile ? onBoardScroll : undefined}>
                         {COLUNAS.map(col => (
                             <BoardColumn
                                 key={col.key} coluna={col} tarefas={colunas[col.key]}
                                 cardVisivel={cardVisivel} onCardClick={abrirCard} onQuickAdd={quickAdd}
+                                onCardMenu={isMobile ? setMenuTarefa : undefined}
                             />
                         ))}
                     </div>
@@ -215,6 +302,27 @@ export function TarefaBoard({ novaRef }) {
                 aberto={panelAberto} tarefa={panelTarefa}
                 onClose={() => setPanelAberto(false)} onSaved={carregar}
             />
+
+            {isMobile && (
+                <>
+                    <BoardFiltroSheet
+                        open={filtroAberto}
+                        onClose={() => setFiltroAberto(false)}
+                        busca={busca}
+                        onBusca={setBusca}
+                        prio={filtroPrio}
+                        onPrio={setFiltroPrio}
+                        prios={PRIOS}
+                    />
+                    <BoardCardActions
+                        tarefa={menuTarefa}
+                        onClose={() => setMenuTarefa(null)}
+                        onAbrir={abrirCard}
+                        onMover={moverPara}
+                        onExcluir={excluirTarefa}
+                    />
+                </>
+            )}
         </div>
     );
 }

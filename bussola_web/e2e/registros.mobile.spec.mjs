@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, overflowOffenders, smallTargets } from './helpers.mjs';
-import { comApi, limparRegistrosE2E, criarNota, grupoPorNome, notaPorTitulo } from './registros-data.mjs';
+import { gotoApp, overflowOffenders, smallTargets, apiJson } from './helpers.mjs';
+import { comApi, limparRegistrosE2E, criarNota, grupoPorNome, notaPorTitulo, criarTarefa, tarefaPorTitulo } from './registros-data.mjs';
 
 // ---------------------------------------------------------------------------
 // Infra do arquivo
@@ -61,7 +61,7 @@ test.describe('lógica pura', () => {
 // Task 2 — casca e Caderno
 // ---------------------------------------------------------------------------
 // Abas já adaptadas ao celular (as próximas tasks acrescentam as outras).
-const ABAS_VERIFICADAS = ['Caderno'];
+const ABAS_VERIFICADAS = ['Caderno', 'Tarefas'];
 
 test.describe('casca e Caderno', () => {
   test('topbar "Registros", abas segmentadas de largura total e um Fab por aba', async ({ page }) => {
@@ -293,5 +293,135 @@ test.describe('editor e visualização de nota', () => {
     expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('Olá');
     await ov.locator('.modal-footer').getByRole('button', { name: /Editar Nota/ }).click();
     await expect(page.locator('.nota-editor')).toBeVisible();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Task 4 — Tarefas
+// ---------------------------------------------------------------------------
+const NOMES_COLUNAS = ['A Fazer', 'Em Andamento', 'Bloqueado', 'Concluído', 'Cancelado'];
+const CHAVES_COLUNAS = ['a_fazer', 'em_andamento', 'bloqueado', 'concluido', 'cancelado'];
+const rotuloChip = (nome, n) => `${nome}, ${n} ${n === 1 ? 'tarefa' : 'tarefas'}`;
+
+async function abrirTarefas(page) {
+  await gotoApp(page, '/registros');
+  await abrirAba(page, 'Tarefas');
+  await page.locator('.kb-board').waitFor();
+}
+
+async function irParaColuna(page, idx) {
+  await page.locator('.kb-m-chip').nth(idx).click();
+  await expect(page.locator('.kb-m-chip').nth(idx)).toHaveAttribute('aria-selected', 'true');
+  await expect.poll(() => page.locator('.kb-board').evaluate((e) => Math.round(e.scrollLeft / e.clientWidth))).toBe(idx);
+}
+
+test.describe('Tarefas', () => {
+  test('chips com contagem por status; uma coluna por vez; chip ↔ swipe', async ({ page, request }) => {
+    const board = await apiJson(request, 'GET', '/registros/tarefas/board');
+    await abrirTarefas(page);
+    await expect(page.locator('.kb-toolbar')).toHaveCount(0);
+    const chips = page.locator('.kb-m-chip');
+    await expect(chips).toHaveCount(5);
+    for (let i = 0; i < 5; i += 1) await expect(chips.nth(i)).toHaveAttribute('aria-label', rotuloChip(NOMES_COLUNAS[i], board[CHAVES_COLUNAS[i]].length));
+    await expect(chips.first()).toHaveAttribute('aria-selected', 'true');
+    const b = await page.locator('.kb-board').boundingBox();
+    const c = await page.locator('.kb-column').first().boundingBox();
+    expect(Math.round(c.width)).toBe(Math.round(b.width));
+    await irParaColuna(page, 3);
+    await page.locator('.kb-board').evaluate((e) => e.scrollTo({ left: e.clientWidth, behavior: 'instant' }));
+    await expect(chips.nth(1)).toHaveAttribute('aria-selected', 'true');
+  });
+
+  test('o quadro cabe na tela: cada coluna rola por dentro e a página não rola', async ({ page }) => {
+    await abrirTarefas(page);
+    expect(await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight)).toBeLessThanOrEqual(4);
+    const corpo = page.locator('.kb-column').first().locator('.kb-column-body');
+    expect(await corpo.evaluate((e) => e.scrollHeight > e.clientHeight)).toBe(true);
+    const quadro = await page.locator('.kb-board').boundingBox();
+    expect(quadro.y + quadro.height).toBeLessThanOrEqual(844 - 64);
+  });
+
+  test('quick-add no topo da coluna cria a tarefa no status da coluna', async ({ page, request }) => {
+    await abrirTarefas(page);
+    const aFazer = page.locator('.kb-column').first();
+    const add = await aFazer.getByRole('button', { name: 'Nova tarefa' }).boundingBox();
+    const card = await aFazer.locator('.kb-card').first().boundingBox();
+    expect(add.y).toBeLessThan(card.y);
+    await irParaColuna(page, 1);
+    const col = page.locator('.kb-column').nth(1);
+    await col.getByRole('button', { name: 'Nova tarefa' }).click();
+    const campo = col.getByRole('textbox', { name: 'Nova tarefa em Em Andamento' });
+    await campo.fill('E2E quick-add');
+    await campo.press('Enter');
+    await expect(col.locator('.kb-card', { hasText: 'E2E quick-add' })).toBeVisible();
+    expect((await tarefaPorTitulo(request, 'E2E quick-add')).status).toBe('Em andamento');
+  });
+
+  test('card do board: ⋯ abre Abrir / Mover para… / Excluir; mover e excluir', async ({ page, request }) => {
+    await criarTarefa(request, { titulo: 'E2E menu card', status: 'Em andamento' });
+    await abrirTarefas(page);
+    await irParaColuna(page, 1);
+    const card = page.locator('.kb-card', { hasText: 'E2E menu card' });
+    const mais = card.getByRole('button', { name: 'Ações de E2E menu card' });
+    const b = await mais.boundingBox();
+    expect(Math.min(b.width, b.height)).toBeGreaterThanOrEqual(44);
+    await mais.click();
+    await expect(page.locator('.modal-overlay:not(.app-sheet-overlay)')).toHaveCount(0); // não abriu o detalhe
+    const acoes = page.locator('.action-sheet');
+    await expect(acoes.locator('.action-sheet-item')).toHaveText(['Abrir', 'Mover para…', 'Excluir', 'Cancelar']);
+    await acoes.getByRole('button', { name: 'Mover para…' }).click();
+    const mover = page.locator('.reg-sheet');
+    await expect(mover.locator('.reg-opcao')).toHaveText(['A Fazer', 'Bloqueado', 'Concluído', 'Cancelado']);
+    await mover.getByRole('button', { name: 'Bloqueado' }).click();
+    // Persistido pelo mesmo caminho do arraste (PATCH /tarefas/reordenar): o status gravado é o do destino.
+    await expect.poll(async () => (await tarefaPorTitulo(request, 'E2E menu card'))?.status).toBe('Bloqueado');
+    await expect(page.locator('.kb-m-chip').nth(2)).toHaveAttribute('aria-label', rotuloChip('Bloqueado', 1));
+    await irParaColuna(page, 2);
+    await page.locator('.kb-card', { hasText: 'E2E menu card' }).getByRole('button', { name: /^Ações de/ }).click();
+    await page.locator('.action-sheet').getByRole('button', { name: 'Excluir' }).click();
+    await page.locator('.confirm-modal').getByRole('button', { name: 'Excluir' }).click();
+    await expect.poll(() => tarefaPorTitulo(request, 'E2E menu card')).toBeNull();
+  });
+
+  test('filtros em sheet: busca e prioridade com contador', async ({ page, request }) => {
+    await criarTarefa(request, { titulo: 'E2E filtro crítico', prioridade: 'Crítica' });
+    await abrirTarefas(page);
+    await page.getByRole('button', { name: 'Filtros', exact: true }).click();
+    const sheet = page.locator('.reg-sheet');
+    await sheet.getByRole('searchbox', { name: 'Buscar' }).fill('E2E filtro');
+    await expect(page.locator('.kb-column').first().locator('.kb-card:visible')).toHaveCount(1);
+    await sheet.getByRole('button', { name: 'Crítica' }).click();
+    await expect(sheet.getByRole('button', { name: 'Crítica' })).toHaveAttribute('aria-pressed', 'true');
+    await sheet.getByRole('button', { name: 'Ver tarefas' }).click();
+    await expect(page.getByRole('button', { name: 'Filtros (2 ativos)' })).toBeVisible();
+    await expect(page.locator('.kb-m-chip').first()).toHaveAttribute('aria-label', rotuloChip('A Fazer', 1));
+    await page.getByRole('button', { name: 'Filtros (2 ativos)' }).click();
+    await page.locator('.reg-sheet').getByRole('button', { name: 'Limpar' }).click();
+    await page.locator('.reg-sheet').getByRole('button', { name: 'Ver tarefas' }).click();
+    await expect(page.getByRole('button', { name: 'Filtros', exact: true })).toBeVisible();
+  });
+
+  test('arrastar só com toque longo: gesto rápido não arrasta; 350ms parado arrasta', async ({ page, request }) => {
+    await criarTarefa(request, { titulo: 'E2E toque longo', status: 'Cancelado' }); // coluna só com ela: soltar não reordena o seed
+    await abrirTarefas(page);
+    await irParaColuna(page, 4);
+    const card = page.locator('.kb-card', { hasText: 'E2E toque longo' });
+    const b = await card.boundingBox();
+    const x = b.x + b.width / 3;
+    const y = b.y + b.height / 2;
+    const cdp = await page.context().newCDPSession(page);
+    const toque = (type, px, py) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x: px, y: py }] });
+    await toque('touchStart', x, y);
+    await toque('touchMove', x, y + 30);
+    await toque('touchEnd');
+    await expect(page.locator('.kb-card--overlay')).toHaveCount(0);
+    await toque('touchStart', x, y);
+    await page.waitForTimeout(350);
+    await toque('touchMove', x, y + 10);
+    await toque('touchMove', x, y + 20);
+    await expect(page.locator('.kb-card--overlay')).toHaveCount(1);
+    await toque('touchEnd');
+    await expect(page.locator('.kb-card--overlay')).toHaveCount(0);
+    expect(await card.evaluate((e) => getComputedStyle(e).touchAction)).toBe('manipulation');
   });
 });

@@ -43,7 +43,9 @@
     display: flex; gap: 0; background: var(--cor-card-principal); border: 1px solid var(--cor-borda);
     border-radius: 10px; overflow: hidden; cursor: pointer; transition: transform 0.12s, box-shadow 0.12s;
 }
-.kb-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.18); }
+@media (hover: hover) and (pointer: fine) {
+    .kb-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.18); }
+}
 .kb-card--hidden { display: none; }
 .kb-card--overlay { box-shadow: 0 12px 28px rgba(0,0,0,0.35); transform: rotate(2deg); cursor: grabbing; }
 .kb-card-prio { width: 4px; flex-shrink: 0; }

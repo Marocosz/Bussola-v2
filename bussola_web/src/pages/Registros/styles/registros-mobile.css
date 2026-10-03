@@ -545,3 +545,231 @@
         padding: var(--sp-4);
     }
 }
+
+/* --- Tarefas: uma coluna por vez --- */
+@media (max-width: 768px) {
+    .registros-scope.main-container.reg-m-tarefas {
+        padding-bottom: 0 !important; /* o quadro já desconta a barra inferior: a página não rola */
+    }
+
+    .registros-scope .kb-board-scope {
+        gap: var(--sp-3);
+        max-width: none;
+    }
+
+    .registros-scope .kb-m-bar {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-2);
+    }
+
+    .registros-scope .kb-m-chips {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        gap: var(--sp-2);
+        overflow-x: auto;
+        scrollbar-width: none;
+        overscroll-behavior-x: contain;
+    }
+
+    .registros-scope .kb-m-chip {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--sp-2);
+        min-height: var(--tap-min);
+        padding: 0 var(--sp-3);
+        border: 1px solid var(--cor-borda);
+        border-radius: 999px;
+        background: var(--cor-card-principal);
+        color: var(--cor-texto-secundario);
+        font: inherit;
+        font-size: 0.875rem;
+        font-weight: 600;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+    .registros-scope .kb-m-chip.active {
+        color: var(--cor-texto-principal);
+        border-color: var(--kb-accent);
+        background: color-mix(in srgb, var(--kb-accent) 14%, var(--cor-card-principal));
+    }
+
+    .registros-scope .kb-m-chip-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--kb-accent);
+    }
+
+    .registros-scope .kb-m-chip-count {
+        min-width: 24px;
+        padding: 0 var(--sp-1);
+        border-radius: 999px;
+        background: var(--cor-card-secundario);
+        color: var(--cor-texto-secundario);
+        font-size: 0.75rem;
+        text-align: center;
+    }
+
+    .registros-scope .kb-m-filtro {
+        position: relative;
+        flex-shrink: 0;
+        width: var(--tap-min);
+        height: var(--tap-min);
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--cor-borda);
+        border-radius: 12px;
+        background: var(--cor-card-principal);
+        color: var(--cor-texto-principal);
+        font-size: 1rem;
+        cursor: pointer;
+    }
+
+    .registros-scope .kb-m-filtro.active {
+        border-color: var(--cor-azul-primario);
+        color: var(--cor-azul-primario);
+    }
+
+    .registros-scope .kb-m-badge {
+        position: absolute;
+        top: calc(-1 * var(--sp-1));
+        right: calc(-1 * var(--sp-1));
+        min-width: 18px;
+        height: 18px;
+        padding: 0 var(--sp-1);
+        border-radius: 999px;
+        background: var(--cor-azul-primario);
+        color: #fff;
+        font-size: 0.6875rem;
+        font-weight: 700;
+        display: grid;
+        place-items: center;
+    }
+
+    /* Carrossel de colunas (scroll-snap) com altura até a barra inferior */
+    .registros-scope .kb-board {
+        flex: none;
+        gap: 0;
+        padding-bottom: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+        height: calc(var(--vvh, 100dvh) - var(--kb-top, 240px) - var(--bottom-nav-h) - var(--safe-bottom) - var(--sp-4));
+        min-height: 320px;
+    }
+
+    .registros-scope .kb-column {
+        flex: 0 0 100%;
+        min-width: 0;
+        max-width: none;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+        background: transparent;
+        border: none;
+        border-radius: 0;
+    }
+
+    .registros-scope .kb-column-head,
+    .registros-scope .kb-column-addfoot {
+        display: none;
+    }
+
+    .registros-scope .kb-column-body {
+        gap: var(--sp-3);
+        padding: 0 0 calc(56px + var(--sp-4)); /* o último card não fica sob o Fab */
+        border-radius: 0;
+        overscroll-behavior-y: contain;
+    }
+
+    .registros-scope .kb-column-addtop {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: var(--sp-2);
+        min-height: var(--tap-min);
+        padding: 0 var(--sp-3);
+        border: 1px dashed var(--cor-borda);
+        border-radius: 12px;
+        background: transparent;
+        color: var(--cor-texto-secundario);
+        font: inherit;
+        font-size: 0.875rem;
+        cursor: pointer;
+    }
+
+    .registros-scope .kb-quickadd {
+        flex-shrink: 0;
+        gap: var(--sp-2);
+        padding: var(--sp-2);
+    }
+
+    .registros-scope .kb-quickadd-actions {
+        gap: var(--sp-2);
+    }
+
+    .registros-scope .kb-mini {
+        width: var(--tap-min);
+        height: var(--tap-min);
+    }
+
+    .registros-scope .kb-column-empty {
+        padding: var(--sp-5) var(--sp-4);
+        font-size: 0.875rem;
+    }
+
+    .registros-scope .kb-card {
+        flex-shrink: 0; /* overflow:hidden zeraria o tamanho mínimo dentro da coluna rolável */
+    }
+
+    .registros-scope .kb-card-body {
+        padding: var(--sp-3);
+    }
+
+    .registros-scope .kb-card-top {
+        align-items: flex-start;
+    }
+
+    .registros-scope .kb-card-title {
+        font-size: 0.9375rem;
+    }
+
+    .registros-scope .kb-chip {
+        font-size: 0.75rem;
+        padding: var(--sp-1) var(--sp-2);
+    }
+
+    .registros-scope .kb-card-menu {
+        width: var(--tap-min);
+        height: var(--tap-min);
+        flex-shrink: 0;
+        margin: calc(-1 * var(--sp-3)) calc(-1 * var(--sp-3)) calc(-1 * var(--sp-2)) auto;
+        display: grid;
+        place-items: center;
+        border: none;
+        border-radius: 12px;
+        background: transparent;
+        color: var(--cor-texto-secundario);
+        font-size: 1rem;
+        cursor: pointer;
+    }
+
+    .registros-scope .kb-card-pin + .kb-card-menu {
+        margin-left: var(--sp-1);
+    }
+}
+
+/* Toque (celular e tablet): arraste só por toque longo, sem seleção/menu do sistema no card */
+@media (pointer: coarse) {
+    .registros-scope .kb-card {
+        touch-action: manipulation;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+    }
+}

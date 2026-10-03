@@ -27,7 +27,11 @@ function formatarPrazo(prazo) {
 // de todos os itens por frame é o que trava o arraste.
 const semAnimacao = () => false;
 
-function BoardCardBase({ tarefa, onClick, hidden = false, overlay = false }) {
+// O "⋯" fica dentro do card arrastável: segura os eventos que os sensores
+// (mouse, toque e teclado) escutam no card, para o toque no botão não virar arraste.
+const pararArraste = (e) => e.stopPropagation();
+
+function BoardCardBase({ tarefa, onClick, hidden = false, overlay = false, onMenu }) {
     const sortable = useSortable({ id: tarefa.id, disabled: overlay, animateLayoutChanges: semAnimacao });
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = sortable;
 
@@ -61,6 +65,19 @@ function BoardCardBase({ tarefa, onClick, hidden = false, overlay = false }) {
                 <div className="kb-card-top">
                     <h4 className="kb-card-title">{tarefa.titulo}</h4>
                     {tarefa.fixado && <i className="fa-solid fa-thumbtack kb-card-pin"></i>}
+                    {onMenu && (
+                        <button
+                            type="button"
+                            className="kb-card-menu"
+                            aria-label={`Ações de ${tarefa.titulo}`}
+                            onClick={(e) => { e.stopPropagation(); onMenu(tarefa); }}
+                            onMouseDown={pararArraste}
+                            onTouchStart={pararArraste}
+                            onKeyDown={pararArraste}
+                        >
+                            <i className="fa-solid fa-ellipsis"></i>
+                        </button>
+                    )}
                 </div>
                 <div className="kb-card-meta">
                     {prazo && (
