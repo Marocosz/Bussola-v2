@@ -3,7 +3,6 @@ import { getAgendaDashboard } from '../../services/api';
 import { CompromissoCard } from './components/CompromissoCard';
 import { AgendaModal } from './components/AgendaModal';
 import { useToast } from '../../context/ToastContext';
-import { useConfirm } from '../../context/ConfirmDialogContext';
 import { AiAssistant } from '../../components/AiAssistant'; // [NOVO] Import da IA
 import './styles.css';
 import { logger } from '../../utils/logger';
@@ -72,14 +71,13 @@ export function Agenda() {
     const [sortOrder, setSortOrder] = useState('asc'); 
 
     const { addToast } = useToast();
-    const dialogConfirm = useConfirm();
     
     const [tooltip, setTooltip] = useState({ visible: false, x: 0, y: 0, compromissos: [] });
 
     const [openMonths, setOpenMonths] = useState(() => {
         const savedState = localStorage.getItem('@Bussola:agenda_accordions');
         if (savedState) {
-            try { return JSON.parse(savedState); } catch (e) { }
+            try { return JSON.parse(savedState); } catch { /* estado salvo inválido: começa fechado */ }
         }
         return {};
     });
@@ -198,7 +196,7 @@ export function Agenda() {
     );
 
     return (
-        <div className="container main-container">
+        <div className="container main-container agenda-scope">
             <div className="page-header">
                 <div className="page-header-main">
                     <h1><i className="fa-solid fa-calendar-days"></i> Roteiro</h1>

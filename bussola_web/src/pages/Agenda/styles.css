@@ -1,20 +1,26 @@
 /* ==========================================================================
-   AGENDA - ESTILOS GERAIS E MODAL
+   AGENDA (ROTEIRO) - ESTILOS DA PÁGINA
    Arquivo: styles.css
+
+   Tudo do Roteiro fica sob .agenda-scope (raiz da página). As regras do
+   calendário também valem em .roteiro-cal-sheet: no celular o calendário
+   abre num Sheet, que é portal no body (fora da raiz).
+
+   No FIM do arquivo fica o LEGADO COMPARTILHADO: regras sem escopo cujos
+   nomes de classe outras páginas também usam (Finanças, Registros, Ritmo).
+   Ficam idênticas e na mesma posição de import para não mudar essas
+   páginas, e DEPOIS do bloco com escopo para o Roteiro manter a mesma
+   cascata de antes. Não edite o legado para o Roteiro: sobrescreva com
+   .agenda-scope. .main-container foi para layout.css e .btn-action-icon
+   para components.css.
    ========================================================================== */
 
 /* ============================================= */
 /* 1. ESTRUTURA GERAL E LAYOUT                   */
 /* ============================================= */
 
-.main-container {
-    padding-bottom: 5rem !important;
-    min-height: 100vh;
-    box-sizing: border-box;
-}
-
 /* LAYOUT GRID ESPECÍFICO DA AGENDA (2 Colunas) */
-.layout-grid-custom.agenda-layout {
+.agenda-scope .layout-grid-custom.agenda-layout {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0;
@@ -24,7 +30,641 @@
     margin: 0 auto;
 }
 
-/* --- COLUNAS INDIVIDUAIS --- */
+/* ============================================= */
+/* 3. CABEÇALHOS DAS COLUNAS (HEADER)            */
+/* ============================================= */
+
+.agenda-scope .agenda-layout .column-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0 -1.2rem 1.5rem -1.2rem;
+    padding: 0.8rem 1.5rem;
+    background-color: var(--cor-card-secundario);
+    border-bottom: 1px solid var(--cor-borda);
+    border-right: 1px solid var(--cor-borda);
+    position: relative;
+    z-index: 2;
+    min-height: 60px;
+}
+
+.agenda-scope .agenda-layout .header-left-aligned {
+    justify-content: space-between !important;
+}
+
+.agenda-scope .agenda-layout .column-header-flex h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--cor-texto-secundario);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.agenda-scope .btn-filter-sort {
+    background: transparent;
+    border: 1px solid var(--cor-borda);
+    color: var(--cor-texto-secundario);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
+    font-size: 0.9rem;
+}
+
+.agenda-scope .btn-filter-sort:hover {
+    background: var(--cor-fundo-hover);
+    color: var(--cor-azul-primario);
+    border-color: var(--cor-azul-primario);
+}
+
+.agenda-scope .btn-filter-sort:active {
+    transform: translateY(1px);
+}
+
+/* Navegação do Calendário */
+.agenda-scope .calendar-nav-header {
+    display: flex;
+    justify-content: center !important;
+    gap: 1.5rem;
+    position: relative;
+}
+
+.agenda-scope .calendar-title-nav {
+    min-width: 150px;
+    text-transform: capitalize !important;
+    text-align: center;
+}
+
+:is(.agenda-scope, .roteiro-cal-sheet) .btn-nav-arrow {
+    background: transparent;
+    border: 1px solid var(--cor-borda);
+    color: var(--cor-texto-secundario);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
+}
+
+:is(.agenda-scope, .roteiro-cal-sheet) .btn-nav-arrow:hover {
+    background-color: var(--cor-fundo-hover);
+    color: var(--cor-azul-primario);
+    border-color: var(--cor-azul-primario);
+}
+
+/* 4. AJUSTE PARA 2 COLUNAS CONECTADAS: ver LEGADO COMPARTILHADO no fim do arquivo
+      (.agenda-column também é usada por Finanças). */
+
+/* ============================================= */
+/* 5. LISTA DE COMPROMISSOS (GRID INTELIGENTE)   */
+/* ============================================= */
+
+.agenda-scope .month-group {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+}
+
+.agenda-scope .month-group+.month-group {
+    margin-top: 1.5rem !important;
+}
+
+.agenda-scope .month-header {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid var(--cor-borda) !important;
+    border-radius: 0 !important;
+    padding: 0.2rem 0 0.4rem 0;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
+}
+
+.agenda-scope .month-header:hover,
+.agenda-scope .month-header.active {
+    border-bottom-color: var(--cor-azul-primario) !important;
+}
+
+.agenda-scope .month-header:hover .month-title-text,
+.agenda-scope .month-header.active .month-title-text {
+    color: var(--cor-azul-primario);
+}
+
+.agenda-scope .month-title-text {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--cor-texto-secundario);
+    transition: color 0.2s;
+}
+
+.agenda-scope .month-header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--cor-texto-secundario);
+}
+
+.agenda-scope .month-header i {
+    font-size: 0.8rem;
+    transition: transform 0.3s ease;
+}
+
+.agenda-scope .month-header i.rotate {
+    transform: rotate(180deg);
+}
+
+.agenda-scope .accordion-wrapper {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease-out;
+}
+
+.agenda-scope .accordion-wrapper.open {
+    grid-template-rows: 1fr;
+}
+
+.agenda-scope .accordion-inner {
+    overflow: hidden;
+    min-height: 0;
+}
+
+.agenda-scope .month-content {
+    padding-top: 0.5rem;
+    padding-bottom: 0;
+}
+
+.agenda-scope .compromissos-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    /* row-gap folgado (>22px) evita colisão do selo com o card acima;
+       padding-top dá espaço p/ o selo da 1ª linha (o .accordion-inner
+       usa overflow:hidden e cortaria o selo saliente). */
+    gap: 2rem 1rem;
+    padding-top: 26px;
+}
+
+.agenda-scope .compromissos-grid>.compromisso-card-modern:last-child:nth-child(odd) {
+    grid-column: span 2;
+}
+
+/* ============================================= */
+/* 6. CARD DE COMPROMISSO (DESIGN MODERNO V2)    */
+/* ============================================= */
+
+.agenda-scope .compromisso-card-modern {
+    --card-accent: var(--cor-azul-primario);
+    background-color: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    border-radius: 16px;
+    padding: 1.9rem 1.2rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.agenda-scope .compromisso-card-modern:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--card-accent) 45%, var(--cor-borda));
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1),
+        0 0 0 3px color-mix(in srgb, var(--card-accent) 12%, transparent);
+}
+
+/* Selo flutuante herda a cor de status do card */
+.agenda-scope .compromisso-card-modern .selo-badge {
+    --selo-cor: var(--card-accent);
+}
+
+/* Identidade de cor por status (usada no selo flutuante e no glow do hover) */
+.agenda-scope .compromisso-card-modern.pendente {
+    --card-accent: var(--cor-azul-primario);
+}
+
+.agenda-scope .compromisso-card-modern.realizado {
+    --card-accent: var(--cor-verde-sucesso);
+    opacity: 0.8;
+}
+
+.agenda-scope .compromisso-card-modern.perdido {
+    --card-accent: var(--cor-vermelho-delete);
+}
+
+.agenda-scope .compromisso-card-modern.cancelado {
+    --card-accent: #6b7280;
+    opacity: 0.8;
+}
+
+/* --- 1. Header: Data e Botões --- */
+.agenda-scope .card-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.agenda-scope .date-highlight {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--cor-azul-primario);
+}
+
+.agenda-scope .date-big {
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+
+.agenda-scope .time-group {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.agenda-scope .time-big {
+    font-size: 1.2rem;
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+.agenda-scope .weekday-inline {
+    font-size: 0.9rem;
+    color: var(--cor-texto-secundario);
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.agenda-scope .top-actions {
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.agenda-scope .compromisso-card-modern:hover .top-actions {
+    opacity: 1;
+}
+
+@media (max-width: 768px) {
+    .agenda-scope .top-actions {
+        opacity: 1 !important;
+    }
+}
+
+/* .btn-action-icon e os hovers de editar/excluir: ver components.css (definição única). */
+
+/* --- 2. Título --- */
+.agenda-scope .card-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--cor-texto-principal);
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* --- 3. Informações Modernas --- */
+.agenda-scope .card-infos-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin-top: 0.2rem;
+}
+
+.agenda-scope .info-modern-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    max-width: 100%;
+    padding: 0 10px;
+}
+
+.agenda-scope .location-box {
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    padding: 6px 10px;
+    width: fit-content;
+}
+
+.agenda-scope .info-icon-badge {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    color: var(--cor-azul-primario);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+
+.agenda-scope .info-text {
+    font-size: 0.95rem;
+    color: var(--cor-texto-secundario);
+    line-height: 1.4;
+    padding-top: 2px;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+/* --- 4. Footer --- */
+.agenda-scope .card-footer-row {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 1rem;
+    position: relative;
+}
+
+/* Tag de estado — "sai de trás" do selo formando um único lockup:
+   canto esquerdo reto (fica escondido atrás do selo) e só o direito
+   arredondado. Fica atrás do selo (z-index menor) e herda a cor do
+   status via --card-accent (mesmo do selo). */
+.agenda-scope .selo-status-tag {
+    position: absolute;
+    top: -13px;
+    left: 50px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    /* padding-left maior: o texto começa depois da parte que fica sob o selo */
+    padding: 0 14px 0 22px;
+    border-radius: 0 999px 999px 0;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--card-accent);
+    background: color-mix(in srgb, var(--card-accent) 16%, var(--cor-card-principal));
+    box-shadow: 0 4px 10px -5px rgba(0, 0, 0, 0.4);
+    z-index: 2;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.agenda-scope .btn-concluir-action {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
+}
+
+.agenda-scope .btn-concluir-action.complete {
+    background-color: var(--cor-azul-primario);
+    color: white;
+    box-shadow: 0 4px 12px rgba(74, 109, 255, 0.25);
+}
+
+.agenda-scope .btn-concluir-action.complete:hover {
+    background-color: var(--cor-azul-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(74, 109, 255, 0.35);
+}
+
+.agenda-scope .btn-concluir-action.undo {
+    background-color: var(--cor-fundo);
+    border: 1px solid var(--cor-borda);
+    color: var(--cor-texto-secundario);
+}
+
+.agenda-scope .btn-concluir-action.undo:hover {
+    background-color: var(--cor-fundo-hover);
+    color: var(--cor-texto-principal);
+    border-color: var(--cor-texto-secundario);
+}
+
+.agenda-scope .footer-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.agenda-scope .btn-cancelar-action {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid var(--cor-vermelho-delete);
+    color: var(--cor-vermelho-delete);
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
+}
+
+.agenda-scope .btn-cancelar-action:hover {
+    background: rgba(231, 76, 60, 0.1);
+    transform: translateY(-1px);
+}
+
+/* ============================================= */
+/* 8. CALENDÁRIO (DIAS E VISUALIZAÇÃO)           */
+/* (também no sheet do celular: .roteiro-cal-sheet) */
+/* ============================================= */
+
+.agenda-scope .month-divider {
+    display: none;
+}
+
+:is(.agenda-scope, .roteiro-cal-sheet) .dias-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+}
+
+:is(.agenda-scope, .roteiro-cal-sheet) .dia-card {
+    background-color: var(--cor-card-secundario);
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    padding: 0.2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1 / 1;
+    position: relative;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
+}
+
+:is(.agenda-scope, .roteiro-cal-sheet) .dia-card.dia-padding {
+    background-color: transparent !important;
+    border: 1px dashed var(--cor-borda) !important;
+    background-image: repeating-linear-gradient(45deg,
+            transparent,
+            transparent 5px,
+            rgba(128, 128, 128, 0.08) 5px,
+            rgba(128, 128, 128, 0.08) 10px) !important;
+    opacity: 0.6;
+    pointer-events: none;
+    box-shadow: none !important;
+}
+
+:is(.agenda-scope, .roteiro-cal-sheet) .dia-card.dia-padding .dia-numero,
+:is(.agenda-scope, .roteiro-cal-sheet) .dia-card.dia-padding .dia-semana {
+    color: var(--cor-texto-secundario);
+    opacity: 0.5;
+}
+
+:is(.agenda-scope, .roteiro-cal-sheet) .dia-card.dia-padding .compromisso-indicator {
+    display: none;
+}
+
+:is(.agenda-scope, .roteiro-cal-sheet) .dia-card.today {
+    border: 2px solid var(--cor-azul-primario);
+    background-color: var(--cor-card-principal);
+}
+
+:is(.agenda-scope, .roteiro-cal-sheet) .dia-card.today .dia-numero {
+    color: var(--cor-azul-primario);
+}
+
+:is(.agenda-scope, .roteiro-cal-sheet) .dia-card:not(.dia-padding).has-compromissos {
+    background-color: rgba(74, 109, 255, 0.05);
+}
+
+:is(.agenda-scope, .roteiro-cal-sheet) .dia-card:not(.dia-padding):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    border-color: var(--cor-azul-primario);
+    cursor: pointer;
+}
+
+:is(.agenda-scope, .roteiro-cal-sheet) .dia-numero {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+:is(.agenda-scope, .roteiro-cal-sheet) .dia-semana {
+    font-size: 0.65rem;
+    color: var(--cor-texto-secundario);
+    text-transform: uppercase;
+}
+
+:is(.agenda-scope, .roteiro-cal-sheet) .compromisso-indicator {
+    height: 5px;
+    width: 5px;
+    background-color: var(--cor-azul-primario);
+    border-radius: 50%;
+    margin-top: 2px;
+}
+
+:is(.agenda-scope, .roteiro-cal-sheet) .compromisso-indicator.no-event {
+    background-color: transparent;
+}
+
+@media (max-width: 480px) {
+    :is(.agenda-scope, .roteiro-cal-sheet) .dias-grid {
+        gap: 2px;
+    }
+
+    :is(.agenda-scope, .roteiro-cal-sheet) .dia-semana {
+        display: none;
+    }
+}
+
+/* ============================================= */
+/* 9. TOOLTIP                                    */
+/* ============================================= */
+
+.agenda-scope .tooltip {
+    display: none;
+    opacity: 0;
+    position: absolute;
+    z-index: 2500;
+    background-color: var(--cor-card-principal);
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    width: 250px;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    will-change: top, left, opacity; /* [OPTIMIZATION] Ajuda no desempenho de renderização */
+}
+
+.agenda-scope .tooltip.visible {
+    display: block;
+    opacity: 1;
+}
+
+.agenda-scope .tooltip-compromisso-item {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--cor-borda);
+}
+
+.agenda-scope .tooltip-compromisso-item:last-child {
+    border-bottom: none;
+}
+
+.agenda-scope .tooltip-titulo {
+    font-weight: 600;
+    color: var(--cor-texto-principal);
+    font-size: 0.85rem;
+}
+
+.agenda-scope .tooltip-hora {
+    font-size: 0.8rem;
+    color: var(--cor-texto-secundario);
+    margin-left: auto;
+}
+
+/* ============================================= */
+/* 10. RESPONSIVIDADE                             */
+/* ============================================= */
+
+@media (max-width: 768px) {
+
+    /* No mobile, volta tudo para 1 coluna */
+    .agenda-scope .layout-grid-custom.agenda-layout {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    /* Grid de compromissos no mobile vira 1 coluna também */
+    .agenda-scope .compromissos-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Remove o span do último item no mobile */
+    .agenda-scope .compromissos-grid>.compromisso-card-modern:last-child:nth-child(odd) {
+        grid-column: span 1;
+    }
+}
+
+/* ========================================================================== */
+/* LEGADO COMPARTILHADO (sem escopo) — NÃO EDITAR PARA O ROTEIRO              */
+/* Mesmas regras de antes, na mesma ordem relativa. Consumidores:             */
+/*  - .agenda-column*, .empty-list-msg: Finanças (+ CaixaModal, MetasModal)   */
+/*  - .header-actions-group: Finanças, Registros, Ritmo                        */
+/*  - .header-search-*, .small-btn: Registros                                  */
+/*  - @media 768 de .agenda-column/.column-header-flex: Finanças/Registros/Ritmo*/
+/* Saem quando a página consumidora definir o seu (com o seu escopo).         */
+/* ========================================================================== */
+
 .agenda-column {
     display: flex;
     flex-direction: column;
@@ -41,39 +681,6 @@
     font-style: italic;
     border: 1px dashed var(--cor-borda);
     border-radius: 8px;
-}
-
-/* ============================================= */
-
-/* ============================================= */
-/* 3. CABEÇALHOS DAS COLUNAS (HEADER)            */
-/* ============================================= */
-
-.agenda-layout .column-header-flex {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin: 0 -1.2rem 1.5rem -1.2rem;
-    padding: 0.8rem 1.5rem;
-    background-color: var(--cor-card-secundario);
-    border-bottom: 1px solid var(--cor-borda);
-    border-right: 1px solid var(--cor-borda);
-    position: relative;
-    z-index: 2;
-    min-height: 60px;
-}
-
-.agenda-layout .header-left-aligned {
-    justify-content: space-between !important; 
-}
-
-.agenda-layout .column-header-flex h2 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--cor-texto-secundario);
-    margin: 0;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
 .agenda-column:last-child .column-header-flex {
@@ -121,31 +728,6 @@
     z-index: 2;
 }
 
-.btn-filter-sort {
-    background: transparent;
-    border: 1px solid var(--cor-borda);
-    color: var(--cor-texto-secundario);
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
-    font-size: 0.9rem;
-}
-
-.btn-filter-sort:hover {
-    background: var(--cor-fundo-hover);
-    color: var(--cor-azul-primario);
-    border-color: var(--cor-azul-primario);
-}
-
-.btn-filter-sort:active {
-    transform: translateY(1px);
-}
-
 .small-btn {
     padding: 0 14px;
     font-size: 0.85rem;
@@ -155,44 +737,6 @@
     gap: 8px;
     border-radius: 8px;
 }
-
-/* Navegação do Calendário */
-.calendar-nav-header {
-    display: flex;
-    justify-content: center !important; 
-    gap: 1.5rem;
-    position: relative;
-}
-
-.calendar-title-nav {
-    min-width: 150px; 
-    text-transform: capitalize !important; 
-    text-align: center;
-}
-
-.btn-nav-arrow {
-    background: transparent;
-    border: 1px solid var(--cor-borda);
-    color: var(--cor-texto-secundario);
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
-}
-
-.btn-nav-arrow:hover {
-    background-color: var(--cor-fundo-hover);
-    color: var(--cor-azul-primario);
-    border-color: var(--cor-azul-primario);
-}
-
-/* ============================================= */
-/* 4. AJUSTE PARA 2 COLUNAS CONECTADAS (FIX)     */
-/* ============================================= */
 
 .agenda-column:first-child {
     padding-left: 0;
@@ -218,562 +762,7 @@
     border-right: 1px solid var(--cor-borda);
 }
 
-/* ============================================= */
-/* 5. LISTA DE COMPROMISSOS (GRID INTELIGENTE)   */
-/* ============================================= */
-
-.month-group {
-    display: flex;
-    flex-direction: column;
-    margin: 0;
-}
-
-.month-group+.month-group {
-    margin-top: 1.5rem !important;
-}
-
-.month-header {
-    background: transparent !important;
-    border: none !important;
-    border-bottom: 1px solid var(--cor-borda) !important;
-    border-radius: 0 !important;
-    padding: 0.2rem 0 0.4rem 0;
-    margin-bottom: 0.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
-}
-
-.month-header:hover,
-.month-header.active {
-    border-bottom-color: var(--cor-azul-primario) !important;
-}
-
-.month-header:hover .month-title-text,
-.month-header.active .month-title-text {
-    color: var(--cor-azul-primario);
-}
-
-.month-title-text {
-    font-size: 0.85rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--cor-texto-secundario);
-    transition: color 0.2s;
-}
-
-.month-header-right {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: var(--cor-texto-secundario);
-}
-
-.month-header i {
-    font-size: 0.8rem;
-    transition: transform 0.3s ease;
-}
-
-.month-header i.rotate {
-    transform: rotate(180deg);
-}
-
-.accordion-wrapper {
-    display: grid;
-    grid-template-rows: 0fr;
-    transition: grid-template-rows 0.3s ease-out;
-}
-
-.accordion-wrapper.open {
-    grid-template-rows: 1fr;
-}
-
-.accordion-inner {
-    overflow: hidden;
-    min-height: 0;
-}
-
-.month-content {
-    padding-top: 0.5rem;
-    padding-bottom: 0;
-}
-
-.compromissos-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    /* row-gap folgado (>22px) evita colisão do selo com o card acima;
-       padding-top dá espaço p/ o selo da 1ª linha (o .accordion-inner
-       usa overflow:hidden e cortaria o selo saliente). */
-    gap: 2rem 1rem;
-    padding-top: 26px;
-}
-
-.compromissos-grid>.compromisso-card-modern:last-child:nth-child(odd) {
-    grid-column: span 2;
-}
-
-/* ============================================= */
-/* 6. CARD DE COMPROMISSO (DESIGN MODERNO V2)    */
-/* ============================================= */
-
-.compromisso-card-modern {
-    --card-accent: var(--cor-azul-primario);
-    background-color: var(--cor-card-principal);
-    border: 1px solid var(--cor-borda);
-    border-radius: 16px;
-    padding: 1.9rem 1.2rem 1.2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
-    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
-    position: relative;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    height: 100%;
-    box-sizing: border-box;
-}
-
-.compromisso-card-modern:hover {
-    transform: translateY(-3px);
-    border-color: color-mix(in srgb, var(--card-accent) 45%, var(--cor-borda));
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1),
-        0 0 0 3px color-mix(in srgb, var(--card-accent) 12%, transparent);
-}
-
-/* Selo flutuante herda a cor de status do card */
-.compromisso-card-modern .selo-badge {
-    --selo-cor: var(--card-accent);
-}
-
-/* Identidade de cor por status (usada no selo flutuante e no glow do hover) */
-.compromisso-card-modern.pendente {
-    --card-accent: var(--cor-azul-primario);
-}
-
-.compromisso-card-modern.realizado {
-    --card-accent: var(--cor-verde-sucesso);
-    opacity: 0.8;
-}
-
-.compromisso-card-modern.perdido {
-    --card-accent: var(--cor-vermelho-delete);
-}
-
-.compromisso-card-modern.cancelado {
-    --card-accent: #6b7280;
-    opacity: 0.8;
-}
-
-/* --- 1. Header: Data e Botões --- */
-.card-header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.date-highlight {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: var(--cor-azul-primario);
-}
-
-.date-big {
-    font-size: 1.6rem;
-    font-weight: 800;
-    letter-spacing: -1px;
-}
-
-.time-group {
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-}
-
-.time-big {
-    font-size: 1.2rem;
-    font-weight: 600;
-    opacity: 0.9;
-}
-
-.weekday-inline {
-    font-size: 0.9rem;
-    color: var(--cor-texto-secundario);
-    font-weight: 500;
-    text-transform: capitalize;
-}
-
-.top-actions {
-    display: flex;
-    gap: 8px;
-    opacity: 0; 
-    transition: opacity 0.2s ease;
-}
-
-.compromisso-card-modern:hover .top-actions {
-    opacity: 1; 
-}
-
 @media (max-width: 768px) {
-    .top-actions {
-        opacity: 1 !important;
-    }
-}
-
-.btn-action-icon {
-    width: 32px !important;
-    height: 32px !important;
-    font-size: 0.8rem;
-    color: var(--cor-texto-secundario);
-    background: transparent;
-    border: 1px solid var(--cor-borda) !important;
-    border-radius: 6px !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    padding: 0;
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
-}
-
-.btn-action-icon.btn-edit-transacao:hover {
-    background-color: #f59e0b !important;
-    border-color: #f59e0b !important;
-    color: #fff !important;
-}
-
-.btn-action-icon.btn-delete-transacao:hover {
-    background-color: var(--cor-vermelho-delete) !important;
-    border-color: var(--cor-vermelho-delete) !important;
-    color: #fff !important;
-}
-
-/* --- 2. Título --- */
-.card-title {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: var(--cor-texto-principal);
-    margin: 0;
-    line-height: 1.4;
-}
-
-/* --- 3. Informações Modernas --- */
-.card-infos-container {
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
-    margin-top: 0.2rem;
-}
-
-.info-modern-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    max-width: 100%;
-    padding: 0 10px;
-}
-
-.location-box {
-    border: 1px solid var(--cor-borda);
-    border-radius: 8px;
-    padding: 6px 10px;
-    width: fit-content;
-}
-
-.info-icon-badge {
-    width: 24px;
-    height: 24px;
-    min-width: 24px;
-    color: var(--cor-azul-primario);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.9rem;
-}
-
-.info-text {
-    font-size: 0.95rem;
-    color: var(--cor-texto-secundario);
-    line-height: 1.4;
-    padding-top: 2px;
-    white-space: normal;
-    word-break: break-word;
-    overflow-wrap: break-word;
-}
-
-/* --- 4. Footer --- */
-.card-footer-row {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    margin-top: auto;
-    padding-top: 1rem;
-    position: relative;
-}
-
-/* Tag de estado — "sai de trás" do selo formando um único lockup:
-   canto esquerdo reto (fica escondido atrás do selo) e só o direito
-   arredondado. Fica atrás do selo (z-index menor) e herda a cor do
-   status via --card-accent (mesmo do selo). */
-.selo-status-tag {
-    position: absolute;
-    top: -13px;
-    left: 50px;
-    height: 26px;
-    display: inline-flex;
-    align-items: center;
-    /* padding-left maior: o texto começa depois da parte que fica sob o selo */
-    padding: 0 14px 0 22px;
-    border-radius: 0 999px 999px 0;
-    font-size: 0.72rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--card-accent);
-    background: color-mix(in srgb, var(--card-accent) 16%, var(--cor-card-principal));
-    box-shadow: 0 4px 10px -5px rgba(0, 0, 0, 0.4);
-    z-index: 2;
-    pointer-events: none;
-    white-space: nowrap;
-}
-
-.btn-concluir-action {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
-}
-
-.btn-concluir-action.complete {
-    background-color: var(--cor-azul-primario);
-    color: white;
-    box-shadow: 0 4px 12px rgba(74, 109, 255, 0.25);
-}
-
-.btn-concluir-action.complete:hover {
-    background-color: var(--cor-azul-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(74, 109, 255, 0.35);
-}
-
-.btn-concluir-action.undo {
-    background-color: var(--cor-fundo);
-    border: 1px solid var(--cor-borda);
-    color: var(--cor-texto-secundario);
-}
-
-.btn-concluir-action.undo:hover {
-    background-color: var(--cor-fundo-hover);
-    color: var(--cor-texto-principal);
-    border-color: var(--cor-texto-secundario);
-}
-
-.footer-actions {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.btn-cancelar-action {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    background: transparent;
-    border: 1px solid var(--cor-vermelho-delete);
-    color: var(--cor-vermelho-delete);
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
-}
-
-.btn-cancelar-action:hover {
-    background: rgba(231, 76, 60, 0.1);
-    transform: translateY(-1px);
-}
-
-/* ============================================= */
-/* 8. CALENDÁRIO (DIAS E VISUALIZAÇÃO)           */
-/* ============================================= */
-
-.month-divider {
-    display: none; 
-}
-
-.dias-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 0.5rem;
-}
-
-.dia-card {
-    background-color: var(--cor-card-secundario);
-    border: 1px solid var(--cor-borda);
-    border-radius: 8px;
-    padding: 0.2rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    aspect-ratio: 1 / 1;
-    position: relative;
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
-}
-
-.dia-card.dia-padding {
-    background-color: transparent !important;
-    border: 1px dashed var(--cor-borda) !important;
-    background-image: repeating-linear-gradient(45deg,
-            transparent,
-            transparent 5px,
-            rgba(128, 128, 128, 0.08) 5px,
-            rgba(128, 128, 128, 0.08) 10px) !important;
-    opacity: 0.6;
-    pointer-events: none;
-    box-shadow: none !important;
-}
-
-.dia-card.dia-padding .dia-numero,
-.dia-card.dia-padding .dia-semana {
-    color: var(--cor-texto-secundario);
-    opacity: 0.5;
-}
-
-.dia-card.dia-padding .compromisso-indicator {
-    display: none;
-}
-
-.dia-card.today {
-    border: 2px solid var(--cor-azul-primario);
-    background-color: var(--cor-card-principal);
-}
-
-.dia-card.today .dia-numero {
-    color: var(--cor-azul-primario);
-}
-
-.dia-card:not(.dia-padding).has-compromissos {
-    background-color: rgba(74, 109, 255, 0.05);
-}
-
-.dia-card:not(.dia-padding):hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    border-color: var(--cor-azul-primario);
-    cursor: pointer;
-}
-
-.dia-numero {
-    font-size: 0.9rem;
-    font-weight: 600;
-}
-
-.dia-semana {
-    font-size: 0.65rem;
-    color: var(--cor-texto-secundario);
-    text-transform: uppercase;
-}
-
-.compromisso-indicator {
-    height: 5px;
-    width: 5px;
-    background-color: var(--cor-azul-primario);
-    border-radius: 50%;
-    margin-top: 2px;
-}
-
-.compromisso-indicator.no-event {
-    background-color: transparent;
-}
-
-@media (max-width: 480px) {
-    .dias-grid {
-        gap: 2px;
-    }
-
-    .dia-semana {
-        display: none;
-    }
-}
-
-/* ============================================= */
-/* 9. TOOLTIP                                    */
-/* ============================================= */
-
-.tooltip {
-    display: none;
-    opacity: 0;
-    position: absolute;
-    z-index: 2500;
-    background-color: var(--cor-card-principal);
-    border: 1px solid var(--cor-borda);
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    width: 250px;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
-    will-change: top, left, opacity; /* [OPTIMIZATION] Ajuda no desempenho de renderização */
-}
-
-.tooltip.visible {
-    display: block;
-    opacity: 1;
-}
-
-.tooltip-compromisso-item {
-    padding: 0.5rem 0;
-    border-bottom: 1px solid var(--cor-borda);
-}
-
-.tooltip-compromisso-item:last-child {
-    border-bottom: none;
-}
-
-.tooltip-titulo {
-    font-weight: 600;
-    color: var(--cor-texto-principal);
-    font-size: 0.85rem;
-}
-
-.tooltip-hora {
-    font-size: 0.8rem;
-    color: var(--cor-texto-secundario);
-    margin-left: auto;
-}
-
-/* ============================================= */
-/* 10. RESPONSIVIDADE                             */
-/* ============================================= */
-
-@media (max-width: 768px) {
-
-    /* No mobile, volta tudo para 1 coluna */
-    .layout-grid-custom.agenda-layout {
-        grid-template-columns: 1fr;
-        gap: 2rem;
-    }
-
-    /* Grid de compromissos no mobile vira 1 coluna também */
-    .compromissos-grid {
-        grid-template-columns: 1fr;
-    }
-
-    /* Remove o span do último item no mobile */
-    .compromissos-grid>.compromisso-card-modern:last-child:nth-child(odd) {
-        grid-column: span 1;
-    }
-
     .agenda-column:not(:last-child) {
         border-right: none;
         border-bottom: 1px dashed var(--cor-borda);

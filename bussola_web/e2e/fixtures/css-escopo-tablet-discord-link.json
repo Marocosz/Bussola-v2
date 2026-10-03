@@ -1,0 +1,39 @@
+{
+ ".btn-action-icon": [
+  {
+   "display": "flex",
+   "position": "static",
+   "z-index": "auto",
+   "width": "44px",
+   "height": "44px",
+   "min-height": "44px",
+   "box-sizing": "border-box",
+   "margin-top": "0px",
+   "margin-right": "0px",
+   "margin-bottom": "0px",
+   "margin-left": "0px",
+   "padding-top": "0px",
+   "padding-right": "0px",
+   "padding-bottom": "0px",
+   "padding-left": "0px",
+   "border-top-width": "1px",
+   "border-top-style": "solid",
+   "border-top-color": "rgba(255, 255, 255, 0.1)",
+   "border-right-width": "1px",
+   "border-bottom-width": "1px",
+   "border-top-left-radius": "6px",
+   "border-top-right-radius": "6px",
+   "background-color": "rgb(56, 57, 62)",
+   "color": "rgb(189, 193, 198)",
+   "font-size": "12.8px",
+   "font-weight": "400",
+   "gap": "normal",
+   "justify-content": "center",
+   "align-items": "center",
+   "opacity": "1",
+   "text-transform": "none",
+   "grid-template-columns": "none",
+   "flex-wrap": "nowrap"
+  }
+ ]
+}

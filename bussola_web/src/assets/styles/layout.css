@@ -14,6 +14,16 @@ main.container {
     padding-bottom: 2rem;
 }
 
+/* Wrapper comum das páginas (.container.main-container). Antes vinha sem escopo de
+   pages/Agenda/styles.css e já valia para todas as páginas (Home e Estudos dependem
+   dele); fica aqui com as mesmas declarações. As páginas sobrescrevem com o seu escopo. */
+.main-container {
+    padding-bottom: 5rem !important;
+    min-height: 100vh;
+    min-height: 100dvh;
+    box-sizing: border-box;
+}
+
 /* ============================================= */
 /* 2. Navegação lateral (Sidebar)                */
 /* ============================================= */

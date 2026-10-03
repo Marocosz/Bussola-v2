@@ -236,3 +236,41 @@ textarea.form-input {
     from { transform: translateY(24px); opacity: 0.6; }
     to { transform: none; opacity: 1; }
 }
+
+/* ========================================================= */
+/* BOTÃO DE ÍCONE (.btn-action-icon)                          */
+/* Tamanho, borda e raio que valiam em TODO o app vinham, com */
+/* !important, de pages/Agenda/styles.css (sem escopo): Navbar,*/
+/* Cofre, Metas, Registros, UserDrawer e Finanças renderizam   */
+/* com eles. Ficam aqui, idênticos, como a definição única     */
+/* (spec §4.3). O visual "redondo" de global.css continua      */
+/* valendo para o que não é !important. O alvo de 44px no      */
+/* toque vem de tokens.css (min-width/min-height).             */
+/* ========================================================= */
+.btn-action-icon {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.8rem;
+    color: var(--cor-texto-secundario);
+    background: transparent;
+    border: 1px solid var(--cor-borda) !important;
+    border-radius: 6px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
+}
+
+.btn-action-icon.btn-edit-transacao:hover {
+    background-color: #f59e0b !important;
+    border-color: #f59e0b !important;
+    color: #fff !important;
+}
+
+.btn-action-icon.btn-delete-transacao:hover {
+    background-color: var(--cor-vermelho-delete) !important;
+    border-color: var(--cor-vermelho-delete) !important;
+    color: #fff !important;
+}
