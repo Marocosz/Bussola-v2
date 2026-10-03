@@ -297,3 +297,34 @@ textarea.form-input {
     border-color: var(--cor-vermelho-delete) !important;
     color: #fff !important;
 }
+
+/* ========================================================= */
+/* EFEITOS GLOBAIS QUE VINHAM DE Auth/styles.css             */
+/* Aquele arquivo é carregado no boot (via ForgotPassword) e  */
+/* tinha regras sem escopo. Medido na cascata: só estes       */
+/* efeitos chegavam ao app (o resto era sobrescrito por       */
+/* components.css/global.css). Mantidos aqui, iguais, para o  */
+/* desktop não mudar ao escopar o Auth.                       */
+/* ========================================================= */
+.form-group label {
+    margin-left: 2px;
+}
+
+.form-input:invalid:not(:placeholder-shown) {
+    border-color: #ef4444;
+}
+
+.btn-primary.full-width {
+    width: 100%;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .btn-primary:hover:not(:disabled) {
+        filter: brightness(1.1);
+        transform: translateY(-1px);
+    }
+}
+
+.btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+}

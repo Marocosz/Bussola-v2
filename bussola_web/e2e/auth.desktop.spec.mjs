@@ -69,3 +69,32 @@ test('desktop admin-modal inalterado', async ({ page }) => {
   await page.locator('.admin-modal-content').waitFor();
   await expect(page).toHaveScreenshot('admin-modal.png');
 });
+
+// ---------------------------------------------------------------------------
+// Task 2 — escopo do Auth sem mudar o desktop
+// ---------------------------------------------------------------------------
+test('efeitos globais preservados ao escopar o Auth (labels, input inválido, hover do primário)', async ({ page }) => {
+  await gotoApp(page, '/cofre');
+  await page.getByRole('button', { name: 'Guardar Segredo' }).click();
+  const label = page.locator('.modal-content .form-group label').first();
+  expect(await label.evaluate((e) => getComputedStyle(e).marginLeft)).toBe('2px');
+  const dias = page.locator('.modal-content input[type="number"]');
+  await dias.fill('-5'); // min="0": inválido e preenchido
+  await dias.blur(); // sem foco: o :focus não pode mascarar a borda de inválido
+  // border-color tem transição de 0.2s: esperar o valor final em vez de ler no meio dela
+  await expect.poll(() => dias.evaluate((e) => getComputedStyle(e).borderTopColor)).toBe('rgb(239, 68, 68)');
+  const salvar = page.locator('.modal-content .btn-primary');
+  await salvar.hover();
+  await expect.poll(() => salvar.evaluate((e) => getComputedStyle(e).filter)).toBe('brightness(1.1)');
+});
+
+test.describe('status (base depois da correção das variáveis)', () => {
+  test.use({ storageState: DESLOGADO });
+  for (const [nome, rota] of [['verify-email', '/verify-email'], ['register-success', '/register-success']]) {
+    test(`desktop ${nome} com card visível`, async ({ page }) => {
+      await gotoApp(page, rota);
+      await page.locator('.auth-status-card').waitFor();
+      await expect(page).toHaveScreenshot(`${nome}.png`);
+    });
+  }
+});

@@ -1,5 +1,9 @@
 /* ==========================================================
-   AUTH.CSS - Estilos para Login, Registro, Esqueci Senha, etc.
+   AUTH — Esqueci a senha, Nova senha e telas de status
+   (verificação de e-mail, cadastro enviado, vínculo do Discord).
+   Tudo escopado: este arquivo é carregado no boot (via ForgotPassword)
+   e antes vazava .form-group/.form-input/.btn-primary para o app todo.
+   Os efeitos globais que vinham desse vazamento estão em components.css.
    ========================================================== */
 
 /* CONTAINER GERAL (Centraliza tudo na tela) */
@@ -9,14 +13,18 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: var(--cor-fundo); /* Ajustado para variável padrão */
+    justify-items: center;
+    max-width: 1100px;
+    gap: 4rem;
+    margin: 0 auto;
+    background-color: var(--cor-fundo);
     padding: 1.5rem;
     transition: background-color 0.3s ease;
 }
 
 /* CARTÃO DE AUTH */
 .auth-simple-card {
-    background-color: var(--cor-card-principal); /* Ajustado para variável padrão */
+    background-color: var(--cor-card-principal);
     width: 100%;
     max-width: 440px; /* Largura ideal para leitura */
     padding: 2.5rem;
@@ -26,8 +34,6 @@
     display: flex;
     flex-direction: column;
     gap: 2rem;
-    
-    /* Animação suave de entrada */
     animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -58,230 +64,6 @@
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-}
-
-/* GRUPO DE INPUTS */
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    text-align: left;
-}
-
-.form-group label {
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--cor-texto-secundario);
-    margin-left: 2px;
-}
-
-.form-input {
-    background-color: var(--cor-fundo);
-    border: 1px solid var(--cor-borda);
-    border-radius: 8px;
-    padding: 12px 16px;
-    font-size: 1rem;
-    color: var(--cor-texto-principal);
-    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.form-input:focus {
-    outline: none;
-    border-color: var(--cor-azul-primario);
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15); /* Glow azul suave */
-}
-
-/* ESTADOS DE VALIDAÇÃO */
-.form-input:invalid:not(:placeholder-shown) {
-    border-color: #ef4444;
-}
-
-/* BOTÃO PRINCIPAL */
-.btn-primary {
-    background-color: var(--cor-azul-primario);
-    color: #ffffff;
-    border: none;
-    border-radius: 8px;
-    padding: 12px 24px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-}
-
-.btn-primary:hover:not(:disabled) {
-    filter: brightness(1.1);
-    transform: translateY(-1px);
-}
-
-.btn-primary:active:not(:disabled) {
-    transform: translateY(0);
-}
-
-.btn-primary:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.btn-primary.full-width {
-    width: 100%;
-}
-
-/* MENSAGEM DE SUCESSO */
-.auth-success-message {
-    text-align: center;
-    padding: 1rem 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    animation: fadeIn 0.4s ease-out;
-}
-
-.auth-success-message h3 {
-    color: var(--cor-texto-principal);
-    font-size: 1.4rem;
-    margin: 0;
-}
-
-.auth-success-message p {
-    color: var(--cor-texto-secundario);
-    margin: 0.2rem 0;
-}
-
-/* RODAPÉ DO CARD */
-.auth-footer {
-    text-align: center;
-    margin-top: -0.5rem;
-}
-
-.link-secondary {
-    color: var(--cor-texto-secundario);
-    text-decoration: none;
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: color 0.2s;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.link-secondary:hover {
-    color: var(--cor-azul-primario);
-}
-
-.text-muted {
-    font-size: 0.8rem !important;
-    opacity: 0.8;
-}
-
-/* ==========================================================
-   NOVOS ESTILOS ADICIONADOS (Feature de Força de Senha)
-   ========================================================== */
-
-/* Barra de Progresso da Senha */
-.password-strength-container {
-    margin-top: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.strength-bar-bg {
-    width: 100%;
-    height: 6px;
-    background-color: var(--cor-borda); /* Fundo cinza da barra */
-    border-radius: 3px;
-    overflow: hidden;
-}
-
-.strength-bar-fill {
-    height: 100%;
-    border-radius: 3px;
-    /* Animação suave ao digitar */
-    transition: width 0.3s ease, background-color 0.3s ease;
-}
-
-.strength-text {
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-align: right; /* Feedback alinhado à direita */
-}
-
-/* Box de Dica de Segurança (Register) */
-.security-tip-box {
-    background-color: rgba(59, 130, 246, 0.08); /* Azul bem claro */
-    border: 1px solid rgba(59, 130, 246, 0.2);
-    border-radius: 8px;
-    padding: 12px;
-    margin-top: 10px;
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-    font-size: 0.85rem;
-    color: var(--cor-texto-secundario);
-    line-height: 1.4;
-    text-align: left;
-}
-
-.security-tip-box i {
-    color: var(--cor-azul-primario);
-    margin-top: 3px;
-}
-
-/* ANIMAÇÕES */
-@keyframes slideUpFade {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-/* RESPONSIVIDADE MOBILE */
-@media (max-width: 600px) {
-    .auth-simple-card {
-        padding: 1.5rem;
-        gap: 1.5rem;
-        border: none;
-        box-shadow: none;
-        background: transparent;
-    }
-    
-    .auth-simple-container {
-        background-color: var(--cor-fundo);
-        align-items: flex-start;
-        padding-top: 3rem;
-    }
-
-    .form-input {
-        background-color: var(--cor-card-principal);
-    }
-}
-
-/* ==========================================================
-   FORMULÁRIO DO CARD (antes herdado por vazamento de
-   Login/styles.css via .auth-card; agora explícito e escopado)
-   ========================================================== */
-.auth-simple-container {
-    justify-items: center;
-    max-width: 1100px;
-    gap: 4rem;
-    margin: 0 auto;
 }
 
 .auth-simple-card .form-group {
@@ -326,9 +108,202 @@
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
+/* MENSAGEM DE SUCESSO */
+.auth-success-message {
+    text-align: center;
+    padding: 1rem 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.auth-success-message h3 {
+    color: var(--cor-texto-principal);
+    font-size: 1.4rem;
+    margin: 0;
+}
+
+.auth-success-message p {
+    color: var(--cor-texto-secundario);
+    margin: 0.2rem 0;
+}
+
+/* RODAPÉ DO CARD */
+.auth-footer {
+    text-align: center;
+    margin-top: -0.5rem;
+}
+
+.auth-simple-card .link-secondary {
+    color: var(--cor-texto-secundario);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.auth-simple-card .link-secondary:hover {
+    color: var(--cor-azul-primario);
+}
+
+.auth-simple-card .text-muted {
+    font-size: 0.8rem !important;
+    opacity: 0.8;
+}
+
+/* ==========================================================
+   Força de senha (Registro e Nova senha) — classes próprias
+   ========================================================== */
+.password-strength-container {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.strength-bar-bg {
+    width: 100%;
+    height: 6px;
+    background-color: var(--cor-borda);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.strength-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.strength-text {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: right;
+}
+
+/* Box de Dica de Segurança (Register) */
+.security-tip-box {
+    background-color: rgba(59, 130, 246, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 0.85rem;
+    color: var(--cor-texto-secundario);
+    line-height: 1.4;
+    text-align: left;
+}
+
+.security-tip-box i {
+    color: var(--cor-azul-primario);
+    margin-top: 3px;
+}
+
+/* ==========================================================
+   Telas de status (antes inline, com --cor-fundo-principal,
+   --cor-fundo-card e --cor-borda-suave, que não existem)
+   ========================================================== */
+.auth-status-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background-color: var(--cor-fundo);
+    color: var(--cor-texto-principal);
+    padding: 20px;
+    text-align: center;
+}
+
+.auth-status-card {
+    background: var(--cor-card-principal);
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    max-width: 450px;
+    width: 100%;
+    border: 1px solid var(--cor-borda);
+}
+
+.auth-status-card.is-largo {
+    padding: 50px 40px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    max-width: 500px;
+}
+
+/* ANIMAÇÕES (fadeIn vem de components.css) */
+@keyframes slideUpFade {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 @media (max-width: 900px) {
     .auth-simple-container {
         text-align: center;
         gap: 3rem;
+    }
+}
+
+/* ==========================================================
+   CELULAR (≤768): cards de largura total, 16px de gutter
+   ========================================================== */
+@media (max-width: 768px) {
+    .auth-simple-container {
+        align-items: flex-start;
+        padding: calc(var(--safe-top) + var(--sp-6)) var(--sp-4) var(--sp-6);
+    }
+
+    .auth-simple-card {
+        max-width: none;
+        padding: var(--sp-5) var(--sp-4);
+        gap: var(--sp-5);
+    }
+
+    .auth-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .auth-simple-card .form-group {
+        margin-bottom: var(--sp-4);
+    }
+
+    .auth-simple-card .btn-primary {
+        min-height: 48px;
+    }
+
+    .auth-simple-card .link-secondary {
+        min-height: var(--tap-min);
+    }
+
+    .auth-status-page {
+        justify-content: flex-start;
+        min-height: 0;
+        padding: calc(var(--safe-top) + var(--sp-6)) var(--sp-4) var(--sp-6);
+    }
+
+    .auth-status-card,
+    .auth-status-card.is-largo {
+        max-width: none;
+        padding: var(--sp-5) var(--sp-4);
+        border-radius: 16px;
+    }
+
+    .auth-status-card button {
+        min-height: 48px;
     }
 }

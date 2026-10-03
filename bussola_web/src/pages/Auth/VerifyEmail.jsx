@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { verifyUserEmail } from '../../services/api'; // Importa a função que criamos no api.ts
 import { useToast } from '../../context/ToastContext';
 import { logger } from '../../utils/logger';
+import './styles.css';
 
 // Importe o logo para manter a identidade visual
 import logoBussola from '../../assets/images/bussola.svg';
@@ -80,26 +81,8 @@ export function VerifyEmail() {
 
     // --- RENDERIZAÇÃO DA TELA ---
     return (
-        <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100vh',
-            backgroundColor: 'var(--cor-fundo-principal)', // Usa suas variáveis de tema
-            color: 'var(--cor-texto-principal)',
-            padding: '20px',
-            textAlign: 'center'
-        }}>
-            <div style={{
-                background: 'var(--cor-fundo-card)',
-                padding: '40px',
-                borderRadius: '12px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                maxWidth: '450px',
-                width: '100%',
-                border: '1px solid var(--cor-borda-suave, #e5e7eb)'
-            }}>
+        <div className="auth-status-page">
+            <div className="auth-status-card">
                 <img 
                     src={logoBussola} 
                     alt="Logo Bússola" 

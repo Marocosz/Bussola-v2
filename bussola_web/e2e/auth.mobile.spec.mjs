@@ -1,0 +1,83 @@
+import { test, expect } from '@playwright/test';
+import { gotoApp, overflowOffenders, smallTargets, animacoesAcabaram } from './helpers.mjs';
+import { DESLOGADO, semGoogle, cadastroAberto } from './fixtures/auth.mjs';
+
+// [nome, rota, seletor do card]
+const PUBLICAS = [
+  ['login', '/login', '.auth-card'],
+  ['register', '/register', '.auth-card'],
+  ['forgot', '/forgot-password', '.auth-simple-card'],
+  ['reset', '/reset-password?token=e2e', '.auth-simple-card'],
+  ['verify', '/verify-email', '.auth-status-card'],
+  ['register-success', '/register-success', '.auth-status-card'],
+];
+
+async function abrir(page, rota, card) {
+  await semGoogle(page);
+  await cadastroAberto(page);
+  await gotoApp(page, rota);
+  await page.locator(card).waitFor();
+  await animacoesAcabaram(page); // animação de entrada
+}
+
+// ---------------------------------------------------------------------------
+// Task 2 — telas de Auth
+// ---------------------------------------------------------------------------
+test.describe('auth deslogado', () => {
+  test.use({ storageState: DESLOGADO });
+
+  for (const w of [360, 390, 430, 768]) {
+    test(`sem overflow horizontal em ${w}px nas telas públicas`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: 844 });
+      for (const [nome, rota, card] of PUBLICAS) {
+        await abrir(page, rota, card);
+        expect(await overflowOffenders(page), `${nome} @ ${w}px`).toEqual([]);
+      }
+    });
+  }
+
+  test('Esqueci/Nova senha/Status: card de largura total (16px) e alvos ≥ 44px', async ({ page }) => {
+    for (const [nome, rota, card] of PUBLICAS.slice(2)) {
+      await abrir(page, rota, card);
+      const b = await page.locator(card).boundingBox();
+      expect(Math.round(b.x), nome).toBe(16);
+      expect(Math.round(b.width), nome).toBe(390 - 32);
+      expect(await smallTargets(page, card), nome).toEqual([]);
+    }
+  });
+
+  test('telas de status com fundo de card (variáveis corrigidas)', async ({ page }) => {
+    for (const rota of ['/verify-email', '/register-success']) {
+      await abrir(page, rota, '.auth-status-card');
+      const card = page.locator('.auth-status-card');
+      expect(await card.evaluate((e) => getComputedStyle(e).backgroundColor), rota).toBe('rgb(46, 47, 51)');
+      expect(await card.evaluate((e) => getComputedStyle(e).borderTopColor), rota).not.toBe('rgb(229, 231, 235)');
+    }
+  });
+});
+
+test.describe('auth logado', () => {
+  test('Discord e Autorizar conexão: sem overflow e card de largura total', async ({ page }) => {
+    await page.route(/\/api\/v1\/oauth\/clientes\/[^/]+$/, (r) => r.fulfill({ json: { client_id: 'e2e', client_name: 'Claude' } }));
+    for (const w of [360, 390, 430, 768]) {
+      await page.setViewportSize({ width: w, height: 844 });
+      await gotoApp(page, '/discord/link');
+      await page.locator('.auth-status-card').waitFor();
+      expect(await overflowOffenders(page), `discord @ ${w}`).toEqual([]);
+      await gotoApp(page, '/conexoes/autorizar?client_id=e2e&redirect_uri=https%3A%2F%2Fclaude.ai%2Fapi%2Fcallback');
+      await page.locator('.autorizar-acoes').waitFor();
+      expect(await overflowOffenders(page), `autorizar @ ${w}`).toEqual([]);
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoApp(page, '/discord/link');
+    await page.locator('.auth-status-card').waitFor();
+    const d = await page.locator('.auth-status-card').boundingBox();
+    expect(Math.round(d.x)).toBe(16);
+    expect(Math.round(d.width)).toBe(390 - 32);
+    expect(await smallTargets(page, '.auth-status-card')).toEqual([]);
+    await gotoApp(page, '/conexoes/autorizar?client_id=e2e&redirect_uri=https%3A%2F%2Fclaude.ai%2Fapi%2Fcallback');
+    await page.locator('.autorizar-acoes').waitFor();
+    expect(Math.round((await page.locator('.autorizar-card').boundingBox()).width)).toBe(390 - 32);
+    expect(await smallTargets(page, '.autorizar-card')).toEqual([]);
+  });
+});

@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { resetPassword } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import zxcvbn from 'zxcvbn';
-import '../Login/styles.css'; // Usando o mesmo CSS global de auth
+import './styles.css'; // .auth-simple-* e força de senha
 import { logger } from '../../utils/logger';
 
 export function ResetPassword() {

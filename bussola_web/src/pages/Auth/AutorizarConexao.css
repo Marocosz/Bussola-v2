@@ -64,3 +64,28 @@
     opacity: 0.6;
     cursor: wait;
 }
+
+@media (max-width: 768px) {
+    .autorizar-page {
+        align-items: flex-start;
+        padding: calc(var(--safe-top) + var(--sp-6)) var(--sp-4) var(--sp-6);
+    }
+
+    .autorizar-card {
+        max-width: none;
+        padding: var(--sp-5) var(--sp-4);
+    }
+
+    .autorizar-opcao {
+        min-height: var(--tap-min);
+    }
+
+    .autorizar-acoes {
+        gap: var(--sp-2);
+    }
+
+    .autorizar-btn {
+        flex: 1;
+        min-height: 48px;
+    }
+}

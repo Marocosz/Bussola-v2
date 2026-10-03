@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
 import api from '../../services/api';
 import logoBussola from '../../assets/images/bussola.svg';
+import './styles.css';
 
 export function DiscordLink() {
     const [searchParams] = useSearchParams();
@@ -55,26 +56,8 @@ export function DiscordLink() {
     }, [token, navigate, addToast]);
 
     return (
-        <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100vh',
-            backgroundColor: 'var(--cor-fundo-principal)',
-            color: 'var(--cor-texto-principal)',
-            padding: '20px',
-            textAlign: 'center',
-        }}>
-            <div style={{
-                background: 'var(--cor-fundo-card)',
-                padding: '40px',
-                borderRadius: '12px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                maxWidth: '450px',
-                width: '100%',
-                border: '1px solid var(--cor-borda-suave, #e5e7eb)',
-            }}>
+        <div className="auth-status-page">
+            <div className="auth-status-card">
                 <img
                     src={logoBussola}
                     alt="Logo Bússola"
