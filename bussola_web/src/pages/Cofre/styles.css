@@ -641,6 +641,14 @@
         user-select: all;
     }
 
+    /* Máscara (24 pontos) numa linha só: o que não cabe é cortado (sem um ponto órfão na 2ª linha). */
+    .cofre-scope .secret-field .text-masked {
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
     .cofre-scope .secret-actions {
         gap: var(--sp-2);
     }

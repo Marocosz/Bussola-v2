@@ -541,6 +541,20 @@ test.describe('ver segredo e área de transferência', () => {
     await expect(page.locator('.modal-overlay.is-sheet .text-masked')).toHaveAttribute('aria-label', 'Senha oculta');
   });
 
+  for (const w of [360, 390, 430]) {
+    test(`máscara do valor oculto fica numa linha só a ${w}px (sem ponto órfão)`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: 844 });
+      await stubClipboard(page);
+      await gotoApp(page, '/cofre');
+      await abrirSegredo(page, 'E2E Banco Zeta');
+      const mascara = page.locator('.modal-overlay.is-sheet .text-masked');
+      await expect(mascara).toBeVisible();
+      const { altura, fonte } = await mascara.evaluate((e) => ({ altura: e.getBoundingClientRect().height, fonte: parseFloat(getComputedStyle(e).fontSize) }));
+      expect(altura).toBeLessThan(fonte * 2); // uma linha (duas passariam de 2× o tamanho da fonte)
+      expect(await overflowOffenders(page)).toEqual([]);
+    });
+  }
+
   test('fechou com a escrita ainda pendente: limpa na hora, sem timer órfão', async ({ page }) => {
     await stubClipboard(page);
     await page.clock.install({ time: FIXED_NOW });
