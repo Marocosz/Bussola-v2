@@ -6,6 +6,7 @@ import { logger } from '../../utils/logger';
 import { AiAssistant } from '../../components/AiAssistant';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { Fab } from '../../components/mobile/Fab';
+import { proximoIndiceRoving } from '../../components/mobile/rovingKeys';
 
 import {
     getBioData,
@@ -28,6 +29,11 @@ import './styles.css';
 // No celular, acima disto a linha de volume vira uma barra contínua (blocos de 3px não cabem).
 const VOL_MAX_BLOCOS = 12;
 
+const ABAS_PLANO = [
+    { value: 'treino', label: 'Plano de Treino' },
+    { value: 'nutricao', label: 'Plano de Dieta' },
+];
+
 export function Ritmo() {
     const { addToast } = useToast();
     // [NOVO] Inicializa o Dialog
@@ -46,6 +52,14 @@ export function Ritmo() {
 
     // Estado da Aba
     const [activeTab, setActiveTab] = useState('treino');
+    const onAbasKeyDown = (e) => {
+        const atual = ABAS_PLANO.findIndex((a) => a.value === activeTab);
+        const prox = proximoIndiceRoving(e.key, atual, ABAS_PLANO.length, 'horizontal');
+        if (prox === null) return;
+        e.preventDefault();
+        setActiveTab(ABAS_PLANO[prox].value);
+        document.getElementById(`ritmo-tab-${ABAS_PLANO[prox].value}`)?.focus();
+    };
 
     // Estados dos Modais
     const [showBioModal, setShowBioModal] = useState(false);
@@ -405,25 +419,23 @@ export function Ritmo() {
                 </div>
 
                 <div className="column-header-flex plans-header-container">
-                    <div className="tab-selector-wrapper" role="tablist" aria-label="Planos">
-                        <button
-                            type="button"
-                            role="tab"
-                            aria-selected={activeTab === 'treino'}
-                            className={`tab-btn-pill ${activeTab === 'treino' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('treino')}
-                        >
-                            Plano de Treino
-                        </button>
-                        <button
-                            type="button"
-                            role="tab"
-                            aria-selected={activeTab === 'nutricao'}
-                            className={`tab-btn-pill ${activeTab === 'nutricao' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('nutricao')}
-                        >
-                            Plano de Dieta
-                        </button>
+                    {/* Abas com teclado (←/→, Home/End; tabindex móvel) e ligadas ao painel abaixo. */}
+                    <div className="tab-selector-wrapper" role="tablist" aria-label="Planos" onKeyDown={onAbasKeyDown}>
+                        {ABAS_PLANO.map((a) => (
+                            <button
+                                key={a.value}
+                                type="button"
+                                role="tab"
+                                id={`ritmo-tab-${a.value}`}
+                                aria-controls={activeTab === a.value ? 'ritmo-tabpanel' : undefined}
+                                aria-selected={activeTab === a.value}
+                                tabIndex={activeTab === a.value ? 0 : -1}
+                                className={`tab-btn-pill ${activeTab === a.value ? 'active' : ''}`}
+                                onClick={() => setActiveTab(a.value)}
+                            >
+                                {a.label}
+                            </button>
+                        ))}
                     </div>
 
                     {/* No celular a criação vai para o Fab */}
@@ -437,7 +449,7 @@ export function Ritmo() {
                     )}
                 </div>
 
-                <section className="ritmo-content-area" style={{ opacity: refreshing ? 0.6 : 1, transition: 'opacity 0.2s ease' }}>
+                <section className="ritmo-content-area" role="tabpanel" id="ritmo-tabpanel" aria-labelledby={`ritmo-tab-${activeTab}`} style={{ opacity: refreshing ? 0.6 : 1, transition: 'opacity 0.2s ease' }}>
                     {activeTab === 'treino' && (
                         <div className="tab-content fade-in">
                             <div className="diet-selection-section">
