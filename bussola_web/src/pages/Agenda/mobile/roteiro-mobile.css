@@ -381,6 +381,12 @@
         display: grid;
         place-items: center;
         line-height: 1;
+        margin: 0; /* <button>: sem a margem negativa do button.close-btn de toque (o cabeçalho já tem o respiro) */
+    }
+
+    /* Hora ao lado da data: largura para "Hora..." inteiro a partir de 360px (o padrão de 110px cortava). */
+    .agenda-scope .agenda-modal .pk-datetime-fields .pk-wrapper:last-child {
+        width: 128px;
     }
 
     .agenda-scope .agenda-modal .modal-body {

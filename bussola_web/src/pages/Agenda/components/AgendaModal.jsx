@@ -68,7 +68,7 @@ export function AgendaModal({ active, closeModal, onUpdate, editingData, initial
             <div className="modal-content" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <h3>{editingData ? 'Editar Compromisso' : 'Novo Compromisso'}</h3>
-                    <span className="close-btn" role="button" aria-label="Fechar" onClick={closeModal}>&times;</span>
+                    <button type="button" className="close-btn" aria-label="Fechar" onClick={closeModal}>&times;</button>
                 </div>
                 <form onSubmit={handleSubmit}>
                     <div className="modal-body">
