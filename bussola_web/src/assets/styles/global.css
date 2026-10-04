@@ -46,8 +46,9 @@ body.light-theme {
     --cor-fundo-hover: rgba(0, 0, 0, 0.05);
     --cor-texto-principal: #212529;
     --cor-texto-secundario: #636363;
-    --cor-cinza-botao: #8b8a8a;
-    --cor-cinza-botao-hover: #6a6a6a;
+    /* texto branco: #6a6a6a dá 5.4:1 (era #8b8a8a, 3.4:1); hover mais escuro, 7.5:1 */
+    --cor-cinza-botao: #6a6a6a;
+    --cor-cinza-botao-hover: #555555;
     --cor-scrollbar: #CED4DA;
     --cor-scrollbar-hover: #ADB5BD;
 }
