@@ -84,6 +84,22 @@ export const AiAssistant =({ context }) => {
     };
   }, [isDragging]);
 
+  // Janela redimensionada: o botão é mostrado dentro da tela (posição limitada na hora de desenhar).
+  // A posição guardada não muda — ao alargar de novo, ele volta ao lugar (e um redimensionamento
+  // de passagem, como o de uma captura, não o tira do canto).
+  const [viewport, setViewport] = useState(() => ({
+    w: typeof window !== 'undefined' ? window.innerWidth : 0,
+    h: typeof window !== 'undefined' ? window.innerHeight : 0,
+  }));
+  useEffect(() => {
+    const aoRedimensionar = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener('resize', aoRedimensionar);
+    return () => window.removeEventListener('resize', aoRedimensionar);
+  }, []);
+  const limitar = (v, max) => Math.max(10, Math.min(max, v));
+  const left = limitar(position.x, viewport.w - 60);
+  const top = limitar(position.y, viewport.h - 60);
+
   const positionClass = `pos-${smartPos.x}-${smartPos.y}`;
 
   // No celular o assistente abre pelo botão da topbar (sheet de tela cheia).
@@ -93,7 +109,7 @@ export const AiAssistant =({ context }) => {
     <div
       ref={dragRef}
       className={`ai-floating-container ${isOpen ? 'open' : ''} ${isDragging ? 'dragging' : ''}`}
-      style={{ left: position.x, top: position.y }}
+      style={{ left, top }}
       onMouseDown={handleMouseDown}
     >
       <div className={`ai-content-slider ${positionClass}`}>
