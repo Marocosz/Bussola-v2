@@ -186,6 +186,34 @@
     -webkit-tap-highlight-color: transparent;
 }
 
+.financas-scope .m-tx-row {
+    position: relative;
+}
+
+/* Área clicável da linha: botão transparente que cobre a linha (fora do grid, absoluto). */
+.financas-scope .m-tx-hit {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.financas-scope .m-tx-hit:focus-visible {
+    outline: 2px solid var(--cor-azul-primario);
+    outline-offset: -2px;
+}
+
+/* Só o "Efetivar" fica por cima da área da linha (tags e textos continuam abrindo as ações). */
+.financas-scope .m-tx-efetivar {
+    position: relative;
+    z-index: 1;
+}
+
 .financas-scope .m-tx-row:last-child {
     border-bottom: none;
 }

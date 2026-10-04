@@ -38,6 +38,20 @@ async function conferirPainel(page, tablist) {
   await expect(painel).toHaveAttribute('aria-labelledby', await ativa.getAttribute('id'));
 }
 
+test('Provisões: linha sem controle aninhado (área da linha e Efetivar são irmãos) e Enter abre as ações', async ({ page }) => {
+  await gotoApp(page, '/financas');
+  await page.getByRole('button', { name: 'Remover filtro Este mês' }).click();
+  const linha = page.locator('.m-tx-row').filter({ has: page.locator('.m-tx-efetivar') }).first();
+  await expect(linha).toBeVisible();
+  // Nenhum controle interativo dentro de outro (role=button/button contendo button).
+  expect(await page.evaluate(() => [...document.querySelectorAll('.m-tx-row [role="button"] button, [role="button"].m-tx-row button, .m-tx-row button button')].length)).toBe(0);
+  const abrir = linha.locator('.m-tx-hit');
+  await expect(abrir).toHaveAttribute('aria-label', /^Ações de /);
+  await abrir.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.action-sheet')).toBeVisible();
+});
+
 test.describe('abas com teclado e painel ligado', () => {
   test('Provisões: segmentado com setas/Home/End e tabpanel aria-labelledby', async ({ page }) => {
     await gotoApp(page, '/financas');

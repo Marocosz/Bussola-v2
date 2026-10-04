@@ -287,7 +287,7 @@ test.describe('ações da linha', () => {
   test('pontual: ActionSheet com Editar e Excluir; Editar abre o form preenchido', async ({ page }) => {
     await gotoApp(page, '/financas');
     await buscar(page, 'E2E Café');
-    await page.locator('.m-tx-row .m-tx-title').click();
+    await page.locator('.m-tx-row .m-tx-hit').click(); // toque na linha (o botão que cobre a linha)
     const sheet = page.locator('.action-sheet');
     await expect(sheet.locator('.action-sheet-titles strong')).toHaveText(DESC);
     await expect(sheet.locator(ITEM)).toHaveText(['Editar', 'Excluir']);
@@ -302,7 +302,7 @@ test.describe('ações da linha', () => {
   test('teclado: Enter na linha abre o ActionSheet', async ({ page }) => {
     await gotoApp(page, '/financas');
     await buscar(page, 'E2E Café');
-    await page.locator('.m-tx-row').focus();
+    await page.locator('.m-tx-row .m-tx-hit').focus();
     await page.keyboard.press('Enter');
     await expect(page.locator('.action-sheet')).toBeVisible();
     await page.keyboard.press('Escape');
@@ -316,7 +316,7 @@ test.describe('ações da linha', () => {
     const chip = await pendente.locator('.m-tx-efetivar').boundingBox();
     expect(chip.height).toBeGreaterThanOrEqual(44);
     expect(chip.width).toBeGreaterThanOrEqual(44);
-    await pendente.locator('.m-tx-title').click();
+    await pendente.locator('.m-tx-hit').click();
     const items = page.locator('.action-sheet').locator(ITEM);
     await expect(items).toHaveText(['Efetivar', 'Editar', 'Ver histórico', 'Encerrar recorrência']);
     await expect(items.first()).toHaveClass(/is-primary/);
@@ -328,7 +328,7 @@ test.describe('ações da linha', () => {
   test('parcelada: Ver parcelas abre o sheet com todas as parcelas do grupo', async ({ page }) => {
     await gotoApp(page, '/financas');
     await buscar(page, 'Macbook');
-    await page.locator('.m-tx-row .m-tx-title').first().click();
+    await page.locator('.m-tx-row .m-tx-hit').first().click();
     await page.locator('.action-sheet').getByRole('button', { name: 'Ver parcelas' }).click();
     const sheet = page.locator('.m-parcelas');
     await expect(sheet.locator('.parcela-sub-row')).toHaveCount(10);
@@ -341,7 +341,7 @@ test.describe('ações da linha', () => {
   test('Excluir pelo ActionSheet remove a transação', async ({ page }) => {
     await gotoApp(page, '/financas');
     await buscar(page, 'E2E Café');
-    await page.locator('.m-tx-row .m-tx-title').click();
+    await page.locator('.m-tx-row .m-tx-hit').click();
     await page.locator('.action-sheet').getByRole('button', { name: 'Excluir' }).click();
     await page.getByRole('button', { name: 'Sim, excluir' }).click();
     await expect(page.getByText('Transação removida.')).toBeVisible();

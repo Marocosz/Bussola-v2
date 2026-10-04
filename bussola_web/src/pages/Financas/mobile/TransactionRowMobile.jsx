@@ -104,17 +104,20 @@ export function TransactionRowMobile({ transacao: t, onUpdate, onEdit, onEditCof
 
     return (
         <>
+            {/* A área clicável da linha é um botão que cobre a linha, IRMÃO do "Efetivar"
+                (que fica por cima): sem controle interativo dentro de outro. */}
             <div
                 className={`m-tx-row ${apagada ? 'is-muted' : ''} ${isDeleting ? 'is-deleting' : ''}`}
-                role={actions.length ? 'button' : undefined}
-                tabIndex={actions.length ? 0 : undefined}
                 data-tipo={isCofre ? 'cofre' : tipo}
-                onClick={abrir}
-                onKeyDown={(e) => {
-                    if (e.target !== e.currentTarget) return;
-                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(); }
-                }}
             >
+                {actions.length > 0 && (
+                    <button
+                        type="button"
+                        className="m-tx-hit"
+                        aria-label={`Ações de ${t.descricao}, ${sinal} ${fmtBRL(t.valor)}`}
+                        onClick={abrir}
+                    />
+                )}
                 <span className="row-cat-icon m-tx-icon"><i className={icone} style={{ color: cor }} /></span>
                 <span className={`m-tx-title ${apagada ? 'row-descricao-encerrada' : ''}`}>{t.descricao}</span>
                 <span className={`row-valor m-tx-valor ${valorCls} ${apagada ? 'row-valor-encerrado' : ''}`}>{sinal} {fmtBRL(t.valor)}</span>
