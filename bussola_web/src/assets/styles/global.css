@@ -894,11 +894,13 @@ textarea:focus:invalid {
 }
 .selo-badge i { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25)); }
 
-/* leve "levantada" e giro do selo no hover do card */
-.selo-card:hover .selo-badge {
-    transform: translateY(-3px) rotate(-4deg);
-    box-shadow:
-        0 0 0 4px var(--cor-card-principal),
-        0 12px 22px -6px rgba(0, 0, 0, 0.55),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+/* leve "levantada" e giro do selo no hover do card — só com mouse (no toque ficaria preso depois do tap) */
+@media (hover: hover) and (pointer: fine) {
+    .selo-card:hover .selo-badge {
+        transform: translateY(-3px) rotate(-4deg);
+        box-shadow:
+            0 0 0 4px var(--cor-card-principal),
+            0 12px 22px -6px rgba(0, 0, 0, 0.55),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
 }
