@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Segmented, segmentedPanelProps } from '../../../components/mobile/Segmented';
+import { Segmented } from '../../../components/mobile/Segmented';
+import { segmentedPanelProps } from '../../../components/mobile/segmentedIds';
 import { Fab } from '../../../components/mobile/Fab';
 import { ActionSheet } from '../../../components/mobile/ActionSheet';
 import { MetasTab } from '../../Metas/MetasTab';

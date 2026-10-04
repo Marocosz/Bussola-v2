@@ -1,20 +1,12 @@
 import { useRef } from 'react';
 import { proximoIndiceRoving } from './rovingKeys';
-
-const tabId = (idBase, value) => `${idBase}-tab-${value}`;
-const panelId = (idBase) => `${idBase}-panel`;
-
-/** Props do painel controlado por um Segmented com `idBase` (role=tabpanel ligado à aba ativa). */
-export const segmentedPanelProps = (idBase, value) => ({
-    role: 'tabpanel',
-    id: panelId(idBase),
-    'aria-labelledby': tabId(idBase, value),
-});
+import { segmentedTabId as tabId, segmentedPanelId as panelId } from './segmentedIds';
 
 /**
  * Controle segmentado (abas de página ou alternância). Cada opção é um `role="tab"`.
  * Teclado: setas esquerda/direita, Home e End trocam a aba (tabindex móvel: só a ativa entra no Tab).
- * Com `idBase`, a aba ativa aponta (aria-controls) para o painel de `segmentedPanelProps(idBase, value)`.
+ * Com `idBase`, a aba ativa aponta (aria-controls) para o painel de `segmentedPanelProps(idBase, value)`
+ * (segmentedIds.js).
  */
 export function Segmented({ options, value, onChange, label, className = '', idBase }) {
     const refs = useRef([]);
