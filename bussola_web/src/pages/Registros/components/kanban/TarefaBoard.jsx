@@ -184,9 +184,6 @@ export function TarefaBoard({ novaRef }) {
             try {
                 const servidor = await getTarefasBoard();
                 await reordenarTarefas(keyToStatus(to), idsParaGravar(servidor, novo, to, movidoId));
-                const atual = await getTarefasBoard();
-                if (!antesDoArrasteRef.current) setColunas(colunasDoBoard(atual));
-                return true;
             } catch (e) {
                 logger.error('Erro ao reordenar', { error: String(e) });
                 // Só desfaz se o quadro ainda é o que este salvamento produziu; se outra mudança
@@ -196,6 +193,16 @@ export function TarefaBoard({ novaRef }) {
                 addToast({ type: 'error', title: 'Erro', description: 'Não consegui salvar a mudança.' });
                 return false;
             }
+            // Já gravou: a releitura é à parte. Se ela falhar, a mudança NÃO é desfeita nem dá erro de
+            // salvar; o quadro fica com o estado otimista e recarrega pelo caminho normal (carregar).
+            try {
+                const atual = await getTarefasBoard();
+                if (!antesDoArrasteRef.current) setColunas(colunasDoBoard(atual));
+            } catch (e) {
+                logger.error('Erro ao reler o board depois de gravar', { error: String(e) });
+                carregar();
+            }
+            return true;
         });
     }, [addToast, carregar, enfileirar]);
 
