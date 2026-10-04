@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { test, expect } from '@playwright/test';
-import { gotoApp, apiJson } from './helpers.mjs';
+import { gotoApp, apiJson, congelarAgenda } from './helpers.mjs';
 
 const SELETORES = [
   '.main-container', '.btn-action-icon', '.layout-grid-custom', '.agenda-column', '.column-header-flex',
@@ -137,6 +137,8 @@ export function registrarTestesDeEscopo(projeto) {
   for (const [nome, rota] of ROTAS) {
     test(`estilos computados de ${nome} (${projeto}) não mudam`, async ({ page, request }) => {
       if (nome === 'home') await page.route(/\/home\/news(\?.*)?$/, (route) => route.fulfill({ json: NEWS }));
+      // O "hoje" do calendário vem do relógio real do servidor: congela, senão a captura muda de um dia para o outro.
+      if (rota === '/agenda') await congelarAgenda(page);
       const destino = rota === 'leitura' ? await rotaDeLeitura(page, request) : rota;
       await gotoApp(page, destino);
       if (rota === 'leitura') await page.locator('.estudo-leitura').waitFor();
@@ -156,6 +158,7 @@ export function registrarTestesDeEscopo(projeto) {
     if (so && so !== projeto) continue;
     test(`estilos computados de ${nome} (${projeto}) não mudam`, async ({ page }) => {
       if (rota === '/home') await page.route(/\/home\/news(\?.*)?$/, (route) => route.fulfill({ json: NEWS }));
+      if (rota === '/agenda') await congelarAgenda(page);
       await gotoApp(page, rota);
       await preparar(page);
       await conferir(page, projeto, nome);
