@@ -85,6 +85,27 @@ for (const [nome, abrir, opts] of TELAS) {
   });
 }
 
+// Causa do flake de `registros-tarefas`: a captura fullPage redimensiona a janela por um instante
+// (o layout de celular monta) e os chips de coluna usavam scrollIntoView, que também rolava a JANELA.
+// Sob carga isso caía dentro da captura, com a página rolada 86px (sidebar/Fab fixos deslocados).
+test('desktop: estreitar a janela e voltar não rola a página (chips só rolam a própria faixa)', async ({ page }) => {
+  await gotoApp(page, '/registros');
+  await aba(page, 'Tarefas');
+  await page.locator('.kb-board').waitFor();
+  await page.evaluate(() => {
+    window.scrollTo(0, 0);
+    window.__rolou = false;
+    window.addEventListener('scroll', () => { window.__rolou = true; });
+  });
+  await page.setViewportSize({ width: 320, height: 60 });
+  await page.locator('.kb-m-chips').waitFor();
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.locator('.kb-toolbar').waitFor();
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  expect(await page.evaluate(() => ({ rolou: window.__rolou, y: window.scrollY }))).toEqual({ rolou: false, y: 0 });
+});
+
 test('desktop: cabeçalho com abas, sem segmentado nem Fab', async ({ page }) => {
   await gotoApp(page, '/registros');
   await expect(page.locator('.registros-main-header')).toBeVisible();

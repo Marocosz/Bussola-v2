@@ -5,9 +5,18 @@ import { COLUNAS } from './columns';
 export function BoardMobileBar({ contagens, ativa, onSelect, filtrosAtivos, onFiltro }) {
     const chipsRef = useRef(null);
 
-    // Mantém o chip da coluna visível à vista quando o swipe muda a coluna.
+    // Mantém o chip da coluna visível à vista quando o swipe muda a coluna. Rola só a faixa de chips
+    // (na horizontal): scrollIntoView também rolaria a janela, e a página pulava na vertical.
     useEffect(() => {
-        chipsRef.current?.children[ativa]?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+        const faixa = chipsRef.current;
+        const chip = faixa?.children[ativa];
+        if (!chip) return;
+        const ini = chip.getBoundingClientRect().left - faixa.getBoundingClientRect().left + faixa.scrollLeft;
+        const fim = ini + chip.getBoundingClientRect().width;
+        let left = null;
+        if (ini < faixa.scrollLeft) left = ini;
+        else if (fim > faixa.scrollLeft + faixa.clientWidth) left = fim - faixa.clientWidth;
+        if (left !== null) faixa.scrollTo({ left, behavior: 'smooth' });
     }, [ativa]);
 
     return (
