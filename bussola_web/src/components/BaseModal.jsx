@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useCallback } from 'react';
+import { useEffect, useLayoutEffect, useRef, useCallback, useState, useId } from 'react';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { lockScroll, unlockScroll } from '../utils/scrollLock';
 import { useSheetHistory } from '../hooks/useSheetHistory';
@@ -22,6 +22,10 @@ const toque = () => window.matchMedia?.('(pointer: coarse)').matches ?? false;
 export function BaseModal({ children, onClose, onBack, className = '', sheet = 'auto' }) {
     const mouseDownTarget = useRef(null);
     const overlayRef = useRef(null);
+    // Quem tinha o foco ao abrir: lido no 1º render, antes de qualquer autoFocus dos filhos (que roda no commit).
+    const [anterior] = useState(() => document.activeElement);
+    const idTitulo = useId();
+    const focoInicial = useRef(null);
     const isMobile = useIsMobile();
     const pedirFechar = onBack ?? onClose;
     // Celular: o Voltar (Android/navegador) fecha o modal/sheet de cima.
@@ -37,9 +41,24 @@ export function BaseModal({ children, onClose, onBack, className = '', sheet = '
     // autoFocus/efeitos de layout dos filhos (que, se já focaram algo dentro, são respeitados).
     useLayoutEffect(() => {
         const overlay = overlayRef.current;
-        const anterior = document.activeElement;
-        if (overlay && !overlay.contains(document.activeElement)) {
-            const alvo = overlay.querySelector('[role="dialog"], .modal-content') || overlay.firstElementChild || overlay;
+        // Diálogo sem papel próprio (modais simples) ganha role/aria-modal e nome pelo título.
+        const dialogo = overlay?.querySelector('[role="dialog"], .modal-content');
+        if (dialogo && !dialogo.hasAttribute('role')) {
+            dialogo.setAttribute('role', 'dialog');
+            dialogo.setAttribute('aria-modal', 'true');
+            const titulo = dialogo.querySelector('h1, h2, h3');
+            if (titulo && !dialogo.hasAttribute('aria-label') && !dialogo.hasAttribute('aria-labelledby')) {
+                if (!titulo.id) titulo.id = `${idTitulo}-t`;
+                dialogo.setAttribute('aria-labelledby', titulo.id);
+            }
+        }
+        if (overlay && overlay.contains(document.activeElement)) {
+            focoInicial.current = document.activeElement;
+        } else if (overlay && focoInicial.current?.isConnected && overlay.contains(focoInicial.current)) {
+            // Remontagem simulada do StrictMode: o cleanup devolveu o foco ao opener; refaz o autoFocus.
+            focoInicial.current.focus({ preventScroll: true });
+        } else if (overlay) {
+            const alvo = dialogo || overlay.firstElementChild || overlay;
             if (!alvo.hasAttribute('tabindex')) alvo.setAttribute('tabindex', '-1');
             alvo.setAttribute('data-foco-modal', '');
             alvo.focus({ preventScroll: true });
@@ -52,7 +71,7 @@ export function BaseModal({ children, onClose, onBack, className = '', sheet = '
             if (atual && atual !== document.body && !overlay?.contains(atual)) return;
             anterior.focus({ preventScroll: true });
         };
-    }, []);
+    }, [anterior, idTitulo]);
 
     const handleOverlayClick = useCallback((e) => {
         if (e.target === e.currentTarget && mouseDownTarget.current === e.currentTarget) onClose();

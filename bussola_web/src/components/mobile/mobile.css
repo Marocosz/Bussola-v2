@@ -27,7 +27,7 @@
     width: 38px;
     height: 5px;
     border-radius: 3px;
-    background: var(--cor-cinza-botao-hover);
+    background: var(--cor-sheet-grab);
     margin: var(--sp-2) auto 0;
     flex-shrink: 0;
 }

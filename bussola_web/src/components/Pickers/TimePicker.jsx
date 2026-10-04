@@ -81,8 +81,9 @@ export function TimePicker({
         const centralizar = (col, v) => {
             const el = col?.querySelector(`[data-v="${v}"]`);
             if (!el) return;
-            const delta = el.getBoundingClientRect().top - col.getBoundingClientRect().top;
-            col.scrollTop += delta - (col.clientHeight - el.offsetHeight) / 2;
+            // Offsets de layout (ignoram o scale() da animação de abertura); getBoundingClientRect errava ~2%.
+            const topo = el.offsetParent === col ? el.offsetTop : el.offsetTop - col.offsetTop;
+            col.scrollTop = topo - (col.clientHeight - el.offsetHeight) / 2;
         };
         const id = requestAnimationFrame(() => {
             if (selH) centralizar(hColRef.current, selH);

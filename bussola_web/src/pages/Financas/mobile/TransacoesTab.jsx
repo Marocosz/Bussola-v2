@@ -33,10 +33,23 @@ export function TransacoesTab({ data, loading, transactions, filters, sortConfig
         const antes = window.scrollY;
         alvoRef.current.scrollIntoView({ block: 'start' });
         puloRef.current = { antes, depois: window.scrollY };
+        usuarioRolou.current = false;
     });
+    // "Ninguém rolou depois": só gestos do usuário contam (o layout pode reposicionar o scroll sozinho
+    // ao trocar de celular para desktop, então comparar scrollY não é confiável).
+    const usuarioRolou = useRef(false);
+    useEffect(() => {
+        const marca = () => { usuarioRolou.current = true; };
+        const eventos = ['wheel', 'touchmove', 'keydown', 'pointerdown'];
+        eventos.forEach((e) => window.addEventListener(e, marca, { passive: true }));
+        return () => eventos.forEach((e) => window.removeEventListener(e, marca));
+    }, []);
     useEffect(() => () => {
         const pulo = puloRef.current;
-        if (pulo && pulo.depois !== pulo.antes && window.scrollY === pulo.depois) window.scrollTo(0, pulo.antes);
+        if (pulo && pulo.depois !== pulo.antes && !usuarioRolou.current) window.scrollTo(0, pulo.antes);
+        // Rearma: no StrictMode (dev) o desmonta/remonta simulado desfaria o pulo e ele nunca mais voltaria.
+        puloRef.current = null;
+        jaRolou.current = false;
     }, []);
 
     const chips = activeFilterChips(filters, data);

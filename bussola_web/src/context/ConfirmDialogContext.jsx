@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useRef } from 'react';
+import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useSheetHistory } from '../hooks/useSheetHistory';
 import { useEscape } from '../hooks/useEscape';
@@ -18,7 +18,21 @@ export function ConfirmDialogProvider({ children }) {
 
     const awaitingPromiseRef = useRef(null);
 
+    // Quem tinha o foco ao abrir: ao fechar o diálogo, o foco volta para lá (senão cai no body).
+    const openerRef = useRef(null);
+    const estavaAberto = useRef(false);
+    useEffect(() => {
+        if (estavaAberto.current && !dialogState.isOpen) {
+            const opener = openerRef.current;
+            openerRef.current = null;
+            const textoNoToque = window.matchMedia?.('(pointer: coarse)').matches && opener?.matches?.('input, textarea, select, [contenteditable="true"]');
+            if (opener?.isConnected && !textoNoToque) opener.focus({ preventScroll: true });
+        }
+        estavaAberto.current = dialogState.isOpen;
+    }, [dialogState.isOpen]);
+
     const openDialog = (opts) => {
+        if (!estavaAberto.current) openerRef.current = document.activeElement;
         setDialogState({
             isOpen: true,
             title: opts.title || 'Tem certeza?',
@@ -57,7 +71,7 @@ export function ConfirmDialogProvider({ children }) {
             
             {dialogState.isOpen && (
                 <div className="confirm-overlay">
-                    <div className="confirm-modal">
+                    <div className="confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="confirm-titulo">
                         <div className="confirm-header">
                             <div className={`icon-badge ${dialogState.variant}`}>
                                 {dialogState.variant === 'danger' ? (
@@ -66,7 +80,7 @@ export function ConfirmDialogProvider({ children }) {
                                     <i className="fa-solid fa-circle-info"></i>
                                 )}
                             </div>
-                            <h3>{dialogState.title}</h3>
+                            <h3 id="confirm-titulo">{dialogState.title}</h3>
                         </div>
                         
                         <div className="confirm-body">

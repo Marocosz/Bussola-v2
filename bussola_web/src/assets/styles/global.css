@@ -25,6 +25,7 @@
     --cor-vermelho-delete-hover: #c0392b;
     --cor-cinza-botao: #484a4f;
     --cor-cinza-botao-hover: #5f6368;
+    --cor-sheet-grab: #5f6368;
     --cor-verde-sucesso: #27ae60;
     --cor-verde-sucesso-hover: #2ecc71;
     --cor-laranja-aviso: #f39c12;
@@ -49,6 +50,7 @@ body.light-theme {
     /* texto branco: #6a6a6a dá 5.4:1 (era #8b8a8a, 3.4:1); hover mais escuro, 7.5:1 */
     --cor-cinza-botao: #6a6a6a;
     --cor-cinza-botao-hover: #555555;
+    --cor-sheet-grab: #6a6a6a;
     --cor-scrollbar: #CED4DA;
     --cor-scrollbar-hover: #ADB5BD;
 }

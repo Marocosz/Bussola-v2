@@ -78,6 +78,20 @@ test('desktop cofre: nada do layout mobile aparece', async ({ page }) => {
   await expect(page.locator('.app-fab')).toHaveCount(0);
 });
 
+// Regressão: o modal com autoFocus guardava o próprio campo como "quem tinha o foco" e, ao fechar,
+// o foco caía no body. Tem de voltar para o botão que abriu.
+test('desktop cofre: Escape devolve o foco ao botão que abriu o modal', async ({ page }) => {
+  await gotoApp(page, '/cofre');
+  const abrir = page.getByRole('button', { name: 'Guardar Segredo' });
+  await abrir.click();
+  const modal = page.locator('.modal-content');
+  await expect(modal).toBeVisible();
+  await expect(modal.locator('input:focus, textarea:focus')).toHaveCount(1);
+  await page.keyboard.press('Escape');
+  await expect(modal).toHaveCount(0);
+  await expect(abrir).toBeFocused();
+});
+
 // Regressão: 'AAAA-MM-DD' era lido como meia-noite UTC e aparecia um dia antes no Brasil.
 test('desktop cofre: data de expiração mostra o dia gravado', async ({ page, request }) => {
   const criado = await apiJson(request, 'POST', '/cofre/', { titulo: 'E2E Data certa', valor: 'E2E-x', data_expiracao: '2026-12-25' });
