@@ -38,6 +38,74 @@ async function conferirPainel(page, tablist) {
   await expect(painel).toHaveAttribute('aria-labelledby', await ativa.getAttribute('id'));
 }
 
+// Grupo de radios/opções com tabindex móvel: só o selecionado no Tab; setas movem (e, em radio, selecionam).
+async function conferirRadios(page, grupo, { seleciona = true, proxima = 'ArrowRight' } = {}) {
+  const itens = grupo.locator(seleciona ? '[role="radio"]' : '[role="option"]');
+  const attr = seleciona ? 'aria-checked' : 'aria-selected';
+  const n = await itens.count();
+  expect(n).toBeGreaterThan(1);
+  const tabs = await itens.evaluateAll((els) => els.map((e) => e.getAttribute('tabindex')));
+  expect(tabs.filter((t) => t === '0')).toHaveLength(1);
+  expect(tabs.filter((t) => t === '-1')).toHaveLength(n - 1);
+  const i0 = tabs.indexOf('0');
+  await itens.nth(i0).focus();
+  await page.keyboard.press(proxima);
+  const i1 = (i0 + 1) % n;
+  await expect(itens.nth(i1)).toBeFocused();
+  if (seleciona) {
+    await expect(itens.nth(i1)).toHaveAttribute(attr, 'true');
+    await expect(itens.nth(i1)).toHaveAttribute('tabindex', '0');
+  }
+  await page.keyboard.press('End');
+  await expect(itens.nth(n - 1)).toBeFocused();
+  await page.keyboard.press('Home');
+  await expect(itens.nth(0)).toBeFocused();
+}
+
+test.describe('chips de escolha com teclado', () => {
+  test('detalhe da tarefa: status e prioridade com setas (radiogroup)', async ({ page }) => {
+    await gotoApp(page, '/registros');
+    await page.getByRole('tablist', { name: 'Seções de Registros' }).getByRole('tab', { name: 'Tarefas' }).click();
+    await page.locator('.app-fab').click();
+    const ov = page.locator('.modal-overlay.is-sheet-full');
+    await conferirRadios(page, ov.getByRole('radiogroup', { name: 'Status' }));
+    await conferirRadios(page, ov.getByRole('radiogroup', { name: 'Prioridade' }));
+  });
+
+  test('novo grupo: cores com setas (radiogroup)', async ({ page }) => {
+    await gotoApp(page, '/registros');
+    await page.locator('.reg-m-chips').getByRole('button', { name: 'Grupos', exact: true }).click();
+    await page.locator('.reg-sheet').getByRole('button', { name: 'Novo grupo' }).click();
+    const modal = page.locator('.modal-overlay.is-sheet', { has: page.locator('.compact-modal') });
+    await conferirRadios(page, modal.getByRole('radiogroup', { name: 'Cor' }));
+  });
+
+  test('grupo da nota: opções com ↑/↓ (listbox) sem escolher ao mover', async ({ page }) => {
+    await gotoApp(page, '/registros');
+    await page.locator('.app-fab').click();
+    await page.locator('.modal-overlay.is-sheet-full .nota-m-grupo').click();
+    const lista = page.locator('.reg-sheet').getByRole('listbox', { name: 'Grupo da nota' });
+    await conferirRadios(page, lista, { seleciona: false, proxima: 'ArrowDown' });
+    await expect(page.locator('.reg-sheet')).toHaveCount(1); // mover não escolhe nem fecha
+  });
+
+  test('quadro: chips de coluna com setas e aria-controls para a coluna', async ({ page }) => {
+    await gotoApp(page, '/registros');
+    await page.getByRole('tablist', { name: 'Seções de Registros' }).getByRole('tab', { name: 'Tarefas' }).click();
+    const chips = page.getByRole('tablist', { name: 'Colunas do quadro' }).getByRole('tab');
+    await expect(chips).toHaveCount(5);
+    for (const c of await chips.all()) {
+      const alvo = await c.getAttribute('aria-controls');
+      expect(alvo).toMatch(/^kb-col-/);
+      await expect(page.locator(`#${alvo}`)).toHaveAttribute('role', 'tabpanel');
+    }
+    await chips.first().focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(chips.nth(1)).toBeFocused();
+    await expect(chips.nth(1)).toHaveAttribute('aria-selected', 'true');
+  });
+});
+
 test('Provisões: linha sem controle aninhado (área da linha e Efetivar são irmãos) e Enter abre as ações', async ({ page }) => {
   await gotoApp(page, '/financas');
   await page.getByRole('button', { name: 'Remover filtro Este mês' }).click();

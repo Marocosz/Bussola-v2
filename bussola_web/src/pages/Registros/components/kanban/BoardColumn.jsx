@@ -42,7 +42,12 @@ function BoardColumnBase({ coluna, tarefas, cardVisivel, onCardClick, onQuickAdd
     );
 
     return (
-        <div className="kb-column" role={isMobile ? 'tabpanel' : undefined} aria-label={isMobile ? coluna.label : undefined}>
+        <div
+            className="kb-column"
+            id={isMobile ? `kb-col-${coluna.key}` : undefined}
+            role={isMobile ? 'tabpanel' : undefined}
+            aria-label={isMobile ? coluna.label : undefined}
+        >
             <div className="kb-column-head">
                 <span className="kb-column-accent" style={{ backgroundColor: coluna.accent }}></span>
                 <span className="kb-column-label">{coluna.label}</span>

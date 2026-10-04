@@ -6,6 +6,7 @@ import { useIsMobile } from '../../../../hooks/useIsMobile';
 import { BaseModal } from '../../../../components/BaseModal';
 import { ActionSheet } from '../../../../components/mobile/ActionSheet';
 import { DatePicker } from '../../../../components/Pickers';
+import { moverFocoRoving, tabIndexRoving } from '../../../../components/mobile/rovingKeys';
 import { SubtaskTree } from './SubtaskTree';
 import { COLUNAS, PRIO_COLORS } from './columns';
 
@@ -114,13 +115,17 @@ export function TarefaDetailPanel({ aberto, tarefa, onClose, onSaved }) {
                         <>
                             <div className="form-group">
                                 <span className="reg-campo-label" id="tarefa-status-label">Status</span>
-                                <div className="reg-chip-grid" role="radiogroup" aria-labelledby="tarefa-status-label">
-                                    {COLUNAS.map(c => (
+                                <div
+                                    className="reg-chip-grid" role="radiogroup" aria-labelledby="tarefa-status-label"
+                                    onKeyDown={(e) => { const i = moverFocoRoving(e, '[role="radio"]'); if (i !== null) setStatus(COLUNAS[i].status); }}
+                                >
+                                    {COLUNAS.map((c, i) => (
                                         <button
                                             key={c.key}
                                             type="button"
                                             role="radio"
                                             aria-checked={status === c.status}
+                                            tabIndex={tabIndexRoving(i, COLUNAS.findIndex(x => x.status === status))}
                                             className={`reg-chip ${status === c.status ? 'active' : ''}`}
                                             onClick={() => setStatus(c.status)}
                                         >
@@ -132,13 +137,17 @@ export function TarefaDetailPanel({ aberto, tarefa, onClose, onSaved }) {
                             </div>
                             <div className="form-group">
                                 <span className="reg-campo-label" id="tarefa-prio-label">Prioridade</span>
-                                <div className="reg-chip-grid" role="radiogroup" aria-labelledby="tarefa-prio-label">
-                                    {PRIOS.map(p => (
+                                <div
+                                    className="reg-chip-grid" role="radiogroup" aria-labelledby="tarefa-prio-label"
+                                    onKeyDown={(e) => { const i = moverFocoRoving(e, '[role="radio"]'); if (i !== null) setPrioridade(PRIOS[i]); }}
+                                >
+                                    {PRIOS.map((p, i) => (
                                         <button
                                             key={p}
                                             type="button"
                                             role="radio"
                                             aria-checked={prioridade === p}
+                                            tabIndex={tabIndexRoving(i, PRIOS.indexOf(prioridade))}
                                             className={`reg-chip ${prioridade === p ? 'active' : ''}`}
                                             onClick={() => setPrioridade(p)}
                                         >

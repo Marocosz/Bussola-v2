@@ -11,3 +11,21 @@ export function proximoIndiceRoving(key, atual, total, orientacao = 'ambas') {
     if (key === 'End') return total - 1;
     return null;
 }
+
+/**
+ * onKeyDown de um grupo (radiogroup, listbox, tablist): move o foco entre os itens `seletor` do
+ * grupo e devolve o índice novo (ou null se a tecla não navega). Quem chama decide se seleciona.
+ */
+export function moverFocoRoving(e, seletor, orientacao = 'ambas') {
+    const itens = [...e.currentTarget.querySelectorAll(seletor)].filter((el) => !el.disabled);
+    const atual = itens.indexOf(document.activeElement);
+    if (atual === -1) return null;
+    const prox = proximoIndiceRoving(e.key, atual, itens.length, orientacao);
+    if (prox === null) return null;
+    e.preventDefault();
+    itens[prox].focus();
+    return prox;
+}
+
+/** tabIndex do item i num grupo com tabindex móvel: o selecionado (ou o primeiro, se nenhum) é 0. */
+export const tabIndexRoving = (i, selecionado) => (i === (selecionado >= 0 ? selecionado : 0) ? 0 : -1);

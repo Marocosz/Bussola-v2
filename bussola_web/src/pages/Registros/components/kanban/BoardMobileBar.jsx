@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { COLUNAS } from './columns';
+import { moverFocoRoving } from '../../../../components/mobile/rovingKeys';
 
 /** Celular: chips de status (com contagem) que levam à coluna e o botão de filtros. */
 export function BoardMobileBar({ contagens, ativa, onSelect, filtrosAtivos, onFiltro }) {
@@ -21,13 +22,19 @@ export function BoardMobileBar({ contagens, ativa, onSelect, filtrosAtivos, onFi
 
     return (
         <div className="kb-m-bar">
-            <div className="kb-m-chips" role="tablist" aria-label="Colunas do quadro" ref={chipsRef} data-offscreen-ok>
+            {/* Abas das colunas: setas/Home/End trocam a coluna (tabindex móvel); cada chip controla a sua coluna. */}
+            <div
+                className="kb-m-chips" role="tablist" aria-label="Colunas do quadro" ref={chipsRef} data-offscreen-ok
+                onKeyDown={(e) => { const i = moverFocoRoving(e, '[role="tab"]', 'horizontal'); if (i !== null) onSelect(i); }}
+            >
                 {COLUNAS.map((col, i) => (
                     <button
                         key={col.key}
                         type="button"
                         role="tab"
                         aria-selected={ativa === i}
+                        aria-controls={`kb-col-${col.key}`}
+                        tabIndex={ativa === i ? 0 : -1}
                         aria-label={`${col.label}, ${contagens[i]} ${contagens[i] === 1 ? 'tarefa' : 'tarefas'}`}
                         className={`kb-m-chip ${ativa === i ? 'active' : ''}`}
                         style={{ '--kb-accent': col.accent }}

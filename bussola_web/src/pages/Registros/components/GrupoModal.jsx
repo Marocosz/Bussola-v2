@@ -3,6 +3,7 @@ import { createGrupo, updateGrupo } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 import { BaseModal } from '../../../components/BaseModal';
 import { useIsMobile } from '../../../hooks/useIsMobile';
+import { moverFocoRoving, tabIndexRoving } from '../../../components/mobile/rovingKeys';
 import '../styles.css';
 import { logger } from '../../../utils/logger';
 
@@ -102,13 +103,17 @@ export function GrupoModal({ active, closeModal, onUpdate, editingData, existing
                                 {/* No celular as cores ficam à vista (o popover cortaria dentro do sheet). */}
                                 <div className="form-group">
                                     <label id="grupo-cor-m">Cor</label>
-                                    <div className="grupo-cores-m" role="radiogroup" aria-labelledby="grupo-cor-m">
-                                        {availableColors.map(c => (
+                                    <div
+                                        className="grupo-cores-m" role="radiogroup" aria-labelledby="grupo-cor-m"
+                                        onKeyDown={(e) => { const i = moverFocoRoving(e, '[role="radio"]'); if (i !== null) setCor(availableColors[i]); }}
+                                    >
+                                        {availableColors.map((c, i) => (
                                             <button
                                                 key={c}
                                                 type="button"
                                                 role="radio"
                                                 aria-checked={cor === c}
+                                                tabIndex={tabIndexRoving(i, availableColors.indexOf(cor))}
                                                 aria-label={`Cor ${c}`}
                                                 className={`grupo-cor-m ${cor === c ? 'selected' : ''}`}
                                                 style={{ backgroundColor: c }}
