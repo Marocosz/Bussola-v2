@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Segmented } from '../../../components/mobile/Segmented';
+import { Segmented, segmentedPanelProps } from '../../../components/mobile/Segmented';
 import { Fab } from '../../../components/mobile/Fab';
 import { ActionSheet } from '../../../components/mobile/ActionSheet';
 import { MetasTab } from '../../Metas/MetasTab';
@@ -33,9 +33,9 @@ export function ProvisoesMobile({
         <div className="m-prov">
             <KpiStrip {...kpis} onOpenCaixa={onOpenCaixa} />
 
-            <Segmented label="Seções de Provisões" options={ABAS} value={aba} onChange={setAba} className="m-prov-tabs" />
+            <Segmented label="Seções de Provisões" options={ABAS} value={aba} onChange={setAba} className="m-prov-tabs" idBase="m-prov" />
 
-            <div className="m-prov-panel" role="tabpanel" aria-label={ABAS.find((a) => a.value === aba).label}>
+            <div className="m-prov-panel" {...segmentedPanelProps('m-prov', aba)}>
                 {aba === 'transacoes' && (
                     <>
                         <TransacoesTab

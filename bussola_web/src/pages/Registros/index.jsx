@@ -14,7 +14,7 @@ import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmDialogContext';
 import { AiAssistant } from '../../components/AiAssistant';
 import { useIsMobile } from '../../hooks/useIsMobile';
-import { Segmented } from '../../components/mobile/Segmented';
+import { Segmented, segmentedPanelProps } from '../../components/mobile/Segmented';
 import { Fab } from '../../components/mobile/Fab';
 import { CadernoToolbar } from './mobile/CadernoToolbar';
 import { GruposSheet } from './mobile/GruposSheet';
@@ -226,6 +226,9 @@ export function Registros() {
 
     if (!data && !loading) return null;
 
+    // Celular: o conteúdo da aba é o painel do segmentado (role=tabpanel ligado à aba ativa).
+    const painelMobile = isMobile ? segmentedPanelProps('reg-m', activeTab) : {};
+
     return (
         <div className={['container main-container registros-scope', isMobile && `reg-m reg-m-${activeTab}`].filter(Boolean).join(' ')}>
 
@@ -245,6 +248,7 @@ export function Registros() {
                         value={activeTab}
                         onChange={setActiveTab}
                         className="reg-m-tabs"
+                        idBase="reg-m"
                     />
                 ) : (
                 <div className="column-header-flex registros-main-header">
@@ -393,7 +397,7 @@ export function Registros() {
 
                 {/* CONTEÚDO: CADERNO */}
                 {activeTab === 'caderno' && (
-                    <div className="column-scroll-content">
+                    <div className="column-scroll-content" {...painelMobile}>
                         {loading ? (
                             <LoadingState />
                         ) : (
@@ -482,14 +486,14 @@ export function Registros() {
 
                 {/* CONTEÚDO: TAREFAS (Board Kanban) */}
                 {activeTab === 'tarefas' && (
-                    <div className="column-scroll-content" style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div className="column-scroll-content" style={{ display: 'flex', flexDirection: 'column' }} {...painelMobile}>
                         <TarefaBoard novaRef={novaTarefaRef} />
                     </div>
                 )}
 
                 {/* CONTEÚDO: JORNADA */}
                 {activeTab === 'jornada' && (
-                    <div className="column-scroll-content">
+                    <div className="column-scroll-content" {...painelMobile}>
                         {loading ? (
                             <LoadingState />
                         ) : (
