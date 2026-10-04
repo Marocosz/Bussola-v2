@@ -33,6 +33,11 @@
     animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+/* Foco inicial do BaseModal vai para o próprio diálogo (tabIndex -1): sem anel em volta dele. */
+[data-foco-modal]:focus {
+    outline: none;
+}
+
 .modal-header {
     padding: 1.25rem 1.5rem;
     border-bottom: 1px solid var(--cor-borda);

@@ -217,11 +217,10 @@ test('editor de nota: ESC passa pela mesma confirmação (sem empilhar diálogos
   await page.keyboard.press('Escape');
   await expect(dialogo(page)).toContainText('Descartar alterações?');
   await expect(editor(page)).toBeVisible();
-  await page.keyboard.press('Escape'); // com o diálogo aberto: não abre outro nem fecha o editor
-  await expect(dialogo(page)).toHaveCount(1);
-  await expect(editor(page)).toBeVisible();
-  await dialogo(page).getByRole('button', { name: 'Cancelar' }).click();
+  // Com o diálogo aberto, o ESC é dele (camada de cima): cancela só o diálogo, sem abrir outro nem fechar o editor.
+  await page.keyboard.press('Escape');
   await expect(dialogo(page)).toHaveCount(0);
+  await expect(editor(page)).toBeVisible();
   await expect(tituloNota(page)).toHaveValue('E2E esc editor');
   await tituloNota(page).press('Escape');
   await expect(dialogo(page)).toContainText('Descartar alterações?');

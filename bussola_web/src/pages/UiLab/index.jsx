@@ -57,6 +57,7 @@ export function UiLab() {
                                     <input className="form-input" />
                                 </div>
                             ))}
+                            <DatePicker label="Data no modal" value={data} onChange={(e) => setData(e.target.value)} />
                             <p>Fim do conteúdo</p>
                         </div>
                         <div className="modal-footer">

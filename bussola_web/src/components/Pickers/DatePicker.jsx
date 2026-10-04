@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useIsMobile } from '../../hooks/useIsMobile';
+import { useEscape } from '../../hooks/useEscape';
 import './pickers.css';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -160,18 +161,17 @@ export const DatePicker = React.memo(function DatePicker({
             if (panelRef.current?.contains(e.target)) return;
             setOpen(false);
         };
-        const onKeyDown = (e) => { if (e.key === 'Escape') setOpen(false); };
 
         document.addEventListener('mousedown', onMouseDown);
         window.addEventListener('scroll', onScroll, { passive: true, capture: true });
-        document.addEventListener('keydown', onKeyDown);
 
         return () => {
             document.removeEventListener('mousedown', onMouseDown);
             window.removeEventListener('scroll', onScroll, { capture: true });
-            document.removeEventListener('keydown', onKeyDown);
         };
     }, [open, isMobile]);
+    // ESC fecha só o picker (é a camada de cima; o modal em volta continua aberto).
+    useEscape(open, () => setOpen(false));
 
     // ── Navegação de mês ────────────────────────────────────────────────────
     const prevMonth = useCallback(() => {

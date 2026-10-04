@@ -5,6 +5,7 @@ import { logger } from '../../../utils/logger';
 import { BaseModal } from '../../../components/BaseModal';
 import { MarkdownViewer } from './MarkdownViewer';
 import { useIsMobile } from '../../../hooks/useIsMobile';
+import { useEscape } from '../../../hooks/useEscape';
 import { useConfirm } from '../../../context/ConfirmDialogContext';
 import { GrupoPickerSheet } from '../mobile/GrupoPickerSheet';
 import '../styles.css';
@@ -152,14 +153,8 @@ export function AnotacaoModal({ active, closeModal, onUpdate, editingData, grupo
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
-    // ── Fechar fullscreen com Escape ───────────────────────────────
-    useEffect(() => {
-        const handler = (e) => {
-            if (e.key === 'Escape' && isFullscreen) setIsFullscreen(false);
-        };
-        document.addEventListener('keydown', handler);
-        return () => document.removeEventListener('keydown', handler);
-    }, [isFullscreen]);
+    // ── Fechar fullscreen com Escape (camada acima do editor: o ESC só sai da tela cheia) ──
+    useEscape(isFullscreen, () => setIsFullscreen(false));
 
     // ── Salvar ─────────────────────────────────────────────────────
     const handleSave = async () => {

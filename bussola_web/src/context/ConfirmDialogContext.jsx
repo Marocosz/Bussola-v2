@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useRef } from 'react';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useSheetHistory } from '../hooks/useSheetHistory';
+import { useEscape } from '../hooks/useEscape';
 
 const ConfirmDialogContext = createContext();
 
@@ -47,6 +48,8 @@ export function ConfirmDialogProvider({ children }) {
     // baixo continua aberto).
     const isMobile = useIsMobile();
     useSheetHistory(isMobile && dialogState.isOpen, () => handleClose(dialogState.options ? null : false));
+    // ESC cancela só o diálogo (ele é a camada de cima; o modal de baixo continua aberto).
+    useEscape(dialogState.isOpen, () => handleClose(dialogState.options ? null : false));
 
     return (
         <ConfirmDialogContext.Provider value={openDialog}>
