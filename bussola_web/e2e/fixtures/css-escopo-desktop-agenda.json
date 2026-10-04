@@ -6549,7 +6549,7 @@
  ".tooltip": [
   {
    "display": "none",
-   "position": "absolute",
+   "position": "fixed",
    "z-index": "2500",
    "width": "250px",
    "height": "auto",
