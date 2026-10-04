@@ -440,7 +440,8 @@ test.describe('Tarefas', () => {
     await toque('touchEnd');
     await expect(page.locator('.kb-card--overlay')).toHaveCount(0);
     await toque('touchStart', x, y);
-    await page.waitForTimeout(350);
+    // Parado, o toque longo ativa sozinho (sem esperar um tempo fixo, que falhava sob carga).
+    await expect(page.locator('.kb-card--overlay')).toHaveCount(1);
     await toque('touchMove', x, y + 10);
     await toque('touchMove', x, y + 20);
     await expect(page.locator('.kb-card--overlay')).toHaveCount(1);
@@ -509,13 +510,17 @@ test.describe('Tarefas', () => {
       await expect(col.locator('.kb-card')).toHaveText([/E2E ordem A/, /E2E ordem B/]);
       const cdp = await page.context().newCDPSession(page);
       const toque = (type, px, py) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x: px, y: py }] });
+      // O toque longo (250ms parado) ativa o arraste: espera o card "levantado" aparecer antes de mover.
+      // Um tempo fixo falhava sob carga: o timer do sensor atrasava, o primeiro movimento passava da
+      // tolerância e o gesto virava rolagem nativa (o quadro ia para outra coluna).
+      const arrasteAtivo = () => expect(page.locator('.kb-card--overlay')).toHaveCount(1);
 
       // Arrastar A para baixo de B (mesma coluna).
       const a = await col.locator('.kb-card', { hasText: 'E2E ordem A' }).boundingBox();
       const b = await col.locator('.kb-card', { hasText: 'E2E ordem B' }).boundingBox();
       const x = a.x + a.width / 3;
       await toque('touchStart', x, a.y + a.height / 2);
-      await page.waitForTimeout(350);
+      await arrasteAtivo();
       for (let i = 1; i <= 10; i += 1) {
         await toque('touchMove', x, a.y + a.height / 2 + ((b.y + b.height * 0.75) - (a.y + a.height / 2)) * (i / 10));
       }
@@ -525,7 +530,7 @@ test.describe('Tarefas', () => {
       // Arrastar até a borda direita e segurar: o quadro não rola para outra coluna e nada muda de status.
       const a2 = await col.locator('.kb-card', { hasText: 'E2E ordem A' }).boundingBox();
       await toque('touchStart', a2.x + a2.width / 3, a2.y + a2.height / 2);
-      await page.waitForTimeout(350);
+      await arrasteAtivo();
       for (let i = 1; i <= 10; i += 1) await toque('touchMove', a2.x + a2.width / 3 + ((385 - a2.x - a2.width / 3) * i) / 10, a2.y + a2.height / 2);
       for (let i = 0; i < 15; i += 1) { await toque('touchMove', 385 + (i % 2), a2.y + a2.height / 2); await page.waitForTimeout(60); }
       await toque('touchEnd');
