@@ -76,15 +76,16 @@ export function TimePicker({
     useEffect(() => {
         if (!open) return;
         // rAF garante que o DOM do portal já está renderizado
+        // Centraliza rolando só a coluna (scrollIntoView também rolaria a janela/o sheet por trás).
+        const centralizar = (col, v) => {
+            const el = col?.querySelector(`[data-v="${v}"]`);
+            if (!el) return;
+            const delta = el.getBoundingClientRect().top - col.getBoundingClientRect().top;
+            col.scrollTop += delta - (col.clientHeight - el.offsetHeight) / 2;
+        };
         const id = requestAnimationFrame(() => {
-            if (hColRef.current && selH) {
-                const el = hColRef.current.querySelector(`[data-v="${selH}"]`);
-                el?.scrollIntoView({ block: 'center', behavior: 'instant' });
-            }
-            if (mColRef.current && selMNorm) {
-                const el = mColRef.current.querySelector(`[data-v="${selMNorm}"]`);
-                el?.scrollIntoView({ block: 'center', behavior: 'instant' });
-            }
+            if (selH) centralizar(hColRef.current, selH);
+            if (selMNorm) centralizar(mColRef.current, selMNorm);
         });
         return () => cancelAnimationFrame(id);
     }, [open]); // eslint-disable-line react-hooks/exhaustive-deps

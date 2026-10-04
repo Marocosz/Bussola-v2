@@ -23,11 +23,21 @@ export function TransacoesTab({ data, loading, transactions, filters, sortConfig
     const d0 = new Date();
     const hoje = `${d0.getFullYear()}-${String(d0.getMonth() + 1).padStart(2, '0')}-${String(d0.getDate()).padStart(2, '0')}`;
     const padrao = filters.datePreset === 'mes' && sortConfig.column === 'data' && sortConfig.dir === 'desc';
+    // O pulo rola a janela (a lista rola com a página); ao desmontar (outra aba, ou a janela voltou a
+    // ser desktop), desfaz o pulo se ninguém rolou depois dele — senão a página fica deslocada.
+    const puloRef = useRef(null);
     useEffect(() => {
         if (loading || jaRolou.current) return;
         jaRolou.current = true;
-        if (padrao) alvoRef.current?.scrollIntoView({ block: 'start' });
+        if (!padrao || !alvoRef.current) return;
+        const antes = window.scrollY;
+        alvoRef.current.scrollIntoView({ block: 'start' });
+        puloRef.current = { antes, depois: window.scrollY };
     });
+    useEffect(() => () => {
+        const pulo = puloRef.current;
+        if (pulo && pulo.depois !== pulo.antes && window.scrollY === pulo.depois) window.scrollTo(0, pulo.antes);
+    }, []);
 
     const chips = activeFilterChips(filters, data);
     const n = chips.length;
