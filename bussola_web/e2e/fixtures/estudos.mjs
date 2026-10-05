@@ -58,7 +58,7 @@ export const FONTES = [
 const API = /^http:\/\/127\.0\.0\.1:8000\/api\/v1\/estudos/;
 const rota = (sufixo) => new RegExp(`${API.source}${sufixo}`);
 
-export async function mockEstudos(page, { materiais = MATERIAIS } = {}) {
+export async function mockEstudos(page, { materiais = MATERIAIS, respostas = [] } = {}) {
   await page.route(rota('/temas(\\?.*)?$'), (r) => r.fulfill({ json: TEMAS }));
   await page.route(rota('/materiais(\\?.*)?$'), (r) => r.fulfill({ json: materiais }));
   await page.route(rota('/materiais/(\\d+)$'), (r) => {
@@ -72,10 +72,19 @@ export async function mockEstudos(page, { materiais = MATERIAIS } = {}) {
     const { estudado } = r.request().postDataJSON();
     return r.fulfill({ json: { estudado, estudado_em: estudado ? '2026-10-02T12:00:00' : null } });
   });
-  await page.route(rota('/materiais/(\\d+)/respostas$'), (r) => r.fulfill({
-    status: 201,
-    json: { id: 1, material_id: 9101, bloco_id: 'b12', resposta: 1, acertou: true, respondido_em: '2026-10-02T12:00:00' },
-  }));
+  await page.route(rota('/materiais/(\\d+)/respostas$'), (r) => {
+    if (r.request().method() === 'GET') return r.fulfill({ json: respostas });
+    // Ecoa o bloco respondido; no quiz (b12) o acerto é calculado como no servidor.
+    const { bloco_id: blocoId, resposta, acertou } = r.request().postDataJSON();
+    const quiz = BLOCOS.find((b) => b.id === blocoId && b.tipo === 'quiz');
+    return r.fulfill({
+      status: 201,
+      json: {
+        id: 1, material_id: 9101, bloco_id: blocoId, resposta,
+        acertou: quiz ? resposta === quiz.correta : Boolean(acertou), respondido_em: '2026-10-02T12:00:00',
+      },
+    });
+  });
   await page.route(rota('/kit/versao$'), (r) => r.fulfill({ json: { versao: '1.0.0' } }));
   await page.route(rota('/kit/instrucoes-projeto$'), (r) => r.fulfill({ json: { texto: 'Instruções de teste do Projeto Estudos.' } }));
   await page.route(rota('/kit/[a-z-]+\\.zip$'), (r) => r.fulfill({ status: 200, contentType: 'application/zip', body: Buffer.from('PK') }));

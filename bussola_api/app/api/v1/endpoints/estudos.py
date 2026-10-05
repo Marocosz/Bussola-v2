@@ -9,7 +9,8 @@ from sqlalchemy.orm import Session
 
 from app.api import deps
 from app.schemas.estudos import (
-    EstudadoUpdate, MaterialResponse, MaterialResumo, RespostaCreate, RespostaResponse, TemaResponse,
+    EstudadoUpdate, MaterialResponse, MaterialResumo, RespondidoResponse, RespostaCreate, RespostaResponse,
+    TemaResponse,
 )
 from app.services import estudos_kit
 from app.services.estudos import estudos_service
@@ -59,6 +60,17 @@ def responder(material_id: int, dados: RespostaCreate, db: Session = Depends(dep
     if registro is None:
         raise HTTPException(status_code=404, detail="Material não encontrado")
     return registro
+
+
+@router.get("/materiais/{material_id}/respostas", response_model=list[RespondidoResponse])
+def respondidos(material_id: int, db: Session = Depends(deps.get_db), current_user=Depends(deps.get_current_user)):
+    _material_ou_404(db, material_id, current_user.id)
+    linhas = estudos_service.listar_respostas(db, current_user.id, material_id=material_id, limite=1000)
+    ultimas = {}
+    for r in linhas:  # mais recentes primeiro: fica a última de cada bloco que ainda existe
+        if r["bloco_existe"] and r["bloco_id"] not in ultimas:
+            ultimas[r["bloco_id"]] = r
+    return list(ultimas.values())
 
 
 @router.patch("/materiais/{material_id}/estudado", response_model=MaterialResponse)

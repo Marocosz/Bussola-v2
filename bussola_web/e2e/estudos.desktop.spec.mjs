@@ -94,3 +94,59 @@ test('desktop estudos: sem topbar mobile nem botão Voltar', async ({ page }) =>
   await expect(page.locator('.m-topbar')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Voltar' })).toHaveCount(0);
 });
+
+// ---------------------------------------------------------------------------
+// Leitura: barra fixa, índice, progresso e fim do material
+// ---------------------------------------------------------------------------
+test('desktop leitura: índice lateral lista seção, perguntas e fontes e leva ao item', async ({ page }) => {
+  await mockEstudos(page);
+  await gotoApp(page, '/estudos/9101');
+  const indice = page.locator('.estudo-lateral .estudo-indice');
+  await expect(indice).toBeVisible();
+  await expect(indice.locator('.estudo-indice-texto')).toHaveText([
+    'Formatação inline', 'Qual índice atende BETWEEN?', 'Por que índices deixam escritas mais lentas?', 'Fontes',
+  ]);
+  await expect(page.locator('.estudo-btn-indice')).toBeHidden();
+  await indice.getByRole('link', { name: /Qual índice atende BETWEEN/ }).click();
+  await expect(indice.locator('.estudo-indice-item.ativo')).toHaveText(/Qual índice atende BETWEEN/);
+  await expect(page.locator('#bloco-b12')).toBeInViewport();
+});
+
+test('desktop leitura: barra fica fixa, mostra o título e volta ao topo', async ({ page }) => {
+  await mockEstudos(page);
+  await gotoApp(page, '/estudos/9101');
+  const barra = page.locator('.estudo-barra');
+  await expect(barra).not.toHaveClass(/compacto/);
+  await page.mouse.wheel(0, 1500);
+  await expect(barra).toHaveClass(/compacto/);
+  await expect.poll(async () => Math.round((await barra.boundingBox()).y)).toBe(12);
+  await expect(barra.locator('.estudo-barra-titulo')).toBeVisible();
+  await expect.poll(() => barra.evaluate((e) => Number(getComputedStyle(e).getPropertyValue('--progresso')))).toBeGreaterThan(0);
+  await barra.getByRole('button', { name: 'Voltar ao topo' }).click();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+});
+
+test('desktop leitura: progresso das perguntas vem do servidor e soma o que é respondido', async ({ page }) => {
+  await mockEstudos(page, { respostas: [{ bloco_id: 'b13', acertou: false, respondido_em: '2026-10-01T10:00:00' }] });
+  await gotoApp(page, '/estudos/9101');
+  const indice = page.locator('.estudo-lateral .estudo-indice');
+  await expect(indice.locator('.estudo-indice-resumo')).toHaveText(/1\/2 respondidas · 0 acertos/);
+  await expect(indice.locator('.estudo-indice-status.erro')).toHaveCount(1);
+  await page.locator('.bloco-quiz-opcao', { hasText: 'B-tree' }).click();
+  await expect(indice.locator('.estudo-indice-resumo')).toHaveText(/2\/2 respondidas · 1 acerto/);
+  await expect(indice.locator('.estudo-indice-status.acerto')).toHaveCount(1);
+});
+
+test('desktop leitura: fim do material marca estudado e leva ao próximo do tema', async ({ page }) => {
+  await mockEstudos(page);
+  await gotoApp(page, '/estudos/9101');
+  const fim = page.locator('.estudo-fim');
+  await fim.getByRole('button', { name: 'Marcar como estudado' }).click();
+  await expect(fim.locator('.estudo-fim-status')).toHaveText(/Material estudado/);
+  await expect(page.locator('.estudo-btn-estudado')).toHaveText(/Estudado/);
+  await expect(fim.locator('.estudo-vizinho.anterior')).toHaveCount(0);
+  await fim.locator('.estudo-vizinho.proximo').click();
+  await expect(page).toHaveURL(/\/estudos\/9102$/);
+  await expect(page.locator('.estudo-cabecalho h1')).toHaveText('Resumo: normalização');
+  await expect(page.locator('.estudo-vizinho.anterior')).toHaveText(/Índices B-tree/);
+});

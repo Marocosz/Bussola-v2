@@ -86,3 +86,15 @@ def test_delete_material(client, db, user):
     assert client.get(f"{BASE}/materiais/{m.id}").status_code == 404
     assert client.delete(f"{BASE}/materiais/{m.id}").status_code == 404
     assert estudos_service.listar_respostas(db, user.id) == []
+
+
+def test_respondidos_do_material_ultima_resposta_por_bloco(client, db, user, outro_user):
+    m = _exercicios(db, user)
+    assert client.get(f"{BASE}/materiais/{m.id}/respostas").json() == []
+    client.post(f"{BASE}/materiais/{m.id}/respostas", json={"bloco_id": "b2", "resposta": 0})
+    client.post(f"{BASE}/materiais/{m.id}/respostas", json={"bloco_id": "b2", "resposta": 1})
+    client.post(f"{BASE}/materiais/{m.id}/respostas", json={"bloco_id": "b3", "resposta": "x", "acertou": False})
+    corpo = client.get(f"{BASE}/materiais/{m.id}/respostas").json()
+    assert sorted((r["bloco_id"], r["acertou"]) for r in corpo) == [("b2", True), ("b3", False)]
+    alheio = _exercicios(db, outro_user)
+    assert client.get(f"{BASE}/materiais/{alheio.id}/respostas").status_code == 404

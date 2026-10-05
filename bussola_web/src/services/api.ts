@@ -979,6 +979,11 @@ export const responderEstudo = async (id: number | string, data: any) => {
     return response.data;
 };
 
+export const getEstudoRespostas = async (id: number | string) => {
+    const response = await api.get(`/estudos/materiais/${id}/respostas`);
+    return response.data;
+};
+
 export const marcarEstudoEstudado = async (id: number | string, estudado: boolean) => {
     const response = await api.patch(`/estudos/materiais/${id}/estudado`, { estudado });
     return response.data;

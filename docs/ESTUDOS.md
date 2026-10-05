@@ -35,7 +35,8 @@ receitas) mora no **kit** baixável em `/estudos/kit`.
 
 REST (site): `GET /temas`, `GET /materiais?tema_id&tipo&estudado&tag&busca`, `GET /materiais/{id}`,
 `POST /materiais/{id}/respostas` (`acertou` calculado no servidor para quiz; informado pelo usuário
-na questão aberta), `PATCH /materiais/{id}/estudado`, `DELETE /materiais/{id}`,
+na questão aberta), `GET /materiais/{id}/respostas` (última resposta de cada bloco — progresso no
+índice da leitura), `PATCH /materiais/{id}/estudado`, `DELETE /materiais/{id}`,
 `GET /kit/versao`, `GET /kit/instrucoes-projeto`, `GET /kit/{claude-code|claude-ai}.zip`.
 
 MCP: `catalogo_de_blocos`, `listar_temas_estudo`, `listar_materiais`, `ler_material`,

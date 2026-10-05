@@ -363,6 +363,43 @@ test.describe('leitura', () => {
     await expect.poll(async () => (await copiar.boundingBox()).height).toBeLessThanOrEqual(56);
   });
 
+  test('ações ficam abaixo do título; sem cabeçalho de página nem barra de progresso', async ({ page }) => {
+    await mockEstudos(page);
+    await gotoApp(page, '/estudos/9101');
+    const titulo = await page.locator('.estudo-cabecalho h1').boundingBox();
+    const estudado = await page.locator('.estudo-btn-estudado').boundingBox();
+    expect(estudado.y).toBeGreaterThan(titulo.y + titulo.height);
+    await expect(page.locator('.estudo-pagina > .page-header')).toBeHidden();
+    await expect(page.locator('.estudo-progresso')).toBeHidden();
+    await expect(page.locator('.estudo-btn-indice')).toBeHidden();
+  });
+
+  test('Índice na topbar abre o sheet e tocar numa pergunta fecha e rola até ela', async ({ page }) => {
+    await mockEstudos(page);
+    await gotoApp(page, '/estudos/9101');
+    await page.locator('.m-topbar').getByRole('button', { name: 'Índice do material' }).click();
+    const sheet = page.locator('.modal-overlay.is-sheet .estudo-indice-sheet');
+    await expect(sheet).toBeVisible();
+    await animacoesAcabaram(page);
+    await expect.poll(() => smallTargets(page, '.modal-overlay.is-sheet')).toEqual([]);
+    await sheet.getByRole('link', { name: /Por que índices deixam/ }).click();
+    await expect(sheet).toHaveCount(0);
+    await expect(page.locator('#bloco-b13')).toBeInViewport();
+    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(500);
+  });
+
+  test('fim do material e fontes em uma coluna, sem overflow', async ({ page }) => {
+    await mockEstudos(page);
+    await gotoApp(page, '/estudos/9101');
+    const marcar = page.locator('.estudo-fim-marcar');
+    await marcar.scrollIntoViewIfNeeded();
+    expect(Math.round((await marcar.boundingBox()).width)).toBe(390 - 32 - 2 * 16 - 2);
+    const fontes = await page.locator('.estudo-fontes li').all();
+    const caixas = await Promise.all(fontes.map((f) => f.boundingBox()));
+    expect(caixas.every((b) => Math.round(b.x) === 16 && Math.round(b.width) === 390 - 32)).toBe(true);
+    expect(await overflowOffendersOutsideScrollers(page)).toEqual([]);
+  });
+
   test('excluir pede confirmação e volta para a biblioteca', async ({ page }) => {
     await mockEstudos(page);
     await gotoApp(page, '/estudos/9101');

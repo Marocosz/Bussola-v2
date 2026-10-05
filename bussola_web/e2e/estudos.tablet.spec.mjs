@@ -46,3 +46,12 @@ test('tablet: filtros, ações e gatilhos por bloco com 44px e visíveis sem hov
   expect(await acoesBloco.evaluate((e) => getComputedStyle(e).opacity)).toBe('1');
   expect((await acoesBloco.locator('button').boundingBox()).height).toBeGreaterThanOrEqual(44);
 });
+
+test('tablet 1000px leitura: sem índice lateral, botão "Índice" na barra abre o sheet', async ({ page }) => {
+  await mockEstudos(page);
+  await page.setViewportSize({ width: 1000, height: 1100 });
+  await gotoApp(page, '/estudos/9101');
+  await expect(page.locator('.estudo-lateral')).toBeHidden();
+  await page.locator('.estudo-barra').getByRole('button', { name: 'Índice' }).click();
+  await expect(page.locator('.estudo-indice-sheet .estudo-indice-item')).toHaveCount(4);
+});

@@ -44,6 +44,13 @@ class RespostaCreate(BaseModel):
     acertou: Optional[bool] = None                 # só para questão aberta; ignorado em quiz
 
 
+class RespondidoResponse(BaseModel):
+    """Última resposta de cada bloco respondível do material (progresso na leitura)."""
+    bloco_id: str
+    acertou: bool
+    respondido_em: Optional[str] = None
+
+
 class RespostaResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
