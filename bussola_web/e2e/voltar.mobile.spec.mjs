@@ -145,7 +145,7 @@ test('Sair pelo "Mais" vai para o login sem deixar entrada de sheet', async ({ p
 test('Voltar da topbar (TopbarTitle) segue usando o idx do router depois de abrir e fechar um sheet', async ({ page }) => {
   await mockEstudos(page);
   await gotoApp(page, '/estudos');
-  await page.locator('.page-header').getByRole('link', { name: /Kit do Claude/ }).click();
+  await page.locator('.estudos-barra').getByRole('link', { name: /Kit/ }).click();
   await expect(page).toHaveURL(/\/estudos\/kit$/);
   const idx = await page.evaluate(() => window.history.state.idx);
   await nav(page).getByRole('button', { name: 'Mais' }).click();

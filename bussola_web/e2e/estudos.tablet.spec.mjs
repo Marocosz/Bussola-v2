@@ -39,8 +39,7 @@ test('tablet: filtros, ações e gatilhos por bloco com 44px e visíveis sem hov
   await mockEstudos(page);
   await gotoApp(page, '/estudos');
   await page.locator('.estudo-card').first().waitFor();
-  expect(await smallTargets(page, '.estudos-temas')).toEqual([]);
-  expect(await smallTargets(page, '.estudos-filtros')).toEqual([]);
+  expect(await smallTargets(page, '.estudos-barra')).toEqual([]);
   await gotoApp(page, '/estudos/9101');
   expect(await smallTargets(page, '.estudo-acoes')).toEqual([]);
   const acoesBloco = page.locator('#bloco-b3 .estudo-bloco-acoes');

@@ -2,8 +2,19 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { getEstudosMateriais, getEstudosTemas } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
-import { NIVEIS, TIPOS, tipoDe } from './constantes';
+import { TIPOS } from './constantes';
+import { EstudoCard } from './EstudoCard';
 import './styles.css';
+
+// Filtro de status: o botão cicla todos → não estudados → estudados.
+const STATUS = {
+    todos: { rotulo: 'Todos', icone: 'fa-layer-group', proximo: 'pendentes' },
+    pendentes: { rotulo: 'Não estudados', icone: 'fa-hourglass-half', proximo: 'estudados' },
+    estudados: { rotulo: 'Estudados', icone: 'fa-circle-check', proximo: 'todos' },
+};
+
+// Grupos (temas) recolhidos ficam salvos no navegador; o padrão é tudo aberto.
+const CHAVE_FECHADOS = '@Bussola:estudos_grupos_fechados';
 
 // Biblioteca de materiais de estudo. Quem cria os materiais é o Claude (kit + MCP);
 // aqui só se navega, filtra e abre. Filtro de tema fica na URL (?tema=<id>|sem).
@@ -13,7 +24,12 @@ export function Estudos() {
     const [dados, setDados] = useState({ carregado: false, erro: false, temas: [], materiais: [] });
     const [tentativa, setTentativa] = useState(0);
     const [tipo, setTipo] = useState('');
-    const [soNaoEstudados, setSoNaoEstudados] = useState(false);
+    const [status, setStatus] = useState('todos');
+    const [busca, setBusca] = useState('');
+    const [dropdownAberto, setDropdownAberto] = useState(false);
+    const [fechados, setFechados] = useState(() => {
+        try { return JSON.parse(localStorage.getItem(CHAVE_FECHADOS)) || {}; } catch { return {}; }
+    });
     const temaSelecionado = searchParams.get('tema') || '';
 
     useEffect(() => {
@@ -39,32 +55,71 @@ export function Estudos() {
     const totalEstudados = materiais.filter((m) => m.estudado).length;
     const totalSemTema = materiais.filter((m) => m.tema_id === null).length;
 
+    const termo = busca.trim().toLowerCase();
     const filtrados = useMemo(() => materiais.filter((m) => {
         if (temaSelecionado === 'sem' && m.tema_id !== null) return false;
         if (temaSelecionado && temaSelecionado !== 'sem' && String(m.tema_id) !== temaSelecionado) return false;
         if (tipo && m.tipo !== tipo) return false;
-        if (soNaoEstudados && m.estudado) return false;
+        if (status === 'pendentes' && m.estudado) return false;
+        if (status === 'estudados' && !m.estudado) return false;
+        if (termo) {
+            const alvo = [m.titulo, m.subtitulo, m.tema_nome, ...m.tags].filter(Boolean).join(' ').toLowerCase();
+            if (!alvo.includes(termo)) return false;
+        }
         return true;
-    }), [materiais, temaSelecionado, tipo, soNaoEstudados]);
+    }), [materiais, temaSelecionado, tipo, status, termo]);
 
     const escolherTema = (valor) => {
         const proximo = new URLSearchParams(searchParams);
         if (valor) proximo.set('tema', valor);
         else proximo.delete('tema');
         setSearchParams(proximo);
+        setDropdownAberto(false);
     };
 
-    const botaoTema = (valor, nome, cor, total) => (
-        <button
+    // Agrupa por tema na ordem da lista de temas; "Sem tema" por último.
+    const grupos = useMemo(() => {
+        const porTema = new Map();
+        filtrados.forEach((m) => {
+            const chave = m.tema_id === null ? 'sem' : String(m.tema_id);
+            if (!porTema.has(chave)) porTema.set(chave, []);
+            porTema.get(chave).push(m);
+        });
+        const lista = temas
+            .filter((t) => porTema.has(String(t.id)))
+            .map((t) => ({
+                chave: String(t.id),
+                nome: t.nome,
+                cor: t.cor || 'var(--cor-azul-primario)',
+                materiais: porTema.get(String(t.id)),
+            }));
+        if (porTema.has('sem')) lista.push({ chave: 'sem', nome: 'Sem tema', cor: '#ccc', materiais: porTema.get('sem') });
+        return lista;
+    }, [filtrados, temas]);
+
+    const alternarGrupo = (chave) => {
+        setFechados((prev) => {
+            const proximo = { ...prev, [chave]: !prev[chave] };
+            try { localStorage.setItem(CHAVE_FECHADOS, JSON.stringify(proximo)); } catch { /* sem storage: só não persiste */ }
+            return proximo;
+        });
+    };
+
+    const temaAtual = temas.find((t) => String(t.id) === temaSelecionado);
+    const rotuloTema = temaSelecionado === 'sem' ? 'Sem tema' : (temaAtual?.nome || 'Todos os Temas');
+
+    const itemTema = (valor, nome, cor, total) => (
+        <div
             key={valor || 'todos'}
-            type="button"
-            className={`estudos-tema ${temaSelecionado === valor ? 'ativo' : ''}`}
+            className={`dropdown-item ${temaSelecionado === valor ? 'selected' : ''}`}
             onClick={() => escolherTema(valor)}
         >
-            <span className="estudos-tema-cor" style={{ background: cor }}></span>
-            <span className="estudos-tema-nome">{nome}</span>
-            <span className="estudos-tema-total">{total}</span>
-        </button>
+            <div className="dropdown-item-info">
+                {cor && <span className="dot" style={{ backgroundColor: cor }}></span>}
+                <span className="name">{nome}</span>
+            </div>
+            <span className="estudos-dropdown-total">{total}</span>
+        </div>
     );
 
     return (
@@ -77,13 +132,10 @@ export function Estudos() {
                     <span className="ph-kpi"><i className="fa-solid fa-book-open"></i> {materiais.length} materiais</span>
                     <span className="ph-kpi positivo"><i className="fa-solid fa-check"></i> {totalEstudados} estudados</span>
                     <span className="ph-kpi"><i className="fa-solid fa-folder"></i> {temas.length} temas</span>
-                    <Link to="/estudos/kit" className="ph-kpi ph-kpi-btn">
-                        <i className="fa-solid fa-wand-magic-sparkles"></i> Kit do Claude
-                    </Link>
                 </div>
             </div>
 
-            <div className="estudos-wrapper">
+            <div className="estudos-wrapper estudos-biblioteca">
                 {!dados.carregado && (
                     <div className="estudos-carregando">
                         <i className="fa-solid fa-circle-notch fa-spin"></i>
@@ -119,84 +171,121 @@ export function Estudos() {
                 )}
 
                 {dados.carregado && !dados.erro && materiais.length > 0 && (
-                    <div className="estudos-layout">
-                        <aside className="estudos-temas" aria-label="Temas" data-offscreen-ok>
-                            <h2>Temas</h2>
-                            {botaoTema('', 'Todos', 'var(--cor-texto-secundario)', materiais.length)}
-                            {temas.map((t) => botaoTema(String(t.id), t.nome, t.cor || 'var(--cor-azul-primario)', t.total_materiais))}
-                            {totalSemTema > 0 && botaoTema('sem', 'Sem tema', 'var(--cor-borda)', totalSemTema)}
-                        </aside>
-
-                        <section className="estudos-principal">
-                            <div className="estudos-filtros">
-                                <div className="estudos-chips">
+                    <>
+                        <div className="column-header-flex estudos-barra">
+                            <div className="tab-selector-wrapper" aria-label="Tipos" data-offscreen-ok>
+                                <button
+                                    type="button"
+                                    className={`tab-btn-pill ${tipo === '' ? 'active' : ''}`}
+                                    onClick={() => setTipo('')}
+                                >
+                                    Todos
+                                </button>
+                                {Object.entries(TIPOS).map(([chave, t]) => (
                                     <button
+                                        key={chave}
                                         type="button"
-                                        className={`estudos-chip ${tipo === '' ? 'ativo' : ''}`}
-                                        onClick={() => setTipo('')}
+                                        className={`tab-btn-pill ${tipo === chave ? 'active' : ''}`}
+                                        onClick={() => setTipo(chave)}
                                     >
-                                        Todos
+                                        {t.rotulo}
                                     </button>
-                                    {Object.entries(TIPOS).map(([chave, t]) => (
-                                        <button
-                                            key={chave}
-                                            type="button"
-                                            className={`estudos-chip ${t.classe} ${tipo === chave ? 'ativo' : ''}`}
-                                            onClick={() => setTipo(tipo === chave ? '' : chave)}
-                                        >
-                                            <i className={`fa-solid ${t.icone}`}></i> {t.rotulo}
-                                        </button>
-                                    ))}
-                                </div>
-                                <label className="estudos-check">
-                                    <input
-                                        type="checkbox"
-                                        checked={soNaoEstudados}
-                                        onChange={(e) => setSoNaoEstudados(e.target.checked)}
-                                    />
-                                    Só não estudados
-                                </label>
+                                ))}
                             </div>
 
-                            {filtrados.length === 0 ? (
-                                <p className="estudos-nada">Nenhum material com esses filtros.</p>
-                            ) : (
-                                <div className="estudos-grade">
-                                    {filtrados.map((m) => {
-                                        const t = tipoDe(m.tipo);
-                                        return (
-                                            <Link
-                                                key={m.id}
-                                                to={`/estudos/${m.id}`}
-                                                className="estudo-card"
-                                                style={{ '--estudo-cor': m.tema_cor || 'var(--cor-azul-primario)' }}
-                                            >
-                                                <div className="estudo-card-topo">
-                                                    <span className={`estudo-etiqueta ${t.classe}`}>
-                                                        <i className={`fa-solid ${t.icone}`}></i> {t.rotulo}
-                                                    </span>
-                                                    {m.estudado && (
-                                                        <span className="estudo-card-estudado" title="Estudado">
-                                                            <i className="fa-solid fa-circle-check"></i>
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <h3>{m.titulo}</h3>
-                                                {m.subtitulo && <p className="estudo-card-sub">{m.subtitulo}</p>}
-                                                <div className="estudo-card-rodape">
-                                                    {m.tema_nome && <span className="estudo-card-tema">{m.tema_nome}</span>}
-                                                    <span className="estudo-card-nivel">{NIVEIS[m.nivel] || m.nivel}</span>
-                                                    {m.tags.slice(0, 3).map((tag) => (
-                                                        <span key={tag} className="estudo-tag">#{tag}</span>
-                                                    ))}
-                                                </div>
-                                            </Link>
-                                        );
-                                    })}
+                            <div className="header-actions-group">
+                                <div className="header-search-wrapper">
+                                    <i className="fa-solid fa-magnifying-glass header-search-icon"></i>
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar..."
+                                        value={busca}
+                                        onChange={(e) => setBusca(e.target.value)}
+                                        className="header-search-input"
+                                    />
                                 </div>
-                            )}
-                        </section>
-                    </div>
+
+                                <button
+                                    type="button"
+                                    className={`dropdown-trigger-btn estudos-status-btn ${status !== 'todos' ? 'active' : ''}`}
+                                    onClick={() => setStatus(STATUS[status].proximo)}
+                                    title="Alternar entre todos, não estudados e estudados"
+                                >
+                                    <i className={`fa-solid ${STATUS[status].icone}`}></i>
+                                    <span>{STATUS[status].rotulo}</span>
+                                </button>
+
+                                <div className="custom-dropdown-wrapper">
+                                    <button
+                                        type="button"
+                                        className={`dropdown-trigger-btn ${temaSelecionado ? 'active' : ''}`}
+                                        onClick={() => setDropdownAberto(!dropdownAberto)}
+                                    >
+                                        <span>{rotuloTema}</span>
+                                        <i className="fa-solid fa-chevron-down"></i>
+                                    </button>
+
+                                    {dropdownAberto && (
+                                        <>
+                                            <div className="dropdown-backdrop" onClick={() => setDropdownAberto(false)}></div>
+                                            <div className="custom-dropdown-menu">
+                                                {itemTema('', 'Todos os Temas', null, materiais.length)}
+                                                <div className="dropdown-divider"></div>
+                                                <div className="dropdown-scroll-area">
+                                                    {temas.map((t) => itemTema(String(t.id), t.nome, t.cor || 'var(--cor-azul-primario)', t.total_materiais))}
+                                                    {totalSemTema > 0 && itemTema('sem', 'Sem tema', '#ccc', totalSemTema)}
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+
+                                <Link to="/estudos/kit" className="btn-primary small-btn">
+                                    <i className="fa-solid fa-wand-magic-sparkles"></i> Kit
+                                </Link>
+                            </div>
+                        </div>
+
+                        {filtrados.length === 0 ? (
+                            <div className="empty-state">
+                                <i className="fa-regular fa-folder-open"></i>
+                                <p>{termo ? 'Nenhum material encontrado.' : 'Nenhum material com esses filtros.'}</p>
+                            </div>
+                        ) : (
+                            <div className="estudos-grupos">
+                                {grupos.map((g) => {
+                                    const aberto = !fechados[g.chave];
+                                    return (
+                                        <div className="group-accordion" key={g.chave}>
+                                            <h3
+                                                className={`accordion-header ${aberto ? 'active' : ''}`}
+                                                onClick={() => alternarGrupo(g.chave)}
+                                            >
+                                                <div className="header-title-wrapper">
+                                                    <span className="grp-dot" style={{ backgroundColor: g.cor }}></span>
+                                                    <span>{g.nome}</span>
+                                                </div>
+                                                <div className="header-meta">
+                                                    <span className="count-text">
+                                                        {g.materiais.length} {g.materiais.length === 1 ? 'MATERIAL' : 'MATERIAIS'}
+                                                    </span>
+                                                    <i className={`fa-solid fa-chevron-down ${aberto ? 'rotate' : ''}`}></i>
+                                                </div>
+                                            </h3>
+
+                                            <div className={`accordion-wrapper ${aberto ? 'open' : ''}`}>
+                                                <div className="accordion-inner">
+                                                    <div className="estudos-grade">
+                                                        {g.materiais.map((m) => <EstudoCard key={m.id} material={m} />)}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         </div>

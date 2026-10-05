@@ -8,6 +8,10 @@ const semInline = (lista) => lista.filter((s) => !/"\[\d+\]"|bloco-secao-ancora/
 
 const tituloTopbar = (page) => page.locator('.m-topbar-title');
 const voltar = (page) => page.getByRole('button', { name: 'Voltar' });
+const escolherTema = async (page, nome) => {
+  await page.locator('.estudos-barra .custom-dropdown-wrapper .dropdown-trigger-btn').click();
+  await page.locator('.custom-dropdown-menu .dropdown-item', { hasText: nome }).click();
+};
 
 // ---------------------------------------------------------------------------
 // Task 1 — helper
@@ -58,7 +62,7 @@ test.describe('topbar das sub-rotas', () => {
   test('kit a partir da biblioteca: Voltar volta no histórico', async ({ page }) => {
     await mockEstudos(page);
     await gotoApp(page, '/estudos');
-    await page.locator('.page-header').getByRole('link', { name: /Kit do Claude/ }).click();
+    await page.locator('.estudos-barra').getByRole('link', { name: /Kit/ }).click();
     await expect(page).toHaveURL(/\/estudos\/kit$/);
     const idx = await page.evaluate(() => window.history.state.idx);
     await voltar(page).click();
@@ -69,7 +73,7 @@ test.describe('topbar das sub-rotas', () => {
   test('leitura: topbar com o tema e Voltar preserva o filtro', async ({ page }) => {
     await mockEstudos(page);
     await gotoApp(page, '/estudos');
-    await page.locator('.estudos-tema', { hasText: 'Banco de Dados' }).click();
+    await escolherTema(page, 'Banco de Dados');
     await expect(page).toHaveURL(/\/estudos\?tema=901$/);
     await page.locator('.estudo-card', { hasText: 'Índices B-tree' }).click();
     await expect(page).toHaveURL(/\/estudos\/9101$/);
@@ -121,9 +125,9 @@ test.describe('biblioteca', () => {
       await gotoApp(page, '/estudos');
       await page.locator('.estudo-card').first().waitFor();
       expect(await overflowOffenders(page), `${w}px`).toEqual([]);
-      const temas = await page.locator('.estudos-temas').boundingBox();
-      expect(temas.x).toBeGreaterThanOrEqual(0);
-      expect(temas.x + temas.width).toBeLessThanOrEqual(w);
+      const barra = await page.locator('.estudos-barra').boundingBox();
+      expect(barra.x).toBeGreaterThanOrEqual(0);
+      expect(barra.x + barra.width).toBeLessThanOrEqual(w);
     });
   }
 
@@ -143,44 +147,45 @@ test.describe('biblioteca', () => {
     await expect.poll(() => smallTargets(page, '.estudos-scope')).toEqual([]);
   });
 
-  test('cards em 1 coluna: gutter de 16px e 12px entre eles; textos ≥ 12px', async ({ page }) => {
+  test('cards em 1 coluna: gutter de 16px; textos ≥ 12px', async ({ page }) => {
     await mockEstudos(page);
     await gotoApp(page, '/estudos');
     const cards = await page.locator('.estudo-card').all();
     expect(cards).toHaveLength(MATERIAIS.length);
     const caixas = await Promise.all(cards.map((c) => c.boundingBox()));
     for (const b of caixas) {
-      expect(Math.round(b.x)).toBe(16);
-      expect(Math.round(b.width)).toBe(390 - 32);
+      expect(Math.round(b.x)).toBe(16 + 2);
+      expect(Math.round(b.width)).toBe(390 - 32 - 4);
     }
-    expect(Math.round(caixas[1].y - (caixas[0].y + caixas[0].height))).toBe(12);
-    for (const sel of ['.estudo-card-tema', '.estudo-card-nivel', '.estudo-tag', '.estudo-etiqueta']) {
+    for (const sel of ['.estudo-card-data', '.estudo-card-nivel', '.estudo-tag', '.estudo-etiqueta']) {
       const px = await page.locator(sel).first().evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
       expect(px, sel).toBeGreaterThanOrEqual(12);
     }
   });
 
-  test('faixa de temas rola na horizontal e filtra', async ({ page }) => {
+  test('menu de temas filtra', async ({ page }) => {
     await mockEstudos(page);
     await gotoApp(page, '/estudos');
-    const faixa = page.locator('.estudos-temas');
-    await expect(faixa).toHaveAttribute('aria-label', 'Temas');
-    await expect(faixa.locator('h2')).toBeHidden();
-    expect(await faixa.evaluate((e) => e.scrollWidth > e.clientWidth)).toBe(true);
-    await faixa.locator('.estudos-tema', { hasText: 'Banco de Dados' }).click();
+    await escolherTema(page, 'Banco de Dados');
     await expect(page.locator('.estudo-card')).toHaveCount(2);
-    await faixa.locator('.estudos-tema', { hasText: 'Sem tema' }).click();
+    await escolherTema(page, 'Sem tema');
     await expect(page.locator('.estudo-card')).toHaveCount(1);
   });
 
-  test('chips de tipo e "Só não estudados" filtram', async ({ page }) => {
+  test('abas de tipo, busca e filtro de status filtram', async ({ page }) => {
     await mockEstudos(page);
     await gotoApp(page, '/estudos');
-    await page.locator('.estudos-chips').getByRole('button', { name: 'Resumo' }).click();
+    const barra = page.locator('.estudos-barra');
+    await barra.getByRole('button', { name: 'Resumo' }).click();
     await expect(page.locator('.estudo-card')).toHaveCount(1);
-    await page.locator('.estudos-chips').getByRole('button', { name: 'Todos' }).click();
-    await page.locator('.estudos-check').click();
+    await barra.locator('.tab-btn-pill', { hasText: /^Todos$/ }).click();
+    await barra.locator('.estudos-status-btn').click();
+    await expect(barra.locator('.estudos-status-btn')).toHaveText('Não estudados');
     await expect(page.locator('.estudo-card')).toHaveCount(MATERIAIS.length - 1);
+    await barra.locator('.estudos-status-btn').click();
+    await barra.locator('.estudos-status-btn').click();
+    await barra.getByPlaceholder('Buscar...').fill('tcp');
+    await expect(page.locator('.estudo-card')).toHaveCount(1);
   });
 
   test('sem efeito de hover no toque', async ({ page }) => {
@@ -192,11 +197,6 @@ test.describe('biblioteca', () => {
     await expect.poll(() => card.evaluate((e) => getComputedStyle(e).transform)).toBe('none');
   });
 
-  test('faixa de temas: scroll-padding-inline mantém o respiro no snap', async ({ page }) => {
-    await mockEstudos(page);
-    await gotoApp(page, '/estudos');
-    await expect.poll(() => page.locator('.estudos-temas').evaluate((e) => getComputedStyle(e).scrollPaddingInlineStart)).toBe('8px');
-  });
 });
 
 // ---------------------------------------------------------------------------
