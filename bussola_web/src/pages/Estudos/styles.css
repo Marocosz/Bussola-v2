@@ -226,7 +226,7 @@
 }
 
 .estudos-scope .dropdown-divider { height: 1px; background: var(--cor-borda); margin: 6px 0; }
-.estudos-scope .dropdown-scroll-area { max-height: 280px; overflow-y: auto; scrollbar-width: thin; }
+.estudos-scope .dropdown-scroll-area { max-height: 280px; overflow-y: auto; }
 
 .estudos-scope .dropdown-item {
     padding: 0.8rem 1rem;
@@ -424,13 +424,14 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 760px) minmax(0, 1fr);
 }
 .estudo-leitura > * { grid-column: 2; min-width: 0; width: 100%; box-sizing: border-box; }
-.estudo-leitura > .estudo-barra { grid-column: 1 / -1; }
 .estudo-leitura > .estudo-lateral { display: none; }
 
 @media (min-width: 1200px) {
     .estudo-leitura.com-indice {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 760px) 3rem 230px minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr) minmax(0, 760px) 2.5rem 250px minmax(0, 1fr);
     }
+    /* a barra cobre texto + índice: as bordas esquerda/direita dos três ficam alinhadas */
+    .estudo-leitura.com-indice > .estudo-barra { grid-column: 2 / 5; }
     .estudo-leitura.com-indice > .estudo-lateral { display: block; grid-column: 4; grid-row: 2 / span 4; }
     .estudo-leitura.com-indice .estudo-btn-indice { display: none; }
 }
@@ -648,44 +649,54 @@
 .estudo-indice { display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.88rem; }
 .estudo-lateral .estudo-indice {
     position: sticky;
-    top: 96px;
-    max-height: calc(100vh - 120px);
+    top: 88px; /* logo abaixo da barra fixa (12px + 60px) */
+    max-height: calc(100vh - 104px);
     overflow-y: auto;
-    scrollbar-width: thin;
-    padding: 1rem;
+    padding: 1rem 0.75rem;
     box-sizing: border-box;
-    background: var(--cor-card-principal);
+    background: var(--cor-card-secundario);
     border: 1px solid var(--cor-borda);
-    border-radius: 14px;
+    border-radius: 12px;
 }
-.estudo-indice-topo { display: flex; justify-content: space-between; align-items: baseline; }
+/* scrollbar fina no padrão do projeto (scrollbar-width desligaria o ::-webkit-scrollbar no Chrome) */
+.estudo-indice::-webkit-scrollbar { width: 6px; }
+.estudo-indice::-webkit-scrollbar-track { background: transparent; margin: 8px 0; }
+.estudo-indice::-webkit-scrollbar-thumb { background-color: var(--cor-borda); border-radius: 4px; border: none; }
+.estudo-indice::-webkit-scrollbar-thumb:hover { background-color: var(--cor-texto-secundario); }
+@supports not selector(::-webkit-scrollbar) {
+    .estudo-indice { scrollbar-width: thin; scrollbar-color: var(--cor-borda) transparent; }
+}
+.estudo-indice-topo { display: flex; justify-content: space-between; align-items: baseline; padding: 0 0.25rem; }
 .estudo-indice-titulo { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--cor-texto-secundario); }
-.estudo-indice-pct { font-size: 0.78rem; font-weight: 700; color: var(--estudo-cor, var(--cor-azul-primario)); }
-.estudo-indice-trilho { height: 4px; border-radius: 4px; background: var(--cor-card-secundario); overflow: hidden; }
+.estudo-indice-pct { font-size: 0.78rem; font-weight: 700; color: var(--cor-azul-primario); }
+.estudo-indice-trilho { height: 4px; margin: 0 0.25rem; border-radius: 4px; background: var(--cor-borda); overflow: hidden; }
 .estudo-indice-trilho span { display: block; height: 100%; background: var(--estudo-cor, var(--cor-azul-primario)); transition: width 0.2s; }
 .estudo-indice-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+/* mesmo comportamento dos links da sidebar e dos itens de dropdown: hover neutro, ativo tingido */
 .estudo-indice-item {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.6rem;
     align-items: flex-start;
-    padding: 0.4rem 0.6rem;
+    padding: 0.5rem 0.65rem;
     border-radius: 8px;
-    border-left: 2px solid transparent;
     color: var(--cor-texto-secundario);
     text-decoration: none;
     line-height: 1.35;
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
-.estudo-indice-item.tipo-secao { color: var(--cor-texto-principal); font-weight: 600; }
+.estudo-indice-item.tipo-secao { font-weight: 500; }
 .estudo-indice-item.tipo-quiz,
-.estudo-indice-item.tipo-questao_aberta { padding-left: 1.3rem; font-size: 0.82rem; }
-.estudo-indice-item > i:first-child { font-size: 0.72rem; margin-top: 0.25rem; opacity: 0.8; }
+.estudo-indice-item.tipo-questao_aberta { padding-left: 1.5rem; font-size: 0.82rem; }
+.estudo-indice-item > i:first-child { width: 14px; flex-shrink: 0; text-align: center; font-size: 0.75rem; margin-top: 0.2rem; }
 .estudo-indice-texto { flex: 1; min-width: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.estudo-indice-item.ativo {
-    color: var(--estudo-cor, var(--cor-azul-primario));
-    background: color-mix(in srgb, var(--estudo-cor, var(--cor-azul-primario)) 10%, transparent);
-    border-left-color: var(--estudo-cor, var(--cor-azul-primario));
+@media (hover: hover) and (pointer: fine) {
+    .estudo-indice-item:not(.ativo):hover { background: var(--cor-fundo-hover); color: var(--cor-texto-principal); }
 }
-@media (hover: hover) and (pointer: fine) { .estudo-indice-item:not(.ativo):hover { background: var(--cor-fundo-hover); color: var(--cor-texto-principal); } }
+.estudo-indice-item.ativo {
+    background: rgba(var(--cor-tema-rgb), 0.14);
+    color: var(--cor-azul-primario);
+    font-weight: 600;
+}
 .estudo-indice-status { margin-top: 0.15rem; }
 .estudo-indice-status.acerto { color: var(--cor-verde-sucesso); }
 .estudo-indice-status.erro { color: var(--cor-laranja-aviso); }
@@ -693,7 +704,7 @@
     display: flex;
     gap: 0.45rem;
     align-items: center;
-    margin: 0;
+    margin: 0 0.25rem;
     padding-top: 0.6rem;
     border-top: 1px solid var(--cor-borda);
     font-size: 0.8rem;
